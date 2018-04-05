@@ -11,4 +11,12 @@ datagroup: upff_default_datagroup {
   max_cache_age: "1 hour"
 }
 
+explore: application_installed{
+  join: signupstarted {
+    type:  left_outer
+    sql_on: ${application_installed.anonymous_id} = ${signupstarted.anonymous_id} ;;
+    relationship: one_to_one
+  }
+}
+
 persist_with: upff_default_datagroup
