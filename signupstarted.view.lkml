@@ -16,6 +16,7 @@ view: signupstarted {
     type: count_distinct
     sql: ${anonymous_id} ;;
     description: "The number of anonymous_ids."
+    drill_fields: [received_date, total_anonymous_ids, platform]
   }
 
   dimension: collection_id {
