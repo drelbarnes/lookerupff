@@ -11,6 +11,8 @@ datagroup: upff_default_datagroup {
   max_cache_age: "1 hour"
 }
 
+persist_with: upff_default_datagroup
+
 explore: application_installed{
   join: signupstarted {
     type:  left_outer
@@ -18,5 +20,3 @@ explore: application_installed{
     relationship: one_to_one
   }
 }
-
-persist_with: upff_default_datagroup
