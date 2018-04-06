@@ -13,7 +13,7 @@ view: application_installed {
   }
 
   measure: total_anonymous_ids {
-    type: sum
+    type: count_distinct
     sql: ${anonymous_id} ;;
     description: "The number of anonymous_ids."
   }
