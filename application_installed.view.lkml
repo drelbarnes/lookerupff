@@ -16,7 +16,7 @@ view: application_installed {
     type: count_distinct
     sql: ${anonymous_id} ;;
     description: "The number of anonymous_ids."
-    drill_fields: [received_date, total_anonymous_ids, context_os_name]
+    drill_fields: [received_date, context_os_name, total_anonymous_ids, signupstarted.total_anonymous_ids]
   }
 
   dimension: build {
