@@ -12,6 +12,12 @@ view: signupstarted {
     sql: ${TABLE}.anonymous_id ;;
   }
 
+  measure: total_anonymous_ids {
+    type: sum
+    sql: ${anonymous_id} ;;
+    description: "The number of anonymous_ids."
+  }
+
   dimension: collection_id {
     type: number
     sql: ${TABLE}.collection_id ;;

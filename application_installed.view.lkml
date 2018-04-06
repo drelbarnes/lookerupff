@@ -12,6 +12,12 @@ view: application_installed {
     sql: ${TABLE}.anonymous_id ;;
   }
 
+  measure: total_anonymous_ids {
+    type: sum
+    sql: ${anonymous_id} ;;
+    description: "The number of anonymous_ids."
+  }
+
   dimension: build {
     type: string
     sql: ${TABLE}.build ;;
@@ -222,6 +228,7 @@ view: application_installed {
     type: string
     sql: ${TABLE}.version ;;
   }
+
 
   measure: count {
     type: count
