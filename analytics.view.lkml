@@ -21,6 +21,12 @@ view: analytics {
     sql: ${TABLE}.free_trial_converted ;;
   }
 
+  measure: trial_to_paid {
+    type: sum
+    description: "Total number of trials to paid during a time period."
+    sql:  ${free_trial_converted} ;;
+  }
+
 
   dimension: free_trial_created {
     type: number
