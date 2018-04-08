@@ -15,7 +15,7 @@ view: application_installed {
   measure: total_anonymous_ids {
     type: count_distinct
     sql: ${anonymous_id} ;;
-    description: "The number of anonymous_ids."
+    description: "The number of anonymous users."
     drill_fields: [received_date, context_os_name, total_anonymous_ids, signupstarted.total_anonymous_ids]
   }
 

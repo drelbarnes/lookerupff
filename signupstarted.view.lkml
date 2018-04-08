@@ -15,7 +15,7 @@ view: signupstarted {
   measure: total_anonymous_ids {
     type: count_distinct
     sql: ${anonymous_id} ;;
-    description: "The number of anonymous_ids."
+    description: "The number of anonymous users."
     drill_fields: [received_date, total_anonymous_ids, platform]
   }
 
