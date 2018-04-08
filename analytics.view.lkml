@@ -56,6 +56,17 @@ view: analytics {
     sql: ${TABLE}.paying_created ;;
   }
 
+  dimension: paying_churn {
+    type: number
+    sql: ${TABLE}.paying_churn ;;
+  }
+
+  measure: new_cancelled_paid {
+    type: sum
+    description: "Total number of cancelled paid subs during a time period."
+    sql:  ${paying_churn} ;;
+  }
+
   measure: new_paid {
     type: sum
     description: "Total number of new paids during a time period."
