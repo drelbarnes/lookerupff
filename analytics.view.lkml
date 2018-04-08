@@ -20,6 +20,7 @@ view: analytics {
     type: sum
     description: "Total number of cancelled trials during a time period."
     sql:  ${free_trial_churn} ;;
+    drill_fields: [timestamp_date, free_trial_churn]
   }
 
 
@@ -65,6 +66,7 @@ view: analytics {
     type: sum
     description: "Total number of cancelled paid subs during a time period."
     sql:  ${paying_churn} ;;
+    drill_fields: [timestamp_date, paying_churn]
   }
 
   measure: new_paid {
