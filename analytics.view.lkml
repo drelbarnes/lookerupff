@@ -43,6 +43,12 @@ view: analytics {
     sql: ${TABLE}.paying_created ;;
   }
 
+  measure: new_paid {
+    type: sum
+    description: "Total number of new paids during a time period."
+    sql:  ${paying_created} ;;
+  }
+
   dimension_group: timestamp {
     type: time
     timeframes: [
