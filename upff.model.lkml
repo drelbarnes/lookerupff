@@ -20,3 +20,7 @@ explore: application_installed{
     relationship: one_to_one
   }
 }
+
+explore: analytics{
+
+}
