@@ -21,15 +21,16 @@ view: analytics {
     sql: ${TABLE}.free_trial_converted ;;
   }
 
-  measure: new_trials {
-    type: sum
-    description: "Total number of new trials during a time period."
-    sql:  ${free_trial_converted} ;;
-  }
 
   dimension: free_trial_created {
     type: number
     sql: ${TABLE}.free_trial_created ;;
+  }
+
+  measure: new_trials {
+    type: sum
+    description: "Total number of new trials during a time period."
+    sql:  ${free_trial_created} ;;
   }
 
   dimension: paused_created {
