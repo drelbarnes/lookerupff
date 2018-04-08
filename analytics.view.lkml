@@ -16,6 +16,13 @@ view: analytics {
     sql: ${TABLE}.free_trial_churn ;;
   }
 
+  measure: new_cancelled_trials {
+    type: sum
+    description: "Total number of cancelled trials during a time period."
+    sql:  ${free_trial_churn} ;;
+  }
+
+
   dimension: free_trial_converted {
     type: number
     sql: ${TABLE}.free_trial_converted ;;
