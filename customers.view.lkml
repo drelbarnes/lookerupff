@@ -44,7 +44,7 @@ view: customers {
   }
 
   dimension: customer_created_at {
-    type: string
+    type: date
     sql: ${TABLE}.customer_created_at ;;
   }
 
