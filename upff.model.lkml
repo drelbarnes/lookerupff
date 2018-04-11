@@ -24,3 +24,7 @@ explore: application_installed{
 explore: analytics{
 
 }
+
+explore: customers{
+  label: "Subscribers"
+}
