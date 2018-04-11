@@ -16,11 +16,11 @@ view: analytics {
     sql: ${TABLE}.free_trial_churn ;;
   }
 
-  measure: average_churn_by_date {
+  measure: average_churn_by {
     type: average
     description: "Average churn in a given time period."
-    sql:  ${free_trial_churn} ;;
-    drill_fields: [timestamp_date, free_trial_churn]
+    sql:  ${free_trial_churn} / ${free_trial_created} ;;
+    drill_fields: [timestamp_date, average_churn_by]
   }
 
   measure: new_cancelled_trials {
