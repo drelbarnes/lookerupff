@@ -285,12 +285,14 @@ view: play {
 
   dimension: user_id {
     type: string
+    tags: ["user_id"]
     # hidden: yes
     sql: ${TABLE}.user_id ;;
   }
 
   dimension: useremail {
     type: string
+    tags: ["email"]
     sql: ${TABLE}.useremail ;;
   }
 

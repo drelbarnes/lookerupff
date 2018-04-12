@@ -3,6 +3,7 @@ view: customers {
 
   dimension: customer_id {
     primary_key: yes
+    tags: ["user_id"]
     type: number
     sql: ${TABLE}.customer_id ;;
   }
@@ -50,6 +51,7 @@ view: customers {
 
   dimension: email {
     type: string
+    tags: ["email"]
     sql: ${TABLE}.email ;;
   }
 
