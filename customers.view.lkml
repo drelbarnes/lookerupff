@@ -63,7 +63,8 @@ view: customers {
   measure: average_days_churned {
     type: average_distinct
     sql_distinct_key: ${platform} ;;
-    sql: ${event_created_at} - ${customer_created_at};;
+    sql: DATEDIFF(${event_created_at}::date,${customer_created_at}::date) ;;
+
   }
 
   dimension: first_name {
