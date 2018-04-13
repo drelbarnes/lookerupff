@@ -27,4 +27,10 @@ explore: analytics{
 
 explore: customers{
   label: "Subscribers"
+  join: play {
+    type:  left_outer
+    sql_on: ${customers.customer_id} = ${play.user_id} ;;
+    relationship: one_to_many
+  }
+
 }
