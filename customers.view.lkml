@@ -62,7 +62,7 @@ view: customers {
 
   measure: days_churned {
     type: number
-    sql: DATEDIFF(${event_created_at}::timestamp,${customer_created_at}::timestamp) ;;
+    sql:  DATE_PART('day', ${event_created_at}::timestamp - ${customer_created_at}::timestamp) ;;
 
   }
 
