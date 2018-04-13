@@ -32,5 +32,4 @@ explore: customers{
     sql_on: ${customers.customer_id} = ${play.user_id} ;;
     relationship: one_to_many
   }
-
 }
