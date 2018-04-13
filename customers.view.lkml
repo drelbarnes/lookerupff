@@ -62,13 +62,13 @@ view: customers {
 
   measure: days_churned {
     type: number
-    sql:  DATE_PART('day', ${event_created_at}::timestamp - ${customer_created_at}::timestamp) ;;
+    sql:  DATEDIFF('day', ${event_created_at}::timestamp, ${customer_created_at}::timestamp) ;;
 
   }
 
   measure: average_days_churned {
     type: average
-    sql:  DATE_PART('day', ${event_created_at}::timestamp - ${customer_created_at}::timestamp) ;;
+    sql:  DATEDIFF('day', ${event_created_at}::timestamp, ${customer_created_at}::timestamp) ;;
   }
 
   dimension: first_name {
