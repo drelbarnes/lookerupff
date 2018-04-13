@@ -56,7 +56,7 @@ view: customers {
   }
 
   dimension: event_created_at {
-    type: string
+    type: date
     sql: ${TABLE}.event_created_at ;;
   }
 
