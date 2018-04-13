@@ -60,10 +60,15 @@ view: customers {
     sql: ${TABLE}.event_created_at ;;
   }
 
-  measure: average_days_churned {
-    type: average_distinct
-    sql_distinct_key: ${platform} ;;
+  measure: days_churned {
+    type: number
     sql: DATEDIFF(${event_created_at}::date,${customer_created_at}::date) ;;
+
+  }
+
+  measure: average_days_churned {
+    type: average
+    sql: days_churned ;;
 
   }
 
