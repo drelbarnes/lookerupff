@@ -124,7 +124,7 @@ view: analytics {
   dimension: group_a {
     hidden: yes
     type: yesno
-    sql: {% condition time_a %} timestamp.raw {% endcondition %}
+    sql: {% condition time_a %} ${timestamp_raw} {% endcondition %}
       ;;
   }
 
@@ -146,7 +146,7 @@ view: analytics {
   dimension: group_b {
     hidden: yes
     type: yesno
-    sql: {% condition time_b %} timestamp.raw {% endcondition %}
+    sql: {% condition time_b %} ${timestamp_raw} {% endcondition %}
       ;;
   }
 
@@ -163,8 +163,8 @@ view: analytics {
   dimension: is_in_time_a_or_b {
     group_label: "Time Comparison Filters"
     type: yesno
-    sql: {% condition time_a %} timestamp.raw {% endcondition %}
-          OR {% condition time_b %} timestamp.raw {% endcondition %}
+    sql: {% condition time_a %} ${timestamp_raw} {% endcondition %}
+          OR {% condition time_b %} ${timestamp_raw} {% endcondition %}
            ;;
   }
 
