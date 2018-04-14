@@ -129,7 +129,7 @@ view: analytics {
   }
 
   measure: count_a {
-    type: count_distinct
+    type: sum
     sql:  ${free_trial_created} ;;
     filters: {
       field: group_a
@@ -151,7 +151,7 @@ view: analytics {
   }
 
   measure: count_b {
-    type: count_distinct
+    type: sum
     sql:  ${free_trial_created} ;;
    filters: {
     field: group_b
