@@ -132,8 +132,7 @@ view: analytics {
     type: count
 
     filters: {
-      field: group_a
-      value: "yes"
+      field: free_trial_created
     }
   }
 
@@ -154,8 +153,8 @@ view: analytics {
     type: count
 
     filters: {
-      field: group_b
-      value: "yes"
+      field: free_trial_created
+
     }
   }
 
