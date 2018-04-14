@@ -132,7 +132,8 @@ view: analytics {
     type: count
 
     filters: {
-      field: free_trial_created
+      field: group_a
+      value: "yes"
     }
   }
 
@@ -152,10 +153,10 @@ view: analytics {
   measure: count_b {
     type: count
 
-    filters: {
-      field: free_trial_created
-
-    }
+   filters: {
+    field: group_b
+    value: "yes"
+  }
   }
 
 ## filter on comparison queries to avoid querying unnecessarily large date ranges.
