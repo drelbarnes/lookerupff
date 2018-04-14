@@ -129,8 +129,8 @@ view: analytics {
   }
 
   measure: count_a {
-    type: count
-
+    type: count_distinct
+    sql:  ${free_trial_created} ;;
     filters: {
       field: group_a
       value: "yes"
@@ -151,13 +151,13 @@ view: analytics {
   }
 
   measure: count_b {
-    type: count
-
+    type: count_distinct
+    sql:  ${free_trial_created} ;;
    filters: {
     field: group_b
     value: "yes"
   }
-  }
+}
 
 ## filter on comparison queries to avoid querying unnecessarily large date ranges.
   dimension: is_in_time_a_or_b {
