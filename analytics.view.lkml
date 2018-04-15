@@ -71,7 +71,7 @@ view: analytics {
   measure: total_active_subs {
     type: sum
     description: "Total active subs "
-    sql:  existing_paying + existing_paid ;;
+    sql:  existing_paying + existing_free_trials ;;
   }
 
   dimension: paused_created {
