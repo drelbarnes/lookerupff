@@ -6,9 +6,19 @@ view: analytics {
     sql: ${TABLE}.existing_free_trials ;;
   }
 
+  measure: total_active_free_trials {
+    type: number
+    sql: ${existing_free_trials} ;;
+  }
+
   dimension: existing_paying {
     type: number
     sql: ${TABLE}.existing_paying ;;
+  }
+
+  measure: total_active_paying {
+    type: number
+    sql: ${existing_paying} ;;
   }
 
   dimension: free_trial_churn {
