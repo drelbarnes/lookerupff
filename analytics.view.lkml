@@ -23,7 +23,7 @@ view: analytics {
 
   measure: total_active_subs {
     type: number
-    sql: total_active_paying + total_active_free_trials ;;
+    sql: ${existing_free_trials} + ${existing_paying} ;;
   }
 
 
