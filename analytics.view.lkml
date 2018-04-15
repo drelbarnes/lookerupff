@@ -7,7 +7,7 @@ view: analytics {
   }
 
   measure: total_active_free_trials {
-    type: number
+    type: sum
     sql: ${existing_free_trials} ;;
   }
 
@@ -17,9 +17,16 @@ view: analytics {
   }
 
   measure: total_active_paying {
-    type: number
+    type: sum
     sql: ${existing_paying} ;;
   }
+
+  measure: total_active_subs {
+    type: number
+    description: "Total active subs"
+    sql:  ${existing_paying} + ${existing_free_trials} ;;
+  }
+
 
   dimension: free_trial_churn {
     type: number
@@ -64,11 +71,6 @@ view: analytics {
     sql:  ${free_trial_created} ;;
   }
 
-  measure: total_active_subs {
-    type: number
-    description: "Total active subs"
-    sql:  ${existing_paying} + ${existing_free_trials} ;;
-  }
 
   dimension: paused_created {
     type: number
