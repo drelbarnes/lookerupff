@@ -6,23 +6,9 @@ view: analytics {
     sql: ${TABLE}.existing_free_trials ;;
   }
 
-  measure: total_active_free_trial_subs {
-    type: sum
-    description: "Total number of active subs during a time period."
-    sql:  ${existing_free_trials} ;;
-    drill_fields: [timestamp_date, existing_free_trials]
-  }
-
   dimension: existing_paying {
     type: number
     sql: ${TABLE}.existing_paying ;;
-  }
-
-  measure: total_active_paid_subs {
-    type: sum
-    description: "Total active number of paid subs during a time period."
-    sql:  ${existing_paying} ;;
-    drill_fields: [timestamp_date, existing_paying]
   }
 
   dimension: free_trial_churn {
@@ -69,7 +55,7 @@ view: analytics {
   }
 
   measure: total_active_subs {
-    type: sum
+    type: number
     description: "Total active subs"
     sql:  ${existing_paying} + ${existing_free_trials} ;;
   }
