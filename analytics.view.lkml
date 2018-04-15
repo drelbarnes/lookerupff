@@ -21,6 +21,11 @@ view: analytics {
     sql: ${existing_paying} ;;
   }
 
+  measure: total_active_subs {
+    type: number
+    sql: total_active_paying + total_active_free_trials ;;
+  }
+
 
   dimension: free_trial_churn {
     type: number
