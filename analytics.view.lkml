@@ -14,7 +14,7 @@ view: analytics {
   }
 
   dimension: existing_paying {
-    type: string
+    type: number
     sql: ${TABLE}.existing_paying ;;
   }
 
