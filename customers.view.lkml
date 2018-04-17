@@ -94,6 +94,7 @@ view: customers {
   dimension: platform {
     type: string
     sql: ${TABLE}.platform ;;
+    drill_fields: [status, customer_id, email, customer_created_at, status]
   }
 
   dimension: product_id {
