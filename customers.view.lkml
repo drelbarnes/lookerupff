@@ -62,7 +62,7 @@ view: customers {
 
   dimension: current_date{
     type: date
-    sql: CURRENT_TIMESTAMP ;;
+    sql: current_date;;
 }
 
 
