@@ -66,7 +66,7 @@ view: customers {
 
   }
 
-  measure: average_days_by_churn {
+  measure: average_days_by {
     type: average
     sql:  DATEDIFF('day', ${customer_created_at}::timestamp, ${event_created_at}::timestamp) ;;
   }
