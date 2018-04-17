@@ -73,7 +73,7 @@ view: customers {
   }
 
   measure: average_days_by {
-    type: average
+    type: average_distinct
     sql:  DATEDIFF('day', ${customer_created_at}::timestamp, ${event_created_at}::timestamp) ;;
   }
 
