@@ -60,6 +60,12 @@ view: customers {
     sql: ${TABLE}.event_created_at ;;
   }
 
+  dimension: current_date{
+    type: date
+    sql: CURRENT_TIMESTAMP ;;
+}
+
+
   measure: days_churned {
     type: number
     sql:  DATEDIFF('day', ${event_created_at}::timestamp, ${customer_created_at}::timestamp) ;;
@@ -74,6 +80,11 @@ view: customers {
   measure: min_days_by {
     type: min
     sql:  DATEDIFF('day', ${customer_created_at}::timestamp, ${event_created_at}::timestamp) ;;
+  }
+
+  measure: average_days_on_free_trial {
+    type: date
+    sql:  DATEDIFF('day', ${event_created_at}::timestamp, ${current_date}::timestamp) ;;
   }
 
   dimension: first_name {
