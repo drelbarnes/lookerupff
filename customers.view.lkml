@@ -71,6 +71,11 @@ view: customers {
     sql:  DATEDIFF('day', ${customer_created_at}::timestamp, ${event_created_at}::timestamp) ;;
   }
 
+  measure: min_days_by {
+    type: min
+    sql:  DATEDIFF('day', ${customer_created_at}::timestamp, ${event_created_at}::timestamp) ;;
+  }
+
   dimension: first_name {
     type: string
     sql: ${TABLE}.first_name ;;
