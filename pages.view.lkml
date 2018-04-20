@@ -1,5 +1,5 @@
-view: subscribed {
-  sql_table_name: javascript.subscribed ;;
+view: pages {
+  sql_table_name: javascript.pages ;;
 
   dimension: id {
     primary_key: yes
@@ -82,28 +82,9 @@ view: subscribed {
     sql: ${TABLE}.context_user_agent ;;
   }
 
-  dimension_group: created {
-    type: time
-    timeframes: [
-      raw,
-      time,
-      date,
-      week,
-      month,
-      quarter,
-      year
-    ]
-    sql: ${TABLE}.created_at ;;
-  }
-
-  dimension: event {
+  dimension: name {
     type: string
-    sql: ${TABLE}.event ;;
-  }
-
-  dimension: event_text {
-    type: string
-    sql: ${TABLE}.event_text ;;
+    sql: ${TABLE}.name ;;
   }
 
   dimension_group: original_timestamp {
@@ -120,9 +101,9 @@ view: subscribed {
     sql: ${TABLE}.original_timestamp ;;
   }
 
-  dimension: product_id {
-    type: number
-    sql: ${TABLE}.product_id ;;
+  dimension: path {
+    type: string
+    sql: ${TABLE}.path ;;
   }
 
   dimension_group: received {
@@ -139,14 +120,14 @@ view: subscribed {
     sql: ${TABLE}.received_at ;;
   }
 
-  dimension: revenue {
-    type: number
-    sql: ${TABLE}.revenue ;;
+  dimension: referrer {
+    type: string
+    sql: ${TABLE}.referrer ;;
   }
 
-  measure: total_revenue {
-    type: sum
-    sql: ${revenue} ;;
+  dimension: search {
+    type: string
+    sql: ${TABLE}.search ;;
   }
 
   dimension_group: sent {
@@ -163,11 +144,6 @@ view: subscribed {
     sql: ${TABLE}.sent_at ;;
   }
 
-  dimension: state {
-    type: string
-    sql: ${TABLE}.state ;;
-  }
-
   dimension_group: timestamp {
     type: time
     timeframes: [
@@ -180,6 +156,16 @@ view: subscribed {
       year
     ]
     sql: ${TABLE}.timestamp ;;
+  }
+
+  dimension: title {
+    type: string
+    sql: ${TABLE}.title ;;
+  }
+
+  dimension: url {
+    type: string
+    sql: ${TABLE}.url ;;
   }
 
   dimension: user_id {
@@ -213,12 +199,23 @@ view: subscribed {
     drill_fields: [detail*]
   }
 
+  measure: unique_views {
+    type: count_distinct
+    sql: ${TABLE}.context_ip ;;
+  }
+
+  measure: total_views {
+    type: count_distinct
+    sql: ${TABLE}.user_id ;;
+  }
+
   # ----- Sets of fields for drilling ------
   set: detail {
     fields: [
       id,
-      context_campaign_name,
       context_library_name,
+      context_campaign_name,
+      name,
       users.name,
       users.context_library_name,
       users.context_campaign_name,

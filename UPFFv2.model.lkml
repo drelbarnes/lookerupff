@@ -25,11 +25,14 @@ explore: analytics{
 
 }
 
-explore: customers{
-  join: analytics {
-    type: inner
-    sql_on: ${analytics.timestamp_time}=${customers.customer_created_at} ;;
-    relationship: one_to_one
-  }
+explore: subscribed {
+
+}
+
+explore: pages{
+
+}
+
+explore: customers {
 
 }

@@ -22,6 +22,23 @@ view: analytics {
     sql:  ${free_trial_churn} ;;
   }
 
+  measure: free_trials_count {
+    type: sum
+    description: "Total number of existing trials during a period of time"
+    sql:  ${existing_free_trials} ;;
+  }
+
+  measure: paid_subs_count {
+    type: sum
+    description: "Total number of existing paid subs during a period of time"
+    sql:  ${existing_paying} ;;
+  }
+
+  measure: total_count {
+    type: sum
+    description: "Total number of existing free trials and paid subs during a period of time"
+    sql:  ${existing_paying}+${existing_free_trials} ;;
+  }
 
   dimension: free_trial_converted {
     type: number
@@ -67,10 +84,27 @@ view: analytics {
     sql:  ${paying_churn} ;;
   }
 
+measure: total_cancelled {
+  type: sum
+  description: "Total number of cancelled free trials and paid subs during a time period."
+  sql: ${paying_churn}+${free_trial_churn} ;;
+}
   measure: new_paid {
     type: sum
     description: "Total number of new paids during a time period."
     sql:  ${paying_created} ;;
+  }
+
+  measure: new_total {
+    type: sum
+    description: "Total number of new free trials and paid subs during a time period."
+    sql:  ${paying_created}+${free_trial_created}+${free_trial_converted};;
+  }
+
+  measure:  new_paid_total{
+    type: sum
+    description: "Total number of new paid subs (reacquisitions) and free trial to paid."
+    sql: ${free_trial_converted}+${paying_created};;
   }
 
   dimension_group: timestamp {
@@ -100,5 +134,11 @@ view: analytics {
   measure: count {
     type: count
     drill_fields: []
+  }
+
+  measure: PaidTrialLost {
+    type: sum
+    sql: ${paying_created}-${paying_churn}  ;;
+
   }
 }
