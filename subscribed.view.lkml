@@ -184,6 +184,7 @@ view: subscribed {
 
   dimension: user_id {
     type: string
+    tags: ["user_id"]
     # hidden: yes
     sql: ${TABLE}.user_id ;;
   }

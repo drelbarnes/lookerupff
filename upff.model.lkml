@@ -24,12 +24,3 @@ explore: application_installed{
 explore: analytics{
 
 }
-
-explore: customers{
-  join: analytics {
-    type: inner
-    sql_on: ${analytics.timestamp_time}=${customers.customer_created_at} ;;
-    relationship: one_to_one
-  }
-
-}

@@ -285,12 +285,19 @@ view: play {
 
   dimension: user_id {
     type: string
+    tags: ["user_id"]
     # hidden: yes
     sql: ${TABLE}.user_id ;;
   }
 
+  measure: average_number_of_plays_per_user {
+    type:  average
+    sql:  count(${user_id}) ;;
+  }
+
   dimension: useremail {
     type: string
+    tags: ["email"]
     sql: ${TABLE}.useremail ;;
   }
 

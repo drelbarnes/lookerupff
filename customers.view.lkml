@@ -3,6 +3,7 @@ view: customers {
 
   dimension: customer_id {
     primary_key: yes
+    tags: ["user_id"]
     type: number
     sql: ${TABLE}.customer_id ;;
   }
@@ -44,18 +45,50 @@ view: customers {
   }
 
   dimension: customer_created_at {
-    type: string
+    type: date
     sql: ${TABLE}.customer_created_at ;;
   }
 
   dimension: email {
     type: string
+    tags: ["email"]
     sql: ${TABLE}.email ;;
   }
 
   dimension: event_created_at {
-    type: string
+    type: date
     sql: ${TABLE}.event_created_at ;;
+  }
+
+  dimension: current_date{
+    type: date
+    sql: current_date;;
+}
+
+
+  measure: days_churned {
+    type: number
+    sql:  DATEDIFF('day', ${event_created_at}::timestamp, ${customer_created_at}::timestamp) ;;
+
+  }
+
+  measure: average_days_by {
+    type: average
+    sql:  DATEDIFF('day', ${customer_created_at}::timestamp, ${event_created_at}::timestamp) ;;
+  }
+
+  measure: max_days_by {
+    type: max
+    sql:  DATEDIFF('day', ${customer_created_at}::timestamp, ${event_created_at}::timestamp) ;;
+  }
+  measure: min_days_by {
+    type: min
+    sql:  DATEDIFF('day', ${customer_created_at}::timestamp, ${event_created_at}::timestamp) ;;
+  }
+
+  measure: average_days_on {
+    type: average
+    sql:  DATEDIFF('day', ${event_created_at}::timestamp, ${current_date}::timestamp) ;;
   }
 
   dimension: first_name {
@@ -76,6 +109,7 @@ view: customers {
   dimension: platform {
     type: string
     sql: ${TABLE}.platform ;;
+    drill_fields: [status, platform, customer_id, email, customer_created_at, status]
   }
 
   dimension: product_id {
@@ -115,6 +149,6 @@ view: customers {
 
   measure: count {
     type: count
-    drill_fields: [customer_id, product_name, last_name, first_name]
+    drill_fields: [customer_id, product_name, last_name, first_name, email]
   }
 }

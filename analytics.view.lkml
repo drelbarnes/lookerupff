@@ -6,20 +6,44 @@ view: analytics {
     sql: ${TABLE}.existing_free_trials ;;
   }
 
+  measure: total_active_free_trials {
+    type: sum
+    sql: ${existing_free_trials} ;;
+  }
+
   dimension: existing_paying {
-    type: string
+    type: number
     sql: ${TABLE}.existing_paying ;;
   }
+
+  measure: total_active_paying {
+    type: sum
+    sql: ${existing_paying} ;;
+  }
+
+  measure: total_active_subs {
+    type: number
+    sql: ${existing_free_trials} + ${existing_paying} ;;
+  }
+
 
   dimension: free_trial_churn {
     type: number
     sql: ${TABLE}.free_trial_churn ;;
   }
 
+  measure: average_churn_by {
+    type: average
+    description: "Average churn in a given time period."
+    sql:  ${free_trial_churn} / ${free_trial_created} ;;
+    drill_fields: [timestamp_date, average_churn_by]
+  }
+
   measure: new_cancelled_trials {
     type: sum
     description: "Total number of cancelled trials during a time period."
     sql:  ${free_trial_churn} ;;
+    drill_fields: [timestamp_date, free_trial_churn]
   }
 
   measure: free_trials_count {
@@ -63,6 +87,7 @@ view: analytics {
     sql:  ${free_trial_created} ;;
   }
 
+
   dimension: paused_created {
     type: number
     sql: ${TABLE}.paused_created ;;
@@ -82,6 +107,7 @@ view: analytics {
     type: sum
     description: "Total number of cancelled paid subs during a time period."
     sql:  ${paying_churn} ;;
+    drill_fields: [timestamp_date, paying_churn]
   }
 
 measure: total_cancelled {
@@ -141,4 +167,62 @@ measure: total_cancelled {
     sql: ${paying_created}-${paying_churn}  ;;
 
   }
+# ------
+# Filters
+# ------
+
+## filter determining time range for all "A" measures
+  filter: time_a {
+    type: date_time
+  }
+
+## flag for "A" measures to only include appropriate time range
+  dimension: group_a {
+    hidden: yes
+    type: yesno
+    sql: {% condition time_a %} ${timestamp_raw} {% endcondition %}
+      ;;
+  }
+
+  measure: count_a {
+    type: sum
+    sql:  ${free_trial_created} ;;
+    filters: {
+      field: group_a
+      value: "yes"
+    }
+  }
+
+## filter determining time range for all "B" measures
+  filter: time_b {
+    type: date_time
+  }
+
+## flag for "B" measures to only include appropriate time range
+  dimension: group_b {
+    hidden: yes
+    type: yesno
+    sql: {% condition time_b %} ${timestamp_raw} {% endcondition %}
+      ;;
+  }
+
+  measure: count_b {
+    type: sum
+    sql:  ${free_trial_created} ;;
+   filters: {
+    field: group_b
+    value: "yes"
+  }
+}
+
+## filter on comparison queries to avoid querying unnecessarily large date ranges.
+  dimension: is_in_time_a_or_b {
+    group_label: "Time Comparison Filters"
+    type: yesno
+    sql: {% condition time_a %} ${timestamp_raw} {% endcondition %}
+          OR {% condition time_b %} ${timestamp_raw} {% endcondition %}
+           ;;
+  }
+
+
 }

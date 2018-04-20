@@ -170,11 +170,13 @@ view: transactions {
 
   dimension: user_email {
     type: string
+    tags: ["email"]
     sql: ${TABLE}.user_email ;;
   }
 
   dimension: user_id {
     type: number
+    tags: ["user_id"]
     sql: ${TABLE}.user_id ;;
   }
 
