@@ -80,21 +80,10 @@ view: analytics {
     type: number
     sql: ${TABLE}.free_trial_created ;;
   }
-
   measure: new_trials {
     type: sum
     description: "Total number of new trials during a time period."
     sql:  ${free_trial_created} ;;
-  }
-
-  measure: new_trials_by {
-    type: sum
-    description: "Total number of new trials during a time period."
-    sql:  ${TABLE}.free_trial_created ;;
-    filters: {
-      field: timestamp_date
-      value: "15 days"
-    }
   }
 
 
