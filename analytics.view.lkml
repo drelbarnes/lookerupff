@@ -87,7 +87,15 @@ view: analytics {
     sql:  ${free_trial_created} ;;
   }
 
-
+  measure: new_trials_15_days_ago {
+    type: sum
+    description: "Total number of new trials during a time period."
+    sql:  ${free_trial_created} ;;
+    filters: {
+      field:  timestamp_time
+      value: "15 days"
+    }
+  }
   dimension: paused_created {
     type: number
     sql: ${TABLE}.paused_created ;;
