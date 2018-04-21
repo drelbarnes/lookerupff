@@ -87,6 +87,17 @@ view: analytics {
     sql:  ${free_trial_created} ;;
   }
 
+  measure: new_trials_by {
+    type: sum
+    description: "Total number of new trials during a time period."
+    sql:  ${free_trial_created} ;;
+    filters: {
+      field: timestamp_date
+      value: "15 days"
+    }
+  }
+
+
   dimension: paused_created {
     type: number
     sql: ${TABLE}.paused_created ;;
@@ -222,6 +233,4 @@ measure: total_cancelled {
           OR {% condition time_b %} ${timestamp_raw} {% endcondition %}
            ;;
   }
-
-
 }
