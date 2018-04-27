@@ -87,7 +87,6 @@ view: analytics {
     type: number
     sql: ${TABLE}.free_trial_created ;;
   }
-
   measure: new_trials {
     type: sum
     description: "Total number of new trials during a time period."
@@ -235,6 +234,4 @@ measure: Cancelled_Subs {
           OR {% condition time_b %} ${timestamp_raw} {% endcondition %}
            ;;
   }
-
-
 }
