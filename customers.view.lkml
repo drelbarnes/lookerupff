@@ -28,6 +28,8 @@ view: customers {
     sql: ${TABLE}.city ;;
   }
 
+
+
   dimension: country {
     type: string
     map_layer_name: countries
@@ -150,5 +152,10 @@ view: customers {
   measure: count {
     type: count
     drill_fields: [customer_id, product_name, last_name, first_name, email]
+  }
+
+  measure: customer_count {
+    type: count_distinct
+    sql: ${customer_id} ;;
   }
 }

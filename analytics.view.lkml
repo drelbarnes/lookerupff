@@ -46,6 +46,13 @@ view: analytics {
     drill_fields: [timestamp_date, free_trial_churn]
   }
 
+  measure: cancelled_trials {
+    type: sum
+    description: "Total number of cancelled trials during a time period."
+    sql:  ${free_trial_churn}*-1 ;;
+    drill_fields: [timestamp_date, free_trial_churn]
+  }
+
   measure: free_trials_count {
     type: sum
     description: "Total number of existing trials during a period of time"
@@ -167,6 +174,11 @@ measure: total_cancelled {
     sql: ${paying_created}-${paying_churn}  ;;
 
   }
+
+measure: Cancelled_Subs {
+  type: sum
+  sql: ${paying_churn}*-1 ;;
+}
 # ------
 # Filters
 # ------
