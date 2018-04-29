@@ -195,11 +195,20 @@ measure: Cancelled_Subs {
       ;;
   }
 
-  measure: count_a {
+  measure: free_trial_created_14_days_prior {
     type: sum
     sql:  ${free_trial_created} ;;
     filters: {
       field: group_a
+      value: "yes"
+    }
+  }
+
+  measure: free_trial_converted_today {
+    type: sum
+    sql:  ${free_trial_converted} ;;
+    filters: {
+      field: group_b
       value: "yes"
     }
   }
@@ -233,5 +242,17 @@ measure: Cancelled_Subs {
     sql: {% condition time_a %} ${timestamp_raw} {% endcondition %}
           OR {% condition time_b %} ${timestamp_raw} {% endcondition %}
            ;;
+  }
+
+dimension: is_in_time_a {
+  group_label: "Group A Comparison Filter"
+  type: yesno
+  sql:{% condition time_a %} ${timestamp_raw} {% endcondition %};;
+  }
+
+  dimension: is_in_time_b {
+    group_label: "Group B Comparison Filter"
+    type: yesno
+    sql:{% condition time_b %} ${timestamp_raw} {% endcondition %};;
   }
 }
