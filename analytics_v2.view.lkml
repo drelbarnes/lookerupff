@@ -1,5 +1,27 @@
-view: analytics {
-  sql_table_name: customers.analytics ;;
+view: analytics_v2 {
+  derived_table: {
+    sql: select a.*,new_trials_14_days_prior from
+    (select *, row_number() over(order by timestamp desc) as rownum from customers.analytics) as a
+    left join
+    (select free_trial_created as new_trials_14_days_prior, row_number() over(order by timestamp desc) as rownum from customers.analytics
+    where timestamp in (select dateadd(day,-15,timestamp) as timestamp from customers.analytics )) as b on a.rownum=b.rownum;;
+  }
+
+  dimension: new_trials_14_days_prior{
+    type: number
+    sql: ${TABLE}.new_trials_14_days_prior;;
+  }
+
+  dimension: conversion {
+    type: number
+    value_format: ".0#\%"
+    sql: 100.0*${TABLE}.free_trial_converted/${TABLE}.new_trials_14_days_prior ;;
+  }
+
+  measure: total_new_trials_14_days_prior {
+    type: sum
+    sql: ${TABLE}.new_trials_14_days_prior;;
+  }
 
   dimension: existing_free_trials {
     type: number
@@ -8,7 +30,7 @@ view: analytics {
 
   measure: total_active_free_trials {
     type: sum
-    sql: ${existing_free_trials} ;;
+    sql:${existing_free_trials} ;;
   }
 
   dimension: existing_paying {
@@ -116,11 +138,11 @@ view: analytics {
     drill_fields: [timestamp_date, paying_churn]
   }
 
-measure: total_cancelled {
-  type: sum
-  description: "Total number of cancelled free trials and paid subs during a time period."
-  sql: ${paying_churn}+${free_trial_churn} ;;
-}
+  measure: total_cancelled {
+    type: sum
+    description: "Total number of cancelled free trials and paid subs during a time period."
+    sql: ${paying_churn}+${free_trial_churn} ;;
+  }
   measure: new_paid {
     type: sum
     description: "Total number of new paids during a time period."
@@ -174,10 +196,22 @@ measure: total_cancelled {
 
   }
 
-measure: Cancelled_Subs {
-  type: sum
-  sql: ${paying_churn}*-1 ;;
-}
+  measure: Cancelled_Subs {
+    type: sum
+    sql: ${paying_churn}*-1 ;;
+  }
+
+  measure: conversion_rate {
+    type: sum
+    value_format: ".0#\%"
+    sql: 100.0*${TABLE}.free_trial_converted/${TABLE}.new_trials_14_days_prior ;;
+  }
+
+  measure: conversion_rate_v2 {
+    type: number
+    value_format: ".0#\%"
+    sql: 100.0*${trial_to_paid}/${total_new_trials_14_days_prior} ;;
+  }
 # ------
 # Filters
 # ------
@@ -218,6 +252,8 @@ measure: Cancelled_Subs {
     }
   }
 
+
+
 ## filter determining time range for all "B" measures
   filter: time_b {
     type: date_time
@@ -234,11 +270,11 @@ measure: Cancelled_Subs {
   measure: count_b {
     type: sum
     sql:  ${free_trial_created} ;;
-   filters: {
-    field: group_b
-    value: "yes"
+    filters: {
+      field: group_b
+      value: "yes"
+    }
   }
-}
 
 ## filter on comparison queries to avoid querying unnecessarily large date ranges.
   dimension: is_in_time_a_or_b {
@@ -249,10 +285,10 @@ measure: Cancelled_Subs {
            ;;
   }
 
-dimension: is_in_time_a {
-  group_label: "Group A Comparison Filter"
-  type: yesno
-  sql:{% condition time_a %} ${timestamp_raw} {% endcondition %};;
+  dimension: is_in_time_a {
+    group_label: "Group A Comparison Filter"
+    type: yesno
+    sql:{% condition time_a %} ${timestamp_raw} {% endcondition %};;
   }
 
   dimension: is_in_time_b {

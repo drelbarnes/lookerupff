@@ -25,6 +25,10 @@ explore: analytics{
 
 }
 
+explore: analytics_v2 {
+
+}
+
 explore: subscribed {
 
 }
