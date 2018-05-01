@@ -1,11 +1,19 @@
 view: analytics_v2 {
   derived_table: {
-    sql: select a.*,new_trials_14_days_prior from
-    (select *, row_number() over(order by timestamp desc) as rownum from customers.analytics) as a
-    left join
-    (select free_trial_created as new_trials_14_days_prior, row_number() over(order by timestamp desc) as rownum from customers.analytics
-    where timestamp in (select dateadd(day,-15,timestamp) as timestamp from customers.analytics )) as b on a.rownum=b.rownum;;
-  }
+    sql: select *,
+                case when rownum=max(rownum) over(partition by Week) then existing_paying end as PriorWeekExistingSubs,
+                case when rownum=max(rownum) over(partition by Month) then existing_paying end as PriorMonthExistingSubs
+      from
+      (select a.*,cast(datepart(week,date(timestamp)) as varchar) as Week,
+      cast(datepart(month,date(timestamp)) as varchar) as Month,
+      cast(datepart(Quarter,date(timestamp)) as varchar) as Quarter,
+      cast(datepart(Year,date(timestamp)) as varchar) as Year,
+      new_trials_14_days_prior from
+      (select *, row_number() over(order by timestamp desc) as rownum from customers.analytics) as a
+      left join
+      (select free_trial_created as new_trials_14_days_prior, row_number() over(order by timestamp desc) as rownum from customers.analytics
+      where timestamp in
+                      (select dateadd(day,-15,timestamp) as timestamp from customers.analytics )) as b on a.rownum=b.rownum);;}
 
   dimension: new_trials_14_days_prior{
     type: number
@@ -54,13 +62,6 @@ view: analytics_v2 {
     sql: ${TABLE}.free_trial_churn ;;
   }
 
-  measure: average_churn_by {
-    type: average
-    description: "Average churn in a given time period."
-    sql:  ${free_trial_churn} / ${free_trial_created} ;;
-    drill_fields: [timestamp_date, average_churn_by]
-  }
-
   measure: new_cancelled_trials {
     type: sum
     description: "Total number of cancelled trials during a time period."
@@ -104,7 +105,6 @@ view: analytics_v2 {
     sql:  ${free_trial_converted} ;;
   }
 
-
   dimension: free_trial_created {
     type: number
     sql: ${TABLE}.free_trial_created ;;
@@ -114,7 +114,6 @@ view: analytics_v2 {
     description: "Total number of new trials during a time period."
     sql:  ${free_trial_created} ;;
   }
-
 
   dimension: paused_created {
     type: number
@@ -161,6 +160,7 @@ view: analytics_v2 {
     sql: ${free_trial_converted}+${paying_created};;
   }
 
+
   dimension_group: timestamp {
     type: time
     timeframes: [
@@ -185,6 +185,58 @@ view: analytics_v2 {
     sql: ${TABLE}.total_paying ;;
   }
 
+  measure: paying_total {
+    type: sum
+    sql: ${TABLE}.total_paying ;;
+  }
+
+  measure: free_trials_total {
+    type: sum
+    sql: ${TABLE}.total_free_trials ;;
+  }
+
+  dimension: churn_rate {
+    type: number
+    value_format: ".0#\%"
+    sql: 100.0*${TABLE}.paying_churn/${TABLE}.existing_paying ;;
+  }
+
+  dimension: rownum {
+    type: number
+    sql: {TABLE}.rownum ;;
+  }
+
+  measure: minrow {
+    type: min
+    sql: ${TABLE}.rownum ;;
+  }
+
+  measure: last_updated_date {
+    type: date
+    sql: MAX(${timestamp_raw});;
+  }
+
+measure: end_of_prior_week_subs {
+  type: sum
+  sql: ${TABLE}.PriorWeekExistingSubs ;;
+}
+
+  measure: end_of_prior_month_subs {
+    type: sum
+    sql: ${TABLE}.PriorMonthExistingSubs ;;
+  }
+
+  measure: weekly_churn {
+    type: number
+    value_format: ".0#\%"
+    sql: 100.0*${new_cancelled_paid}/${end_of_prior_week_subs} ;;
+  }
+
+  measure: monthly_churn {
+    type: number
+    sql: ${new_cancelled_paid}/${end_of_prior_month_subs} ;;
+  }
+
   measure: count {
     type: count
     drill_fields: []
@@ -199,12 +251,6 @@ view: analytics_v2 {
   measure: Cancelled_Subs {
     type: sum
     sql: ${paying_churn}*-1 ;;
-  }
-
-  measure: conversion_rate {
-    type: sum
-    value_format: ".0#\%"
-    sql: 100.0*${TABLE}.free_trial_converted/${TABLE}.new_trials_14_days_prior ;;
   }
 
   measure: conversion_rate_v2 {

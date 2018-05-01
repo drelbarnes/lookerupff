@@ -21,22 +21,10 @@ explore: application_installed{
   }
 }
 
-explore: analytics{
-
-}
-
-explore: analytics_v2 {
-
-}
-
-explore: subscribed {
-
-}
-
-explore: pages{
-
-}
-
-explore: customers {
-
-}
+explore: analytics{}
+explore: analytics_v2 {}
+explore: subscribed {}
+explore: pages{}
+explore: customers {}
+explore: churn_reasons_aggregated {}
+explore: churn_custom_reasons {}

@@ -163,6 +163,17 @@ measure: total_cancelled {
     sql: ${TABLE}.total_paying ;;
   }
 
+  measure: paying_total {
+    type: sum
+    sql: ${TABLE}.total_paying ;;
+  }
+
+  measure: free_trials_total {
+    type: sum
+    sql: ${TABLE}.total_free_trials ;;
+  }
+
+
   measure: count {
     type: count
     drill_fields: []
