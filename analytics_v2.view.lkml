@@ -1,10 +1,15 @@
 view: analytics_v2 {
   derived_table: {
-    sql: select *,
+    sql: select a.*,
                 case when rownum=max(rownum) over(partition by Week) then existing_paying end as PriorWeekExistingSubs,
-                case when rownum=max(rownum) over(partition by Month) then existing_paying end as PriorMonthExistingSubs
-      from
-      (select a.*,cast(datepart(week,date(timestamp)) as varchar) as Week,
+                case when rownum=max(rownum) over(partition by Month) then existing_paying end as PriorMonthExistingSubs,
+                wait_content,
+                save_money,
+                vacation,
+                high_price,
+                other
+                from
+      ((select a.*,cast(datepart(week,date(timestamp)) as varchar) as Week,
       cast(datepart(month,date(timestamp)) as varchar) as Month,
       cast(datepart(Quarter,date(timestamp)) as varchar) as Quarter,
       cast(datepart(Year,date(timestamp)) as varchar) as Year,
@@ -13,7 +18,58 @@ view: analytics_v2 {
       left join
       (select free_trial_created as new_trials_14_days_prior, row_number() over(order by timestamp desc) as rownum from customers.analytics
       where timestamp in
-                      (select dateadd(day,-15,timestamp) as timestamp from customers.analytics )) as b on a.rownum=b.rownum);;}
+                      (select dateadd(day,-15,timestamp) as timestamp from customers.analytics )) as b on a.rownum=b.rownum)) as a
+      left join customers.churn_reasons_aggregated as b on a.timestamp=b.timestamp;;}
+
+  dimension: high_price {
+    type: number
+    sql: ${TABLE}.high_price ;;
+  }
+
+  dimension: other {
+    type: number
+    sql: ${TABLE}.other ;;
+  }
+
+  dimension: save_money {
+    type: string
+    sql: ${TABLE}.save_money ;;
+  }
+
+  measure: high_price_total {
+    type: sum
+    sql: ${TABLE}.high_price ;;
+  }
+
+  measure: other_total {
+    type: sum
+    sql: ${TABLE}.other ;;
+  }
+
+  measure: save_money_total {
+    type: sum
+    sql: ${TABLE}.save_money ;;
+  }
+
+  dimension: vacation {
+    type: number
+    sql: ${TABLE}.vacation ;;
+  }
+
+  dimension: wait_content {
+    type: number
+    sql: ${TABLE}.wait_content ;;
+  }
+
+  measure: vacation_total {
+    type: sum
+    sql: ${TABLE}.vacation ;;
+  }
+
+  measure: wait_content_total {
+    type: sum
+    sql: ${TABLE}.wait_content ;;
+  }
 
   dimension: new_trials_14_days_prior{
     type: number
