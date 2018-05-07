@@ -79,6 +79,11 @@ view: customers {
     sql:  DATEDIFF('day', ${customer_created_at}::timestamp, ${event_created_at}::timestamp) ;;
   }
 
+dimension: days_since_created {
+  type: number
+  sql:  DATEDIFF('day', ${customer_created_at}::timestamp, ${event_created_at}::timestamp);;
+}
+
   measure: max_days_by {
     type: max
     sql:  DATEDIFF('day', ${customer_created_at}::timestamp, ${event_created_at}::timestamp) ;;
@@ -147,6 +152,11 @@ view: customers {
   dimension: status {
     type: string
     sql: ${TABLE}.status ;;
+  }
+
+  dimension: State_Location {
+    map_layer_name:us_states
+    sql: ${state} ;;
   }
 
   measure: count {
