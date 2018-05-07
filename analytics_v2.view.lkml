@@ -314,6 +314,16 @@ measure: end_of_prior_week_subs {
     value_format: ".0#\%"
     sql: 100.0*${trial_to_paid}/${total_new_trials_14_days_prior} ;;
   }
+
+  measure: total_free_trial_change {
+    type: number
+    sql: (${free_trials_total}-${free_trials_count});;
+  }
+
+  measure: total_paid_sub_change {
+    type: number
+    sql: (${paying_total}-${paid_subs_count});;
+  }
 # ------
 # Filters
 # ------
