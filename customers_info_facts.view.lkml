@@ -1,7 +1,7 @@
 view: customers_info_facts {
   derived_table: {
     explore_source: customers {
-      limit: 25000
+      limit: 30000
       column: customer_id {
         field: customers.customer_id
       }
