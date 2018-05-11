@@ -11,11 +11,11 @@ view: customers_info_facts {
       }
 
       column: email {
-        field: customers.status
+        field: customers.email
       }
 
       column: platform {
-        field: customers.status
+        field: customers.platform
       }
     }
   }
