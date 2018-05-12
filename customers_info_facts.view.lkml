@@ -21,12 +21,14 @@ view: customers_info_facts {
   }
   dimension: customer_id {
     type: number
+    tags: ["user_id"]
     primary_key: yes
     sql: ${TABLE}.customer_id ;;
   }
 
   dimension: email {
     type: string
+    tags: ["email"]
     sql: ${TABLE}.email ;;
   }
 
