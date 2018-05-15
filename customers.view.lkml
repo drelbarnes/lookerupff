@@ -154,6 +154,16 @@ dimension: days_since_created {
     sql: ${TABLE}.status ;;
   }
 
+  dimension: status_v2 {
+    type: string
+    sql: case when ${status}= 'cancelled' then 'churn'
+              when ${status}= 'disabled' then 'churn'
+              when ${status}= 'expired' then 'churn'
+              when ${status}= 'paused' then 'churn'
+              when ${status}= 'refunded' then 'churn'
+              else ${status} end;;
+  }
+
   dimension: State_Location {
     map_layer_name:us_states
     sql: ${state} ;;

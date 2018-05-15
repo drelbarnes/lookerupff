@@ -39,16 +39,19 @@ view: analytics_v2 {
   measure: high_price_total {
     type: sum
     sql: ${TABLE}.high_price ;;
+    drill_fields: [high_price,timestamp_date]
   }
 
   measure: other_total {
     type: sum
     sql: ${TABLE}.other ;;
+    drill_fields: [other,timestamp_date]
   }
 
   measure: save_money_total {
     type: sum
     sql: ${TABLE}.save_money ;;
+    drill_fields: [save_money,timestamp_date]
   }
 
   dimension: vacation {
@@ -64,11 +67,13 @@ view: analytics_v2 {
   measure: vacation_total {
     type: sum
     sql: ${TABLE}.vacation ;;
+    drill_fields: [vacation,timestamp_date]
   }
 
   measure: wait_content_total {
     type: sum
     sql: ${TABLE}.wait_content ;;
+    drill_fields: [wait_content,timestamp_date]
   }
 
   dimension: new_trials_14_days_prior{
@@ -85,6 +90,7 @@ view: analytics_v2 {
   measure: total_new_trials_14_days_prior {
     type: sum
     sql: ${TABLE}.new_trials_14_days_prior;;
+    drill_fields: [new_trials_14_days_prior,timestamp_date]
   }
 
   dimension: existing_free_trials {
@@ -159,6 +165,8 @@ view: analytics_v2 {
     type: sum
     description: "Total number of trials to paid during a time period."
     sql:  ${free_trial_converted} ;;
+    drill_fields: [free_trial_converted,timestamp_date]
+
   }
 
   dimension: free_trial_created {
@@ -202,6 +210,7 @@ view: analytics_v2 {
     type: sum
     description: "Total number of new paids during a time period."
     sql:  ${paying_created} ;;
+    drill_fields: [paying_created,timestamp_date]
   }
 
   measure: new_total {
@@ -323,6 +332,11 @@ measure: end_of_prior_week_subs {
   measure: total_paid_sub_change {
     type: number
     sql: (${paying_total}-${paid_subs_count});;
+  }
+
+  measure: net_gained {
+    type: number
+    sql: (${new_trials}+${trial_to_paid})-(${cancelled_trials}-${Cancelled_Subs}) ;;
   }
 # ------
 # Filters
