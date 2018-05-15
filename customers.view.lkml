@@ -116,7 +116,7 @@ dimension: days_since_created {
   dimension: platform {
     type: string
     sql: ${TABLE}.platform ;;
-    drill_fields: [status, platform, customer_id, email, customer_created_at, status]
+    drill_fields: [status, platform, customer_id, email, customer_created_at, status,event_created_at]
   }
 
   dimension: product_id {
