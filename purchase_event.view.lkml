@@ -1,5 +1,5 @@
-view: users {
-  sql_table_name: http_api.users ;;
+view: purchase_event {
+  sql_table_name: http_api.purchase_event ;;
 
   dimension: id {
     primary_key: yes
@@ -71,14 +71,38 @@ view: users {
     sql: ${TABLE}.email ;;
   }
 
+  dimension: event {
+    type: string
+    sql: ${TABLE}.event ;;
+  }
+
   dimension: event_status {
     type: string
     sql: ${TABLE}.event_status ;;
   }
 
+  dimension: event_text {
+    type: string
+    sql: ${TABLE}.event_text ;;
+  }
+
   dimension: name {
     type: string
     sql: ${TABLE}.name ;;
+  }
+
+  dimension_group: original_timestamp {
+    type: time
+    timeframes: [
+      raw,
+      time,
+      date,
+      week,
+      month,
+      quarter,
+      year
+    ]
+    sql: ${TABLE}.original_timestamp ;;
   }
 
   dimension: plan {
@@ -110,6 +134,20 @@ view: users {
     sql: ${TABLE}.region ;;
   }
 
+  dimension_group: sent {
+    type: time
+    timeframes: [
+      raw,
+      time,
+      date,
+      week,
+      month,
+      quarter,
+      year
+    ]
+    sql: ${TABLE}.sent_at ;;
+  }
+
   dimension: status {
     type: string
     sql: ${TABLE}.status ;;
@@ -134,9 +172,18 @@ view: users {
     sql: ${TABLE}.team ;;
   }
 
-  dimension: topic {
-    type: string
-    sql: ${TABLE}.topic ;;
+  dimension_group: timestamp {
+    type: time
+    timeframes: [
+      raw,
+      time,
+      date,
+      week,
+      month,
+      quarter,
+      year
+    ]
+    sql: ${TABLE}.timestamp ;;
   }
 
   dimension_group: updated {
@@ -156,6 +203,12 @@ view: users {
   dimension: upff {
     type: string
     sql: ${TABLE}.upff ;;
+  }
+
+  dimension: user_id {
+    type: string
+    # hidden: yes
+    sql: ${TABLE}.user_id ;;
   }
 
   dimension: uuid {
@@ -180,6 +233,18 @@ view: users {
 
   measure: count {
     type: count
-    drill_fields: [id, name, context_library_name]
+    drill_fields: [detail*]
+  }
+
+  # ----- Sets of fields for drilling ------
+  set: detail {
+    fields: [
+      id,
+      name,
+      context_library_name,
+      users.name,
+      users.context_library_name,
+      users.id
+    ]
   }
 }

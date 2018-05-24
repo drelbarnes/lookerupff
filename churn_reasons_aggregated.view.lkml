@@ -75,5 +75,33 @@ view: churn_reasons_aggregated {
     drill_fields: []
   }
 
+  parameter: date_granularity {
+    type: string
+    allowed_value: { value: "Day" }
+    allowed_value: { value: "Week"}
+    allowed_value: { value: "Month" }
+    allowed_value: { value: "Quarter" }
+    allowed_value: { value: "Year" }
+  }
+
+  dimension: date {
+    label_from_parameter: date_granularity
+    sql:
+       CASE
+         WHEN {% parameter date_granularity %} = 'Day' THEN
+           ${timestamp_date}::VARCHAR
+         WHEN {% parameter date_granularity %} = 'Week' THEN
+           ${timestamp_week}::VARCHAR
+         WHEN {% parameter date_granularity %} = 'Month' THEN
+           ${timestamp_month}::VARCHAR
+         WHEN {% parameter date_granularity %} = 'Quarter' THEN
+           ${timestamp_quarter}::VARCHAR
+         WHEN {% parameter date_granularity %} = 'Year' THEN
+           ${timestamp_year}::VARCHAR
+         ELSE
+           NULL
+       END ;;
+  }
+
 
 }

@@ -28,3 +28,10 @@ explore: pages{}
 explore: customers {}
 explore: churn_reasons_aggregated {}
 explore: churn_custom_reasons {}
+explore: afinn_lexicon {}
+explore: purchase_event {}
+explore: users {}
+explore: identifies {}
+explore: play {}
+explore: heartlandia {}
+explore: viewership {}

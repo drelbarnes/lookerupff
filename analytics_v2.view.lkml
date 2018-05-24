@@ -1,6 +1,9 @@
 view: analytics_v2 {
   derived_table: {
     sql: select a.*,
+                3347+((49000-3347)*(cast(datepart(dayofyear,date(a.timestamp)) as integer)-1)/365) as target,
+                cast(datepart(dayofyear,date(a.timestamp)) as integer)-1 as day_of_year,
+                49000 as annual_target,
                 case when rownum=max(rownum) over(partition by Week) then existing_paying end as PriorWeekExistingSubs,
                 case when rownum=max(rownum) over(partition by Month) then existing_paying end as PriorMonthExistingSubs,
                 wait_content,
@@ -20,6 +23,41 @@ view: analytics_v2 {
       where timestamp in
                       (select dateadd(day,-15,timestamp) as timestamp from customers.analytics )) as b on a.rownum=b.rownum)) as a
       left join customers.churn_reasons_aggregated as b on a.timestamp=b.timestamp;;}
+
+dimension: target {
+  type: number
+  sql: ${TABLE}.target ;;
+}
+
+measure: targets {
+  type: sum
+  sql: ${target} ;;
+}
+
+  dimension: annual_target {
+    type: number
+    sql: ${TABLE}.annual_target ;;
+  }
+
+  measure: annual_targets {
+    type: sum
+    sql: ${annual_target} ;;
+  }
+
+  dimension: day_of_year {
+    type: number
+    sql: ${TABLE}.day_of_year ;;
+  }
+
+  dimension: avg_target_subs_per_day {
+    type:  number
+    sql: (${annual_target}-(${TABLE}.total_paying+${TABLE}.total_free_trials ))/(365-${TABLE}.day_of_year);;
+  }
+
+  measure: avg_targets_subs_per_day {
+    type:  sum
+    sql: ${avg_target_subs_per_day};;
+  }
 
   dimension: high_price {
     type: number
@@ -153,7 +191,7 @@ view: analytics_v2 {
   measure: total_count {
     type: sum
     description: "Total number of existing free trials and paid subs during a period of time"
-    sql:  ${existing_paying}+${existing_free_trials} ;;
+    sql:  ${TABLE}.total_paying+${TABLE}.total_free_trials ;;
   }
 
   dimension: free_trial_converted {
@@ -402,6 +440,114 @@ measure: end_of_prior_week_subs {
     }
   }
 
+  measure: paid_a {
+    type: sum
+    sql:  ${total_paying};;
+    filters: {
+      field: group_a
+      value: "yes"
+    }
+  }
+
+  measure: trials_a {
+    type: sum
+    sql:  ${total_free_trials};;
+    filters: {
+      field: group_a
+      value: "yes"
+    }
+  }
+
+  measure: conversions_a {
+    type: sum
+    sql: ${free_trial_converted};;
+    filters: {
+      field: group_a
+      value: "yes"
+    }
+  }
+
+  measure: paid_churn_a {
+    type: sum
+    sql: ${paying_churn} ;;
+    filters: {
+      field: group_a
+      value: "yes"
+    }
+  }
+
+  measure: trial_churn_a {
+    type: sum
+    sql: ${free_trial_churn} ;;
+    filters: {
+      field: group_a
+      value: "yes"
+    }
+  }
+
+  measure: trial_starts_a {
+    type: sum
+    sql: ${free_trial_created} ;;
+    filters: {
+      field: group_a
+      value: "yes"
+    }
+  }
+
+    measure: avg_paid_b {
+      type: average
+      sql:  ${total_paying};;
+      filters: {
+        field: group_b
+        value: "yes"
+      }
+    }
+
+  measure: avg_trials_b {
+    type: average
+    sql:  ${total_free_trials};;
+    filters: {
+      field: group_b
+      value: "yes"
+    }
+  }
+
+  measure: avg_conversions_b {
+    type: average
+    sql:  ${free_trial_converted};;
+    filters: {
+      field: group_b
+      value: "yes"
+    }
+  }
+
+  measure: avg_paid_churn_b {
+    type: average
+    sql:  ${paying_churn};;
+    filters: {
+      field: group_b
+      value: "yes"
+    }
+  }
+
+measure: avg_trial_churn_b {
+  type: average
+  sql:  ${free_trial_churn};;
+  filters: {
+    field: group_b
+    value: "yes"
+  }
+}
+
+  measure: avg_trial_starts_b {
+    type: average
+    sql:  ${free_trial_created};;
+    filters: {
+      field: group_b
+      value: "yes"
+    }
+  }
+
 ## filter on comparison queries to avoid querying unnecessarily large date ranges.
   dimension: is_in_time_a_or_b {
     group_label: "Time Comparison Filters"
@@ -422,4 +568,33 @@ measure: end_of_prior_week_subs {
     type: yesno
     sql:{% condition time_b %} ${timestamp_raw} {% endcondition %};;
   }
+
+  parameter: date_granularity {
+    type: string
+    allowed_value: { value: "Day" }
+    allowed_value: { value: "Week"}
+    allowed_value: { value: "Month" }
+    allowed_value: { value: "Quarter" }
+    allowed_value: { value: "Year" }
+  }
+
+  dimension: date {
+    label_from_parameter: date_granularity
+    sql:
+       CASE
+         WHEN {% parameter date_granularity %} = 'Day' THEN
+           ${timestamp_date}::VARCHAR
+         WHEN {% parameter date_granularity %} = 'Week' THEN
+           ${timestamp_week}::VARCHAR
+         WHEN {% parameter date_granularity %} = 'Month' THEN
+           ${timestamp_month}::VARCHAR
+         WHEN {% parameter date_granularity %} = 'Quarter' THEN
+           ${timestamp_quarter}::VARCHAR
+         WHEN {% parameter date_granularity %} = 'Year' THEN
+           ${timestamp_year}::VARCHAR
+         ELSE
+           NULL
+       END ;;
+  }
+
 }
