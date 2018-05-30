@@ -167,6 +167,11 @@ view: purchase_event {
     sql: ${TABLE}.status_date ;;
   }
 
+  dimension: days_since_created {
+    type: number
+    sql:  DATEDIFF('day', ${created_date}::timestamp, ${status_date}::timestamp);;
+  }
+
   dimension: team {
     type: string
     sql: ${TABLE}.team ;;
