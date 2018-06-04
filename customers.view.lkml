@@ -89,6 +89,7 @@ view: customers {
       year
     ]
     sql: ${TABLE}.event_created_at ;;
+    drill_fields: [referrer]
   }
 
   dimension: current_date{
@@ -145,7 +146,7 @@ dimension: days_since_created {
   dimension: platform {
     type: string
     sql: ${TABLE}.platform ;;
-    drill_fields: [status, platform, customer_id, email, customer_created_at, status,event_created_at]
+    drill_fields: [status, platform, customer_id, email, customer_created_at, status,event_created_at,referrer]
   }
 
   dimension: product_id {
@@ -181,6 +182,7 @@ dimension: days_since_created {
   dimension: status {
     type: string
     sql: ${TABLE}.status ;;
+    drill_fields: [referrer]
   }
 
   dimension: status_v2 {

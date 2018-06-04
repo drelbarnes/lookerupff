@@ -188,11 +188,7 @@ measure: targets {
     sql:  ${existing_paying} ;;
   }
 
-  measure: total_count {
-    type: sum
-    description: "Total number of existing free trials and paid subs during a period of time"
-    sql:  ${TABLE}.total_paying+${TABLE}.total_free_trials ;;
-  }
+
 
   dimension: free_trial_converted {
     type: number
@@ -297,6 +293,13 @@ measure: targets {
     type: sum
     sql: ${TABLE}.total_free_trials ;;
   }
+
+  measure: total_count {
+    type: sum
+    description: "Total number of existing free trials and paid subs during a period of time"
+    sql:  ${existing_paying}+${existing_free_trials} ;;
+  }
+
 
   dimension: churn_rate {
     type: number
