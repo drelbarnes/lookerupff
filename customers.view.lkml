@@ -51,6 +51,21 @@ view: customers {
     sql: ${TABLE}.customer_created_at ;;
   }
 
+  dimension_group: creation_timestamp {
+    type: time
+    timeframes: [
+      raw,
+      time,
+      date,
+      week,
+      month,
+      quarter,
+      year
+    ]
+    sql: ${TABLE}.customer_created_at ;;
+    }
+
+
   dimension: email {
     type: string
     tags: ["email"]

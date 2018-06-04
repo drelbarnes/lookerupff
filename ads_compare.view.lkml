@@ -26,7 +26,7 @@ view: ads_compare {
           group by  1
       )
 
-      select date_start,paid_gains as gains,sum(spend) as spend, sum(impresssions) as impressions,
+      select date_start,source,paid_gains as gains,sum(spend) as spend, sum(impresssions) as impressions,
       sum(clicks) as clicks
         from (select date_start,
                 spend,
@@ -41,7 +41,7 @@ view: ads_compare {
                 clicks,
                 source
         from fb_perf) as a inner join subscribers as b on date(date_start)=date(timestamp)
-        group by 1,2;;
+        group by 1,2,3;;
   }
 
 dimension: paid_gains {

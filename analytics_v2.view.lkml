@@ -503,6 +503,11 @@ measure: end_of_prior_week_subs {
       }
     }
 
+    measure: paid_change {
+      type: number
+      sql: (${paid_a}-${avg_paid_b}) ;;
+    }
+
   measure: avg_trials_b {
     type: average
     sql:  ${total_free_trials};;
@@ -510,6 +515,11 @@ measure: end_of_prior_week_subs {
       field: group_b
       value: "yes"
     }
+  }
+
+  measure: trials_change {
+    type: number
+    sql: (${trials_a}-${avg_trials_b}) ;;
   }
 
   measure: avg_conversions_b {
@@ -521,6 +531,11 @@ measure: end_of_prior_week_subs {
     }
   }
 
+  measure: conversion_change {
+    type: number
+    sql: (${conversions_a}-${avg_conversions_b}) ;;
+  }
+
   measure: avg_paid_churn_b {
     type: average
     sql:  ${paying_churn};;
@@ -528,6 +543,11 @@ measure: end_of_prior_week_subs {
       field: group_b
       value: "yes"
     }
+  }
+
+  measure: paid_churn_change {
+    type: number
+    sql: (${paid_churn_a}-${avg_paid_churn_b}) ;;
   }
 
 measure: avg_trial_churn_b {
@@ -539,6 +559,11 @@ measure: avg_trial_churn_b {
   }
 }
 
+  measure: trial_churn_change {
+    type: number
+    sql: (${trial_churn_a}-${avg_trial_churn_b}) ;;
+  }
+
   measure: avg_trial_starts_b {
     type: average
     sql:  ${free_trial_created};;
@@ -546,6 +571,11 @@ measure: avg_trial_churn_b {
       field: group_b
       value: "yes"
     }
+  }
+
+  measure: trials_created_change {
+    type: number
+    sql: (${trial_starts_a}-${avg_trial_starts_b}) ;;
   }
 
 ## filter on comparison queries to avoid querying unnecessarily large date ranges.
