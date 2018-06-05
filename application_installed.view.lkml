@@ -233,6 +233,6 @@ view: application_installed {
 
   measure: count {
     type: count
-    drill_fields: [id, context_os_name, context_library_name, context_app_name]
+    drill_fields: [id, context_os_name, context_library_name, context_app_name, users.email]
   }
 }
