@@ -21,6 +21,15 @@ explore: application_installed{
   }
 }
 
+explore: subscribed {
+  join: application_installed {
+    type:  left_outer
+    sql_on: ${subscribed.anonymous_id} = ${application_installed.anonymous_id} ;;
+    relationship: one_to_one
+  }
+}
+
+
 explore: analytics{}
 
 explore: customers{}
