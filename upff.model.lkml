@@ -31,6 +31,5 @@ explore: subscribed {
 
 
 explore: analytics{}
-
 explore: customers{}
 explore: customers_info_facts{}
