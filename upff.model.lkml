@@ -22,6 +22,7 @@ explore: application_installed{
 }
 
 explore: subscribed {
+  label: "Web to App Users"
   join: application_installed {
     type:  left_outer
     sql_on: ${subscribed.anonymous_id} = ${application_installed.anonymous_id} ;;
