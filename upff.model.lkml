@@ -24,12 +24,11 @@ explore: application_installed{
 explore: subscribed {
   label: "Web to App Users"
   join: application_installed {
-    type:  left_outer
+    type: inner
     sql_on: ${subscribed.anonymous_id} = ${application_installed.anonymous_id} ;;
     relationship: one_to_one
   }
 }
-
 
 explore: analytics{}
 explore: customers{}
