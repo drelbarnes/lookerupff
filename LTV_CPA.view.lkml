@@ -1,85 +1,107 @@
 view: ltv_cpa{
     derived_table: {
-      sql: with
-      fb_perf as (
-        select
+      sql:
+      with fb_perf as (select
                 i.date_start,
-                ROW_NUMBER() OVER(ORDER BY date_start desc) AS Row,
-                sum(i.spend) as spend,
-                'Facebook Ads'::text as source
-          from  facebook_ads.insights i
-          where date(date_start)<dateadd(day,-14,date(getdate()))
+                sum(i.spend) as spend
+          from  facebook_ads.insights as i
       group by  1
       ),
-      subscribers as (
-        select (a.timestamp),
-       ROW_NUMBER() OVER(ORDER BY a.timestamp desc) AS Row,
-       free_trial_converted as paid_gains
-       from customers.analytics as a
-      ),
-      google_perf as (        select a.date_start,ROW_NUMBER() OVER(ORDER BY a.date_start desc) AS Row,
-        sum(campaigncost+spend) as spend, 'Google Ad Words'::text as source
-        from (select  apr.date_start,
+      google_perf as (
+        select  apr.date_start,
+                sum(campaigncost+spend) as spend
+          from  (select  apr.date_start,
                 sum((apr.cost/1000000)) as campaigncost
           from  adwords.campaign_performance_reports as apr
-          where date(date_start)<dateadd(day,-14,date(getdate()))
-          group by  1) as a inner join
-  (select date_start,ROW_NUMBER() OVER(ORDER BY date_start desc) AS Row,
+          group by  1) as apr
+          inner join
+          (select date_start,
   sum(COALESCE((cost/1000000),0 )) as spend from adwords.ad_performance_reports
-  where date(date_start)<dateadd(day,-14,date(getdate()))
-  group by date_Start) as b
-  on a.date_start=b.date_start
-  group by 1),
-
-      ads_compare as (select b.timestamp,source,paid_gains/2 as gains,sum(spend) as spend
-        from (select date_start, row,
-                spend,
-                source
+  group by date_Start) as b on apr.date_start=b.date_start
+          group by  1
+      ),
+        t1 as (select date_start,
+                spend
                 from google_perf
       union all
-        select  date_start, row,
-                spend,
-                source
-        from fb_perf) as a inner join subscribers as b on a.row=b.row
-        group by 1,2,3),
+        select  date_start,
+                spend
+        from fb_perf),
 
-    CPA_ as (SELECT
-  (COALESCE(SUM(ads_compare.spend ), 0))/(COALESCE(SUM(ads_compare.gains ), 0))  AS cpa,
-  1 as matching
-FROM ads_compare
-WHERE
-  (((ads_compare.timestamp ) >= ((DATEADD(day,-29, DATE_TRUNC('day',GETDATE()) ))) AND (ads_compare.timestamp ) < ((DATEADD(day,30, DATEADD(day,-29, DATE_TRUNC('day',GETDATE()) ) )))))
-HAVING
-  (COALESCE(SUM(ads_compare.gains ), 0) > 0)),
+       t2 as (select date_start as timestamp, sum(spend) as spend from t1 group by date_start),
 
-lifetime_value AS (select cast(churn_30_days as decimal) as churn_30_days, cast(total_paying as decimal) as total_paying_31_days_prior
+       t3 as (select a1.timestamp, a1.spend+sum(coalesce(a2.spend,0)) as spend_30_days
+from t2 as a1
+left join t2 as a2 on datediff(day,a2.timestamp,a1.timestamp)<=30 and datediff(day,a2.timestamp,a1.timestamp)>0
+group by a1.timestamp,a1.spend),
+
+t4 as (select *,ROW_NUMBER() OVER(ORDER BY t3.timestamp desc) AS Row
+from t3
+where (t3.timestamp  < (DATEADD(day,-14, DATE_TRUNC('day',GETDATE()) )))),
+
+t5 as (select a1.timestamp,ROW_NUMBER() OVER(ORDER BY a1.timestamp desc) AS Row, a1.free_trial_converted+sum(coalesce(a2.free_trial_converted,0)) as conversions_30_days
+from customers.analytics as a1
+left join customers.analytics as a2 on datediff(day,a2.timestamp,a1.timestamp)<=30 and datediff(day,a2.timestamp,a1.timestamp)>0
+group by a1.timestamp,a1.free_trial_converted),
+
+t6 as (select t5.timestamp, spend_30_days, conversions_30_days,cast(spend_30_days as decimal)/cast(conversions_30_days as decimal) as CPA
+from t4 inner join t5 on t4.row=t5.row),
+
+t7 as (select a.*,prior_31_days_subs, 5.99/(cast(churn_30_days as decimal)/cast(prior_31_days_subs as decimal)) as LTV
 from
-(select sum(paying_churn) as churn_30_days, 1 as matching
-from customers.analytics
-      where   (((analytics.timestamp ) >= ((DATEADD(day,-29, DATE_TRUNC('day',GETDATE()) ))) AND (analytics.timestamp ) < ((DATEADD(day,30, DATEADD(day,-29, DATE_TRUNC('day',GETDATE()) ) )))))) as a
+(select a1.timestamp, a1.paying_churn+sum(coalesce(a2.paying_churn,0)) as churn_30_days
+from customers.analytics as a1
+left join customers.analytics as a2 on datediff(day,a2.timestamp,a1.timestamp)<=30 and datediff(day,a2.timestamp,a1.timestamp)>0
+group by a1.timestamp,a1.paying_churn) as a
 inner join
-(select analytics.timestamp, total_paying, 1 as matching from customers.analytics where timestamp= ((DATEADD(day,-30, DATE_TRUNC('day',GETDATE()) )))) as b
-on a.matching=b.matching),
+(select a.timestamp,total_paying as prior_31_days_subs
+from
+(select a.timestamp, ROW_NUMBER() OVER(ORDER BY a.timestamp desc) AS Row from customers.analytics as a) as a
+inner join
+(select a.timestamp,total_paying, ROW_NUMBER() OVER(ORDER BY a.timestamp desc) AS Row from customers.analytics as a where (a.timestamp  < (DATEADD(day,-32, DATE_TRUNC('day',GETDATE()) )))) as b
+on a.row=b.row) as b
+on a.timestamp=b.timestamp)
 
-LTV_ as (SELECT
-  5.99/(lifetime_value.churn_30_days/lifetime_value.total_paying_31_days_prior) AS LTV,
-  1 as matching
-FROM lifetime_value)
+select t6.timestamp, CPA, LTV, cast(LTV as decimal)/cast(CPA as decimal) as LTV_CPA_Ratio
+from t6 inner join t7 on t6.timestamp=t7.timestamp
+;;}
 
-select CPA, LTV,1.1 as Goal
-from CPA_ as a inner join LTV_ as b on a.matching=b.matching;;}
+  dimension_group: timestamp {
+    type: time
+    timeframes: [
+      raw,
+      time,
+      date,
+      week,
+      month,
+      quarter,
+      year
+    ]
+    sql: ${TABLE}.timestamp ;;}
 
           dimension: CPA{
             type: number
             sql: ${TABLE}.CPA ;;
-            value_format_name: usd
+
           }
+
+          measure: CPA_1 {
+            type: sum
+            sql: ${CPA} ;;
+            value_format_name: usd
+            }
 
           dimension: LTV {
             type: number
             sql: ${TABLE}.LTV ;;
+          }
+
+          measure: LTV_1 {
+            type: sum
+            sql: ${LTV} ;;
             value_format_name: usd
           }
+
 
           dimension: LTV_CPA_Ratio {
             type: number

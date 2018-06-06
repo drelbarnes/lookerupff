@@ -1,52 +1,55 @@
 view: ads_compare {
   derived_table: {
-    sql: with
-      fb_perf as (
-        select
+    sql: with fb_perf as (select
                 i.date_start,
-                ROW_NUMBER() OVER(ORDER BY date_start desc) AS Row,
-                sum(i.spend) as spend,
-                'Facebook Ads'::text as source
-          from  facebook_ads.insights i
-          where date(date_start)<dateadd(day,-14,date(getdate()))
+                sum(i.spend) as spend
+          from  facebook_ads.insights as i
       group by  1
       ),
-      subscribers as (
-        select (a.timestamp),
-       ROW_NUMBER() OVER(ORDER BY a.timestamp desc) AS Row,
-       free_trial_converted as paid_gains
-       from customers.analytics as a
-      ),
-      google_perf as (        select a.date_start,ROW_NUMBER() OVER(ORDER BY a.date_start desc) AS Row,
-        sum(campaigncost+spend) as spend, 'Google Ad Words'::text as source
-        from (select  apr.date_start,
+      google_perf as (
+        select  apr.date_start,
+                sum(campaigncost+spend) as spend
+          from  (select  apr.date_start,
                 sum((apr.cost/1000000)) as campaigncost
           from  adwords.campaign_performance_reports as apr
-          where date(date_start)<dateadd(day,-14,date(getdate()))
-          group by  1) as a inner join
-  (select date_start,ROW_NUMBER() OVER(ORDER BY date_start desc) AS Row,
+          group by  1) as apr
+          inner join
+          (select date_start,
   sum(COALESCE((cost/1000000),0 )) as spend from adwords.ad_performance_reports
-  where date(date_start)<dateadd(day,-14,date(getdate()))
-  group by date_Start) as b
-  on a.date_start=b.date_start
-  group by 1)
-
-      select b.timestamp,source,paid_gains/2 as gains,sum(spend) as spend
-        from (select date_start, row,
-                spend,
-                source
+  group by date_Start) as b on apr.date_start=b.date_start
+          group by  1
+      ),
+        t1 as (select date_start,
+                spend
                 from google_perf
       union all
-        select  date_start, row,
-                spend,
-                source
-        from fb_perf) as a inner join subscribers as b on a.row=b.row
-        group by 1,2,3;;
+        select  date_start,
+                spend
+        from fb_perf),
+
+       t2 as (select date_start as timestamp, sum(spend) as spend from t1 group by date_start),
+
+       t3 as (select a1.timestamp, a1.spend+sum(coalesce(a2.spend,0)) as spend_30_days
+from t2 as a1
+left join t2 as a2 on datediff(day,a2.timestamp,a1.timestamp)<=30 and datediff(day,a2.timestamp,a1.timestamp)>0
+group by a1.timestamp,a1.spend),
+
+t4 as (select *,ROW_NUMBER() OVER(ORDER BY t3.timestamp desc) AS Row
+from t3
+where (t3.timestamp  < (DATEADD(day,-14, DATE_TRUNC('day',GETDATE()) )))),
+
+t5 as (select a1.timestamp,ROW_NUMBER() OVER(ORDER BY a1.timestamp desc) AS Row, a1.free_trial_converted+sum(coalesce(a2.free_trial_converted,0)) as conversions_30_days
+from customers.analytics as a1
+left join customers.analytics as a2 on datediff(day,a2.timestamp,a1.timestamp)<=30 and datediff(day,a2.timestamp,a1.timestamp)>0
+group by a1.timestamp,a1.free_trial_converted)
+
+select t5.timestamp, spend_30_days, conversions_30_days,cast(spend_30_days as decimal)/cast(conversions_30_days as decimal) as CPA
+from t4 inner join t5 on t4.row=t5.row;;
   }
 
 dimension: paid_gains {
   type: number
-  sql: ${TABLE}.gains ;;
+  sql: ${TABLE}.conversions_30_days;;
 }
 
   measure: paid_gains_total {
@@ -71,19 +74,13 @@ dimension: paid_gains {
   measure: spend_14_days_prior {
     type: sum
     value_format_name: usd
-    sql: ${TABLE}.spend ;;
-  }
-
-
-  dimension: source {
-    type: string
-    sql: ${TABLE}.source ;;
+    sql: ${TABLE}.spend_30_days ;;
   }
 
 
   measure: cost_per_acquisition {
-    type: number
-    sql: ${spend_14_days_prior}/${paid_gains_total} ;;
+    type: sum
+    sql: ${TABLE}.CPA ;;
     value_format_name: usd
   }
 

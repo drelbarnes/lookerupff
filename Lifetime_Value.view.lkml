@@ -1,15 +1,34 @@
 view: lifetime_value {
   derived_table: {
-    sql:select cast(churn_30_days as decimal) as churn_30_days, cast(total_paying as decimal) as total_paying_31_days_prior
+    sql:select a.*,prior_31_days_subs, 5.99/(cast(churn_30_days as decimal)/cast(prior_31_days_subs as decimal)) as LTV
 from
-(select sum(paying_churn) as churn_30_days, 1 as matching
-from customers.analytics
-      where   (((analytics.timestamp ) >= ((DATEADD(day,-29, DATE_TRUNC('day',GETDATE()) ))) AND (analytics.timestamp ) < ((DATEADD(day,30, DATEADD(day,-29, DATE_TRUNC('day',GETDATE()) ) )))))) as a
+(select a1.timestamp, a1.paying_churn+sum(coalesce(a2.paying_churn,0)) as churn_30_days
+from customers.analytics as a1
+left join customers.analytics as a2 on datediff(day,a2.timestamp,a1.timestamp)<=30 and datediff(day,a2.timestamp,a1.timestamp)>0
+group by a1.timestamp,a1.paying_churn) as a
 inner join
-(select analytics.timestamp, total_paying, 1 as matching from customers.analytics where timestamp= ((DATEADD(day,-30, DATE_TRUNC('day',GETDATE()) )))) as b
-on a.matching=b.matching
+(select a.timestamp,total_paying as prior_31_days_subs
+from
+(select a.timestamp, ROW_NUMBER() OVER(ORDER BY a.timestamp desc) AS Row from customers.analytics as a) as a
+inner join
+(select a.timestamp,total_paying, ROW_NUMBER() OVER(ORDER BY a.timestamp desc) AS Row from customers.analytics as a where (a.timestamp  < (DATEADD(day,-32, DATE_TRUNC('day',GETDATE()) )))) as b
+on a.row=b.row) as b
+on a.timestamp=b.timestamp
+;;
+  }
 
- ;;
+  dimension_group: timestamp {
+    type: time
+    timeframes: [
+      raw,
+      time,
+      date,
+      week,
+      month,
+      quarter,
+      year
+    ]
+    sql: ${TABLE}.timestamp ;;
   }
 
   dimension: churn_30_days {
@@ -19,18 +38,12 @@ on a.matching=b.matching
 
   dimension: total_paying_31_days_prior {
     type: number
-    sql: ${TABLE}.total_paying_31_days_prior ;;
-  }
-
-  measure: churn_percent {
-    type: number
-    value_format_name: decimal_4
-    sql: ${churn_30_days}/${total_paying_31_days_prior} ;;
+    sql: ${TABLE}.prior_31_days_subs ;;
   }
 
   measure: lifetime_value {
-    type: number
+    type: sum
     value_format_name: usd
-    sql: 5.99/(${churn_30_days}/${total_paying_31_days_prior});;
+    sql:${TABLE}.LTV;;
   }
 }
