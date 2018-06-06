@@ -1,4 +1,4 @@
-view: customers {
+view: customers_v2 {
   sql_table_name: customers.customers ;;
 
   dimension: customer_id {
