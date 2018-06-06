@@ -379,6 +379,12 @@ measure: end_of_prior_week_subs {
     type: number
     sql: (${new_trials}+${trial_to_paid}+${new_paid})+(${cancelled_trials}+${Cancelled_Subs}) ;;
   }
+
+  measure: net_paid {
+    type: number
+    sql: (${trial_to_paid}+${new_paid})+(${Cancelled_Subs}) ;;
+  }
+
 # ------
 # Filters
 # ------

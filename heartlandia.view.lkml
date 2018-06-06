@@ -1,14 +1,14 @@
 view: heartlandia {
   derived_table: {
     sql:
-    select user_id, date(timestamp) as timestamp,
+    select user_id,email, date(timestamp) as timestamp,
 case when sum(high_price_churn)>0 then 1 else 0 end as high_price_churn,
 case when sum(watched_heartland)>0 then 1 else 0 end as watched_heartland,
 case when sum(IOS)>0 then 1 else 0 end as IOS,
 case when sum(Android)>0 then 1 else 0 end as Android,
 case when sum(Web)>0 then 1 else 0 end as Web
-from (select distinct date(timestamp) as timestamp,user_id, high_price_churn, watched_heartland, IOS, Android, Web
-    from ((select DATE(play.timestamp ) as timestamp, user_id,
+from (select distinct date(timestamp) as timestamp,user_id,email, high_price_churn, watched_heartland, IOS, Android, Web
+    from ((select DATE(play.timestamp ) as timestamp, user_id,email,
     case when user_id||date(timestamp) in (select cast(userid as varchar)||date(occurred_at) from
                           customers.churn_custom_reasons
                            where occurred_at >= (TIMESTAMP '2018-04-10') AND (occurred_at) < (TIMESTAMP '2018-05-23')) then 1 else 0 end as high_price_churn,
@@ -189,9 +189,9 @@ select 209047 as video_id union all
 select 209048 as video_id union all
 select 209050 as video_id union all
 select 212496 as video_id) then 1 else 0 end as watched_heartland, 1 as IOS, 0 as Android, 0 as Web
-from ios.play)
+from ios.play left join ios.users on play.user_id=users.id)
 union all
-(select DATE(play.timestamp) as timestamp, user_id,
+(select DATE(play.timestamp) as timestamp, user_id, null as email,
 case when user_id ||date(timestamp) in (select cast(userid as varchar)||date(occurred_at) from
                           customers.churn_custom_reasons
                           where occurred_at >= (TIMESTAMP '2018-04-10') AND (occurred_at) < (TIMESTAMP '2018-05-23'))
@@ -375,15 +375,15 @@ select 209050 as video_id union all
 select 212496 as video_id) then 1 else 0 end as watched_heartland, 0 as IOS, 1 as Android, 0 as Web
 from android.play)
 union all
-(select DATE(play.timestamp) as timestamp, user_id,
+(select DATE(play.timestamp) as timestamp, user_id,email,
 case when user_id||date(timestamp) in (select cast(userid as varchar)||date(occurred_at) from
                           customers.churn_custom_reasons
                           where occurred_at >= (TIMESTAMP '2018-04-10') AND (occurred_at) < (TIMESTAMP '2018-05-23') )
                           then 1 else 0 end as high_price_churn,
 case when title ~* 'heartland'
 then 1 else 0 end as watched_heartland, 0 as IOS, 0 as Android, 1 as Web
-from javascript.play)))
-group by user_id, timestamp
+from javascript.play left join javascript.users on play.user_id=users.id)))
+group by user_id, email, timestamp
 ;;
   }
 
@@ -414,6 +414,11 @@ measure: high_price_churn_total {
   dimension: user_id {
     type: number
     sql: ${TABLE}.user_id ;;
+  }
+
+  dimension: email {
+    type: string
+    sql: ${TABLE}.email ;;
   }
 
   dimension: watched_heartland {
