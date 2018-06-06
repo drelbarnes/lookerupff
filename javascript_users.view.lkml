@@ -1,5 +1,5 @@
 view: javascript_users {
-  sql_table_name: ios.users ;;
+  sql_table_name: javascript.users ;;
 
   dimension: id {
     primary_key: yes

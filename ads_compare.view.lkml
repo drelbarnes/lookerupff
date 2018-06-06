@@ -4,43 +4,43 @@ view: ads_compare {
       fb_perf as (
         select
                 i.date_start,
+                ROW_NUMBER() OVER(ORDER BY date_start desc) AS Row,
                 sum(i.spend) as spend,
-                sum(i.impressions) as impresssions,
-                sum(i.clicks) as clicks,
                 'Facebook Ads'::text as source
           from  facebook_ads.insights i
+          where date(date_start)<dateadd(day,-14,date(getdate()))
       group by  1
       ),
       subscribers as (
-        select timestamp as timestamp,
-               free_trial_converted + paying_created as paid_gains
-        from customers.analytics
+        select (a.timestamp),
+       ROW_NUMBER() OVER(ORDER BY a.timestamp desc) AS Row,
+       free_trial_converted as paid_gains
+       from customers.analytics as a
       ),
-      google_perf as (
-        select  apr.date_start,
-                sum(apr.cost/1000000) as spend,
-                sum(apr.impressions) as impresssions,
-                sum(apr.clicks) as clicks,
-                'Google Ad Words'::text as source
+      google_perf as (        select a.date_start,ROW_NUMBER() OVER(ORDER BY a.date_start desc) AS Row,
+        sum(campaigncost+spend) as spend, 'Google Ad Words'::text as source
+        from (select  apr.date_start,
+                sum((apr.cost/1000000)) as campaigncost
           from  adwords.campaign_performance_reports as apr
-          group by  1
-      )
+          where date(date_start)<dateadd(day,-14,date(getdate()))
+          group by  1) as a inner join
+  (select date_start,ROW_NUMBER() OVER(ORDER BY date_start desc) AS Row,
+  sum(COALESCE((cost/1000000),0 )) as spend from adwords.ad_performance_reports
+  where date(date_start)<dateadd(day,-14,date(getdate()))
+  group by date_Start) as b
+  on a.date_start=b.date_start
+  group by 1)
 
-      select date_start,source,paid_gains as gains,sum(spend) as spend, sum(impresssions) as impressions,
-      sum(clicks) as clicks
-        from (select date_start,
+      select b.timestamp,source,paid_gains/2 as gains,sum(spend) as spend
+        from (select date_start, row,
                 spend,
-                impresssions,
-                clicks,
                 source
                 from google_perf
       union all
-        select  date_start,
+        select  date_start, row,
                 spend,
-                impresssions,
-                clicks,
                 source
-        from fb_perf) as a inner join subscribers as b on date(date_start)=date(timestamp)
+        from fb_perf) as a inner join subscribers as b on a.row=b.row
         group by 1,2,3;;
   }
 
@@ -54,7 +54,7 @@ dimension: paid_gains {
     sql: ${paid_gains} ;;
   }
 
-  dimension_group: date_start {
+  dimension_group: timestamp {
     type: time
     timeframes: [
       raw,
@@ -65,39 +65,25 @@ dimension: paid_gains {
       quarter,
       year
     ]
-    sql: ${TABLE}.date_start ;;
+    sql: ${TABLE}.timestamp ;;
   }
 
-  measure: spend {
+  measure: spend_14_days_prior {
     type: sum
     value_format_name: usd
     sql: ${TABLE}.spend ;;
   }
 
-  measure: impresssions {
-    type: sum
-    sql: ${TABLE}.impresssions ;;
-  }
-
-  measure: clicks {
-    type: sum
-    sql: ${TABLE}.clicks ;;
-  }
 
   dimension: source {
     type: string
     sql: ${TABLE}.source ;;
   }
 
-  measure: cost_per_click {
-    type: number
-    sql: ${spend}::float/NULLIF(${clicks},0) ;;
-    value_format_name: usd
-  }
 
   measure: cost_per_acquisition {
     type: number
-    sql: ${spend}/${paid_gains_total} ;;
+    sql: ${spend_14_days_prior}/${paid_gains_total} ;;
     value_format_name: usd
   }
 

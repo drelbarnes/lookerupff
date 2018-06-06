@@ -1,6 +1,6 @@
 view: analytics_v2 {
   derived_table: {
-    sql: select a.*,
+    sql: select distinct * from (select a.*,
                 3347+((49000-3347)*(cast(datepart(dayofyear,date(a.timestamp)) as integer)-1)/365) as target,
                 cast(datepart(dayofyear,date(a.timestamp)) as integer)-1 as day_of_year,
                 49000 as annual_target,
@@ -22,7 +22,7 @@ view: analytics_v2 {
       (select free_trial_created as new_trials_14_days_prior, row_number() over(order by timestamp desc) as rownum from customers.analytics
       where timestamp in
                       (select dateadd(day,-15,timestamp) as timestamp from customers.analytics )) as b on a.rownum=b.rownum)) as a
-      left join customers.churn_reasons_aggregated as b on a.timestamp=b.timestamp;;}
+      left join customers.churn_reasons_aggregated as b on a.timestamp=b.timestamp);;}
 
 dimension: target {
   type: number
@@ -377,7 +377,7 @@ measure: end_of_prior_week_subs {
 
   measure: net_gained {
     type: number
-    sql: (${new_trials}+${trial_to_paid})-(${cancelled_trials}-${Cancelled_Subs}) ;;
+    sql: (${new_trials}+${trial_to_paid}+${new_paid})+(${cancelled_trials}+${Cancelled_Subs}) ;;
   }
 # ------
 # Filters
@@ -470,6 +470,15 @@ measure: end_of_prior_week_subs {
     }
   }
 
+  measure: reacquisitions_a {
+    type: sum
+    sql: ${paying_created};;
+    filters: {
+      field: group_a
+      value: "yes"
+    }
+  }
+
   measure: paid_churn_a {
     type: sum
     sql: ${paying_churn} ;;
@@ -537,6 +546,20 @@ measure: end_of_prior_week_subs {
   measure: conversion_change {
     type: number
     sql: (${conversions_a}-${avg_conversions_b}) ;;
+  }
+
+  measure: avg_reacquisitions_b {
+    type: average
+    sql:  ${paying_created};;
+    filters: {
+      field: group_b
+      value: "yes"
+    }
+  }
+
+  measure: reacquisition_change {
+    type: number
+    sql: (${reacquisitions_a}-${avg_reacquisitions_b}) ;;
   }
 
   measure: avg_paid_churn_b {
