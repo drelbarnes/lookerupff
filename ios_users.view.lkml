@@ -4,6 +4,7 @@ view: ios_users {
   dimension: id {
     primary_key: yes
     type: string
+    tags: ["user_id"]
     sql: ${TABLE}.id ;;
   }
 
@@ -134,6 +135,7 @@ view: ios_users {
 
   dimension: email {
     type: string
+    tags: ["email"]
     sql: ${TABLE}.email ;;
   }
 
