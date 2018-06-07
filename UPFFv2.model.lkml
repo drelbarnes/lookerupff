@@ -39,3 +39,4 @@ explore: ads_compare {}
 explore: lifetime_value {}
 explore: churn_texts {}
 explore: ltv_cpa {}
+explore: customer_churn_percent {}
