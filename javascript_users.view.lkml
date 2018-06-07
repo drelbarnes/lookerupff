@@ -4,6 +4,7 @@ view: javascript_users {
   dimension: id {
     primary_key: yes
     type: string
+    tags: ["user_id"]
     sql: ${TABLE}.id ;;
   }
 
