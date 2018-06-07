@@ -21,20 +21,6 @@ explore: application_installed{
   }
 }
 
-explore: subscribed {
-  label: "Web to App Users"
-  join: application_installed {
-    type: left_outer
-    sql_on: ${subscribed.anonymous_id} = ${application_installed.anonymous_id} ;;
-    relationship: one_to_one
-  }
-  join: users {
-    type: left_outer
-    sql_on: ${subscribed.user_id} = ${users.id} ;;
-    relationship: one_to_one
-  }
-
-}
 
 explore: analytics{}
 explore: customers{}
