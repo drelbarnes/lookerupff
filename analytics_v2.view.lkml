@@ -1,8 +1,13 @@
 view: analytics_v2 {
   derived_table: {
-    sql: select distinct * from (select a.*,
-                3347+((49000-3347)*(cast(datepart(dayofyear,date(a.timestamp)) as integer)-1)/365) as target,
+    sql: select *, sum((49000-(total_paying))/(365-day_of_year)) OVER (PARTITION by cast(datepart(month,date(timestamp)) as varchar) order by timestamp asc
+                 rows between unbounded preceding and current row) as Running_Free_Trial_Target
+         from (select *, SUM(free_trial_created) OVER (PARTITION by cast(datepart(month,date(timestamp)) as varchar) order by timestamp asc rows between unbounded preceding and current row) AS Running_Free_Trials
+         from (select distinct * from (select a.*,
+                795+((49000-795)*(cast(datepart(dayofyear,date(a.timestamp)) as integer)-1)/365) as target,
+                795+((49000-795)*(cast(datepart(dayofyear,date(a.timestamp)) as integer)+14)/365) as target_14_days_future,
                 cast(datepart(dayofyear,date(a.timestamp)) as integer)-1 as day_of_year,
+                cast(datepart(dayofyear,date(a.timestamp)) as integer)+14 as day_of_year_14_days,
                 49000 as annual_target,
                 case when rownum=max(rownum) over(partition by Week) then existing_paying end as PriorWeekExistingSubs,
                 case when rownum=max(rownum) over(partition by Month) then existing_paying end as PriorMonthExistingSubs,
@@ -22,7 +27,27 @@ view: analytics_v2 {
       (select free_trial_created as new_trials_14_days_prior, row_number() over(order by timestamp desc) as rownum from customers.analytics
       where timestamp in
                       (select dateadd(day,-15,timestamp) as timestamp from customers.analytics )) as b on a.rownum=b.rownum)) as a
-      left join customers.churn_reasons_aggregated as b on a.timestamp=b.timestamp);;}
+      left join customers.churn_reasons_aggregated as b on a.timestamp=b.timestamp)) as a);;}
+
+dimension: running_free_trials {
+  type: number
+  sql: ${TABLE}.Running_Free_Trials ;;
+}
+
+measure: running_free_trials_ {
+  type: sum
+  sql: ${running_free_trials} ;;
+}
+
+  dimension: running_free_trial_target {
+    type: number
+    sql: ${TABLE}.running_free_trial_target*2 ;;
+  }
+
+  measure: running_free_trial_target_{
+    type: sum
+    sql: ${running_free_trial_target} ;;
+  }
 
 dimension: target {
   type: number
@@ -33,6 +58,16 @@ measure: targets {
   type: sum
   sql: ${target} ;;
 }
+
+  dimension: target_14_days_future {
+    type: number
+    sql: ${TABLE}.target_14_days_future ;;
+  }
+
+  measure: target_14_days_future_ {
+    type: sum
+    sql: ${target_14_days_future} ;;
+  }
 
   dimension: annual_target {
     type: number
@@ -49,14 +84,34 @@ measure: targets {
     sql: ${TABLE}.day_of_year ;;
   }
 
+  dimension: day_of_year_14 {
+    type: number
+    sql: ${TABLE}.day_of_year_14_days ;;
+  }
+
   dimension: avg_target_subs_per_day {
     type:  number
-    sql: (${annual_target}-(${TABLE}.total_paying+${TABLE}.total_free_trials ))/(365-${TABLE}.day_of_year);;
+    sql: (${annual_target}-(${TABLE}.total_paying))/(365-${TABLE}.day_of_year);;
   }
 
   measure: avg_targets_subs_per_day {
     type:  sum
     sql: ${avg_target_subs_per_day};;
+  }
+
+  dimension: avg_target_subs_per_day_14_days {
+    type:  number
+    sql: (49000-(${TABLE}.total_paying))/(365-${TABLE}.day_of_year_14_days);;
+  }
+
+  measure: avg_targets_subs_per_day_14_days_ {
+    type:  sum
+    sql: ${avg_target_subs_per_day_14_days};;
+  }
+
+  measure: running_target {
+    type: running_total
+    sql: ${avg_target_subs_per_day_14_days} ;;
   }
 
   dimension: high_price {
