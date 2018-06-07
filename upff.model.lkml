@@ -13,6 +13,14 @@ datagroup: upff_default_datagroup {
 
 persist_with: upff_default_datagroup
 
+explore: javascript_users {
+  label: "Web to iOS App Users"
+  join: ios_users {
+    type:  inner
+    sql_on: ${javascript_users.id} = ${ios_users.id} ;;
+    relationship: one_to_one
+  }
+}
 
 
 explore: analytics{}
