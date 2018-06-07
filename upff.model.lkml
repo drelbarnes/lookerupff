@@ -30,6 +30,12 @@ explore: android_users {
     relationship: one_to_one
   }
 
+  join: javascript_identifies {
+    type:  inner
+    sql_on: ${javascript_users.id} = ${javascript_identifies.user_id} ;;
+    relationship: one_to_one
+  }
+
 }
 
 
