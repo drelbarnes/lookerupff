@@ -1,4 +1,4 @@
-view: androoid_users {
+view: android_users {
   sql_table_name: android.users ;;
 
   dimension: context_traits_user_id {

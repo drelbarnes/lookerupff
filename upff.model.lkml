@@ -22,6 +22,15 @@ explore: javascript_users {
   }
 }
 
+explore: android_users {
+  label: "Web to Android App Users"
+  join: javascript_users {
+    type:  inner
+    sql_on: ${javascript_users.id} = ${android_users.id} ;;
+    relationship: one_to_one
+  }
+}
+
 
 explore: analytics{}
 explore: customers{}
