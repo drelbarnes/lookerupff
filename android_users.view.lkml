@@ -1,15 +1,14 @@
-view: javascript_users {
-  sql_table_name: javascript.users ;;
+view: android_users {
+  sql_table_name: android.users ;;
 
-  dimension: id {
+  dimension: context_traits_user_id {
     primary_key: yes
     type: string
-    tags: ["user_id"]
-    sql: ${TABLE}.id ;;
+    sql: ${TABLE}.context_traits_user_id ;;
   }
 
   dimension: context_app_build {
-    type: string
+    type: number
     sql: ${TABLE}.context_app_build ;;
   }
 
@@ -53,9 +52,9 @@ view: javascript_users {
     sql: ${TABLE}.context_device_model ;;
   }
 
-  dimension: context_device_token {
+  dimension: context_device_name {
     type: string
-    sql: ${TABLE}.context_device_token ;;
+    sql: ${TABLE}.context_device_name ;;
   }
 
   dimension: context_device_type {
@@ -83,6 +82,11 @@ view: javascript_users {
     sql: ${TABLE}.context_locale ;;
   }
 
+  dimension: context_network_bluetooth {
+    type: yesno
+    sql: ${TABLE}.context_network_bluetooth ;;
+  }
+
   dimension: context_network_carrier {
     type: string
     sql: ${TABLE}.context_network_carrier ;;
@@ -108,6 +112,11 @@ view: javascript_users {
     sql: ${TABLE}.context_os_version ;;
   }
 
+  dimension: context_screen_density {
+    type: number
+    sql: ${TABLE}.context_screen_density ;;
+  }
+
   dimension: context_screen_height {
     type: number
     sql: ${TABLE}.context_screen_height ;;
@@ -121,6 +130,21 @@ view: javascript_users {
   dimension: context_timezone {
     type: string
     sql: ${TABLE}.context_timezone ;;
+  }
+
+  dimension: context_traits_anonymous_id {
+    type: string
+    sql: ${TABLE}.context_traits_anonymous_id ;;
+  }
+
+  dimension: context_user_agent {
+    type: string
+    sql: ${TABLE}.context_user_agent ;;
+  }
+
+  dimension: id {
+    type: string
+    sql: ${TABLE}.id ;;
   }
 
   dimension_group: received {
@@ -159,41 +183,6 @@ view: javascript_users {
 
   measure: count {
     type: count
-    drill_fields: [detail*]
-  }
-
-  # ----- Sets of fields for drilling ------
-  set: detail {
-    fields: [
-      id,
-      context_os_name,
-      context_library_name,
-      context_app_name,
-      addwatchlist.count,
-      application_opened.count,
-      application_updated.count,
-      authentication.count,
-      conversion.count,
-      ended.count,
-      error.count,
-      firstplay.count,
-      identifies.count,
-      install.count,
-      pause.count,
-      play.count,
-      removewatchlist.count,
-      seeked.count,
-      signin.count,
-      signup.count,
-      signupstarted.count,
-      subscribetapped.count,
-      timeupdate.count,
-      tracks.count,
-      view.count,
-      waiting.count,
-      welcomebrowse.count,
-      welcomesignin.count,
-      welcomesignup.count
-    ]
+    drill_fields: [context_traits_user_id, context_device_name, context_library_name, context_os_name, context_app_name]
   }
 }

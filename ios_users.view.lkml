@@ -1,5 +1,5 @@
-view: javascript_users {
-  sql_table_name: javascript.users ;;
+view: ios_users {
+  sql_table_name: ios.users ;;
 
   dimension: id {
     primary_key: yes
@@ -123,6 +123,27 @@ view: javascript_users {
     sql: ${TABLE}.context_timezone ;;
   }
 
+  dimension: context_traits_email {
+    type: string
+    sql: ${TABLE}.context_traits_email ;;
+  }
+
+  dimension: context_traits_name {
+    type: string
+    sql: ${TABLE}.context_traits_name ;;
+  }
+
+  dimension: email {
+    type: string
+    tags: ["email"]
+    sql: ${TABLE}.email ;;
+  }
+
+  dimension: name {
+    type: string
+    sql: ${TABLE}.name ;;
+  }
+
   dimension_group: received {
     type: time
     timeframes: [
@@ -166,34 +187,11 @@ view: javascript_users {
   set: detail {
     fields: [
       id,
-      context_os_name,
-      context_library_name,
       context_app_name,
-      addwatchlist.count,
-      application_opened.count,
-      application_updated.count,
-      authentication.count,
-      conversion.count,
-      ended.count,
-      error.count,
-      firstplay.count,
-      identifies.count,
-      install.count,
-      pause.count,
-      play.count,
-      removewatchlist.count,
-      seeked.count,
-      signin.count,
-      signup.count,
-      signupstarted.count,
-      subscribetapped.count,
-      timeupdate.count,
-      tracks.count,
-      view.count,
-      waiting.count,
-      welcomebrowse.count,
-      welcomesignin.count,
-      welcomesignup.count
+      context_library_name,
+      context_os_name,
+      context_traits_name,
+      name
     ]
   }
 }
