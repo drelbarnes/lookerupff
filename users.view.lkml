@@ -1,4 +1,4 @@
-view: users {
+view: http_api_users {
   sql_table_name: http_api.users ;;
 
   dimension: id {

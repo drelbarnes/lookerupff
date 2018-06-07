@@ -2,17 +2,17 @@ view: customer_churn_percent {
   derived_table: {
     sql: with
 
-a as (select date(customer_created_at) as customer_created_at, date(event_created_at) as event_created_at,count(*) as churn_count
+a as (select date(customer_created_at) as customer_created_at, date(event_created_at) as event_created_at,platform,count(*) as churn_count
 from customers.customers
 where (customers.status  IN ('cancelled', 'disabled', 'expired', 'paused', 'refunded'))
-group by 1,2),
+group by 1,2,3),
 
 b as (select date(a.timestamp) as timestamp, free_trial_created
 from customers.analytics as a)
 
-select customer_created_at,event_created_at,cast(churn_count as decimal) as churn_count,
-cast(free_trial_created as decimal) as free_trial_created, cast(churn_count as decimal)/cast(free_trial_created as decimal) as churn_percent
-from a inner join b on customer_created_at=b.timestamp ;;
+select customer_created_at,event_created_at,datediff('day',customer_created_at,event_created_at) as days_since_creation,platform,cast(churn_count as decimal) as churn_count,
+cast(free_trial_created as decimal) as free_trial_created
+from a inner join b on customer_created_at=b.timestamp;;
   }
 
   dimension: customer_created_at {
@@ -39,25 +39,25 @@ from a inner join b on customer_created_at=b.timestamp ;;
     sql: ${TABLE}.customer_created_at ;;
   }
 
+dimension: platform {
+  type: string
+  sql: ${TABLE}.platform ;;
+}
+
   dimension: days_since_created {
     type: number
     sql:  DATEDIFF('day', ${customer_created_at}, ${event_created_at});;
   }
 
+
   measure: free_trial_created {
-    type: sum
-    sql: ${TABLE}.free_trial_created ;;
+    type: sum_distinct
+    sql_distinct_key: ${customer_created_at} ;;
   }
 
   measure: churn_count {
     type: sum
     sql: ${TABLE}.churn_count ;;
-  }
-
-  measure: churn_percent {
-    type: sum
-    sql: ${TABLE}.churn_percent ;;
-    value_format_name: percent_0
   }
 
   measure: churn_percent_v2 {

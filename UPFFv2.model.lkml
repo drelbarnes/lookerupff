@@ -30,7 +30,7 @@ explore: churn_reasons_aggregated {}
 explore: churn_custom_reasons {}
 explore: afinn_lexicon {}
 explore: purchase_event {}
-explore: users {}
+explore: http_api_users {}
 explore: identifies {}
 explore: play {}
 explore: heartlandia {}
