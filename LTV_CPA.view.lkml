@@ -66,6 +66,12 @@ select t6.timestamp, CPA, LTV, cast(LTV as decimal)/cast(CPA as decimal) as LTV_
 from t6 inner join t7 on t6.timestamp=t7.timestamp
 ;;}
 
+  measure: target_ratio {
+  type: sum
+  sql: 1.1 ;;
+  value_format_name: percent_0
+}
+
   dimension_group: timestamp {
     type: time
     timeframes: [
