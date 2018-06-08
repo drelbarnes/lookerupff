@@ -99,9 +99,14 @@ measure: targets {
     sql: ${avg_target_subs_per_day};;
   }
 
+  measure: avg_targets_trials_per_day {
+    type:  sum
+    sql: ${avg_target_subs_per_day}*2;;
+  }
+
   dimension: avg_target_subs_per_day_14_days {
     type:  number
-    sql: (49000-(${TABLE}.total_paying))/(365-${TABLE}.day_of_year_14_days);;
+    sql: (365-${TABLE}.day_of_year_14_days);;
   }
 
   measure: avg_targets_subs_per_day_14_days_ {
@@ -442,7 +447,7 @@ measure: end_of_prior_week_subs {
 
   measure: net_trials {
     type: number
-    sql: (${new_trials})+(${cancelled_trials}) ;;
+    sql: (${new_trials})+(${cancelled_trials}-${trial_to_paid}) ;;
   }
 
 # ------
