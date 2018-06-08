@@ -1,6 +1,24 @@
 view: analytics_v2 {
   derived_table: {
-    sql: select *, sum((49000-(total_paying))/(365-day_of_year)) OVER (PARTITION by cast(datepart(month,date(timestamp)) as varchar) order by timestamp asc
+    sql: with a as (select a.timestamp, ROW_NUMBER() OVER(ORDER BY a.timestamp desc) AS Row
+           from customers.analytics as a),
+
+     b as (select a.timestamp,total_paying,ROW_NUMBER() OVER(ORDER BY a.timestamp desc) AS Row
+           from customers.analytics as a where a.timestamp < (DATEADD(day,-31, DATE_TRUNC('day',GETDATE()) ))),
+
+     c as (select a.timestamp,total_paying as paying_30_days_prior from a inner join b on a.row=b.row),
+
+     d as ((select a1.timestamp, a1.paying_churn+sum(coalesce(a2.paying_churn,0)) as churn_30_days
+from customers.analytics as a1
+left join customers.analytics as a2 on datediff(day,a2.timestamp,a1.timestamp)<=30 and datediff(day,a2.timestamp,a1.timestamp)>0
+group by a1.timestamp,a1.paying_churn)),
+
+     e as (select c.timestamp, cast(paying_30_days_prior as decimal) as paying_30_days_prior,
+                               cast(churn_30_days as decimal) as churn_30_days,
+                               cast(paying_30_days_prior as decimal)/cast(churn_30_days as decimal) as churn_30_day_percent
+           from c inner join d on c.timestamp=d.timestamp),
+
+     f as (select *, sum((49000-(total_paying))/(365-day_of_year)) OVER (PARTITION by cast(datepart(month,date(timestamp)) as varchar) order by timestamp asc
                  rows between unbounded preceding and current row) as Running_Free_Trial_Target
          from (select *, SUM(free_trial_created) OVER (PARTITION by cast(datepart(month,date(timestamp)) as varchar) order by timestamp asc rows between unbounded preceding and current row) AS Running_Free_Trials
          from (select distinct * from (select a.*,
@@ -27,7 +45,19 @@ view: analytics_v2 {
       (select free_trial_created as new_trials_14_days_prior, row_number() over(order by timestamp desc) as rownum from customers.analytics
       where timestamp in
                       (select dateadd(day,-15,timestamp) as timestamp from customers.analytics )) as b on a.rownum=b.rownum)) as a
-      left join customers.churn_reasons_aggregated as b on a.timestamp=b.timestamp)) as a);;}
+      left join customers.churn_reasons_aggregated as b on a.timestamp=b.timestamp)) as a))
+
+      select f.*,paying_30_days_prior,churn_30_days,churn_30_day_percent from e inner join f on e.timestamp=f.timestamp ;;}
+
+dimension: paying_30_days_prior {
+  type: number
+  sql: ${TABLE}.paying_30_days_prior ;;
+}
+
+dimension: churn_30_days {
+  type: number
+  sql: churn_30_days ;;
+}
 
 dimension: running_free_trials {
   type: number
@@ -559,6 +589,17 @@ measure: end_of_prior_week_subs {
     }
   }
 
+
+  measure: churn_30_day_percent_b {
+    type: sum
+    sql: ${churn_30_days}/${paying_30_days_prior};;
+    value_format_name: percent_0
+    filters: {
+      field: group_b
+      value: "yes"
+    }
+  }
+
   measure: trial_churn_a {
     type: sum
     sql: ${free_trial_churn} ;;
@@ -577,6 +618,15 @@ measure: end_of_prior_week_subs {
     }
   }
 
+
+  measure: churn_percent_b {
+    type: sum
+    sql: ${TABLE}.churn_30_day_percent ;;
+    filters: {
+      field: group_b
+      value: "yes"
+    }
+  }
     measure: avg_paid_b {
       type: average
       sql:  ${total_paying};;
