@@ -20,7 +20,12 @@ view: ads_compare {
           group by  1
       ),
         t1 as (select date_start,
-                spend
+case when TO_CHAR(DATE_TRUNC('month', date_start), 'YYYY-MM') = '2018-06' then spend+(19000/30)
+     when TO_CHAR(DATE_TRUNC('month', date_start ), 'YYYY-MM') = '2018-05' then spend+(10000/31)
+     when TO_CHAR(DATE_TRUNC('month', date_start ), 'YYYY-MM') = '2018-04' then spend+(0/30)
+     when TO_CHAR(DATE_TRUNC('month', date_start ), 'YYYY-MM') = '2018-03' then spend+(22018/31)
+     when TO_CHAR(DATE_TRUNC('month', date_start ), 'YYYY-MM') = '2018-02' then spend+(21565/28)
+     when TO_CHAR(DATE_TRUNC('month', date_start ), 'YYYY-MM') = '2018-01' then spend+(21570/31) end as spend
                 from google_perf
       union all
         select  date_start,
@@ -43,7 +48,8 @@ from customers.analytics as a1
 left join customers.analytics as a2 on datediff(day,a2.timestamp,a1.timestamp)<=30 and datediff(day,a2.timestamp,a1.timestamp)>0
 group by a1.timestamp,a1.free_trial_converted)
 
-select t5.timestamp, spend_30_days, conversions_30_days,cast(spend_30_days as decimal)/cast(conversions_30_days as decimal) as CPA
+select t5.timestamp,
+spend_30_days, conversions_30_days,cast(spend_30_days as decimal)/cast(conversions_30_days as decimal) as CPA
 from t4 inner join t5 on t4.row=t5.row;;
   }
 
