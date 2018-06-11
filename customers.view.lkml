@@ -100,7 +100,7 @@ view: customers {
   measure: days_in_trial{
     description: "Number of days a user is in free trial"
     type: number
-    sql:  DATEDIFF('day', ${customer_created_at}::timestamp, ${current_date}::timestamp) ;;
+    sql:  DATEDIFF('day', ${customer_created_at}::timestamp, ${timestamp_date}::timestamp) ;;
   }
 
   measure: days_churned {
