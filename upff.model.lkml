@@ -41,4 +41,5 @@ explore: android_users {
 
 explore: analytics{}
 explore: customers{}
+explore: http_api_users{label: "Subscribers"}
 explore: customers_info_facts{}
