@@ -66,8 +66,20 @@ view: purchase_event {
     sql: ${TABLE}.created_at ;;
   }
 
+  dimension: current_date{
+    type: date
+    sql: current_date;;
+  }
+
+  dimension: days_in_trial{
+    description: "Number of days a user is in free trial"
+    type: number
+    sql:  DATEDIFF('day', ${created_date}::timestamp, ${current_date}::timestamp);;
+  }
+
   dimension: email {
     type: string
+    tags: ["email"]
     sql: ${TABLE}.email ;;
   }
 
@@ -213,6 +225,7 @@ view: purchase_event {
   dimension: user_id {
     type: string
     # hidden: yes
+    tags: ["user_id"]
     sql: ${TABLE}.user_id ;;
   }
 
