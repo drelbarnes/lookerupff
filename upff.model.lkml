@@ -38,7 +38,7 @@ explore: android_users {
 
 }
 
-
 explore: analytics{}
 explore: customers{}
+explore: purchase_event{label: "Subscribers"}
 explore: customers_info_facts{}
