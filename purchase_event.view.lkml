@@ -103,6 +103,16 @@ view: purchase_event {
     sql: ${TABLE}.name ;;
   }
 
+  dimension: fname {
+    type: string
+    sql: ${TABLE}.fname ;;
+  }
+
+  dimension: lname {
+    type: string
+    sql: ${TABLE}.lname ;;
+  }
+
   dimension_group: original_timestamp {
     type: time
     timeframes: [
