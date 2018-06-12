@@ -23,7 +23,7 @@ explore: ios_users {
 
   join: javascript_identifies {
     type:  inner
-    sql_on: ${javascript_users.id} = ${javascript_identifies.user_id} ;;
+    sql_on: ${ios_users.id} = ${javascript_identifies.user_id} ;;
     relationship: one_to_one
   }
 
@@ -39,7 +39,7 @@ explore: android_users {
 
   join: javascript_identifies {
     type:  inner
-    sql_on: ${javascript_users.id} = ${javascript_identifies.user_id} ;;
+    sql_on: ${android_users.id} = ${javascript_identifies.user_id} ;;
     relationship: one_to_one
   }
 
