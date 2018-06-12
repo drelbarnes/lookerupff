@@ -66,10 +66,23 @@ from
 inner join
 (select a.timestamp,total_paying, ROW_NUMBER() OVER(ORDER BY a.timestamp desc) AS Row from customers.analytics as a where (a.timestamp  < (DATEADD(day,-32, DATE_TRUNC('day',GETDATE()) )))) as b
 on a.row=b.row) as b
-on a.timestamp=b.timestamp)
+on a.timestamp=b.timestamp),
 
-select t6.timestamp, CPA, LTV, cast(LTV as decimal)/cast(CPA as decimal) as LTV_CPA_Ratio, 1.1 as LTV_CPA_Ratio_Target
-from t6 inner join t7 on t6.timestamp=t7.timestamp
+t8 as (select t6.timestamp, CPA, LTV, cast(LTV as decimal)/cast(CPA as decimal) as LTV_CPA_Ratio, 1.1 as LTV_CPA_Ratio_Target,  ROW_NUMBER() OVER(ORDER BY t6.timestamp desc) AS Row
+from t6 inner join t7 on t6.timestamp=t7.timestamp),
+
+t9 as (select a1.timestamp,
+              avg(coalesce(a2.ltv,0)) as ltv_4_week_avg,
+              avg(coalesce(a2.cpa,0)) as cpa_4_week_avg
+       from t8 as a1
+            left join t8 as a2 on datediff(day,a2.timestamp,a1.timestamp)<=28 and datediff(day,a2.timestamp,a1.timestamp)>=0
+       group by a1.timestamp)
+
+select t8.*,
+       cpa_4_week_avg,
+       ltv_4_week_avg,
+       ltv_4_week_avg/cpa_4_week_avg as ltv_cpa_ratio_4_week_avg
+from t8 inner join t9 on t8.timestamp=t9.timestamp
 ;;}
 
   measure: target_ratio {
@@ -98,11 +111,30 @@ from t6 inner join t7 on t6.timestamp=t7.timestamp
 
           }
 
-          measure: CPA_1 {
+  dimension: CPA_4_week_avg{
+    type: number
+    sql: ${TABLE}.CPA_4_week_avg ;;
+    value_format_name: usd
+
+  }
+
+  dimension: CPA_4_week_avg_diff {
+    type: number
+    sql: ${CPA}-${CPA_4_week_avg} ;;
+    value_format_name: usd
+  }
+
+          measure: CPA_ {
             type: sum
             sql: ${CPA} ;;
             value_format_name: usd
             }
+
+  measure: CPA_4_week_avg_ {
+    type: sum
+    sql: ${CPA_4_week_avg} ;;
+    value_format_name: usd
+  }
 
           dimension: LTV {
             type: number
@@ -110,18 +142,41 @@ from t6 inner join t7 on t6.timestamp=t7.timestamp
             value_format_name: usd
           }
 
-          measure: LTV_1 {
+  dimension: LTV_4_week_avg {
+    type: number
+    sql: ${TABLE}.LTV_4_week_avg ;;
+    value_format_name: usd
+  }
+
+  dimension: LTV_4_week_avg_diff {
+    type: number
+    sql: ${LTV}-${LTV_4_week_avg} ;;
+    value_format_name: usd
+  }
+
+          measure: LTV_ {
             type: sum
             sql: ${LTV} ;;
             value_format_name: usd
           }
 
+  measure: LTV_4_week_avg_ {
+    type: sum
+    sql: ${LTV_4_week_avg} ;;
+    value_format_name: usd
+  }
 
           measure: LTV_CPA_Ratio {
             type: sum
             sql: ${LTV}/${CPA} ;;
             value_format_name: percent_0
           }
+
+  measure: LTV_CPA_Ratio_4_Week_Avg {
+    type: sum
+    sql: ${LTV_4_week_avg}/${CPA_4_week_avg} ;;
+    value_format_name: percent_0
+  }
 
           measure: LTV_CPA_Ratio_Target {
             type: number
@@ -136,13 +191,13 @@ from t6 inner join t7 on t6.timestamp=t7.timestamp
 
           dimension: LTV_Goal {
             type: number
-            sql: (${CPA}*1.1)-${CPA};;
+            sql: (${CPA}*1.1)-${LTV};;
             value_format_name: usd
           }
 
           dimension: CPA_Goal{
             type: number
-            sql: (${LTV}/1.1)-${LTV} ;;
+            sql: (${LTV}/1.1)-${CPA} ;;
             value_format_name: usd
           }
           }

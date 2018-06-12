@@ -119,6 +119,12 @@ dimension: days_since_created {
   sql:  DATEDIFF('day', ${customer_created_at}::timestamp, ${event_created_at}::timestamp);;
 }
 
+  dimension: weeks_since_created {
+    type: number
+    sql:  DATEDIFF('week', ${customer_created_at}::timestamp, ${event_created_at}::timestamp);;
+  }
+
+
 
   measure: max_days_by {
     type: max
@@ -249,11 +255,11 @@ dimension: days_since_created {
     sql:
       case
         when ${days_since_created}<=14 then '0-14 Days'
-        when ${days_since_created}>14 and ${days_since_created}<=28 then '15-28 Days'
+        when ${days_since_created}>14 and ${days_since_created}<=21 then '15-21 Days'
+        when ${days_since_created}>21 and ${days_since_created}<=28 then '22-28 Days'
         when ${days_since_created}>28 and ${days_since_created}<=35 then '29-35 Days'
-        when ${days_since_created}>35 and ${days_since_created}<=42 then '36-42 Days'
-        when ${days_since_created}>42 and ${days_since_created}<=49 then '43-49 Days'
-        when ${days_since_created}>49 and ${days_since_created}<=56 then '49-56 Days'
+        when ${days_since_created}>35 and ${days_since_created}<=49 then '36-49 Days'
+        when ${days_since_created}>49 and ${days_since_created}<=56 then '50-56 Days'
         else '56+ Days'
         end;;
   }
