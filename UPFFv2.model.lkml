@@ -32,7 +32,6 @@ explore: afinn_lexicon {}
 explore: purchase_event {}
 explore: http_api_users {}
 explore: identifies {}
-explore: play {}
 explore: heartlandia {}
 explore: viewership {}
 explore: ads_compare {}
@@ -40,3 +39,8 @@ explore: lifetime_value {}
 explore: churn_texts {}
 explore: ltv_cpa {}
 explore: customer_churn_percent {}
+explore: android_play {}
+explore: ios_play {}
+explore: javascript_play {}
+explore: all_play {}
+explore: titles {}

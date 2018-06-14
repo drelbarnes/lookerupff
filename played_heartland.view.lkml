@@ -1,4 +1,4 @@
-view: play {
+view: play_heartland {
   derived_table: {
     sql:select *, case when video_id in (select 231517 as video_id union all
 select 245040 as video_id union all

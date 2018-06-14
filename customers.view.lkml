@@ -263,4 +263,23 @@ dimension: days_since_created {
         else '56+ Days'
         end;;
   }
+
+  dimension: revenue {
+    type: number
+    sql:
+      case
+        when ${status}='free_trial' and ${platform}='android' then .7*5.99
+        when ${status}='free_trial' and ${platform}='android_tv' then .7*5.99
+        when ${status}='free_trial' and ${platform}='ios' then .7*5.99
+        when ${status}='free_trial' and ${platform}='tvos' then .7*5.99
+        when ${status}='free_trial' and ${platform}='roku' then .8*5.99
+        when ${status}='free_trial' and ${platform}='web' then 5.99
+        else null end
+    ;;
+  }
+
+  measure: revenue_ {
+    type: sum
+    sql: ${revenue} ;;
+  }
 }
