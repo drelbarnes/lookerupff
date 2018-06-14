@@ -13,13 +13,20 @@ datagroup: upff_default_datagroup {
 
 persist_with: upff_default_datagroup
 
-explore: javascript_users {
+explore: ios_users {
   label: "Web to iOS App Users"
-  join: ios_users {
+  join: javascript_users {
     type:  inner
     sql_on: ${javascript_users.id} = ${ios_users.id} ;;
     relationship: one_to_one
   }
+
+  join: javascript_identifies {
+    type:  inner
+    sql_on: ${ios_users.id} = ${javascript_identifies.user_id} ;;
+    relationship: one_to_one
+  }
+
 }
 
 explore: android_users {
@@ -32,7 +39,7 @@ explore: android_users {
 
   join: javascript_identifies {
     type:  inner
-    sql_on: ${javascript_users.id} = ${javascript_identifies.user_id} ;;
+    sql_on: ${android_users.id} = ${javascript_identifies.user_id} ;;
     relationship: one_to_one
   }
 
