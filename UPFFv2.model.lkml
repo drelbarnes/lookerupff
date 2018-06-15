@@ -44,3 +44,4 @@ explore: ios_play {}
 explore: javascript_play {}
 explore: all_play {}
 explore: titles {}
+explore: mvpd_subs {}

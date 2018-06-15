@@ -26,6 +26,24 @@ view: titles {
     sql: ${TABLE}.month ;;
   }
 
+  dimension: year {
+    type: number
+    sql: ${TABLE}.year ;;
+  }
+
+  dimension: date {
+    type: date
+    sql: ${TABLE}.datetime;;
+  }
+
+  dimension_group: timestamp {
+    type: time
+    timeframes: [
+      month,
+      year
+    ]
+    sql: ${TABLE}.datetime ;;}
+
   dimension: platform {
     type: string
     sql: ${TABLE}.platform ;;
@@ -66,13 +84,15 @@ view: titles {
     sql: ${views} ;;
   }
 
-  measure: avg_views {
-    type: average
-    sql: ${views} ;;
-  }
 
   measure: episode_count {
     type: count_distinct
     sql: ${up_title} ;;
+  }
+
+  measure: avg_views_per_episode {
+    type: number
+    sql: ${total_views}/${episode_count} ;;
+    value_format_name: decimal_0
   }
 }

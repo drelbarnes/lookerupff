@@ -268,12 +268,18 @@ dimension: days_since_created {
     type: number
     sql:
       case
-        when ${status}='free_trial' and ${platform}='android' then .7*5.99
-        when ${status}='free_trial' and ${platform}='android_tv' then .7*5.99
-        when ${status}='free_trial' and ${platform}='ios' then .7*5.99
-        when ${status}='free_trial' and ${platform}='tvos' then .7*5.99
-        when ${status}='free_trial' and ${platform}='roku' then .8*5.99
-        when ${status}='free_trial' and ${platform}='web' then 5.99
+        when ${status}='enabled' and ${days_since_created}=15 and ${platform}='android' then .7*5.99
+        when ${status}='enabled' and ${days_since_created}=15 and ${platform}='android_tv' then .7*5.99
+        when ${status}='enabled' and ${days_since_created}=15 and ${platform}='ios' then .7*5.99
+        when ${status}='enabled' and ${days_since_created}=15 and ${platform}='tvos' then .7*5.99
+        when ${status}='enabled' and ${days_since_created}=15 and ${platform}='roku' then .8*5.99
+        when ${status}='enabled' and ${days_since_created}=15 and ${platform}='web' then 5.99
+        when ${status}='enabled' and ${days_since_created}>15 and (${days_since_created}-15)%30=0 and ${platform}='android' then .7*5.99
+        when ${status}='enabled' and ${days_since_created}>15 and (${days_since_created}-15)%30=0 and ${platform}='android_tv' then .7*5.99
+        when ${status}='enabled' and ${days_since_created}>15 and (${days_since_created}-15)%30=0 and ${platform}='ios' then .7*5.99
+        when ${status}='enabled' and ${days_since_created}>15 and (${days_since_created}-15)%30=0 and ${platform}='tvos' then .7*5.99
+        when ${status}='enabled' and ${days_since_created}>15 and (${days_since_created}-15)%30=0 and ${platform}='roku' then .8*5.99
+        when ${status}='enabled' and ${days_since_created}>15 and (${days_since_created}-15)%30=0 and ${platform}='web' then 5.99
         else null end
     ;;
   }
