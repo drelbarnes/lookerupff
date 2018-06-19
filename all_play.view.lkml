@@ -1,10 +1,10 @@
 view: all_play {
   derived_table: {
-    sql: select a.timestamp,title,user_id,'Android' as platform from android.play as a left join svod_titles.title_id_mapping as b on a.video_id=b.id
+    sql: select a.timestamp,trim(upper(title)) as title,user_id,'Android' as platform from android.play as a left join svod_titles.title_id_mapping as b on a.video_id=b.id
          union all
-         select a.timestamp,title,user_id,'IOS' as platform from ios.play as a left join svod_titles.title_id_mapping as b on a.video_id=b.id
+         select a.timestamp,trim(upper(title)) as title,user_id,'IOS' as platform from ios.play as a left join svod_titles.title_id_mapping as b on a.video_id=b.id
          union all
-         select a.timestamp,title,user_id,'Web' as platform from javascript.play as a ;;
+         select a.timestamp,trim(upper(split_part(title,'-',1))) as title,user_id,'Web' as platform from javascript.play as a ;;
   }
 
   dimension: title {

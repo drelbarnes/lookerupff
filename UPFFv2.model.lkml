@@ -45,3 +45,4 @@ explore: javascript_play {}
 explore: all_play {}
 explore: titles {}
 explore: mvpd_subs {}
+explore: mtd_revenue {}
