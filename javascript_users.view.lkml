@@ -8,6 +8,27 @@ view: javascript_users {
     sql: ${TABLE}.id ;;
   }
 
+  dimension: context_traits_cross_domain_id {
+    type: string
+    sql: ${TABLE}.context_traits_cross_domain_id ;;
+  }
+
+  dimension: name {
+    type: string
+    sql: ${TABLE}.name ;;
+  }
+
+  dimension: email {
+    type: string
+    tags: ["email"]
+    sql: ${TABLE}.email ;;
+  }
+
+  dimension: state {
+    type: string
+    sql: ${TABLE}.state ;;
+  }
+
   dimension: context_app_build {
     type: string
     sql: ${TABLE}.context_app_build ;;

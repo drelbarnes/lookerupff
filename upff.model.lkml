@@ -45,6 +45,23 @@ explore: android_users {
 
 }
 
+
+explore: javascript_uptv_pages {
+  label: "Cross-Domain Subs"
+  join: subscribed {
+    type:  inner
+    sql_on: ${javascript_uptv_pages.context_traits_cross_domain_id} = ${subscribed.context_traits_cross_domain_id} ;;
+    relationship: one_to_one
+  }
+
+  join: javascript_users {
+    type:  inner
+    sql_on: ${javascript_uptv_pages.context_traits_cross_domain_id} = ${javascript_users.context_traits_cross_domain_id} ;;
+    relationship: one_to_one
+  }
+}
+
+
 explore: analytics{}
 explore: customers{}
 explore: purchase_event{label: "Subscribers"}
