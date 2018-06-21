@@ -173,6 +173,11 @@ view: javascript_play {
     sql: ${TABLE}.uuid_ts ;;
   }
 
+  dimension: context_traits_cross_domain_id {
+    type: string
+    sql: ${TABLE}.context_traits_cross_domain_id ;;
+  }
+
   measure: count {
     type: count
     drill_fields: [id, context_campaign_name, context_library_name]

@@ -59,6 +59,12 @@ explore: javascript_uptv_pages {
     sql_on: ${javascript_uptv_pages.context_traits_cross_domain_id} = ${javascript_users.context_traits_cross_domain_id} ;;
     relationship: one_to_one
   }
+
+  join: javascript_play {
+    type: inner
+    sql_on: ${javascript_uptv_pages.context_traits_cross_domain_id} = ${javascript_play.context_traits_cross_domain_id};;
+    relationship: one_to_one
+  }
 }
 
 
