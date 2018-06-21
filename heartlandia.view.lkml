@@ -182,7 +182,7 @@ select 209050 as video_id union all
 select 212496 as video_id),
 
 a as
-(select a.*,customer_id from customers.churn_reasons as a inner join customers.customers as b on a.email=b.email),
+(select a.*,customer_id, first_name,last_name from customers.churn_reasons as a inner join customers.customers as b on a.email=b.email),
 
 android as
 (select user_id,
@@ -210,9 +210,19 @@ android as
   union all
   (select user_id, sum(watched_heartland) as watched_heartland from web group by user_id))
 
-  select customer_id, email, cancelled_type, case when watched_heartland > 0  then 1 else 0 end as watched_heartland
+  select customer_id, email,first_name,last_name, cancelled_type, case when watched_heartland > 0  then 1 else 0 end as watched_heartland
   from a left join play on customer_id=user_id
 ;;
+  }
+
+  dimension: first_name {
+    type: string
+    sql: ${TABLE}.first_name ;;
+  }
+
+  dimension: last_name {
+    type: string
+    sql: ${TABLE}.last_name ;;
   }
 
 dimension: cancelled_type {
