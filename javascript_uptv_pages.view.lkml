@@ -1,5 +1,5 @@
-view: subscribed {
-  sql_table_name: javascript.subscribed ;;
+view: javascript_uptv_pages {
+  sql_table_name: javascript_up_tv.pages ;;
 
   dimension: id {
     primary_key: yes
@@ -77,38 +77,14 @@ view: subscribed {
     sql: ${TABLE}.context_page_url ;;
   }
 
-  dimension: context_user_agent {
-    type: string
-    sql: ${TABLE}.context_user_agent ;;
-  }
-
-  dimension_group: created {
-    type: time
-    timeframes: [
-      raw,
-      time,
-      date,
-      week,
-      month,
-      quarter,
-      year
-    ]
-    sql: ${TABLE}.created_at ;;
-  }
-
-  dimension: event {
-    type: string
-    sql: ${TABLE}.event ;;
-  }
-
-  dimension: event_text {
-    type: string
-    sql: ${TABLE}.event_text ;;
-  }
-
   dimension: context_traits_cross_domain_id {
     type: string
     sql: ${TABLE}.context_traits_cross_domain_id ;;
+  }
+
+  dimension: context_user_agent {
+    type: string
+    sql: ${TABLE}.context_user_agent ;;
   }
 
   dimension_group: original_timestamp {
@@ -125,9 +101,9 @@ view: subscribed {
     sql: ${TABLE}.original_timestamp ;;
   }
 
-  dimension: product_id {
-    type: number
-    sql: ${TABLE}.product_id ;;
+  dimension: path {
+    type: string
+    sql: ${TABLE}.path ;;
   }
 
   dimension_group: received {
@@ -144,14 +120,14 @@ view: subscribed {
     sql: ${TABLE}.received_at ;;
   }
 
-  dimension: revenue {
-    type: number
-    sql: ${TABLE}.revenue ;;
+  dimension: referrer {
+    type: string
+    sql: ${TABLE}.referrer ;;
   }
 
-  measure: total_revenue {
-    type: sum
-    sql: ${revenue} ;;
+  dimension: search {
+    type: string
+    sql: ${TABLE}.search ;;
   }
 
   dimension_group: sent {
@@ -168,11 +144,6 @@ view: subscribed {
     sql: ${TABLE}.sent_at ;;
   }
 
-  dimension: state {
-    type: string
-    sql: ${TABLE}.state ;;
-  }
-
   dimension_group: timestamp {
     type: time
     timeframes: [
@@ -187,11 +158,14 @@ view: subscribed {
     sql: ${TABLE}.timestamp ;;
   }
 
-  dimension: user_id {
+  dimension: title {
     type: string
-    tags: ["user_id"]
-    # hidden: yes
-    sql: ${TABLE}.user_id ;;
+    sql: ${TABLE}.title ;;
+  }
+
+  dimension: url {
+    type: string
+    sql: ${TABLE}.url ;;
   }
 
   dimension: uuid {
@@ -216,19 +190,6 @@ view: subscribed {
 
   measure: count {
     type: count
-    drill_fields: [detail*]
-  }
-
-  # ----- Sets of fields for drilling ------
-  set: detail {
-    fields: [
-      id,
-      context_campaign_name,
-      context_library_name,
-      users.name,
-      users.context_library_name,
-      users.context_campaign_name,
-      users.id
-    ]
+    drill_fields: [id, context_library_name, context_campaign_name]
   }
 }
