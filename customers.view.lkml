@@ -29,7 +29,6 @@ view: customers {
   }
 
 
-
   dimension: country {
     type: string
     map_layer_name: countries
@@ -210,6 +209,11 @@ dimension: days_since_created {
   dimension: State_Location {
     map_layer_name:us_states
     sql: ${state} ;;
+  }
+
+  dimension: marketing_opt_in {
+    type: string
+    sql: ${TABLE}.marketing_opt_in ;;
   }
 
   measure: count {
