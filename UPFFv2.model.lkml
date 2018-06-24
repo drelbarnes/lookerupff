@@ -25,7 +25,27 @@ explore: analytics{}
 explore: analytics_v2 {}
 explore: subscribed {}
 explore: pages{}
-explore: customers {}
+explore: customers {
+
+  join: customers_analytics {
+    type:  inner
+    sql_on: ${customers.customer_created_at} = ${customers_analytics.timestamp_date};;
+    relationship: many_to_one
+  }
+
+  join: android_users {
+    type:  inner
+    sql_on: ${customers.customer_id} = ${android_users.id};;
+    relationship: one_to_one
+  }
+
+  join: ios_users {
+    type:  inner
+    sql_on: ${customers.customer_id} = ${ios_users.id};;
+    relationship: one_to_one
+  }
+
+}
 explore: churn_reasons_aggregated {}
 explore: churn_custom_reasons {}
 explore: afinn_lexicon {}
