@@ -78,6 +78,18 @@ explore: customers{
     relationship: many_to_one
   }
 
+  join: android_users {
+    type:  inner
+    sql_on: ${customers.customer_id} = ${android_users.id};;
+    relationship: one_to_one
+  }
+
+  join: ios_users {
+    type:  inner
+    sql_on: ${customers.customer_id} = ${ios_users.id};;
+    relationship: one_to_one
+  }
+
 }
 
 explore: purchase_event{label: "Subscribers"}
