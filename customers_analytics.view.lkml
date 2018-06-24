@@ -61,7 +61,7 @@ view: customers_analytics {
   }
 
   measure: total_free_trials_sum {
-    type: sum
+    type: count_distinct
     sql: ${TABLE}.total_free_trials ;;
   }
 
