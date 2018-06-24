@@ -229,13 +229,13 @@ dimension: days_since_created {
   measure: customers_android {
     type: number
     value_format: ".0#\%"
-    sql: 100.0*${android_users.count}/${count} ;;
+    sql: ${android_users.count}/${count} ;;
   }
 
   measure: customers_iOS {
     type: number
     value_format: ".0#\%"
-    sql: 100.0*${ios_users.count}/${count} ;;
+    sql: ${ios_users.count}/${count} ;;
   }
 
   parameter: date_granularity {
