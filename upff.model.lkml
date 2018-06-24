@@ -69,6 +69,16 @@ explore: javascript_uptv_pages {
 
 
 explore: analytics{}
-explore: customers{}
+
+explore: customers{
+
+  join: customers_analytics {
+    type:  inner
+    sql_on: ${customers.customer_created_at} = ${customers_analytics.timestamp_date};;
+    relationship: many_to_one
+  }
+
+}
+
 explore: purchase_event{label: "Subscribers"}
 explore: customers_info_facts{}
