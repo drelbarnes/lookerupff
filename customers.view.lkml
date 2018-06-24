@@ -228,7 +228,7 @@ dimension: days_since_created {
 
   measure: customers_android {
     type: number
-    sql: ${android_users.count}/${count} ;;
+    sql: ${android_users.count}/${count};;
   }
 
   measure: customers_iOS {
