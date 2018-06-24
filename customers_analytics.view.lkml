@@ -55,7 +55,7 @@ view: customers_analytics {
     sql: ${TABLE}.timestamp ;;
   }
 
-  dimension: total_free_trials {
+  measure: total_free_trials {
     type: number
     sql: ${TABLE}.total_free_trials ;;
   }
