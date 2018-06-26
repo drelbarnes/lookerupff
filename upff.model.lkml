@@ -72,20 +72,15 @@ explore: analytics{}
 
 explore: customers{
 
-  join: customers_analytics {
-    type:  inner
-    sql_on: ${customers.customer_created_at} = ${customers_analytics.timestamp_date};;
-    relationship: many_to_one
-  }
 
   join: android_users {
-    type:  inner
+    type:  left_outer
     sql_on: ${customers.customer_id} = ${android_users.id};;
     relationship: one_to_one
   }
 
   join: ios_users {
-    type:  inner
+    type:  left_outer
     sql_on: ${customers.customer_id} = ${ios_users.id};;
     relationship: one_to_one
   }
