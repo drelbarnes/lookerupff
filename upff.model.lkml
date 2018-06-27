@@ -69,6 +69,23 @@ explore: javascript_uptv_pages {
 
 
 explore: analytics{}
-explore: customers{}
+
+explore: customers{
+
+
+  join: android_users {
+    type:  left_outer
+    sql_on: ${customers.customer_id} = ${android_users.id};;
+    relationship: one_to_one
+  }
+
+  join: ios_users {
+    type:  left_outer
+    sql_on: ${customers.customer_id} = ${ios_users.id};;
+    relationship: one_to_one
+  }
+
+}
+
 explore: purchase_event{label: "Subscribers"}
 explore: customers_info_facts{}
