@@ -1,6 +1,6 @@
 view: lifetime_value {
   derived_table: {
-    sql:select a.*,prior_31_days_subs, 5.99/(cast(churn_30_days as decimal)/cast(prior_31_days_subs as decimal)) as LTV
+    sql:select a.timestamp,cast(churn_30_days as decimal) as churn_30_days,cast(prior_31_days_subs as decimal) as prior_31_days_subs, 5.99/(cast(churn_30_days as decimal)/cast(prior_31_days_subs as decimal)) as LTV
 from
 (select a1.timestamp, a1.paying_churn+sum(coalesce(a2.paying_churn,0)) as churn_30_days
 from customers.analytics as a1
@@ -39,6 +39,27 @@ on a.timestamp=b.timestamp
   dimension: total_paying_31_days_prior {
     type: number
     sql: ${TABLE}.prior_31_days_subs ;;
+  }
+
+  dimension: churn_percent{
+    type:  number
+    sql: ${churn_30_days}/${total_paying_31_days_prior} ;;
+  }
+
+  measure: churn_30_days_ {
+    type: sum
+    sql: ${TABLE}.churn_30_days ;;
+  }
+
+  measure: total_paying_31_days_prior_ {
+    type: sum
+    sql: ${TABLE}.prior_31_days_subs ;;
+  }
+
+  measure: churn_percent_{
+    type:  number
+    sql: ${churn_30_days_}/${total_paying_31_days_prior_} ;;
+    value_format_name: percent_1
   }
 
   measure: lifetime_value {
