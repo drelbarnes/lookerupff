@@ -70,6 +70,8 @@ explore: javascript_uptv_pages {
 
 explore: analytics{}
 
+explore: php_subscribers{description: "Marketing Opt-In Subs"}
+
 explore: customers{
 
 
