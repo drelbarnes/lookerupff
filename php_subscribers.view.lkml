@@ -91,10 +91,15 @@ view: php_subscribers {
     drill_fields: [first_name, last_name, name]
   }
 
+  measure: new_trials{
+    type: number
+    sql:  ${analytics.new_trials} ;;
+  }
+
   measure: mktg_conversion_rate {
     type: number
     value_format: ".0#\%"
-    sql: 100.0*${count}/${analytics.new_trials} ;;
+    sql: 100.0*${count}/${new_trials} ;;
   }
 
 }
