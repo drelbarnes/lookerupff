@@ -45,7 +45,6 @@ explore: android_users {
 
 }
 
-
 explore: javascript_uptv_pages {
   label: "Cross-Domain Subs"
   join: subscribed {
@@ -68,7 +67,13 @@ explore: javascript_uptv_pages {
 }
 
 
-explore: analytics{}
+explore: analytics{
+  join: php_subscribers {
+    type: inner
+    sql_on: ${analytics.timestamp_date} = ${php_subscribers.created_date};;
+    relationship: one_to_one
+  }
+}
 
 explore: php_subscribers{description: "Marketing Opt-In Subs"}
 
