@@ -90,4 +90,5 @@ view: php_subscribers {
     type: count
     drill_fields: [first_name, last_name, name]
   }
+
 }
