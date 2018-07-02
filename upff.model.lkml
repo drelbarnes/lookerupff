@@ -67,15 +67,16 @@ explore: javascript_uptv_pages {
 }
 
 
-explore: analytics{
-  join: php_subscribers {
+explore: analytics{}
+
+explore: php_subscribers{
+  description: "Marketing Opt-In Subs"
+  join: analytics {
     type: inner
     sql_on: ${analytics.timestamp_date} = ${php_subscribers.created_date};;
     relationship: one_to_one
   }
 }
-
-explore: php_subscribers{description: "Marketing Opt-In Subs"}
 
 explore: customers{
 
