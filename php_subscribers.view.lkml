@@ -94,7 +94,7 @@ view: php_subscribers {
   measure: mktg_conversion_rate {
     type: number
     value_format: ".0#\%"
-    sql: 100.0*${analytics.new_trials}/${count} ;;
+    sql: 100.0*${count}/${analytics.new_trials} ;;
   }
 
 }
