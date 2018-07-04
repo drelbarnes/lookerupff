@@ -47,6 +47,11 @@ explore: android_users {
 
 explore: javascript_users{
   label: "Web Subscribers"
+  join: subscribed {
+    type:  inner
+    sql_on: ${subscribed.user_id} = ${javascript_users.id} ;;
+    relationship: one_to_one
+  }
 }
 
 explore: javascript_uptv_pages {
