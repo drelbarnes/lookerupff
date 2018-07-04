@@ -45,6 +45,10 @@ explore: android_users {
 
 }
 
+explore: javascript_users{
+  label: "Web Subscribers"
+}
+
 explore: javascript_uptv_pages {
   label: "Cross-Domain Subs"
   join: subscribed {
