@@ -52,6 +52,18 @@ explore: javascript_users{
     sql_on: ${subscribed.user_id} = ${javascript_users.id} ;;
     relationship: one_to_one
   }
+
+  join: ios_users{
+    type:  inner
+    sql_on: ${ios_users.id} = ${javascript_users.id} ;;
+    relationship: one_to_one
+  }
+
+  join: android_users{
+    type:  inner
+    sql_on: ${android_users.id} = ${javascript_users.id} ;;
+    relationship: one_to_one
+  }
 }
 
 explore: javascript_uptv_pages {
