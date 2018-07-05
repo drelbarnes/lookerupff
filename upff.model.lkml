@@ -16,7 +16,7 @@ persist_with: upff_default_datagroup
 explore: ios_users {
   label: "Web to iOS App Users"
   join: javascript_users {
-    type:  inner
+    type:  left_outer
     sql_on: ${javascript_users.id} = ${ios_users.id} ;;
     relationship: one_to_one
   }
