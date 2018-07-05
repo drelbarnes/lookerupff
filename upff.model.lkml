@@ -45,23 +45,26 @@ explore: android_users {
 
 }
 
-explore: javascript_users{
+explore: javascript_subscribed{
   label: "Web Subscribers"
-  join: subscribed {
-    type: full_outer
-    sql_on: ${subscribed.user_id} = ${javascript_users.id} ;;
+  from: subscribed
+
+  join: javascript_users {
+    sql_on: ${javascript_users.id} = ${javascript_subscribed.user_id};;
     relationship: one_to_one
   }
 
   join: android_users {
     type: inner
-    sql_on: ${subscribed.user_id} = ${android_users.id} ;;
+    sql_on: ${javascript_users.id} = ${android_users.id} ;;
+    required_joins: [javascript_users]
     relationship: one_to_one
   }
 
   join: ios_users {
     type: inner
-    sql_on: ${subscribed.user_id} = ${ios_users.id} ;;
+    sql_on: ${javascript_users.id} = ${ios_users.id} ;;
+    required_joins: [javascript_users]
     relationship: one_to_one
   }
 }

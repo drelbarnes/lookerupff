@@ -15,6 +15,7 @@ view: web_trial_subscribers {
       }
     }
   }
+
   dimension: subscriber_id {
     type: number
     primary_key: yes
