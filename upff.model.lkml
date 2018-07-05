@@ -14,7 +14,7 @@ datagroup: upff_default_datagroup {
 persist_with: upff_default_datagroup
 
 explore: ios_users {
-  label: "Web to iOS App Users"
+  label: "Web and iOS App Users"
   join: javascript_users {
     type:  left_outer
     sql_on: ${javascript_users.id} = ${ios_users.id} ;;
@@ -30,7 +30,7 @@ explore: ios_users {
 }
 
 explore: android_users {
-  label: "Web to Android App Users"
+  label: "Web and Android App Users"
   join: javascript_users {
     type:  inner
     sql_on: ${javascript_users.id} = ${android_users.id} ;;
@@ -45,21 +45,15 @@ explore: android_users {
 
 }
 
-explore: javascript_subscribed{
-  label: "Web Subscribers"
+explore: web_to_ios{
+  label: "Web to iOS Subscribers"
   from: subscribed
 
   join: javascript_users {
-    sql_on: ${javascript_users.id} = ${javascript_subscribed.user_id};;
+    sql_on: ${javascript_users.id} = ${web_to_ios.user_id};;
     relationship: one_to_one
   }
 
-  join: android_users {
-    type: inner
-    sql_on: ${javascript_users.id} = ${android_users.id} ;;
-    required_joins: [javascript_users]
-    relationship: one_to_one
-  }
 
   join: ios_users {
     type: inner
@@ -67,6 +61,23 @@ explore: javascript_subscribed{
     required_joins: [javascript_users]
     relationship: one_to_one
   }
+}
+
+explore: web_to_android{
+  label: "Web to Android Subscribers"
+  from: subscribed
+
+  join: javascript_users {
+    sql_on: ${javascript_users.id} = $web_to_android.user_id};;
+    relationship: one_to_one
+  }
+
+  join: android_users {
+    type: inner
+    sql_on: ${javascript_users.id} = ${android_users.id} ;;
+    relationship: one_to_one
+  }
+
 }
 
 explore: javascript_uptv_pages {
