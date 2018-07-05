@@ -60,7 +60,7 @@ explore: javascript_users{
   }
 
   join: ios_users {
-    type: inner
+    type: left_outer
     sql_on: ${subscribed.user_id} = ${ios_users.id} ;;
     relationship: one_to_one
   }
