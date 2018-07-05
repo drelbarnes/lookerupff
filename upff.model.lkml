@@ -104,11 +104,11 @@ explore: javascript_uptv_pages {
 
 explore: analytics{}
 
-explore: php_subscribers{
+explore: php_get_customers{
   description: "Marketing Opt-In Subs"
   join: analytics {
     type: inner
-    sql_on: ${analytics.timestamp_date} = ${php_subscribers.created_date};;
+    sql_on: ${analytics.timestamp_date} = ${php_get_customers.created_date};;
     relationship: one_to_one
   }
 }
