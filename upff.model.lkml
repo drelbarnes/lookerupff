@@ -68,7 +68,7 @@ explore: web_to_android{
   from: subscribed
 
   join: javascript_users {
-    sql_on: ${javascript_users.id} = $web_to_android.user_id};;
+    sql_on: ${javascript_users.id} = ${web_to_android.user_id};;
     relationship: one_to_one
   }
 
