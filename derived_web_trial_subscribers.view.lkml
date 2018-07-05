@@ -1,4 +1,4 @@
-view: web_subscribers {
+view: web_trial_subscribers {
   derived_table: {
     explore_source: subscribed {
 
