@@ -159,7 +159,7 @@ view: php_get_customers {
 
   measure: count {
     type: count
-    drill_fields: [id, context_library_name, fname]
+    drill_fields: [id, fname, email, platform, context_library_name, ]
   }
 
   measure: new_trials{
