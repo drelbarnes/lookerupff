@@ -54,13 +54,13 @@ explore: javascript_users{
   }
 
   join: android_users {
-    type: left_outer
+    type: inner
     sql_on: ${subscribed.user_id} = ${android_users.id} ;;
     relationship: one_to_one
   }
 
   join: ios_users {
-    type: left_outer
+    type: inner
     sql_on: ${subscribed.user_id} = ${ios_users.id} ;;
     relationship: one_to_one
   }
