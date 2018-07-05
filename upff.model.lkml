@@ -48,7 +48,7 @@ explore: android_users {
 explore: javascript_users{
   label: "Web Subscribers"
   join: subscribed {
-    type: inner
+    type: left_outer
     sql_on: ${subscribed.user_id} = ${javascript_users.id} ;;
     relationship: one_to_one
   }
@@ -60,7 +60,7 @@ explore: javascript_users{
   }
 
   join: ios_users {
-    type: left_outer
+    type: inner
     sql_on: ${subscribed.user_id} = ${ios_users.id} ;;
     relationship: one_to_one
   }
