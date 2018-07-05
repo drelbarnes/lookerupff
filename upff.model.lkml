@@ -116,5 +116,7 @@ explore: customers{
 
 }
 
+explore: web_trial_subscribers{}
+explore: subscribed {}
 explore: purchase_event{label: "Subscribers"}
 explore: customers_info_facts{}

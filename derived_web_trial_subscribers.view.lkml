@@ -7,7 +7,7 @@ view: web_trial_subscribers {
       }
 
       column: subscriber_id {
-        field: subscribed.user_id
+        field: subscribed.id
       }
 
       derived_column: subscriber_total {
