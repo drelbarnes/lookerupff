@@ -105,6 +105,7 @@ explore: javascript_uptv_pages {
 explore: analytics{}
 
 explore: php_get_customers{
+  label: "Mktg Opt-In Subscribers"
   description: "Marketing Opt-In Subs"
   join: analytics {
     type: inner
