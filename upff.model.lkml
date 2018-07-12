@@ -3,9 +3,6 @@ connection: "upff"
 # include all the views
 include: "*.view"
 
-# include all the dashboards
-include: "*.dashboard"
-
 datagroup: upff_default_datagroup {
   # sql_trigger: SELECT MAX(id) FROM etl_log;;
   max_cache_age: "1 hour"
@@ -80,6 +77,20 @@ explore: web_to_android{
 
 }
 
+# Web Suscribers
+explore: javascript_subscribed {
+
+  label: "Web Subscribers"
+  from: subscribed
+
+  join: javascript_users {
+    type:  inner
+    sql_on: ${javascript_subscribed.user_id} = ${javascript_users.id} ;;
+    relationship: one_to_one
+  }
+
+}
+
 explore: javascript_uptv_pages {
   label: "Cross-Domain Subs"
   join: subscribed {
@@ -131,7 +142,6 @@ explore: customers{
 
 }
 
-explore: web_trial_subscribers{}
 explore: subscribed {}
 explore: purchase_event{label: "Subscribers"}
 explore: customers_info_facts{}
