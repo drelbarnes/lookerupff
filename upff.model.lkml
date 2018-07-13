@@ -164,3 +164,15 @@ explore: customers_info_facts{}
 explore: delighted_survey_question_answered {
   label: "Delighted Feedback"
 }
+
+#iOS // get user plays
+explore: ios_users_play {
+  label: "iOS Subscribers Play"
+  from:  ios_users
+
+  join: ios_play {
+    type: inner
+    sql_on: ${ios_users_play.id} = ${ios_play.user_id};;
+    relationship: one_to_one
+  }
+}
