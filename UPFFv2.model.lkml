@@ -60,6 +60,24 @@ explore: android_play {}
 explore: ios_play {}
 explore: javascript_play {}
 explore: all_play {}
+
+# Web Suscriber Plays
+explore: javascript_users {
+  label: "Web Subscriber Plays"
+
+  join: javascript_play {
+    type:  inner
+    sql_on: ${javascript_users.id} = ${javascript_play.user_id} ;;
+    relationship: one_to_one
+  }
+
+  join: all_play {
+    type:  inner
+    sql_on: ${all_play.user_id} = ${javascript_users.id} ;;
+    relationship: one_to_one
+  }
+}
+
 explore: titles {}
 explore: mvpd_subs {}
 explore: mtd_revenue {}
