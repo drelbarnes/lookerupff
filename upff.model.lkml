@@ -91,6 +91,19 @@ explore: javascript_subscribed {
 
 }
 
+# Web Suscribers Play Data
+explore: javascript_users {
+
+  label: "Web Subscribers Play Data"
+
+  join: javascript_play {
+    type:  inner
+    sql_on: ${javascript_users.id} = ${javascript_play.user_id} ;;
+    relationship: one_to_one
+  }
+
+}
+
 explore: javascript_uptv_pages {
   label: "Cross-Domain Subs"
   join: subscribed {
