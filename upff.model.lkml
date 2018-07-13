@@ -91,10 +91,10 @@ explore: javascript_subscribed {
 
 }
 
-# Web Suscribers Play Data
+# Web Suscriber Plays
 explore: javascript_users {
 
-  label: "Web Subscribers Play Data"
+  label: "Web Subscriber Plays"
 
   join: javascript_play {
     type:  inner
