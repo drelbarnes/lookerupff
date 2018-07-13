@@ -145,3 +145,9 @@ explore: customers{
 explore: subscribed {}
 explore: purchase_event{label: "Subscribers"}
 explore: customers_info_facts{}
+
+
+#Delighted.com // Feedback Survey Responses
+explore: delighted_survey_question_answered {
+  label: "Delighted Feedback"
+}
