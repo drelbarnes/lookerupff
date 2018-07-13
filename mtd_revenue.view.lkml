@@ -27,7 +27,9 @@ d as (select *, case
         else null end as revenue
       from c),
 
-e as (select d.date,sum(revenue) as revenue, case when datepart(month,date(d.date))=6 then 3704.25 else null end as target from d where revenue is not null group by d.date)
+e as (select d.date,sum(revenue) as revenue,
+             case when datepart(month,date(d.date))=6 then 3704.25
+                  when datepart(month,date(d.date))=7 then 4410.24 else null end as target from d where revenue is not null group by d.date)
 
 select e.date, SUM(revenue) OVER (PARTITION by cast(datepart(month,date(e.date)) as varchar) order by date(e.date) asc rows between unbounded preceding and current row) AS running_revenue,
                SUM(target) OVER (PARTITION by cast(datepart(month,date(e.date)) as varchar) order by date(e.date) asc rows between unbounded preceding and current row) AS running_target from e
