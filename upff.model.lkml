@@ -176,3 +176,15 @@ explore: ios_users_play {
     relationship: one_to_one
   }
 }
+
+#Android // get user plays
+explore: android_users_play {
+  label: "Android Subscribers Play"
+  from:  android_users
+
+  join: android_play {
+    type: inner
+    sql_on: ${android_users_play.id} = ${android_play.user_id};;
+    relationship: one_to_one
+  }
+}
