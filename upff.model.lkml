@@ -11,9 +11,9 @@ datagroup: upff_default_datagroup {
 persist_with: upff_default_datagroup
 
 explore: ios_users {
-  label: "Web to iOS App Users"
+  label: "Web and iOS App Users"
   join: javascript_users {
-    type:  inner
+    type:  left_outer
     sql_on: ${javascript_users.id} = ${ios_users.id} ;;
     relationship: one_to_one
   }
@@ -27,7 +27,7 @@ explore: ios_users {
 }
 
 explore: android_users {
-  label: "Web to Android App Users"
+  label: "Web and Android App Users"
   join: javascript_users {
     type:  inner
     sql_on: ${javascript_users.id} = ${android_users.id} ;;
@@ -42,6 +42,67 @@ explore: android_users {
 
 }
 
+explore: web_to_ios{
+  label: "Web to iOS Subscribers"
+  from: subscribed
+
+  join: javascript_users {
+    sql_on: ${javascript_users.id} = ${web_to_ios.user_id};;
+    relationship: one_to_one
+  }
+
+
+  join: ios_users {
+    type: inner
+    sql_on: ${javascript_users.id} = ${ios_users.id} ;;
+    required_joins: [javascript_users]
+    relationship: one_to_one
+  }
+}
+
+explore: web_to_android{
+  label: "Web to Android Subscribers"
+  from: subscribed
+
+  join: javascript_users {
+    sql_on: ${javascript_users.id} = ${web_to_android.user_id};;
+    relationship: one_to_one
+  }
+
+  join: android_users {
+    type: inner
+    sql_on: ${javascript_users.id} = ${android_users.id} ;;
+    relationship: one_to_one
+  }
+
+}
+
+# Web Suscribers
+explore: javascript_subscribed {
+
+  label: "Web Subscribers"
+  from: subscribed
+
+  join: javascript_users {
+    type:  inner
+    sql_on: ${javascript_subscribed.user_id} = ${javascript_users.id} ;;
+    relationship: one_to_one
+  }
+
+}
+
+# Web Suscriber Plays
+explore: javascript_users {
+
+  label: "Web Subscriber Plays"
+
+  join: javascript_play {
+    type:  inner
+    sql_on: ${javascript_users.id} = ${javascript_play.user_id} ;;
+    relationship: one_to_one
+  }
+
+}
 
 explore: javascript_uptv_pages {
   label: "Cross-Domain Subs"
@@ -67,6 +128,16 @@ explore: javascript_uptv_pages {
 
 explore: analytics{}
 
+explore: php_get_customers{
+  label: "Mktg Opt-In Subscribers"
+  description: "Marketing Opt-In Subs"
+  join: analytics {
+    type: inner
+    sql_on: ${analytics.timestamp_date} = ${php_get_customers.created_date};;
+    relationship: one_to_one
+  }
+}
+
 explore: customers{
 
 
@@ -84,5 +155,36 @@ explore: customers{
 
 }
 
+explore: subscribed {}
 explore: purchase_event{label: "Subscribers"}
 explore: customers_info_facts{}
+
+
+#Delighted.com // Feedback Survey Responses
+explore: delighted_survey_question_answered {
+  label: "Delighted Feedback"
+}
+
+#iOS // get user plays
+explore: ios_users_play {
+  label: "iOS Subscribers Play"
+  from:  ios_users
+
+  join: ios_play {
+    type: inner
+    sql_on: ${ios_users_play.id} = ${ios_play.user_id};;
+    relationship: one_to_one
+  }
+}
+
+#Android // get user plays
+explore: android_users_play {
+  label: "Android Subscribers Play"
+  from:  android_users
+
+  join: android_play {
+    type: inner
+    sql_on: ${android_users_play.id} = ${android_play.user_id};;
+    relationship: one_to_one
+  }
+}

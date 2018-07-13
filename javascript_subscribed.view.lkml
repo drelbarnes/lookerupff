@@ -214,6 +214,11 @@ view: subscribed {
     sql: ${TABLE}.uuid_ts ;;
   }
 
+  measure: web_subscribers {
+    type: count
+    sql_distinct_key: ${javascript_users.id};;
+  }
+
   measure: count {
     type: count
     drill_fields: [detail*]
