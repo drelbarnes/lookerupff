@@ -63,7 +63,7 @@ explore: all_play {}
 
 # Web Suscriber Plays
 explore: javascript_users {
-  label: "Web Subscriber Plays"
+  label: "Web Subscriber Video ID"
 
   join: javascript_play {
     type:  inner
