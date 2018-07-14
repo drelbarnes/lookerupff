@@ -76,6 +76,12 @@ explore: javascript_users {
     sql_on: ${all_play.user_id} = ${javascript_users.id} ;;
     relationship: one_to_one
   }
+
+  join: analytics {
+    type:  inner
+    sql_on: ${analytics.timestamp_date} = ${all_play.timestamp_date} ;;
+    relationship: one_to_one
+  }
 }
 
 explore: titles {}
