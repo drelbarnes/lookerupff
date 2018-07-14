@@ -102,6 +102,12 @@ explore: javascript_users {
     relationship: one_to_one
   }
 
+  join: javascript_firstplay {
+    type:  inner
+    sql_on: ${javascript_users.id} = ${javascript_firstplay.user_id} ;;
+    relationship: one_to_one
+  }
+
 }
 
 explore: javascript_uptv_pages {
