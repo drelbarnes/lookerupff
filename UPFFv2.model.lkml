@@ -59,7 +59,15 @@ explore: customer_churn_percent {}
 explore: android_play {}
 explore: ios_play {}
 explore: javascript_play {}
-explore: all_play {}
+explore: all_play {
+
+  join: analytics {
+    type:  inner
+    sql_on: ${analytics.timestamp_date} = ${all_play.timestamp_date} ;;
+    relationship: one_to_one
+  }
+
+}
 
 # Web Suscriber Plays
 explore: javascript_users {
@@ -77,11 +85,6 @@ explore: javascript_users {
     relationship: one_to_one
   }
 
-  join: analytics {
-    type:  inner
-    sql_on: ${analytics.timestamp_date} = ${all_play.timestamp_date} ;;
-    relationship: one_to_one
-  }
 }
 
 explore: titles {}

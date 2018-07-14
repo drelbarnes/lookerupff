@@ -91,7 +91,6 @@ from a inner join customers.customers on user_id=customer_id) ;;
   }
 
 
-
 # ----- Sets of fields for drilling ------
   set: detail {
     fields: [
