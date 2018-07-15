@@ -231,6 +231,7 @@ view: delighted_survey_question_answered {
                     sql: ${TABLE}.survey_question_answer < 7 ;;
                     label: "Detractors"
                   }
+                  else: "Have Not Responded"
       }
   }
 
