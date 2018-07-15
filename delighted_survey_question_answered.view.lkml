@@ -217,9 +217,9 @@ view: delighted_survey_question_answered {
   #Get Promoters by case
   dimension: promoters {
     case: {
-                   when: {
+                  when: {
                     sql: ${TABLE}.survey_question_answer = 9 OR
-                        ${TABLE}.survey_question_answer = 10;;
+                        ${TABLE}.survey_question_answer = 10 AND ${TABLE}.survey_question_name = "NPS question" ;;
                     label: "Promoters"
                   }
                   when: {
@@ -231,7 +231,6 @@ view: delighted_survey_question_answered {
                     sql: ${TABLE}.survey_question_answer < 7 ;;
                     label: "Detractors"
                   }
-                  else: "Have Not Responded"
       }
   }
 
