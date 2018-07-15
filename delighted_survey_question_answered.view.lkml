@@ -219,7 +219,7 @@ view: delighted_survey_question_answered {
     case: {
                   when: {
                     sql: ${TABLE}.survey_question_answer = 9 OR
-                        ${TABLE}.survey_question_answer = 10 AND ${TABLE}.survey_question_name = "NPS question" ;;
+                        ${TABLE}.survey_question_answer = 10 ;;
                     label: "Promoters"
                   }
                   when: {
