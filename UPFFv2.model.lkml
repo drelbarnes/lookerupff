@@ -87,7 +87,7 @@ explore: javascript_users {
 
   join: javascript_timeupdate {
     type:  inner
-    sql_on: ${javascript_timeupdate.user_id} = ${javascript_users.id} ;;
+    sql_on: ${javascript_timeupdate.context_page_title} = ${javascript_play.context_page_title} ;;
     relationship: one_to_one
   }
 
