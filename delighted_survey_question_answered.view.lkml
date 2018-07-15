@@ -228,7 +228,7 @@ view: delighted_survey_question_answered {
                     label: "Passives"
                   }
                   when: {
-                    sql: ${TABLE}.survey_question_answer =< 6 ;;
+                    sql: ${TABLE}.survey_question_answer < 7 ;;
                     label: "Detractors"
                   }
       }
