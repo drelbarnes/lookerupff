@@ -214,8 +214,27 @@ view: delighted_survey_question_answered {
     sql: ${TABLE}.uuid_ts ;;
   }
 
+  #Get Promoters by case
+  dimension: promoters {
+    sql: CASE
+                   WHEN ${TABLE}.survey_question_answered = 9 OR
+                        ${TABLE}.survey_question_answered = 10
+                         THEN 'Promoters'
+
+                   WHEN ${TABLE}.survey_question_answered = 7 OR
+                        ${TABLE}.survey_question_answered = 8
+                         THEN 'Passives'
+
+                   WHEN ${TABLE}.survey_question_answered =< 6
+                          THEN 'Detractors'
+
+    END ;;
+  }
+
   measure: count {
     type: count
     drill_fields: [id, survey_question_name, context_integration_name, context_library_name, survey_name]
   }
+
+
 }
