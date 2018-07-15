@@ -240,7 +240,7 @@ view: delighted_survey_question_answered {
       SELECT ${TABLE}.survey_question_answer
       FROM delighted.survey_question_answered AS d
       WHERE d.user_id <= ${TABLE}.user_id
-        AND ${TABLE}.survey_question_name = "Comment"
+        AND d.survey_question_name = "Comment"
     ) ;;
 
   }
