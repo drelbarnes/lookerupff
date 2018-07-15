@@ -169,6 +169,12 @@ explore: customers_info_facts{}
 #Delighted.com // Feedback Survey Responses
 explore: delighted_survey_question_answered {
   label: "Delighted Feedback"
+
+  join: customers_v2 {
+    type: inner
+    sql_on: ${delighted_survey_question_answered.user_id} = ${customers_v2.customer_id};;
+    relationship: one_to_one
+  }
 }
 
 #iOS // get user plays
