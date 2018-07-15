@@ -236,11 +236,12 @@ view: delighted_survey_question_answered {
 
   dimension: promoters_comment {
    # sql: ${user_id} = ${user_id} AND ${survey_question_name} = "Comment";;
+   type: string
    sql:  (
       SELECT ${TABLE}.survey_question_answer
       FROM delighted.survey_question_answered AS d
       WHERE d.user_id = ${TABLE}.user_id
-        AND d.survey_question_name = "Comment"
+        AND ${TABLE}.survey_question_name = "Comment"
     ) ;;
 
   }
