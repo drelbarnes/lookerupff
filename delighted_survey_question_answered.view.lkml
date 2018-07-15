@@ -218,17 +218,17 @@ view: delighted_survey_question_answered {
   dimension: promoters {
     case: {
                    when: {
-                    sql: ${TABLE}.survey_question_answered = 9 OR
-                        ${TABLE}.survey_question_answered = 10;;
+                    sql: ${TABLE}.survey_question_answer = 9 OR
+                        ${TABLE}.survey_question_answer = 10;;
                     label: "Promoters"
                   }
                   when: {
-                    sql: ${TABLE}.survey_question_answered = 7 OR
-                        ${TABLE}.survey_question_answered = 8 ;;
+                    sql: ${TABLE}.survey_question_answer  = 7 OR
+                        ${TABLE}.survey_question_answer  = 8 ;;
                     label: "Passives"
                   }
                   when: {
-                    sql: ${TABLE}.survey_question_answered =< 6 ;;
+                    sql: ${TABLE}.survey_question_answer =< 6 ;;
                     label: "Detractors"
                   }
       }
