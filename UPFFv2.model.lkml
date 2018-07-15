@@ -85,6 +85,12 @@ explore: javascript_users {
     relationship: one_to_one
   }
 
+  join: javascript_timeupdate {
+    type:  inner
+    sql_on: ${javascript_timeupdate.user_id} = ${javascript_users.id} ;;
+    relationship: one_to_one
+  }
+
 }
 
 explore: titles {}
