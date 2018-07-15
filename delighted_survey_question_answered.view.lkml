@@ -240,4 +240,9 @@ view: delighted_survey_question_answered {
   }
 
 
+  measure: count_distinct_userids{
+    type: count_distinct
+    sql: ${user_id};;
+  }
+
 }
