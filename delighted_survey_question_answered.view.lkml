@@ -216,19 +216,23 @@ view: delighted_survey_question_answered {
 
   #Get Promoters by case
   dimension: promoters {
-    sql: CASE
-                   WHEN ${TABLE}.survey_question_answered = 9 OR
-                        ${TABLE}.survey_question_answered = 10
-                         THEN 'Promoters'
-
-                   WHEN ${TABLE}.survey_question_answered = 7 OR
-                        ${TABLE}.survey_question_answered = 8
-                         THEN 'Passives'
-
-                   WHEN ${TABLE}.survey_question_answered =< 6
-                          THEN 'Detractors'
-
-    END ;;
+    case: {
+                   when: {
+                    sql: ${TABLE}.survey_question_answered = 9 OR
+                        ${TABLE}.survey_question_answered = 10;;
+                    label: "Promoters"
+                  }
+                  when: {
+                    sql: ${TABLE}.survey_question_answered = 7 OR
+                        ${TABLE}.survey_question_answered = 8 ;;
+                    label: "Passives"
+                  }
+                  when: {
+                    sql: ${TABLE}.survey_question_answered =< 6 ;;
+                    label: "Detractors"
+                  }
+                  else: "unknown"
+    }
   }
 
   measure: count {
