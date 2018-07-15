@@ -239,7 +239,7 @@ view: delighted_survey_question_answered {
    sql:  (
       SELECT ${TABLE}.survey_question_answer
       FROM delighted.survey_question_answered AS d
-      WHERE d.user_id <= ${TABLE}.user_id
+      WHERE d.user_id = ${TABLE}.user_id
         AND d.survey_question_name = "Comment"
     ) ;;
 
