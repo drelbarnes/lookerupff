@@ -231,8 +231,7 @@ view: delighted_survey_question_answered {
                     sql: ${TABLE}.survey_question_answered =< 6 ;;
                     label: "Detractors"
                   }
-                  else: "unknown"
-    }
+      }
   }
 
   measure: count {
