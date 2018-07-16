@@ -239,6 +239,7 @@ view: delighted_survey_question_answered {
     sql: COUNT(${TABLE}.survey_question_answer <= 6);;
   }
 
+
   measure: count {
     type: count
     drill_fields: [id, survey_question_name, context_integration_name, context_library_name, survey_name]
