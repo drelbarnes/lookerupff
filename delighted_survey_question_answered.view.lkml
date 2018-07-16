@@ -239,6 +239,18 @@ view: delighted_survey_question_answered {
     sql: COUNT(${TABLE}.survey_question_answer <= 6);;
   }
 
+    measure: detractors {
+    type: count_distinct
+    sql: ${TABLE}.user_id ;;
+    filters: {
+      field: customers_v2.status
+      value: "enabled"
+    }
+    filters: {
+      field: promoters # Reference fields from other joined views with view_name.field_name syntax
+      value: "Detractors" # Minus sign means "not" in this case, but check notation docs for details
+    }
+  }
 
   measure: count {
     type: count
