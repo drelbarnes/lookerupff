@@ -236,7 +236,7 @@ view: delighted_survey_question_answered {
 
   measure: count_detractors {
     type: number
-    sql: COUNT(${TABLE}.survey_question_answer <= 6 AND DISTINCT ${TABLE}.user_id);;
+    sql: COUNT(${TABLE}.survey_question_answer <= 6 AND customers_v2.status = "enabled");;
   }
 
   measure: count {
