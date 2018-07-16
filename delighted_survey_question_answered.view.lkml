@@ -234,12 +234,7 @@ view: delighted_survey_question_answered {
       }
   }
 
-  measure: count_detractors {
-    type: number
-    sql: COUNT(${TABLE}.survey_question_answer <= 6);;
-  }
-
-    measure: detractors {
+  measure: detractors {
     type: count_distinct
     sql: ${TABLE}.user_id ;;
     filters: {
@@ -249,6 +244,32 @@ view: delighted_survey_question_answered {
     filters: {
       field: promoters # Reference fields from other joined views with view_name.field_name syntax
       value: "Detractors" # Minus sign means "not" in this case, but check notation docs for details
+    }
+  }
+
+  measure: passives {
+    type: count_distinct
+    sql: ${TABLE}.user_id ;;
+    filters: {
+      field: customers_v2.status
+      value: "enabled"
+    }
+    filters: {
+      field: promoters # Reference fields from other joined views with view_name.field_name syntax
+      value: "Passives" # Minus sign means "not" in this case, but check notation docs for details
+    }
+  }
+
+  measure: promoterz {
+    type: count_distinct
+    sql: ${TABLE}.user_id ;;
+    filters: {
+      field: customers_v2.status
+      value: "enabled"
+    }
+    filters: {
+      field: promoters # Reference fields from other joined views with view_name.field_name syntax
+      value: "Promoters" # Minus sign means "not" in this case, but check notation docs for details
     }
   }
 
