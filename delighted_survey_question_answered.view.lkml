@@ -235,8 +235,8 @@ view: delighted_survey_question_answered {
   }
 
   measure: count_detractors {
-    type: count_distinct
-    sql: ${TABLE}.survey_question_answer <= 6 ;;
+    type: number
+    sql: COUNT(${TABLE}.survey_question_answer <= 6);;
   }
 
   measure: count {
