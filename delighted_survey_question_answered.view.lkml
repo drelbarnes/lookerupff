@@ -234,6 +234,11 @@ view: delighted_survey_question_answered {
       }
   }
 
+  measure: count_detractors {
+    type: count_distinct
+    sql:  ${promoters} = "Detractors";;
+  }
+
   measure: count {
     type: count
     drill_fields: [id, survey_question_name, context_integration_name, context_library_name, survey_name]
