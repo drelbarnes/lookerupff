@@ -215,15 +215,6 @@ dimension: days_since_created {
     sql: ${TABLE}.marketing_opt_in ;;
   }
 
-  measure: free_trials_created {
-    type: count_distinct
-    sql: ${TABLE}.customer_id ;;
-    filters: {
-      field: creation_timestamp_date
-      value: "14 days"
-    }
-  }
-
 measure: market_opt_in_subs{
     type: count_distinct
     sql: ${TABLE}.customer_id ;;
@@ -234,6 +225,10 @@ measure: market_opt_in_subs{
     filters: {
       field: creation_timestamp_date
       value: "14 days ago for 14 days"
+    }
+    filters: {
+      field: status
+      value: "enabled"
     }
   }
 
@@ -247,6 +242,10 @@ measure: market_opt_in_subs{
     filters: {
       field: creation_timestamp_date
       value: "14 days ago for 14 days"
+    }
+    filters: {
+      field: status
+      value: "enabled"
     }
   }
 
