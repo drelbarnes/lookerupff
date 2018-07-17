@@ -222,6 +222,10 @@ measure: market_opt_in_subs{
       field: marketing_opt_in
       value: "Y"
     }
+    filters: {
+      field: creation_timestamp_date
+      value: "14 days ago for 14 days"
+    }
   }
 
  measure: non_market_opt_in_subs{
@@ -230,6 +234,10 @@ measure: market_opt_in_subs{
     filters: {
       field: marketing_opt_in
       value: "N"
+    }
+    filters: {
+      field: creation_timestamp_date
+      value: "14 days ago for 14 days"
     }
   }
 
