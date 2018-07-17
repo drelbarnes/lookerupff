@@ -220,7 +220,7 @@ dimension: days_since_created {
     sql: ${TABLE}.customer_id ;;
     filters: {
       field: creation_timestamp_date
-      value: "14 days ago for 14 days"
+      value: "14 days"
     }
   }
 
