@@ -224,7 +224,7 @@ measure: market_opt_in_subs{
     }
     filters: {
       field: customer_created_at
-      value: "14 days"
+      value: "15 days"
     }
   }
 
@@ -237,7 +237,7 @@ measure: market_opt_in_subs{
     }
     filters: {
       field: customer_created_at
-      value: "14 days"
+      value: "15 days"
     }
   }
 
