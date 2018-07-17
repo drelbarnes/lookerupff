@@ -224,10 +224,6 @@ dimension: days_since_created {
       field: marketing_opt_in
       value: "Y"
     }
-    filters: {
-      field: status
-      value: "enabled"
-    }
   }
 
 
@@ -238,10 +234,6 @@ dimension: days_since_created {
     filters: {
       field: marketing_opt_in
       value: "N"
-    }
-    filters: {
-      field: status
-      value: "enabled"
     }
   }
 
