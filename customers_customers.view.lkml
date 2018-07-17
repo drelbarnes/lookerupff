@@ -210,6 +210,29 @@ dimension: days_since_created {
     sql: ${customer_id} ;;
   }
 
+  dimension: marketing_opt_in {
+    type: string
+    sql: ${TABLE}.marketing_opt_in ;;
+  }
+
+  measure: market_opt_in_subs{
+    type: count_distinct
+    sql: ${TABLE}.customer_id ;;
+    filters: {
+      field: marketing_opt_in
+      value: "Y"
+    }
+  }
+
+  measure: non_market_opt_in_subs{
+    type: count_distinct
+    sql: ${TABLE}.customer_id ;;
+    filters: {
+      field: marketing_opt_in
+      value: "N"
+    }
+  }
+
   parameter: date_granularity {
     type: string
     allowed_value: { value: "Day" }

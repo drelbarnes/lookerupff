@@ -214,8 +214,74 @@ view: delighted_survey_question_answered {
     sql: ${TABLE}.uuid_ts ;;
   }
 
+  #Get Promoters by case
+  dimension: promoters {
+    case: {
+                  when: {
+                    sql: ${TABLE}.survey_question_answer = 9 OR
+                        ${TABLE}.survey_question_answer = 10 ;;
+                    label: "Promoters"
+                  }
+                  when: {
+                    sql: ${TABLE}.survey_question_answer  = 7 OR
+                        ${TABLE}.survey_question_answer  = 8 ;;
+                    label: "Passives"
+                  }
+                  when: {
+                    sql: ${TABLE}.survey_question_answer <= 6 ;;
+                    label: "Detractors"
+                  }
+      }
+  }
+
+  measure: detractors {
+    type: count_distinct
+    sql: ${TABLE}.user_id ;;
+    filters: {
+      field: customers_v2.status
+      value: "enabled"
+    }
+    filters: {
+      field: promoters # Reference fields from other joined views with view_name.field_name syntax
+      value: "Detractors" # Minus sign means "not" in this case, but check notation docs for details
+    }
+  }
+
+  measure: passives {
+    type: count_distinct
+    sql: ${TABLE}.user_id ;;
+    filters: {
+      field: customers_v2.status
+      value: "enabled"
+    }
+    filters: {
+      field: promoters # Reference fields from other joined views with view_name.field_name syntax
+      value: "Passives" # Minus sign means "not" in this case, but check notation docs for details
+    }
+  }
+
+  measure: promoterz {
+    type: count_distinct
+    sql: ${TABLE}.user_id ;;
+    filters: {
+      field: customers_v2.status
+      value: "enabled"
+    }
+    filters: {
+      field: promoters # Reference fields from other joined views with view_name.field_name syntax
+      value: "Promoters" # Minus sign means "not" in this case, but check notation docs for details
+    }
+  }
+
   measure: count {
     type: count
     drill_fields: [id, survey_question_name, context_integration_name, context_library_name, survey_name]
   }
+
+
+  measure: count_distinct_userids{
+    type: count_distinct
+    sql: ${user_id};;
+  }
+
 }

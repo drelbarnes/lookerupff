@@ -90,6 +90,7 @@ from a inner join customers.customers on user_id=customer_id) ;;
     drill_fields: [detail*]
   }
 
+
 # ----- Sets of fields for drilling ------
   set: detail {
     fields: [
