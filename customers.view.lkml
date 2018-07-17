@@ -102,6 +102,8 @@ view: customers {
     sql:  DATEDIFF('day', ${customer_created_at}::timestamp, ${current_date}::timestamp) ;;
   }
 
+
+
   measure: days_churned {
     type: number
     sql:  DATEDIFF('day', ${event_created_at}::timestamp, ${customer_created_at}::timestamp) ;;
