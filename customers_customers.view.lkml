@@ -217,7 +217,7 @@ dimension: days_since_created {
 
   measure: market_opt_in_subs{
     type: count_distinct
-    sql:  ${TABLE}.marketing_opt_in;;
+    sql: ${TABLE}.user_id ;;
     filters: {
       field: marketing_opt_in
       value: "Y"
@@ -226,7 +226,7 @@ dimension: days_since_created {
 
   measure: non_market_opt_in_subs{
     type: count_distinct
-    sql:  ${TABLE}.marketing_opt_in;;
+    sql: ${TABLE}.user_id ;;
     filters: {
       field: marketing_opt_in
       value: "N"
