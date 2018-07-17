@@ -215,14 +215,7 @@ dimension: days_since_created {
     sql: ${TABLE}.marketing_opt_in ;;
   }
 
-  measure: market_opt_in_subs_total{
-    type: count_distinct
-    sql: ${TABLE}.customer_id ;;
-    filters: {
-      field: marketing_opt_in
-      value: "Y"
-    }
-  }
+
 
   measure: market_opt_in_subs{
     type: count_distinct
@@ -237,14 +230,7 @@ dimension: days_since_created {
     }
   }
 
-  measure: non_market_opt_in_subs_total{
-    type: count_distinct
-    sql: ${TABLE}.customer_id ;;
-    filters: {
-      field: marketing_opt_in
-      value: "N"
-    }
-  }
+
 
   measure: non_market_opt_in_subs{
     type: count_distinct
