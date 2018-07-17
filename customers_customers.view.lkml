@@ -215,25 +215,29 @@ dimension: days_since_created {
     sql: ${TABLE}.marketing_opt_in ;;
   }
 
-
-
-  measure: market_opt_in_subs{
+measure: market_opt_in_subs{
     type: count_distinct
     sql: ${TABLE}.customer_id ;;
     filters: {
       field: marketing_opt_in
       value: "Y"
     }
+    filters: {
+      field: customer_created_at
+      value: "14 days ago"
+    }
   }
 
-
-
-  measure: non_market_opt_in_subs{
+ measure: non_market_opt_in_subs{
     type: count_distinct
     sql: ${TABLE}.customer_id ;;
     filters: {
       field: marketing_opt_in
       value: "N"
+    }
+    filters: {
+      field: customer_created_at
+      value: "14 days ago"
     }
   }
 
