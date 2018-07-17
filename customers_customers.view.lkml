@@ -226,10 +226,7 @@ measure: market_opt_in_subs{
       field: creation_timestamp_date
       value: "14 days"
     }
-    filters: {
-      field: status
-      value: "enabled"
-    }
+
   }
 
  measure: non_market_opt_in_subs{
@@ -243,10 +240,7 @@ measure: market_opt_in_subs{
       field: creation_timestamp_date
       value: "14 days"
     }
-    filters: {
-      field: status
-      value: "enabled"
-    }
+
   }
 
   parameter: date_granularity {
