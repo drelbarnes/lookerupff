@@ -2,7 +2,7 @@ view: upff_linear_ratings {
   derived_table: {
     sql: select 'Total Day' as daypart, 'HH' as demo, 57 as rating, -.26 as VS2Q18Target, .02 as VSYA2Q17
       union all
-      select 'Prime' as daypart, 'HH' as demo, 75 as rating, -.18 as VS2Q18Target, 0 as VSYA2Q17
+      select 'Prime' as daypart, 'HH' as demo, 75 as rating, -.18 as VS2Q18Target, .06 as VSYA2Q17
       union all
       select 'Total Day' as daypart, 'W 25-54' as demo, 19 as rating, -.34 as VS2Q18Target, -.05 as VSYA2Q17
       union all

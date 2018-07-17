@@ -64,3 +64,5 @@ explore: titles {}
 explore: mvpd_subs {}
 explore: mtd_revenue {}
 explore: upff_linear_ratings {}
+explore: uptv_daily_key_demo {}
+explore: uptv_daily_day_part {}
