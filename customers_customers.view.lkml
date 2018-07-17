@@ -222,6 +222,10 @@ dimension: days_since_created {
       field: marketing_opt_in
       value: "Y"
     }
+    filters: {
+      field: status
+      value: "enabled"
+    }
   }
 
   measure: non_market_opt_in_subs{
@@ -230,6 +234,10 @@ dimension: days_since_created {
     filters: {
       field: marketing_opt_in
       value: "N"
+    }
+    filters: {
+      field: status
+      value: "enabled"
     }
   }
 
