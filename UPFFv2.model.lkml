@@ -23,7 +23,7 @@ explore: analytics_v2 {
 
   join: customers_v2{
     type:  inner
-    sql_on: ${customers_v2.customer_created_at} = ${analytics_v2.timestamp_date};;
+    sql_on: ${customers_v2.creation_timestamp_date} = ${analytics_v2.timestamp_date};;
     relationship: one_to_one
   }
 
