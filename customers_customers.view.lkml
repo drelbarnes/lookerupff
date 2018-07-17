@@ -223,7 +223,7 @@ measure: market_opt_in_subs{
       value: "Y"
     }
     filters: {
-      field: customer_created_at
+      field: creation_timestamp_date
       value: "15 days"
     }
   }
@@ -236,7 +236,7 @@ measure: market_opt_in_subs{
       value: "N"
     }
     filters: {
-      field: customer_created_at
+      field: creation_timestamp_date
       value: "15 days"
     }
   }
