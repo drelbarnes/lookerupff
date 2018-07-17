@@ -224,7 +224,7 @@ measure: market_opt_in_subs{
     }
     filters: {
       field: creation_timestamp_date
-      value: "5 days ago for 5 days"
+      value: "14 days ago for 14 days"
     }
   }
 
@@ -237,7 +237,7 @@ measure: market_opt_in_subs{
     }
     filters: {
       field: creation_timestamp_date
-      value: "5 days ago for 5 days"
+      value: "14 days ago for 14 days"
     }
   }
 
