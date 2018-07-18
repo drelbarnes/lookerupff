@@ -77,6 +77,16 @@ explore: all_play {
 
 }
 
+explore: all_firstplay {
+
+  join: analytics {
+    type:  inner
+    sql_on: ${analytics.timestamp_date} = ${all_firstplay.timestamp_date} ;;
+    relationship: one_to_one
+  }
+
+}
+
 # Web Suscriber Plays
 explore: javascript_users {
   label: "Web Subscriber Video ID"
