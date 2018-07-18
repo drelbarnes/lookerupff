@@ -85,6 +85,12 @@ explore: all_firstplay {
     relationship: one_to_one
   }
 
+  join: customers_v2 {
+    type:  inner
+    sql_on: ${customers_v2.customer_id} = ${all_firstplay.user_id} ;;
+    relationship: one_to_one
+  }
+
 }
 
 # Web Suscriber Plays
