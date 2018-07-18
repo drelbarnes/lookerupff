@@ -219,10 +219,6 @@ measure: market_opt_in_subs{
     type: count_distinct
     sql: ${TABLE}.customer_id ;;
     filters: {
-      field: status
-      value: "enabled"
-    }
-    filters: {
       field: marketing_opt_in
       value: "Y"
     }
@@ -235,10 +231,6 @@ measure: market_opt_in_subs{
  measure: non_market_opt_in_subs{
     type: count_distinct
     sql: ${TABLE}.customer_id ;;
-    filters: {
-      field: status
-      value: "enabled"
-    }
     filters: {
       field: marketing_opt_in
       value: "N"
