@@ -79,11 +79,6 @@ explore: all_play {
 
 explore: all_firstplay {
 
-  join: analytics {
-    type:  inner
-    sql_on: ${analytics.timestamp_date} = ${all_firstplay.timestamp_date} ;;
-    relationship: one_to_one
-  }
 
   join: customers_v2 {
     type:  inner
