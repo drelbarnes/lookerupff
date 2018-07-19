@@ -439,9 +439,9 @@ measure: end_of_prior_week_subs {
   }
 
   measure: trial_to_paid_count {
-    type: count_distinct
+    type: number
     description: "Total number of trials to paid during a time period."
-    sql:  ${free_trial_converted} ;;
+    sql:  COUNT(${free_trial_converted}) ;;
     drill_fields: [free_trial_converted,timestamp_date]
 
   }
