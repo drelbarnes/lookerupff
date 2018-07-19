@@ -51,6 +51,17 @@ explore: customers {
   }
 
 }
+
+explore: customers_v2 {
+  label: "Subscribers"
+
+  join: analytics_v2 {
+    type:  inner
+    sql_on: ${customers_v2.event_created_at} = ${analytics_v2.timestamp_date};;
+    relationship: many_to_one
+  }
+
+}
 explore: churn_reasons_aggregated {}
 explore: churn_custom_reasons {}
 explore: afinn_lexicon {}
