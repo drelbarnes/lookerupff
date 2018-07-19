@@ -205,7 +205,7 @@ dimension: days_since_created {
   dimension: is_enabled {
     case: {
       when: {
-        sql: DATEDIFF('day', ${event_created_at}::timestamp, ${customer_created_at}::timestamp) => 15 AND
+        sql: DATEDIFF('day', ${event_created_at}::timestamp, ${customer_created_at}::timestamp) >= 15 AND
         ${timestamp_date} = analytics_v2.timestamp_date;;
         label: "Enabled"
       }
