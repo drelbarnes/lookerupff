@@ -205,8 +205,7 @@ dimension: days_since_created {
   dimension: is_enabled {
     case: {
       when: {
-        sql: DATEDIFF('day', ${event_created_at}::timestamp, ${customer_created_at}::timestamp) >= 15 AND
-        ${timestamp_date} = ${analytics_v2.timestamp_date};;
+        sql: DATEDIFF('day', ${event_created_at}::timestamp, ${customer_created_at}::timestamp) >= 15};;
         label: "Enabled"
       }
     }
@@ -221,6 +220,15 @@ dimension: days_since_created {
   measure: customer_count {
     type: count_distinct
     sql: ${customer_id} ;;
+  }
+
+  measure: customer_count_is_enabled {
+    type: count_distinct
+    sql: ${customer_id} ;;
+    filters: {
+      field:is_enabled
+      value: "Enabled"
+    }
   }
 
   dimension: marketing_opt_in {
