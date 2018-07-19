@@ -88,7 +88,7 @@ explore: all_firstplay {
 
   join: analytics_v2 {
     type:  inner
-    sql_on: ${analytics_v2.timestamp_date} = ${all_firstplay.timestamp_date} ;;
+    sql_on: ${customers_v2.event_created_at} = ${analytics_v2.timestamp_date};;
     relationship: one_to_one
   }
 
