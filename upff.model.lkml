@@ -175,6 +175,12 @@ explore: delighted_survey_question_answered {
     sql_on: ${delighted_survey_question_answered.user_id} = ${customers_v2.customer_id};;
     relationship: one_to_one
   }
+
+  join: analytics_v2 {
+    type:  inner
+    sql_on: ${customers_v2.event_created_at} = ${analytics_v2.timestamp_date};;
+    relationship: many_to_one
+  }
 }
 
 #iOS // get user plays
