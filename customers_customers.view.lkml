@@ -200,6 +200,19 @@ dimension: days_since_created {
     sql: ${state} ;;
   }
 
+
+  #Find subscribers enabled during a given time period
+  dimension: is_enabled {
+    case: {
+      when: {
+        sql: DATEDIFF('day', ${event_created_at}::timestamp, ${customer_created_at}::timestamp) => 15 AND
+        ${timestamp_date} = analytics_v2.timestamp_date;;
+        label: "Enabled"
+      }
+    }
+  }
+
+
   measure: count {
     type: count
     drill_fields: [customer_id, product_name, last_name, first_name, email]
