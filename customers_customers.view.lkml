@@ -201,15 +201,16 @@ dimension: days_since_created {
   }
 
 
-  #Find subscribers enabled during a given time period
+#Find subscribers enabled during a given time period
   dimension: is_enabled {
     case: {
       when: {
-        sql: DATEDIFF('day', ${event_created_at}::timestamp, ${customer_created_at}::timestamp) >= 15;;
+        sql: ${event_created_at} = ${all_firstplay.timestamp_date};;
         label: "Enabled"
       }
     }
   }
+
 
 
   measure: count {
@@ -226,7 +227,7 @@ dimension: days_since_created {
     type: count_distinct
     sql: ${customer_id} ;;
     filters: {
-      field:is_enabled
+      field: is_enabled
       value: "Enabled"
     }
   }

@@ -27,6 +27,12 @@ explore: analytics_v2 {
     relationship: one_to_many
   }
 
+  join: all_firstplay {
+    type:  inner
+    sql_on: ${all_firstplay.timestamp_date} = ${analytics_v2.timestamp_date};;
+    relationship: one_to_one
+  }
+
 }
 explore: subscribed {}
 explore: pages{}
@@ -59,6 +65,12 @@ explore: customers_v2 {
     type:  inner
     sql_on: ${customers_v2.event_created_at} = ${analytics_v2.timestamp_date};;
     relationship: many_to_one
+  }
+
+  join: all_firstplay {
+    type:  inner
+    sql_on: ${all_firstplay.user_id} = ${customers_v2.customer_id};;
+    relationship: one_to_one
   }
 
 }

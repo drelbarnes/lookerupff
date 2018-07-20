@@ -181,6 +181,14 @@ explore: delighted_survey_question_answered {
     sql_on: ${customers_v2.event_created_at} = ${analytics_v2.timestamp_date};;
     relationship: many_to_one
   }
+
+  join: all_firstplay {
+    type:  inner
+    sql_on: ${all_firstplay.timestamp_date} = ${analytics_v2.timestamp_date};;
+    relationship: one_to_one
+  }
+
+
 }
 
 #iOS // get user plays
