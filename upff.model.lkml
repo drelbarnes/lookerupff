@@ -215,6 +215,6 @@ explore: android_users_play {
   }
 }
 
-explore: android_signin {}
-explore: ios_signin {}
-explore: javascript_timeupdate {}
+explore: android_signin {label: "Android Sign-in"}
+explore: ios_signin { label: "iOS Sign-in"}
+explore: javascript_timeupdate {label: "Javascript Timeupdate"}
