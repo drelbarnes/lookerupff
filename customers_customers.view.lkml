@@ -246,6 +246,15 @@ measure: market_opt_in_subs{
     }
   }
 
+measure: campaign_count{
+    type: count_distinct
+    sql: ${mailchimp_email_campaigns.userid} ;;
+    filters: {
+      field: mailchimp_email_campaigns.opened
+      value: "Yes"
+    }
+  }
+
  measure: non_market_opt_in_subs{
     type: count_distinct
     sql: ${TABLE}.customer_id ;;

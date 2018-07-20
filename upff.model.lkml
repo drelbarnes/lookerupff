@@ -188,6 +188,12 @@ explore: delighted_survey_question_answered {
     relationship: one_to_one
   }
 
+  join: mailchimp_email_campaigns {
+    type:  inner
+    sql_on: ${mailchimp_email_campaigns.campaign_date} = ${delighted_survey_question_answered.timestamp_date};;
+    relationship: one_to_one
+  }
+
 
 }
 

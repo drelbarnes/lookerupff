@@ -33,6 +33,12 @@ explore: analytics_v2 {
     relationship: one_to_one
   }
 
+  join: mailchimp_email_campaigns {
+    type:  inner
+    sql_on: ${mailchimp_email_campaigns.campaign_date} = ${analytics_v2.timestamp_date};;
+    relationship: one_to_one
+  }
+
 }
 explore: subscribed {}
 explore: pages{}
@@ -70,6 +76,12 @@ explore: customers_v2 {
   join: all_firstplay {
     type:  inner
     sql_on: ${all_firstplay.user_id} = ${customers_v2.customer_id};;
+    relationship: one_to_one
+  }
+
+  join: mailchimp_email_campaigns {
+    type:  inner
+    sql_on: ${mailchimp_email_campaigns.userid} = ${customers_v2.customer_id};;
     relationship: one_to_one
   }
 
