@@ -42,6 +42,6 @@ view: mailchimp_email_campaigns {
 
   measure: count {
     type: count
-    drill_fields: []
+    drill_fields: [userid, email_address,campaign_id,campaign_date]
   }
 }
