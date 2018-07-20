@@ -129,8 +129,8 @@ explore: all_firstplay {
 
   join: mailchimp_email_campaigns {
     type:  inner
-    sql_on: ${mailchimp_email_campaigns.userid} = ${all_firstplay.user_id};;
-    relationship: many_to_one
+    sql_on: ${mailchimp_email_campaigns.userid} = ${customers_v2.customer_id};;
+    relationship: one_to_one
   }
 
 }
