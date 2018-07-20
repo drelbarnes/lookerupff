@@ -43,7 +43,7 @@ view: mailchimp_email_campaigns {
 
   measure: has_opened_email{
     type: count_distinct
-    sql: ${customers_v2.customer_id} ;;
+    sql: ${userid} ;;
     filters: {
       field: opened
       value: "Yes"
