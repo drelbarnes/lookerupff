@@ -29,7 +29,6 @@ view: customers_v2 {
   }
 
 
-
   dimension: country {
     type: string
     map_layer_name: countries
@@ -237,6 +236,11 @@ dimension: days_since_created {
     sql: ${TABLE}.marketing_opt_in ;;
   }
 
+  dimension: email_campaign_opened {
+    type: string
+    sql: ${mailchimp_email_campaigns.opened} ;;
+  }
+
 measure: market_opt_in_subs{
     type: count_distinct
     sql: ${TABLE}.customer_id ;;
@@ -250,7 +254,7 @@ measure: campaign_count{
     type: count_distinct
     sql: ${TABLE}.customer_id ;;
     filters: {
-      field: mailchimp_email_campaigns.opened
+      field: email_campaign_opened
       value: "Yes"
     }
   }
