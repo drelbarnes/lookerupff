@@ -36,6 +36,7 @@ view: mailchimp_email_campaigns {
   }
 
   dimension: userid {
+    primary_key: yes
     type: number
     sql: ${TABLE}.userid ;;
   }
