@@ -36,7 +36,7 @@ view: mailchimp_email_campaigns {
   }
 
   dimension: userid {
-    type: string
+    type: number
     sql: ${TABLE}.userid ;;
   }
 
@@ -44,4 +44,5 @@ view: mailchimp_email_campaigns {
     type: count
     drill_fields: [userid, email_address,campaign_id,campaign_date]
   }
+
 }
