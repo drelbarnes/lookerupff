@@ -11,9 +11,9 @@ datagroup: upff_default_datagroup {
 persist_with: upff_default_datagroup
 
 explore: application_installed{
-  join: signupstarted {
+  join: ios_signupstarted {
     type:  left_outer
-    sql_on: ${application_installed.anonymous_id} = ${signupstarted.anonymous_id} ;;
+    sql_on: ${application_installed.anonymous_id} = ${ios_signupstarted.anonymous_id} ;;
     relationship: one_to_one
   }
 }
