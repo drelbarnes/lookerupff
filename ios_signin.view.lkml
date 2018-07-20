@@ -1,4 +1,4 @@
-view: signin {
+view: ios_signin {
   sql_table_name: ios.signin ;;
 
   dimension: id {

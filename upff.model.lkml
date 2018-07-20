@@ -214,3 +214,7 @@ explore: android_users_play {
     relationship: one_to_one
   }
 }
+
+explore: android_signin {}
+explore: ios_signin {}
+explore: javascript_timeupdate {}
