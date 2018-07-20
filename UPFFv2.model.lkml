@@ -115,6 +115,12 @@ explore: all_firstplay {
     relationship: many_to_one
   }
 
+  join: mailchimp_email_campaigns {
+    type:  inner
+    sql_on: ${mailchimp_email_campaigns.userid} = ${all_firstplay.user_id};;
+    relationship: many_to_one
+  }
+
 }
 
 # Web Suscriber Plays
