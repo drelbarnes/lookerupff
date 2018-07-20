@@ -46,4 +46,10 @@ view: mailchimp_email_campaigns {
     drill_fields: [userid, email_address,campaign_id,campaign_date]
   }
 
+  measure: count_users {
+    type: count_distinct
+    sql: ${userid} ;;
+    drill_fields: [userid, email_address,campaign_id,campaign_date]
+  }
+
 }
