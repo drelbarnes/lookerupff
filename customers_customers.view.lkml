@@ -248,7 +248,7 @@ measure: market_opt_in_subs{
 
 measure: campaign_count{
     type: count_distinct
-    sql: ${mailchimp_email_campaigns.userid} ;;
+    sql: ${TABLE}.customer_id ;;
     filters: {
       field: mailchimp_email_campaigns.opened
       value: "Yes"
