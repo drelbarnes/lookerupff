@@ -39,6 +39,7 @@ view: delighted_survey_question_answered {
 
   dimension: context_traits_email {
     type: string
+    tags: ["email"]
     sql: ${TABLE}.context_traits_email ;;
   }
 
@@ -191,6 +192,7 @@ view: delighted_survey_question_answered {
 
   dimension: user_id {
     type: string
+    tags: ["user_id"]
     sql: ${TABLE}.user_id ;;
   }
 
