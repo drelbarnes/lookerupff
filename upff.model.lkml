@@ -175,6 +175,26 @@ explore: delighted_survey_question_answered {
     sql_on: ${delighted_survey_question_answered.user_id} = ${customers_v2.customer_id};;
     relationship: one_to_one
   }
+
+  join: analytics_v2 {
+    type:  inner
+    sql_on: ${customers_v2.event_created_at} = ${analytics_v2.timestamp_date};;
+    relationship: many_to_one
+  }
+
+  join: all_firstplay {
+    type:  inner
+    sql_on: ${all_firstplay.timestamp_date} = ${analytics_v2.timestamp_date};;
+    relationship: one_to_one
+  }
+
+  join: mailchimp_email_campaigns {
+    type:  inner
+    sql_on: ${mailchimp_email_campaigns.campaign_date} = ${delighted_survey_question_answered.timestamp_date};;
+    relationship: one_to_one
+  }
+
+
 }
 
 #iOS // get user plays
@@ -200,3 +220,9 @@ explore: android_users_play {
     relationship: one_to_one
   }
 }
+
+explore: android_signin {label: "Android Sign-in"}
+explore: ios_signin { label: "iOS Sign-in"}
+explore: android_signupstarted {label: "Android Signupstarted"}
+explore: ios_signupstarted { label: "iOS Signupstarted"}
+explore: javascript_timeupdate {label: "Javascript Timeupdate"}

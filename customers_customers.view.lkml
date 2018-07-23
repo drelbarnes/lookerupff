@@ -29,7 +29,6 @@ view: customers_v2 {
   }
 
 
-
   dimension: country {
     type: string
     map_layer_name: countries
@@ -200,6 +199,19 @@ dimension: days_since_created {
     sql: ${state} ;;
   }
 
+
+#Find subscribers enabled during a given time period
+  dimension: is_enabled {
+    case: {
+      when: {
+        sql: ${event_created_at} = ${all_firstplay.timestamp_date};;
+        label: "Enabled"
+      }
+    }
+  }
+
+
+
   measure: count {
     type: count
     drill_fields: [customer_id, product_name, last_name, first_name, email]
@@ -210,12 +222,26 @@ dimension: days_since_created {
     sql: ${customer_id} ;;
   }
 
+  measure: customer_count_is_enabled {
+    type: count_distinct
+    sql: ${customer_id} ;;
+    filters: {
+      field: is_enabled
+      value: "Enabled"
+    }
+  }
+
   dimension: marketing_opt_in {
     type: string
     sql: ${TABLE}.marketing_opt_in ;;
   }
 
-  measure: market_opt_in_subs{
+  dimension: email_campaign_opened {
+    type: string
+    sql: ${mailchimp_email_campaigns.opened} ;;
+  }
+
+measure: market_opt_in_subs{
     type: count_distinct
     sql: ${TABLE}.customer_id ;;
     filters: {
@@ -224,7 +250,16 @@ dimension: days_since_created {
     }
   }
 
-  measure: non_market_opt_in_subs{
+measure: campaign_count{
+    type: count_distinct
+    sql: ${TABLE}.customer_id ;;
+    filters: {
+      field: email_campaign_opened
+      value: "Yes"
+    }
+  }
+
+ measure: non_market_opt_in_subs{
     type: count_distinct
     sql: ${TABLE}.customer_id ;;
     filters: {

@@ -11,9 +11,9 @@ datagroup: upff_default_datagroup {
 persist_with: upff_default_datagroup
 
 explore: application_installed{
-  join: signupstarted {
+  join: ios_signupstarted {
     type:  left_outer
-    sql_on: ${application_installed.anonymous_id} = ${signupstarted.anonymous_id} ;;
+    sql_on: ${application_installed.anonymous_id} = ${ios_signupstarted.anonymous_id} ;;
     relationship: one_to_one
   }
 }
@@ -23,7 +23,19 @@ explore: analytics_v2 {
 
   join: customers_v2{
     type:  inner
-    sql_on: ${customers_v2.customer_created_at} = ${analytics_v2.date};;
+    sql_on: ${analytics_v2.timestamp_date} = ${customers_v2.creation_timestamp_date};;
+    relationship: one_to_many
+  }
+
+  join: all_firstplay {
+    type:  inner
+    sql_on: ${all_firstplay.timestamp_date} = ${analytics_v2.timestamp_date};;
+    relationship: one_to_one
+  }
+
+  join: mailchimp_email_campaigns {
+    type:  inner
+    sql_on: ${mailchimp_email_campaigns.campaign_date} = ${analytics_v2.timestamp_date};;
     relationship: one_to_one
   }
 
@@ -51,6 +63,29 @@ explore: customers {
   }
 
 }
+
+explore: customers_v2 {
+  label: "Subscribers"
+
+  join: analytics_v2 {
+    type:  inner
+    sql_on: ${customers_v2.event_created_at} = ${analytics_v2.timestamp_date};;
+    relationship: many_to_one
+  }
+
+  join: all_firstplay {
+    type:  inner
+    sql_on: ${all_firstplay.user_id} = ${customers_v2.customer_id};;
+    relationship: one_to_one
+  }
+
+  join: mailchimp_email_campaigns {
+    type:  inner
+    sql_on: ${mailchimp_email_campaigns.userid} = ${customers_v2.customer_id};;
+    relationship: one_to_one
+  }
+
+}
 explore: churn_reasons_aggregated {}
 explore: churn_custom_reasons {}
 explore: afinn_lexicon {}
@@ -72,6 +107,29 @@ explore: all_play {
   join: analytics {
     type:  inner
     sql_on: ${analytics.timestamp_date} = ${all_play.timestamp_date} ;;
+    relationship: one_to_one
+  }
+
+}
+
+explore: all_firstplay {
+
+
+  join: customers_v2 {
+    type:  inner
+    sql_on: ${customers_v2.customer_id} = ${all_firstplay.user_id} ;;
+    relationship: one_to_one
+  }
+
+  join: analytics_v2 {
+    type:  inner
+    sql_on: ${customers_v2.event_created_at} = ${analytics_v2.timestamp_date};;
+    relationship: many_to_one
+  }
+
+  join: mailchimp_email_campaigns {
+    type: left_outer
+    sql_on: ${mailchimp_email_campaigns.userid} = ${customers_v2.customer_id};;
     relationship: one_to_one
   }
 
