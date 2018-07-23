@@ -1,13 +1,18 @@
 view: upff_linear_ratings {
   derived_table: {
-    sql: select 'Total Day' as daypart, 'HH' as demo, 57 as rating, -.26 as VS2Q18Target, .02 as VSYA2Q17
+    sql: select date(current_Date) as date, 'Total Day' as daypart, 'HH' as demo, 57 as rating, -.26 as VS2Q18Target, .02 as VSYA2Q17
       union all
-      select 'Prime' as daypart, 'HH' as demo, 75 as rating, -.18 as VS2Q18Target, .06 as VSYA2Q17
+      select date(current_Date) as date, 'Prime' as daypart, 'HH' as demo, 75 as rating, -.18 as VS2Q18Target, .06 as VSYA2Q17
       union all
-      select 'Total Day' as daypart, 'W 25-54' as demo, 19 as rating, -.34 as VS2Q18Target, -.05 as VSYA2Q17
+      select date(current_Date) as date, 'Total Day' as daypart, 'W 25-54' as demo, 19 as rating, -.34 as VS2Q18Target, -.05 as VSYA2Q17
       union all
-      select 'Prime' as daypart, 'W 25-54' as demo, 26, -.26 as VS2Q18Target, .04 as VSYA2Q17
+      select date(current_Date) as date, 'Prime' as daypart, 'W 25-54' as demo, 26, -.26 as VS2Q18Target, .04 as VSYA2Q17
        ;;
+  }
+
+  dimension: date {
+    type: date
+    sql: ${TABLE}.date ;;
   }
 
   measure: count {
