@@ -1,4 +1,4 @@
-view: firstplay {
+view: ios_firstplay {
   sql_table_name: ios.firstplay ;;
 
   dimension: id {
