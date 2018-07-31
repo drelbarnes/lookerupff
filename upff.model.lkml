@@ -225,4 +225,6 @@ explore: android_signin {label: "Android Sign-in"}
 explore: ios_signin { label: "iOS Sign-in"}
 explore: android_signupstarted {label: "Android Signupstarted"}
 explore: ios_signupstarted { label: "iOS Signupstarted"}
-explore: javascript_timeupdate {label: "Javascript Timeupdate"}
+explore: javascript_timeupdate {label: "Web Timeupdate"}
+explore: ios_timeupdate {}
+explore: android_timeupdate {}
