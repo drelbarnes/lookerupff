@@ -125,7 +125,10 @@ dimension: days_since_created {
     sql:  DATEDIFF('week', ${customer_created_at}::timestamp, ${event_created_at}::timestamp);;
   }
 
-
+  dimension: months_since_created {
+    type: number
+    sql:  DATEDIFF('month', ${customer_created_at}::timestamp, ${event_created_at}::timestamp);;
+  }
 
   measure: max_days_by {
     type: max
