@@ -228,3 +228,4 @@ explore: ios_signupstarted { label: "iOS Signupstarted"}
 explore: javascript_timeupdate {label: "Web Timeupdate"}
 explore: ios_timeupdate {}
 explore: android_timeupdate {}
+explore: javascript_authentication {label: "Web Authentication"}
