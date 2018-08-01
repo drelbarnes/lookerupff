@@ -130,6 +130,20 @@ dimension: days_since_created {
     sql:  DATEDIFF('month', ${customer_created_at}::timestamp, ${event_created_at}::timestamp);;
   }
 
+
+  dimension: LTV {
+    type:  number
+    label: "LTV"
+    sql:  ${months_since_created} * 5.99 ;;
+  }
+
+  measure: ltv_by_plaform {
+    type: sum
+    label: "LTV By Plaform"
+    sql: ${LTV};;
+  }
+
+
   measure: max_days_by {
     type: max
     sql:  DATEDIFF('day', ${customer_created_at}::timestamp, ${event_created_at}::timestamp) ;;
