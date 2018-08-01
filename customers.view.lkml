@@ -139,7 +139,7 @@ dimension: days_since_created {
 
   measure: lts_by_plaform {
     type: sum
-    label: "Number of Customers By Platform"
+    label: "Number of Customers By Revenue"
     sql: ${LTS};;
   }
 
