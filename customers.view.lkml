@@ -131,16 +131,16 @@ dimension: days_since_created {
   }
 
 
-  dimension: LTS {
+  dimension: LOS {
     type:  number
     label: "Number of Customers By Revenue"
     sql:  ${months_since_created} * 5.99 ;;
   }
 
-  measure: lts_by_plaform {
+  measure: los_by_plaform {
     type: sum
     label: "Number of Customers By Revenue"
-    sql: ${LTS};;
+    sql: ${LOS};;
   }
 
 
