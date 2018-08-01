@@ -131,16 +131,16 @@ dimension: days_since_created {
   }
 
 
-  dimension: LTV {
+  dimension: LTS {
     type:  number
-    label: "LTV"
+    label: "LTS"
     sql:  ${months_since_created} * 5.99 ;;
   }
 
-  measure: ltv_by_plaform {
+  measure: lts_by_plaform {
     type: sum
-    label: "LTV By Plaform"
-    sql: ${LTV};;
+    label: "LTS By Plaform"
+    sql: ${LTS};;
   }
 
 
