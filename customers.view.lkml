@@ -103,6 +103,12 @@ view: customers {
   }
 
 
+  dimension: subscription_length{
+    description: "Number of days a user has been on the service"
+    type: number
+    sql:  DATEDIFF('day', ${customer_created_at}::timestamp, ${current_date}::timestamp) ;;
+  }
+
 
   measure: days_churned {
     type: number
