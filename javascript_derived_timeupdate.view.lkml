@@ -5,8 +5,8 @@ view: javascript_derived_timeupdate {
       column: id {
         field: javascript_timeupdate.id
       }
-      column: timestamp_date {
-        field: javascript_timeupdate.timestamp_date
+      column: timestamp_time {
+        field: javascript_timeupdate.timestamp_time
       }
       column: user_id {
         field: javascript_timeupdate.user_id
@@ -16,13 +16,13 @@ view: javascript_derived_timeupdate {
       }
 
       filters: {
-        field: javascript_timeupdate.timestamp_date
+        field: javascript_timeupdate.timestamp_time
         value: "1 days ago"
       }
 
     }
-    #datagroup_trigger: javascript_timeupdate_datagroup
-   # indexes: ["id", "timeupdate_time"]
+  #datagroup_trigger: javascript_timeupdate_datagroup
+  #indexes: ["user_id", "timeupdate_date"]
 
   }
 
@@ -32,9 +32,9 @@ view: javascript_derived_timeupdate {
     sql: ${TABLE}.id ;;
   }
 
-  dimension: timestamp_date {
+  dimension: timestamp_time {
     type: date
-    sql: ${TABLE}.timestamp_date ;;
+    sql: ${TABLE}.timestamp_time ;;
   }
 
   dimension: user_id {
