@@ -29,26 +29,17 @@ view: javascript_derived_timeupdate {
   dimension: id {
     type: number
     primary_key: yes
-    sql: ${TABLE}.customer_id ;;
+    sql: ${TABLE}.id ;;
   }
 
-  dimension_group: timestamp {
-    type: time
-    timeframes: [
-      raw,
-      time,
-      date,
-      week,
-      month,
-      quarter,
-      year
-    ]
-    sql: ${TABLE}.timestamp ;;
+  dimension: timestamp_date {
+    type: date
+    sql: ${TABLE}.timestamp_date ;;
   }
 
   dimension: user_id {
    type: number
-   sql: ${TABLE}.customer_id ;;
+   sql: ${TABLE}.user_id ;;
   }
 
   dimension: title {
