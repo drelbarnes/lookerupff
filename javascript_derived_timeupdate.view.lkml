@@ -5,7 +5,7 @@ view: javascript_derived_timeupdate {
       column: id {
         field: javascript_timeupdate.id
       }
-      column: timestamp_time {
+      column: timestamp{
         field: javascript_timeupdate.timestamp_time
       }
       column: user_id {
@@ -32,9 +32,18 @@ view: javascript_derived_timeupdate {
     sql: ${TABLE}.id ;;
   }
 
-  dimension: timestamp_time {
-    type: date
-    sql: ${TABLE}.timestamp_time ;;
+  dimension_group: timestamp {
+    type: time
+    timeframes: [
+      raw,
+      time,
+      date,
+      week,
+      month,
+      quarter,
+      year
+    ]
+    sql: ${TABLE}.timestamp ;;
   }
 
   dimension: user_id {
