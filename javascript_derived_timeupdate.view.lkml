@@ -5,11 +5,14 @@ view: javascript_derived_timeupdate {
       column: id {
         field: javascript_timeupdate.id
       }
-      column: timestamp {
-        field: javascript_timeupdate.timestamp
+      column: timestamp_date {
+        field: javascript_timeupdate.timestamp_date
       }
       column: user_id {
         field: javascript_timeupdate.user_id
+      }
+      column: title {
+        field: javascript_timeupdate.title
       }
 
       filters: {
@@ -18,8 +21,8 @@ view: javascript_derived_timeupdate {
       }
 
     }
-    datagroup_trigger: javascript_timeupdate_datagroup
-    indexes: ["id", "timeupdate_time"]
+    #datagroup_trigger: javascript_timeupdate_datagroup
+   # indexes: ["id", "timeupdate_time"]
 
   }
 
@@ -47,5 +50,11 @@ view: javascript_derived_timeupdate {
    type: number
    sql: ${TABLE}.customer_id ;;
   }
+
+  dimension: title {
+    type: string
+    sql: ${TABLE}.title ;;
+  }
+
 
 }
