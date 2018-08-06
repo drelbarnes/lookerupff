@@ -8,6 +8,11 @@ view: customers {
     sql: ${TABLE}.customer_id ;;
   }
 
+  dimension: months_since_created {
+    type: number
+    sql:  DATEDIFF('month', ${customer_created_at}::timestamp, ${event_created_at}::timestamp);;
+  }
+
   dimension: action {
     type: string
     sql: ${TABLE}.action ;;
