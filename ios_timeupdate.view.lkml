@@ -1,5 +1,5 @@
-view: ios_firstplay {
-  sql_table_name: ios.firstplay ;;
+view: ios_timeupdate {
+  sql_table_name: ios.timeupdate ;;
 
   dimension: id {
     primary_key: yes
@@ -127,6 +127,16 @@ view: ios_firstplay {
     sql: ${TABLE}.context_timezone ;;
   }
 
+  dimension: context_traits_email {
+    type: string
+    sql: ${TABLE}.context_traits_email ;;
+  }
+
+  dimension: context_traits_name {
+    type: string
+    sql: ${TABLE}.context_traits_name ;;
+  }
+
   dimension: current_src {
     type: string
     sql: ${TABLE}.current_src ;;
@@ -180,6 +190,11 @@ view: ios_firstplay {
   dimension: is_fullscreen {
     type: yesno
     sql: ${TABLE}.is_fullscreen ;;
+  }
+
+  dimension: is_live {
+    type: yesno
+    sql: ${TABLE}.is_live ;;
   }
 
   dimension: is_trailer {
@@ -285,7 +300,6 @@ view: ios_firstplay {
 
   dimension: user_id {
     type: string
-    # hidden: yes
     sql: ${TABLE}.user_id ;;
   }
 
@@ -335,13 +349,10 @@ view: ios_firstplay {
       id,
       context_library_name,
       name,
-      context_os_name,
       context_app_name,
       username,
-      users.context_os_name,
-      users.context_library_name,
-      users.context_app_name,
-      users.id
+      context_os_name,
+      context_traits_name
     ]
   }
 }

@@ -1,5 +1,5 @@
-view: ios_firstplay {
-  sql_table_name: ios.firstplay ;;
+view: android_timeupdate {
+  sql_table_name: android.timeupdate ;;
 
   dimension: id {
     primary_key: yes
@@ -13,7 +13,7 @@ view: ios_firstplay {
   }
 
   dimension: context_app_build {
-    type: string
+    type: number
     sql: ${TABLE}.context_app_build ;;
   }
 
@@ -57,9 +57,9 @@ view: ios_firstplay {
     sql: ${TABLE}.context_device_model ;;
   }
 
-  dimension: context_device_token {
+  dimension: context_device_name {
     type: string
-    sql: ${TABLE}.context_device_token ;;
+    sql: ${TABLE}.context_device_name ;;
   }
 
   dimension: context_device_type {
@@ -87,6 +87,11 @@ view: ios_firstplay {
     sql: ${TABLE}.context_locale ;;
   }
 
+  dimension: context_network_bluetooth {
+    type: yesno
+    sql: ${TABLE}.context_network_bluetooth ;;
+  }
+
   dimension: context_network_carrier {
     type: string
     sql: ${TABLE}.context_network_carrier ;;
@@ -112,6 +117,11 @@ view: ios_firstplay {
     sql: ${TABLE}.context_os_version ;;
   }
 
+  dimension: context_screen_density {
+    type: number
+    sql: ${TABLE}.context_screen_density ;;
+  }
+
   dimension: context_screen_height {
     type: number
     sql: ${TABLE}.context_screen_height ;;
@@ -127,6 +137,21 @@ view: ios_firstplay {
     sql: ${TABLE}.context_timezone ;;
   }
 
+  dimension: context_traits_anonymous_id {
+    type: string
+    sql: ${TABLE}.context_traits_anonymous_id ;;
+  }
+
+  dimension: context_traits_user_id {
+    type: string
+    sql: ${TABLE}.context_traits_user_id ;;
+  }
+
+  dimension: context_user_agent {
+    type: string
+    sql: ${TABLE}.context_user_agent ;;
+  }
+
   dimension: current_src {
     type: string
     sql: ${TABLE}.current_src ;;
@@ -140,6 +165,11 @@ view: ios_firstplay {
   dimension: current_type {
     type: string
     sql: ${TABLE}.current_type ;;
+  }
+
+  dimension: device {
+    type: string
+    sql: ${TABLE}.device ;;
   }
 
   dimension: device_id {
@@ -163,27 +193,32 @@ view: ios_firstplay {
   }
 
   dimension: is_airplay {
-    type: yesno
+    type: number
     sql: ${TABLE}.is_airplay ;;
   }
 
   dimension: is_chromecast {
-    type: yesno
+    type: number
     sql: ${TABLE}.is_chromecast ;;
   }
 
   dimension: is_drm {
-    type: yesno
+    type: number
     sql: ${TABLE}.is_drm ;;
   }
 
   dimension: is_fullscreen {
-    type: yesno
+    type: number
     sql: ${TABLE}.is_fullscreen ;;
   }
 
+  dimension: is_live {
+    type: number
+    sql: ${TABLE}.is_live ;;
+  }
+
   dimension: is_trailer {
-    type: yesno
+    type: number
     sql: ${TABLE}.is_trailer ;;
   }
 
@@ -212,7 +247,7 @@ view: ios_firstplay {
   }
 
   dimension: platform_id {
-    type: string
+    type: number
     sql: ${TABLE}.platform_id ;;
   }
 
@@ -285,18 +320,7 @@ view: ios_firstplay {
 
   dimension: user_id {
     type: string
-    # hidden: yes
     sql: ${TABLE}.user_id ;;
-  }
-
-  dimension: useremail {
-    type: string
-    sql: ${TABLE}.useremail ;;
-  }
-
-  dimension: username {
-    type: string
-    sql: ${TABLE}.username ;;
   }
 
   dimension: uuid {
@@ -320,7 +344,7 @@ view: ios_firstplay {
   }
 
   dimension: video_id {
-    type: string
+    type: number
     sql: ${TABLE}.video_id ;;
   }
 
@@ -333,15 +357,11 @@ view: ios_firstplay {
   set: detail {
     fields: [
       id,
-      context_library_name,
-      name,
       context_os_name,
+      name,
       context_app_name,
-      username,
-      users.context_os_name,
-      users.context_library_name,
-      users.context_app_name,
-      users.id
+      context_device_name,
+      context_library_name
     ]
   }
 }

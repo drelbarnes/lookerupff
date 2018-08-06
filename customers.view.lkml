@@ -108,6 +108,12 @@ view: customers {
   }
 
 
+  dimension: subscription_length{
+    description: "Number of days a user has been on the service"
+    type: number
+    sql:  DATEDIFF('day', ${customer_created_at}::timestamp, ${current_date}::timestamp) ;;
+  }
+
 
   measure: days_churned {
     type: number
@@ -130,6 +136,23 @@ dimension: days_since_created {
     sql:  DATEDIFF('week', ${customer_created_at}::timestamp, ${event_created_at}::timestamp);;
   }
 
+  dimension: months_since_created {
+    type: number
+    sql:  DATEDIFF('month', ${customer_created_at}::timestamp, ${event_created_at}::timestamp);;
+  }
+
+
+  dimension: LOS {
+    type:  number
+    label: "Number of Customers By Revenue"
+    sql:  ${months_since_created} * 5.99 ;;
+  }
+
+  measure: los_by_plaform {
+    type: sum
+    label: "Number of Customers By Revenue"
+    sql: ${LOS};;
+  }
 
 
   measure: max_days_by {

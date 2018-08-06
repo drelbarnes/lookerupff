@@ -198,13 +198,13 @@ explore: delighted_survey_question_answered {
 }
 
 #iOS // get user plays
-explore: ios_users_play {
+explore: ios_users_firstplay {
   label: "iOS Subscribers Play"
   from:  ios_users
 
-  join: ios_play {
+  join: ios_firstplay {
     type: inner
-    sql_on: ${ios_users_play.id} = ${ios_play.user_id};;
+    sql_on: ${ios_users_firstplay.id} = ${ios_firstplay.user_id};;
     relationship: one_to_one
   }
 }
@@ -225,4 +225,8 @@ explore: android_signin {label: "Android Sign-in"}
 explore: ios_signin { label: "iOS Sign-in"}
 explore: android_signupstarted {label: "Android Signupstarted"}
 explore: ios_signupstarted { label: "iOS Signupstarted"}
-explore: javascript_timeupdate {label: "Javascript Timeupdate"}
+explore: javascript_timeupdate {label: "Web Timeupdate"}
+explore: ios_timeupdate {}
+explore: android_timeupdate {}
+explore: javascript_authentication {label: "Web Authentication"}
+explore: javascript_derived_timeupdate {}
