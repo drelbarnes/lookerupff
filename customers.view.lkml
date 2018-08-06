@@ -8,10 +8,6 @@ view: customers {
     sql: ${TABLE}.customer_id ;;
   }
 
-  dimension: months_since_created {
-    type: number
-    sql:  DATEDIFF('month', ${customer_created_at}::timestamp, ${event_created_at}::timestamp);;
-  }
 
   dimension: action {
     type: string
@@ -153,7 +149,6 @@ dimension: days_since_created {
     label: "Number of Customers By Revenue"
     sql: ${LOS};;
   }
-
 
   measure: max_days_by {
     type: max
