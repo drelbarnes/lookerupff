@@ -37,7 +37,7 @@ view: derived_marketing_attribution {
                         context_campaign_source,
                         b.id
                   from ios.branch_install as a inner join ios.users as b on
-                  ip = context_ip),
+                  a.ip = b.context_ip),
 
                   ios_ as
                   (select a.timestamp as visitingtimestamp,
@@ -49,7 +49,7 @@ view: derived_marketing_attribution {
                         context_campaign_source,
                         b.id
                   from ios.branch_reinstall as a inner join ios.users as b on
-                  ip = context_ip),
+                  a.ip = b.context_ip),
 
                   web as
                   (select a.timestamp as visitingtimestamp,
