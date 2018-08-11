@@ -159,3 +159,5 @@ explore: mtd_revenue {}
 explore: upff_linear_ratings {}
 explore: uptv_daily_key_demo {}
 explore: uptv_daily_day_part {}
+explore: top_play {}
+explore: campaign_wicket_export {}

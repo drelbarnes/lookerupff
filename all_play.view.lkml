@@ -1,34 +1,79 @@
 view: all_play {
   derived_table: {
-    sql: (with a as
-        (select a.timestamp,trim(upper(split_part(series,'|',1))) as series,
-                cast(a.video_id as int) as video_id,
-                trim(upper(split_part(season,'Season',2))) as season,
-                episode,trim(upper(title)) as title,
+    sql:
+    with a1 as
+
+(with
+a as
+(select a.timestamp,
+                case when series is not null then trim(upper(split_part(series,'|',1))) else trim(upper(split_part(a.title,'-',1))) end as series,
+                case when series is not null then trim(upper(split_part(a.title,'-',3))) else null end as season,
+                episode,
+                trim(upper(split_part(a.title,'-',1))) as title,
+                cast(b.id as int) as video_id
+         from javascript.firstplay as a inner join svod_titles.titles_id_mapping as b on trim(upper(b.title))=trim(upper(split_part(a.title,'-',1))) ),
+
+b as
+(select distinct series,
+                    season,
+                    title,
+                    episode,
+                    video_id
+from a
+where season <> ''
+order by series, season, episode),
+
+c as
+(select distinct series,
+       'Movie' as season,
+       title,
+       episode,
+       video_id
+from a
+where season is null)
+
+select series||' - '||season as collection, * from b
+union all
+select season||' - '||series as collection, * from c)
+
+        (select a.timestamp,
+                collection,
+                series,
+                season,
+                title,
+                episode,
+                b.video_id,
                 user_id,
                 'Android' as platform
-         from android.play as a left join svod_titles.titles_id_mapping as b on a.video_id=b.id
+         from android.firstplay as a inner join a1 as b on a.video_id=b.video_id
          union all
          select a.timestamp,
-                trim(upper(split_part(series,'|',1))) as series,
-                cast(a.video_id as int) as video_id,
-                trim(upper(split_part(season,'Season',2))) as season,
-                episode,trim(upper(title)) as title,
+                collection,
+                series,
+                season,
+                title,
+                episode,
+                b.video_id,
                 user_id,
                 'IOS' as platform
-         from ios.play as a left join svod_titles.titles_id_mapping as b on a.video_id=b.id
+         from ios.firstplay as a inner join a1 as b on a.video_id=b.video_id
          union all
          select a.timestamp,
-                trim(upper(split_part(series,'|',1))) as series,
-                cast(b.id as int) as video_id,
-                trim(upper(split_part(season,'Season',2))) as season,
-                episode,trim(upper(split_part(a.title,'-',1))) as title,
+                collection,
+                series,
+                season,
+                b.title,
+                episode,
+                b.video_id,
                 user_id,
                 'Web' as platform
-         from javascript.play as a left join svod_titles.titles_id_mapping as b on trim(upper(b.title))=trim(upper(split_part(a.title,'-',1))) )
+         from javascript.firstplay as a inner join a1 as b on trim(upper(b.title))=trim(upper(split_part(a.title,'-',1))) )
+;;
+  }
 
-select a.*, status
-from a inner join customers.customers on user_id=customer_id) ;;
+  dimension: collection {
+    type: string
+    sql: ${TABLE}.collection ;;
   }
 
   dimension: title {
@@ -49,11 +94,6 @@ from a inner join customers.customers on user_id=customer_id) ;;
   dimension: episode {
     type: string
     sql: ${TABLE}.episode ;;
-  }
-
-  dimension: status {
-    type: string
-    sql: ${TABLE}.status ;;
   }
 
   dimension: platform {

@@ -1,5 +1,20 @@
 view: titles {
-  sql_table_name: svod_titles.svod_titles ;;
+  derived_table: {
+    sql: select month,
+       year,
+       case when platform = 'Comcast SVOD' then 'Comcast' else platform end as platform,
+       up_title,
+       studio,
+       views,
+       type,
+       category,
+       franchise,
+       season,
+       lf_sf,
+       content_type,
+       datetime
+ from svod_titles.svod_titles ;;
+  }
 
   dimension: category {
     type: string
@@ -40,6 +55,7 @@ view: titles {
     type: time
     timeframes: [
       month,
+      quarter,
       year
     ]
     sql: ${TABLE}.datetime ;;}

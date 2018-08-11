@@ -8,6 +8,7 @@ view: customers {
     sql: ${TABLE}.customer_id ;;
   }
 
+
   dimension: action {
     type: string
     sql: ${TABLE}.action ;;
@@ -148,7 +149,6 @@ dimension: days_since_created {
     label: "Number of Customers By Revenue"
     sql: ${LOS};;
   }
-
 
   measure: max_days_by {
     type: max
