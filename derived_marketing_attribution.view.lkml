@@ -32,6 +32,7 @@ view: derived_marketing_attribution {
                         context_campaign_source as trafficchanneltype,
                         context_campaign_name,
                         context_Campaign_medium,
+                        context_campaign_source,
                         b.id
                   from ios.branch_install as a inner join ios.users as b on context_idfa=context_device_advertising_id),
 
