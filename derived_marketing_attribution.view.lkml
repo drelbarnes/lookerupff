@@ -11,7 +11,8 @@ view: derived_marketing_attribution {
                         context_Campaign_medium,
                         context_campaign_source,
                         b.id
-                  from android.branch_install as a inner join android.users as b on context_aaid=context_device_advertising_id)
+                  from android.branch_install as a inner join android.users as b on
+                  ip = context_ip)
                   ,
 
                   android_ as
@@ -23,7 +24,8 @@ view: derived_marketing_attribution {
                         context_Campaign_medium,
                         context_campaign_source,
                         b.id
-                  from android.branch_reinstall as a inner join android.users as b on context_aaid=context_device_advertising_id),
+                  from android.branch_reinstall as a inner join android.users as b on
+                  ip = context_ip),
 
                   ios as
                   (select a.timestamp as visitingtimestamp,
@@ -34,7 +36,8 @@ view: derived_marketing_attribution {
                         context_Campaign_medium,
                         context_campaign_source,
                         b.id
-                  from ios.branch_install as a inner join ios.users as b on context_idfa=context_device_advertising_id),
+                  from ios.branch_install as a inner join ios.users as b on
+                  ip = context_ip),
 
                   ios_ as
                   (select a.timestamp as visitingtimestamp,
@@ -45,7 +48,8 @@ view: derived_marketing_attribution {
                         context_Campaign_medium,
                         context_campaign_source,
                         b.id
-                  from ios.branch_reinstall as a inner join ios.users as b on context_idfa=context_device_advertising_id),
+                  from ios.branch_reinstall as a inner join ios.users as b on
+                  ip = context_ip),
 
                   web as
                   (select a.timestamp as visitingtimestamp,
@@ -55,7 +59,7 @@ view: derived_marketing_attribution {
                         context_Campaign_medium,
                         context_campaign_source,
                         user_id as id
-                  from javascript.start_checkout as a)
+                  from javascript.subscribed as a)
 
                   (select * from android
                   union all
