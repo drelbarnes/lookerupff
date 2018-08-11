@@ -1,4 +1,4 @@
-view: campaign_wicket_export {
+view: derived_marketing_attribution {
   derived_table: {
     sql: with
 
