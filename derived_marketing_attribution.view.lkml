@@ -12,7 +12,7 @@ view: derived_marketing_attribution {
                         context_campaign_source,
                         b.id
                   from android.branch_install as a inner join android.users as b on
-                  ip = context_ip)
+                  a.ip = b.context_ip)
                   ,
 
                   android_ as
