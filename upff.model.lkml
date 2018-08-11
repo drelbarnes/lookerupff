@@ -230,3 +230,4 @@ explore: ios_timeupdate {}
 explore: android_timeupdate {}
 explore: javascript_authentication {label: "Web Authentication"}
 explore: javascript_derived_timeupdate {}
+explore: derived_marketing_attribution {label: "Attribution: Cross Platform"}
