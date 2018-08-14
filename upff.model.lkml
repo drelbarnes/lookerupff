@@ -223,6 +223,7 @@ explore: android_users_play {
 
 explore: javascript_pages {label: "Web Pages Views"}
 explore: ios_view {label: "iOS Views"}
+explore: android_view {label: "Android Views"}
 explore: android_signin {label: "Android Sign-in"}
 explore: ios_signin { label: "iOS Sign-in"}
 explore: android_signupstarted {label: "Android Signupstarted"}
