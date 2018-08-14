@@ -41,7 +41,6 @@ explore: analytics_v2 {
 
 }
 explore: subscribed {}
-explore: pages{}
 explore: customers {
 
   join: customers_analytics {
