@@ -229,7 +229,7 @@ explore: ios_signin { label: "iOS Sign-in"}
 explore: android_signupstarted {label: "Android Signupstarted"}
 explore: ios_signupstarted { label: "iOS Signupstarted"}
 explore: javascript_timeupdate {label: "Web Timeupdate"}
-explore: ios_timeupdate {}
+explore: ios_timeupdate {label: "iOS Timeupdate"}
 explore: android_timeupdate {}
 explore: javascript_authentication {label: "Web Authentication"}
 explore: javascript_derived_timeupdate {}
