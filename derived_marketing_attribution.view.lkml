@@ -1,83 +1,80 @@
 view: derived_marketing_attribution {
   derived_table: {
-    sql: with
+    sql:  with
 
-                  android as
-                  (select a.timestamp as visitingtimestamp,
-                          os as platform,
-                        -- advertising_partner_name as trafficchannel,
-                        context_campaign_source as trafficchanneltype,
-                        context_campaign_name,
-                        context_Campaign_medium,
-                        context_campaign_source,
-                        b.id
-                  from android.branch_install as a inner join android.users as b on
-                  a.ip = b.context_ip)
-                  ,
+                        android as
+                        (select a.timestamp as visitingtimestamp,
+                                os as platform,
+                              -- advertising_partner_name as trafficchannel,
+                              context_campaign_source as trafficchanneltype,
+                              context_campaign_name,
+                              context_Campaign_medium,
+                              c.id
+                        from android.view as a left join android.branch_install as b on a.context_ip = b.ip  inner join android.users as c
+                        on b.ip = c.context_ip)
+                        ,
 
-                  android_ as
-                  (select a.timestamp as visitingtimestamp,
-                          os as platform,
-                        -- advertising_partner_name as trafficchannel,
-                        context_campaign_source as trafficchanneltype,
-                        context_campaign_name,
-                        context_Campaign_medium,
-                        context_campaign_source,
-                        b.id
-                  from android.branch_reinstall as a inner join android.users as b on
-                  a.ip = b.context_ip),
+                        android_ as
+                        (select a.timestamp as visitingtimestamp,
+                                os as platform,
+                              -- advertising_partner_name as trafficchannel,
+                              context_campaign_source as trafficchanneltype,
+                              context_campaign_name,
+                              context_Campaign_medium,
+                              c.id
+                        from android.view as a left join android.branch_install as b on a.context_ip = b.ip  inner join android.users as c
+                        on b.ip = c.context_ip)
+                        ,
 
-                  ios as
-                  (select a.timestamp as visitingtimestamp,
-                        os as platform,
-                        -- advertising_partner_name as trafficchannel,
-                        context_campaign_source as trafficchanneltype,
-                        context_campaign_name,
-                        context_Campaign_medium,
-                        context_campaign_source,
-                        b.id
-                  from ios.branch_install as a inner join ios.users as b on
-                  a.ip = b.context_ip),
+                        ios as
+                        (select a.timestamp as visitingtimestamp,
+                              os as platform,
+                              -- advertising_partner_name as trafficchannel,
+                              context_campaign_source as trafficchanneltype,
+                              context_campaign_name,
+                              context_Campaign_medium,
+                              c.id
+                        from ios.view as a left join ios.branch_install as b on a.context_ip = b.ip  inner join ios.users as c
+                        on b.ip = c.context_ip)
+                        ,
 
-                  ios_ as
-                  (select a.timestamp as visitingtimestamp,
-                        os as platform,
-                        -- advertising_partner_name as trafficchannel,
-                        context_campaign_source as trafficchanneltype,
-                        context_campaign_name,
-                        context_Campaign_medium,
-                        context_campaign_source,
-                        b.id
-                  from ios.branch_reinstall as a inner join ios.users as b on
-                  a.ip = b.context_ip),
+                        ios_ as
+                        (select a.timestamp as visitingtimestamp,
+                              os as platform,
+                              -- advertising_partner_name as trafficchannel,
+                              context_campaign_source as trafficchanneltype,
+                              context_campaign_name,
+                              context_Campaign_medium,
+                              c.id
+                        from ios.view as a left join ios.branch_install as b on a.context_ip = b.ip  inner join ios.users as c
+                        on b.ip = c.context_ip)
+                        ,
 
-                  web as
-                  (select a.timestamp as visitingtimestamp,
-                        'web' as platform,
-                        context_campaign_source as trafficchanneltype,
-                        context_campaign_name,
-                        context_Campaign_medium,
-                        context_campaign_source,
-                        user_id as id
-                  from javascript.subscribed as a)
+                        web as
+                        (select a.timestamp as visitingtimestamp,
+                              'web' as platform,
+                              a.context_campaign_source as trafficchanneltype,
+                              a.context_campaign_name,
+                              a.context_Campaign_medium,
+                              b.user_id as id
+                        from javascript.pages as a left join javascript.subscribed as b on a.anonymous_id = b.anonymous_id)
 
-                  (select * from android
-                  union all
-                  select * from android_
-                  union all
-                  select * from ios
-                  union all
-                  select * from ios_
-                  union all
-                  select * from web)
+                        (select * from android
+                        union all
+                        select * from android_
+                        union all
+                        select * from ios
+                        union all
+                        select * from ios_
+                        union all
+                        select * from web)
 
-
-                  -- select distinct context_campaign_name, context_campaign_source, context_campaign_content, context_Campaign_medium from javascript.start_checkout
-                  -- union all
-                  -- select distinct context_campaign_name, context_campaign_source, context_campaign_content, context_Campaign_medium  from android.branch_install
-                  -- union all
-                  -- select distinct context_campaign_name, context_campaign_source, context_campaign_content, context_Campaign_medium  from ios.branch_install
-                   ;;
+                        -- select distinct context_campaign_name, context_campaign_source, context_campaign_content, context_Campaign_medium from javascript.start_checkout
+                        -- union all
+                        -- select distinct context_campaign_name, context_campaign_source, context_campaign_content, context_Campaign_medium  from android.branch_install
+                        -- union all
+                        -- select distinct context_campaign_name, context_campaign_source, context_campaign_content, context_Campaign_medium  from ios.branch_install
+                         ;;
   }
 
   measure: count {
