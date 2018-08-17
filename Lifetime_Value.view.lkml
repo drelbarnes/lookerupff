@@ -1,6 +1,6 @@
 view: lifetime_value {
   derived_table: {
-    sql:select a.timestamp,cast(churn_30_days as decimal) as churn_30_days,cast(prior_31_days_subs as decimal) as prior_31_days_subs, 5.99/(cast(churn_30_days as decimal)/cast(prior_31_days_subs as decimal)) as LTV
+    sql:select a.timestamp,cast(churn_30_days as decimal) as churn_30_days,cast(prior_31_days_subs as decimal) as prior_31_days_subs, 3.40/(cast(churn_30_days as decimal)/cast(prior_31_days_subs as decimal)) as LTV
 from
 (select a1.timestamp, a1.paying_churn+sum(coalesce(a2.paying_churn,0)) as churn_30_days
 from customers.analytics as a1

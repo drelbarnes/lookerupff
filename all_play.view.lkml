@@ -34,9 +34,10 @@ where season is null)
 
 select series||' - '||season as collection, * from b
 union all
-select season||' - '||series as collection, * from c)
+select season||' - '||series as collection, * from c),
 
-        (select a.timestamp,
+ d as
+(select a.timestamp,
                 collection,
                 series,
                 season,
@@ -68,7 +69,15 @@ select season||' - '||series as collection, * from c)
                 user_id,
                 'Web' as platform
          from javascript.firstplay as a inner join a1 as b on trim(upper(b.title))=trim(upper(split_part(a.title,'-',1))) )
+
+select d.*, status
+from d left join customers.customers on user_id=customer_id
 ;;
+  }
+
+  dimension: status {
+    type: string
+    sql: ${TABLE}.status ;;
   }
 
   dimension: collection {

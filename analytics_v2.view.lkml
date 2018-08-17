@@ -387,7 +387,7 @@ measure: targets {
   measure: total_count {
     type: sum
     description: "Total number of existing free trials and paid subs during a period of time"
-    sql:  ${existing_paying}+${existing_free_trials} ;;
+    sql:  ${total_paying}+${total_free_trials} ;;
   }
 
 
