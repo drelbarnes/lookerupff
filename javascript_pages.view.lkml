@@ -1,4 +1,4 @@
-view: pages {
+view: javascript_pages {
   sql_table_name: javascript.pages ;;
 
   dimension: id {

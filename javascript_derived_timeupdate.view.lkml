@@ -21,28 +21,20 @@ view: javascript_derived_timeupdate {
       }
 
     }
+
   #datagroup_trigger: javascript_timeupdate_datagroup
-  #indexes: ["user_id", "timeupdate_date"]
+  #indexes: ["user_id", "timestamp"]
 
   }
 
   dimension: id {
-    type: number
+    type: string
     primary_key: yes
     sql: ${TABLE}.id ;;
   }
 
-  dimension_group: timestamp {
-    type: time
-    timeframes: [
-      raw,
-      time,
-      date,
-      week,
-      month,
-      quarter,
-      year
-    ]
+  dimension: timestamp {
+    type: date
     sql: ${TABLE}.timestamp ;;
   }
 

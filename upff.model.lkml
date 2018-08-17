@@ -221,12 +221,20 @@ explore: android_users_play {
   }
 }
 
+explore: javascript_pages {label: "Web Pages Views"}
+explore: ios_view {label: "iOS Views"}
+explore: android_view {label: "Android Views"}
 explore: android_signin {label: "Android Sign-in"}
 explore: ios_signin { label: "iOS Sign-in"}
 explore: android_signupstarted {label: "Android Signupstarted"}
 explore: ios_signupstarted { label: "iOS Signupstarted"}
 explore: javascript_timeupdate {label: "Web Timeupdate"}
-explore: ios_timeupdate {}
+explore: ios_timeupdate {label: "iOS Timeupdate"}
 explore: android_timeupdate {}
 explore: javascript_authentication {label: "Web Authentication"}
 explore: javascript_derived_timeupdate {}
+explore: derived_marketing_attribution {label: "Attribution: Cross Platform"}
+explore: ios_branch_install {label: "iOS Branch Install"}
+explore: ios_branch_reinstall {label: "iOS Branch Re-Install"}
+explore: android_branch_install {label: "Android Branch Install"}
+explore: android_branch_reinstall {label: "Android Branch Re-Install"}
