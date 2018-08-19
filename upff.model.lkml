@@ -113,19 +113,19 @@ explore: javascript_users {
 explore: javascript_uptv_pages {
   label: "Cross-Domain Subs"
   join: subscribed {
-    type:  inner
+    type:  left_outer
     sql_on: ${javascript_uptv_pages.context_traits_cross_domain_id} = ${subscribed.context_traits_cross_domain_id} ;;
     relationship: one_to_one
   }
 
   join: javascript_users {
-    type:  inner
+    type:  left_outer
     sql_on: ${javascript_uptv_pages.context_traits_cross_domain_id} = ${javascript_users.context_traits_cross_domain_id} ;;
     relationship: one_to_one
   }
 
   join: javascript_play {
-    type: inner
+    type: left_outer
     sql_on: ${javascript_uptv_pages.context_traits_cross_domain_id} = ${javascript_play.context_traits_cross_domain_id};;
     relationship: one_to_one
   }
