@@ -1,16 +1,30 @@
 view: analytics_v2 {
   derived_table: {
-    sql: with a as (select a.timestamp, ROW_NUMBER() OVER(ORDER BY a.timestamp desc) AS Row
-           from customers.analytics as a),
+    sql: with customers_analytics as (select analytics_timestamp as timestamp,
+       max(existing_free_trials) as existing_free_trials,
+       max(existing_paying) as existing_paying,
+       max(free_trial_churn) as free_trial_churn,
+       max(free_trial_converted) as free_trial_converted,
+       max(free_trial_created) as free_trial_created,
+       max(paused_created) as paused_created,
+       max(paying_churn) as paying_churn,
+       max(paying_created) as paying_created,
+       max(total_free_trials) as total_free_trials,
+       max(total_paying) as total_paying
+from php.get_analytics
+group by analytics_timestamp),
+
+    a as (select a.timestamp, ROW_NUMBER() OVER(ORDER BY a.timestamp desc) AS Row
+           from customers_analytics as a),
 
      b as (select a.timestamp,total_paying,ROW_NUMBER() OVER(ORDER BY a.timestamp desc) AS Row
-           from customers.analytics as a where a.timestamp < (DATEADD(day,-31, DATE_TRUNC('day',GETDATE()) ))),
+           from customers_analytics as a where a.timestamp < (DATEADD(day,-31, DATE_TRUNC('day',GETDATE()) ))),
 
      c as (select a.timestamp,total_paying as paying_30_days_prior from a inner join b on a.row=b.row),
 
      d as ((select a1.timestamp, a1.paying_churn+sum(coalesce(a2.paying_churn,0)) as churn_30_days
-from customers.analytics as a1
-left join customers.analytics as a2 on datediff(day,a2.timestamp,a1.timestamp)<=30 and datediff(day,a2.timestamp,a1.timestamp)>0
+from customers_analytics as a1
+left join customers_analytics as a2 on datediff(day,a2.timestamp,a1.timestamp)<=30 and datediff(day,a2.timestamp,a1.timestamp)>0
 group by a1.timestamp,a1.paying_churn)),
 
      e as (select c.timestamp, cast(paying_30_days_prior as decimal) as paying_30_days_prior,
@@ -40,11 +54,11 @@ group by a1.timestamp,a1.paying_churn)),
       cast(datepart(Quarter,date(timestamp)) as varchar) as Quarter,
       cast(datepart(Year,date(timestamp)) as varchar) as Year,
       new_trials_14_days_prior from
-      (select *, row_number() over(order by timestamp desc) as rownum from customers.analytics) as a
+      (select *, row_number() over(order by timestamp desc) as rownum from customers_analytics) as a
       left join
-      (select free_trial_created as new_trials_14_days_prior, row_number() over(order by timestamp desc) as rownum from customers.analytics
+      (select free_trial_created as new_trials_14_days_prior, row_number() over(order by timestamp desc) as rownum from customers_analytics
       where timestamp in
-                      (select dateadd(day,-15,timestamp) as timestamp from customers.analytics )) as b on a.rownum=b.rownum)) as a
+                      (select dateadd(day,-15,timestamp) as timestamp from customers_analytics )) as b on a.rownum=b.rownum)) as a
       left join customers.churn_reasons_aggregated as b on a.timestamp=b.timestamp)) as a))
 
       select f.*,paying_30_days_prior,churn_30_days,churn_30_day_percent from e inner join f on e.timestamp=f.timestamp ;;}
