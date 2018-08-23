@@ -1,7 +1,21 @@
 view: ltv_cpa{
     derived_table: {
       sql:
-      with fb_perf as (select
+       with customers_analytics as (select analytics_timestamp as timestamp,
+       max(existing_free_trials) as existing_free_trials,
+       max(existing_paying) as existing_paying,
+       max(free_trial_churn) as free_trial_churn,
+       max(free_trial_converted) as free_trial_converted,
+       max(free_trial_created) as free_trial_created,
+       max(paused_created) as paused_created,
+       max(paying_churn) as paying_churn,
+       max(paying_created) as paying_created,
+       max(total_free_trials) as total_free_trials,
+       max(total_paying) as total_paying
+from php.get_analytics
+group by analytics_timestamp),
+
+      fb_perf as (select
                 i.date_start,
                 sum(i.spend) as spend
           from  facebook_ads.insights as i
@@ -46,8 +60,8 @@ from t3
 where (t3.timestamp  < (DATEADD(day,-14, DATE_TRUNC('day',GETDATE()) )))),
 
 t5 as (select a1.timestamp,ROW_NUMBER() OVER(ORDER BY a1.timestamp desc) AS Row, a1.free_trial_converted+sum(coalesce(a2.free_trial_converted,0)) as conversions_30_days
-from customers.analytics as a1
-left join customers.analytics as a2 on datediff(day,a2.timestamp,a1.timestamp)<=30 and datediff(day,a2.timestamp,a1.timestamp)>0
+from customers_analytics as a1
+left join customers_analytics as a2 on datediff(day,a2.timestamp,a1.timestamp)<=30 and datediff(day,a2.timestamp,a1.timestamp)>0
 group by a1.timestamp,a1.free_trial_converted),
 
 t6 as (select t5.timestamp,
@@ -57,15 +71,15 @@ from t4 inner join t5 on t4.row=t5.row),
 t7 as (select a.*,prior_31_days_subs, 3.40/(cast(churn_30_days as decimal)/cast(prior_31_days_subs as decimal)) as LTV
 from
 (select a1.timestamp, a1.paying_churn+sum(coalesce(a2.paying_churn,0)) as churn_30_days
-from customers.analytics as a1
-left join customers.analytics as a2 on datediff(day,a2.timestamp,a1.timestamp)<=30 and datediff(day,a2.timestamp,a1.timestamp)>0
+from customers_analytics as a1
+left join customers_analytics as a2 on datediff(day,a2.timestamp,a1.timestamp)<=30 and datediff(day,a2.timestamp,a1.timestamp)>0
 group by a1.timestamp,a1.paying_churn) as a
 inner join
 (select a.timestamp,total_paying as prior_31_days_subs
 from
-(select a.timestamp, ROW_NUMBER() OVER(ORDER BY a.timestamp desc) AS Row from customers.analytics as a) as a
+(select a.timestamp, ROW_NUMBER() OVER(ORDER BY a.timestamp desc) AS Row from customers_analytics as a) as a
 inner join
-(select a.timestamp,total_paying, ROW_NUMBER() OVER(ORDER BY a.timestamp desc) AS Row from customers.analytics as a where (a.timestamp  < (DATEADD(day,-32, DATE_TRUNC('day',GETDATE()) )))) as b
+(select a.timestamp,total_paying, ROW_NUMBER() OVER(ORDER BY a.timestamp desc) AS Row from customers_analytics as a where (a.timestamp  < (DATEADD(day,-32, DATE_TRUNC('day',GETDATE()) )))) as b
 on a.row=b.row) as b
 on a.timestamp=b.timestamp),
 
