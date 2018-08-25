@@ -126,6 +126,21 @@ dimension: id {
     sql: ${TABLE}.id ;;
   }
 
+  dimension: anonymous_id {
+    type: string
+    sql: ${TABLE}.anonymous_id ;;
+  }
+
+  dimension: session_id {
+    type: string
+    sql: ${TABLE}.session_id ;;
+  }
+
+  dimension: context_timezone {
+    type: string
+    sql: ${TABLE}.context_timezone ;;
+  }
+
   set: detail {
     fields: [
       visitingtimestamp_time,
@@ -133,7 +148,10 @@ dimension: id {
       trafficchanneltype,
       context_campaign_name,
       context_campaign_medium,
-      id
+      id,
+      anonymous_id,
+      session_id,
+      context_timezone
     ]
   }
 }
