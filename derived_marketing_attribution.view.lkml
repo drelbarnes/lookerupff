@@ -9,7 +9,10 @@ view: derived_marketing_attribution {
                               context_campaign_source as trafficchanneltype,
                               context_campaign_name,
                               context_Campaign_medium,
-                              c.id
+                              c.id,
+                              anonymous_id,
+                              session_id,
+                              context_timezone
                         from android.view as a left join android.branch_install as b on a.context_ip = b.ip  inner join android.users as c
                         on b.ip = c.context_ip)
                         ,
@@ -21,7 +24,10 @@ view: derived_marketing_attribution {
                               context_campaign_source as trafficchanneltype,
                               context_campaign_name,
                               context_Campaign_medium,
-                              c.id
+                              c.id,
+                              anonymous_id,
+                              session_id,
+                              context_timezone
                         from android.view as a left join android.branch_install as b on a.context_ip = b.ip  inner join android.users as c
                         on b.ip = c.context_ip)
                         ,
@@ -33,7 +39,10 @@ view: derived_marketing_attribution {
                               context_campaign_source as trafficchanneltype,
                               context_campaign_name,
                               context_Campaign_medium,
-                              c.id
+                              c.id,
+                              anonymous_id,
+                              session_id,
+                              context_timezone
                         from ios.view as a left join ios.branch_install as b on a.context_ip = b.ip  inner join ios.users as c
                         on b.ip = c.context_ip)
                         ,
@@ -45,7 +54,10 @@ view: derived_marketing_attribution {
                               context_campaign_source as trafficchanneltype,
                               context_campaign_name,
                               context_Campaign_medium,
-                              c.id
+                              c.id,
+                              anonymous_id,
+                              session_id,
+                              context_timezone
                         from ios.view as a left join ios.branch_install as b on a.context_ip = b.ip  inner join ios.users as c
                         on b.ip = c.context_ip)
                         ,
@@ -56,7 +68,9 @@ view: derived_marketing_attribution {
                               a.context_campaign_source as trafficchanneltype,
                               a.context_campaign_name,
                               a.context_Campaign_medium,
-                              b.user_id as id
+                              b.user_id as id,
+                              anonymous_id,
+                              context_timezone
                         from javascript.pages as a left join javascript.subscribed as b on a.anonymous_id = b.anonymous_id)
 
                         (select * from android
@@ -107,12 +121,7 @@ view: derived_marketing_attribution {
     sql: ${TABLE}.context_campaign_medium ;;
   }
 
-  dimension: context_campaign_source {
-    type: string
-    sql: ${TABLE}.context_campaign_source ;;
-  }
-
-  dimension: id {
+dimension: id {
     type: string
     sql: ${TABLE}.id ;;
   }
@@ -124,7 +133,6 @@ view: derived_marketing_attribution {
       trafficchanneltype,
       context_campaign_name,
       context_campaign_medium,
-      context_campaign_source,
       id
     ]
   }
