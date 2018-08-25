@@ -1,16 +1,16 @@
 view: analytics_v2 {
   derived_table: {
     sql: with customers_analytics as (select analytics_timestamp as timestamp,
-       existing_free_trials,
-       existing_paying,
-       free_trial_churn,
-       free_trial_converted,
-       free_trial_created,
-       paused_created,
-       paying_churn,
-       paying_created,
-       total_free_trials,
-       total_paying
+       max(existing_free_trials) as existing_free_trials,
+       max(existing_paying) as existing_paying,
+       max(free_trial_churn) as free_trial_churn,
+       max(free_trial_converted) as free_trial_converted,
+       max(free_trial_created) as free_trial_created,
+       max(paused_created) as paused_created,
+       max(paying_churn) as paying_churn,
+       max(paying_created) as paying_created,
+       max(total_free_trials) as total_free_trials,
+       max(total_paying) as total_paying
 from php.get_analytics
 where date(sent_at)=current_date),
 
