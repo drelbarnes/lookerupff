@@ -2,17 +2,14 @@ view: derived_marketing_attribution {
   derived_table: {
     sql:  with
 
-                        android as
+                     android as
                         (select a.timestamp as visitingtimestamp,
                                 os as platform,
                               -- advertising_partner_name as trafficchannel,
                               context_campaign_source as trafficchanneltype,
                               context_campaign_name,
                               context_Campaign_medium,
-                              c.id,
-                              anonymous_id,
-                              session_id,
-                              context_timezone
+                              c.id
                         from android.view as a left join android.branch_install as b on a.context_ip = b.ip  inner join android.users as c
                         on b.ip = c.context_ip)
                         ,
@@ -24,10 +21,7 @@ view: derived_marketing_attribution {
                               context_campaign_source as trafficchanneltype,
                               context_campaign_name,
                               context_Campaign_medium,
-                              c.id,
-                              anonymous_id,
-                              session_id,
-                              context_timezone
+                              c.id
                         from android.view as a left join android.branch_install as b on a.context_ip = b.ip  inner join android.users as c
                         on b.ip = c.context_ip)
                         ,
@@ -39,10 +33,7 @@ view: derived_marketing_attribution {
                               context_campaign_source as trafficchanneltype,
                               context_campaign_name,
                               context_Campaign_medium,
-                              c.id,
-                              anonymous_id,
-                              session_id,
-                              context_timezone
+                              c.id
                         from ios.view as a left join ios.branch_install as b on a.context_ip = b.ip  inner join ios.users as c
                         on b.ip = c.context_ip)
                         ,
@@ -54,10 +45,7 @@ view: derived_marketing_attribution {
                               context_campaign_source as trafficchanneltype,
                               context_campaign_name,
                               context_Campaign_medium,
-                              c.id,
-                              anonymous_id,
-                              session_id,
-                              context_timezone
+                              c.id
                         from ios.view as a left join ios.branch_install as b on a.context_ip = b.ip  inner join ios.users as c
                         on b.ip = c.context_ip)
                         ,
@@ -68,9 +56,7 @@ view: derived_marketing_attribution {
                               a.context_campaign_source as trafficchanneltype,
                               a.context_campaign_name,
                               a.context_Campaign_medium,
-                              b.user_id as id,
-                              anonymous_id,
-                              context_timezone
+                              b.user_id as id
                         from javascript.pages as a left join javascript.subscribed as b on a.anonymous_id = b.anonymous_id)
 
                         (select * from android
@@ -126,21 +112,6 @@ dimension: id {
     sql: ${TABLE}.id ;;
   }
 
-  dimension: anonymous_id {
-    type: string
-    sql: ${TABLE}.anonymous_id ;;
-  }
-
-  dimension: session_id {
-    type: string
-    sql: ${TABLE}.session_id ;;
-  }
-
-  dimension: context_timezone {
-    type: string
-    sql: ${TABLE}.context_timezone ;;
-  }
-
   set: detail {
     fields: [
       visitingtimestamp_time,
@@ -148,10 +119,7 @@ dimension: id {
       trafficchanneltype,
       context_campaign_name,
       context_campaign_medium,
-      id,
-      anonymous_id,
-      session_id,
-      context_timezone
+      id
     ]
   }
 }
