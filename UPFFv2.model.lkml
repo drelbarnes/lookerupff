@@ -90,7 +90,7 @@ explore: churn_custom_reasons {}
 explore: afinn_lexicon {}
 explore: purchase_event {}
 explore: http_api_users {}
-explore: identifies {}
+explore: ios_identifies {}
 explore: heartlandia {}
 explore: viewership {}
 explore: ads_compare {}
