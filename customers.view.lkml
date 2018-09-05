@@ -29,6 +29,11 @@ view: customers {
     sql: ${TABLE}.city ;;
   }
 
+  dimension: state_city {
+    type: string
+    sql: concat(${TABLE}.state, ${TABLE}.city) ;;
+  }
+
 
   dimension: country {
     type: string
@@ -49,6 +54,16 @@ view: customers {
   dimension: customer_created_at {
     type: date
     sql: ${TABLE}.customer_created_at ;;
+  }
+
+  dimension: date_formatted {
+    sql: ${customer_created_at} ;;
+    html: {{ rendered_value | date: "%b" }} ;;
+  }
+
+  dimension: day_of_week {
+    sql: ${customer_created_at} ;;
+    html: {{ rendered_value | date: "%a" }} ;;
   }
 
   dimension_group: creation_timestamp {
@@ -76,6 +91,8 @@ view: customers {
     type: date
     sql: ${TABLE}.event_created_at ;;
   }
+
+
 
   dimension_group: timestamp {
     type: time
@@ -241,6 +258,7 @@ dimension: days_since_created {
     sql: ${TABLE}.marketing_opt_in ;;
   }
 
+
   measure: count {
     type: count
     drill_fields: [customer_id, product_name, last_name, first_name, email]
@@ -307,21 +325,48 @@ dimension: days_since_created {
     type: number
     sql:
       case
-        when ${status}='enabled' and ${days_since_created}=15 and ${platform}='android' then .7*5.99
-        when ${status}='enabled' and ${days_since_created}=15 and ${platform}='android_tv' then .7*5.99
-        when ${status}='enabled' and ${days_since_created}=15 and ${platform}='ios' then .7*5.99
-        when ${status}='enabled' and ${days_since_created}=15 and ${platform}='tvos' then .7*5.99
-        when ${status}='enabled' and ${days_since_created}=15 and ${platform}='roku' then .8*5.99
-        when ${status}='enabled' and ${days_since_created}=15 and ${platform}='web' then 5.99
-        when ${status}='enabled' and ${days_since_created}>15 and (${days_since_created}-15)%30=0 and ${platform}='android' then .7*5.99
-        when ${status}='enabled' and ${days_since_created}>15 and (${days_since_created}-15)%30=0 and ${platform}='android_tv' then .7*5.99
-        when ${status}='enabled' and ${days_since_created}>15 and (${days_since_created}-15)%30=0 and ${platform}='ios' then .7*5.99
-        when ${status}='enabled' and ${days_since_created}>15 and (${days_since_created}-15)%30=0 and ${platform}='tvos' then .7*5.99
-        when ${status}='enabled' and ${days_since_created}>15 and (${days_since_created}-15)%30=0 and ${platform}='roku' then .8*5.99
-        when ${status}='enabled' and ${days_since_created}>15 and (${days_since_created}-15)%30=0 and ${platform}='web' then 5.99
+          when ${status}='enabled' and ${days_since_created}=15 and ${platform}='android' then .7*5.99
+          when ${status}='enabled' and ${days_since_created}=15 and ${platform}='android_tv' then .7*5.99
+          when ${status}='enabled' and ${days_since_created}=15 and ${platform}='ios' then .7*5.99
+          when ${status}='enabled' and ${days_since_created}=15 and ${platform}='tvos' then .7*5.99
+          when ${status}='enabled' and ${days_since_created}=15 and ${platform}='roku' then .8*5.99
+          when ${status}='enabled' and ${days_since_created}=15 and ${platform}='web' then 5.99
+          when ${status}='enabled' and ${days_since_created}>15 and (${days_since_created}-15)%30=0 and ${platform}='android' then .7*5.99
+          when ${status}='enabled' and ${days_since_created}>15 and (${days_since_created}-15)%30=0 and ${platform}='android_tv' then .7*5.99
+          when ${status}='enabled' and ${days_since_created}>15 and (${days_since_created}-15)%30=0 and ${platform}='ios' then .7*5.99
+          when ${status}='enabled' and ${days_since_created}>15 and (${days_since_created}-15)%30=0 and ${platform}='tvos' then .7*5.99
+          when ${status}='enabled' and ${days_since_created}>15 and (${days_since_created}-15)%30=0 and ${platform}='roku' then .8*5.99
+          when ${status}='enabled' and ${days_since_created}>15 and (${days_since_created}-15)%30=0 and ${platform}='web' then 5.99
         else null end
     ;;
   }
+
+
+#Get Status by case
+  dimension: get_status {
+    type:  number
+    sql:
+      case
+        when ${status}='enabled' then 1
+        when ${status}='cancelled' then 0
+      else null end
+    ;;
+  }
+
+#Get Marketing Opt-In by case
+  dimension: get_marketing_opt_in {
+    type:  number
+    sql:
+      case
+        when ${marketing_opt_in}='Y' then 1
+        when ${marketing_opt_in}='N' then 0
+      else null end
+    ;;
+  }
+
+
+
+
 
   measure: revenue_ {
     type: sum
