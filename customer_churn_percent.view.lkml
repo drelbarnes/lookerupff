@@ -1,29 +1,49 @@
 view: customer_churn_percent {
   derived_table: {
-    sql: with
+    sql:with
+
+customers_analytics as (select analytics_timestamp as timestamp,
+       existing_free_trials,
+       existing_paying,
+       free_trial_churn,
+       free_trial_converted,
+       free_trial_created,
+       paused_created,
+       paying_churn,
+       paying_created,
+       total_free_trials,
+       total_paying
+from php.get_analytics
+where date(sent_at)=current_date),
 
 a as (select date(customer_created_at) as customer_created_at, date(event_created_at) as event_created_at,platform,count(*) as churn_count
 from customers.customers
-where (customers.status  IN ('cancelled', 'disabled', 'expired', 'paused', 'refunded'))
+where (customers.status  IN ('cancelled', 'disabled', 'expired', 'refunded'))
 group by 1,2,3),
 
 b as (select date(a.timestamp) as timestamp, free_trial_created
-from customers.analytics as a)
+from customers_analytics as a)
 
-select customer_created_at,event_created_at,datediff('day',customer_created_at,event_created_at) as days_since_creation,platform,cast(churn_count as decimal) as churn_count,
+select customer_created_at,
+case
+        when (DATEDIFF('day', (DATE(customer_created_at)), (DATE(event_created_at))))<=14 then '0-14 Days'
+        when (DATEDIFF('day', (DATE(customer_created_at)), (DATE(event_created_at))))>14 and (DATEDIFF('day', (DATE(customer_created_at)), (DATE(event_created_at))))<=28 then '15-28 Days'
+        when (DATEDIFF('day', (DATE(customer_created_at)), (DATE(event_created_at))))>28 and (DATEDIFF('day', (DATE(customer_created_at)), (DATE(event_created_at))))<=35 then '29-35 Days'
+        when (DATEDIFF('day', (DATE(customer_created_at)), (DATE(event_created_at))))>35 and (DATEDIFF('day', (DATE(customer_created_at)), (DATE(event_created_at))))<=42 then '36-42 Days'
+        when (DATEDIFF('day', (DATE(customer_created_at)), (DATE(event_created_at))))>42 and (DATEDIFF('day', (DATE(customer_created_at)), (DATE(event_created_at))))<=49 then '43-49 Days'
+        when (DATEDIFF('day', (DATE(customer_created_at)), (DATE(event_created_at))))>49 and (DATEDIFF('day', (DATE(customer_created_at)), (DATE(event_created_at))))<=56 then '49-56 Days'
+        else '56+ Days'
+        end AS "days_since_creation",
+sum(cast(churn_count as decimal)) as churn_count,
 cast(free_trial_created as decimal) as free_trial_created
-from a inner join b on customer_created_at=b.timestamp;;
+from a inner join b on customer_created_at=b.timestamp
+group by 1,2,4;;
   }
 
-  dimension: customer_created_at {
-    type: date
-    sql: ${TABLE}.customer_created_at;;
-  }
-
-  dimension: event_created_at {
-    type: date
-    sql: ${TABLE}.event_created_at;;
-  }
+dimension:customer_created_at{
+type: date
+sql: ${TABLE}.customer_created_at ;;
+}
 
   dimension_group: creation_timestamp {
     type: time
@@ -39,20 +59,14 @@ from a inner join b on customer_created_at=b.timestamp;;
     sql: ${TABLE}.customer_created_at ;;
   }
 
-dimension: platform {
-  type: string
-  sql: ${TABLE}.platform ;;
-}
-
-  dimension: days_since_created {
-    type: number
-    sql:  DATEDIFF('day', ${customer_created_at}, ${event_created_at});;
+  dimension: days_since_creation{
+    type: string
+    sql:  ${TABLE}.days_since_creation;;
   }
 
-
   measure: free_trial_created {
-    type: sum_distinct
-    sql_distinct_key: ${customer_created_at} ;;
+    type: sum
+    sql:  ${TABLE}.free_trial_created ;;
   }
 
   measure: churn_count {
@@ -64,20 +78,6 @@ dimension: platform {
     type: number
     sql: ${churn_count}/${free_trial_created} ;;
     value_format_name: percent_0
-  }
-
-  dimension: days_since_creation{
-    type: string
-    sql:
-      case
-        when ${days_since_created}<=14 then '0-14 Days'
-        when ${days_since_created}>14 and ${days_since_created}<=28 then '15-28 Days'
-        when ${days_since_created}>28 and ${days_since_created}<=35 then '29-35 Days'
-        when ${days_since_created}>35 and ${days_since_created}<=42 then '36-42 Days'
-        when ${days_since_created}>42 and ${days_since_created}<=49 then '43-49 Days'
-        when ${days_since_created}>49 and ${days_since_created}<=56 then '49-56 Days'
-        else '56+ Days'
-        end;;
   }
 
 }
