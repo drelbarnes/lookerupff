@@ -1,7 +1,7 @@
 view: ltv_cpa{
     derived_table: {
       sql:
-       with customers_analytics as (select analytics_timestamp as timestamp,
+        with customers_analytics as (select analytics_timestamp as timestamp,
        existing_free_trials,
        existing_paying,
        free_trial_churn,
@@ -42,6 +42,7 @@ case when TO_CHAR(DATE_TRUNC('month', date_start), 'YYYY-MM') = '2018-07' then s
      when TO_CHAR(DATE_TRUNC('month', date_start ), 'YYYY-MM') = '2018-03' then spend+(22018/31)
      when TO_CHAR(DATE_TRUNC('month', date_start ), 'YYYY-MM') = '2018-02' then spend+(21565/28)
      when TO_CHAR(DATE_TRUNC('month', date_start ), 'YYYY-MM') = '2018-01' then spend+(21570/31)
+     when date(date_start) between timestamp '2018-08-11' and timestamp '2018-09-08' then spend+((288.37+87.27)/28)
      else spend end as spend
                 from google_perf
       union all
