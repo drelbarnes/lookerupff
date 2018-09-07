@@ -146,8 +146,7 @@ explore: php_get_customers{
 
 explore: customers{
 
-
-  join: android_users {
+ join: android_users {
     type:  left_outer
     sql_on: ${customers.customer_id} = ${android_users.id};;
     relationship: one_to_one
@@ -156,6 +155,31 @@ explore: customers{
   join: ios_users {
     type:  left_outer
     sql_on: ${customers.customer_id} = ${ios_users.id};;
+    relationship: one_to_one
+  }
+
+  join: all_firstplay {
+    type: left_outer
+    sql_on:  ${customers.customer_id} = ${all_firstplay.user_id} ;;
+    relationship: one_to_many
+  }
+
+  join: delighted_survey_question_answered {
+    type: left_outer
+    sql_on: ${customers.customer_id} = ${delighted_survey_question_answered.user_id};;
+    relationship: one_to_many
+  }
+
+  join: mailchimp_email_campaigns {
+    type:  inner
+    sql_on: ${mailchimp_email_campaigns.campaign_date} = ${delighted_survey_question_answered.timestamp_date};;
+    relationship: one_to_one
+  }
+
+
+  join: customers_v2 {
+    type: inner
+    sql_on: ${delighted_survey_question_answered.user_id} = ${customers_v2.customer_id};;
     relationship: one_to_one
   }
 
@@ -236,5 +260,7 @@ explore: javascript_derived_timeupdate {}
 explore: derived_marketing_attribution {label: "Attribution: Cross Platform"}
 explore: ios_branch_install {label: "iOS Branch Install"}
 explore: ios_branch_reinstall {label: "iOS Branch Re-Install"}
+explore: ios_identifies {label: "iOS Identifies"}
 explore: android_branch_install {label: "Android Branch Install"}
 explore: android_branch_reinstall {label: "Android Branch Re-Install"}
+explore: derived_subscriber_platform_total {label: "Subscriber Platform Total"}

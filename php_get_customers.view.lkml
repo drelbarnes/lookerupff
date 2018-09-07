@@ -2,7 +2,6 @@ view: php_get_customers {
   sql_table_name: php.get_customers ;;
 
   dimension: id {
-    primary_key: yes
     type: string
     sql: ${TABLE}.id ;;
   }
@@ -134,6 +133,7 @@ view: php_get_customers {
 
   dimension: user_id {
     type: string
+    primary_key: yes
     sql: ${TABLE}.user_id ;;
   }
 
@@ -159,7 +159,8 @@ view: php_get_customers {
 
   measure: count {
     type: count
-    drill_fields: [id, fname, email, platform, context_library_name, ]
+    sql_distinct_key: ${user_id} ;;
+    drill_fields: [user_id, fname, email, platform, context_library_name, ]
   }
 
   measure: new_trials{

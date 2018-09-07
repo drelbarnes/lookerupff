@@ -1,4 +1,4 @@
-view: identifies {
+view: ios_identifies {
   sql_table_name: ios.identifies ;;
 
   dimension: id {

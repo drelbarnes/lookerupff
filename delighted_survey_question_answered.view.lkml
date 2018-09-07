@@ -176,6 +176,11 @@ view: delighted_survey_question_answered {
     sql: ${TABLE}.survey_type ;;
   }
 
+  dimension: day_on {
+    type: number
+    sql:  DATEDIFF('day', ${customers_v2.customer_created_at}::timestamp, ${timestamp_date}::timestamp) ;;
+  }
+
   dimension_group: timestamp {
     type: time
     timeframes: [
@@ -274,6 +279,7 @@ view: delighted_survey_question_answered {
       value: "Promoters" # Minus sign means "not" in this case, but check notation docs for details
     }
   }
+
 
   measure: count {
     type: count

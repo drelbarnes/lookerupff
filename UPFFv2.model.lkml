@@ -90,7 +90,7 @@ explore: churn_custom_reasons {}
 explore: afinn_lexicon {}
 explore: purchase_event {}
 explore: http_api_users {}
-explore: identifies {}
+explore: ios_identifies {}
 explore: heartlandia {}
 explore: viewership {}
 explore: ads_compare {}
@@ -117,7 +117,7 @@ explore: all_firstplay {
   join: customers_v2 {
     type:  inner
     sql_on: ${customers_v2.customer_id} = ${all_firstplay.user_id} ;;
-    relationship: one_to_one
+    relationship: one_to_many
   }
 
   join: analytics_v2 {
@@ -129,6 +129,12 @@ explore: all_firstplay {
   join: mailchimp_email_campaigns {
     type: left_outer
     sql_on: ${mailchimp_email_campaigns.userid} = ${customers_v2.customer_id};;
+    relationship: one_to_one
+  }
+
+  join: delighted_survey_question_answered {
+    type: inner
+    sql_on: ${delighted_survey_question_answered.user_id} = ${customers_v2.customer_id};;
     relationship: one_to_one
   }
 

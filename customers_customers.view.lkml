@@ -122,10 +122,6 @@ dimension: days_since_created {
     sql:  DATEDIFF('day', ${customer_created_at}::timestamp, ${event_created_at}::timestamp) ;;
   }
 
-  measure: average_days_on {
-    type: average
-    sql:  DATEDIFF('day', ${event_created_at}::timestamp, ${current_date}::timestamp) ;;
-  }
 
   dimension: first_name {
     type: string

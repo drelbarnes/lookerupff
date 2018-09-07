@@ -6,8 +6,10 @@ view: all_firstplay {
                 trim(upper(split_part(season,'Season',2))) as season,
                 episode,trim(upper(title)) as title,
                 user_id,
-                'Android' as platform
-         from android.firstplay as a left join svod_titles.titles_id_mapping as b on a.video_id=b.id
+                c.platform,
+                'Android' as source
+         from android.firstplay as a left join svod_titles.titles_id_mapping as b on a.video_id = b.id left join customers.customers as c
+         on a.user_id = c.customer_id
          union all
          select a.timestamp,
                 trim(upper(split_part(series,'|',1))) as series,
@@ -15,8 +17,10 @@ view: all_firstplay {
                 trim(upper(split_part(season,'Season',2))) as season,
                 episode,trim(upper(title)) as title,
                 user_id,
-                'IOS' as platform
-         from ios.firstplay as a left join svod_titles.titles_id_mapping as b on a.video_id=b.id
+                c.platform,
+                'iOS' as source
+         from ios.firstplay as a left join svod_titles.titles_id_mapping as b on a.video_id = b.id left join customers.customers as c
+         on a.user_id = c.customer_id
          union all
          select a.timestamp,
                 trim(upper(split_part(series,'|',1))) as series,
@@ -24,11 +28,15 @@ view: all_firstplay {
                 trim(upper(split_part(season,'Season',2))) as season,
                 episode,trim(upper(split_part(a.title,'-',1))) as title,
                 user_id,
-                'Web' as platform
-         from javascript.firstplay as a left join svod_titles.titles_id_mapping as b on trim(upper(b.title))=trim(upper(split_part(a.title,'-',1))) )
+                c.platform,
+                'Web' as source
+         from javascript.firstplay as a left join svod_titles.titles_id_mapping as b on trim(upper(b.title)) = trim(upper(split_part(a.title,'-',1)))
+         left join customers.customers as c
+         on a.user_id = c.customer_id
+        )
 
 select a.*, status
-from a inner join customers.customers on user_id=customer_id) ;;
+from a inner join customers.customers on user_id = customer_id) ;;
   }
 
   dimension: title {
@@ -61,7 +69,14 @@ from a inner join customers.customers on user_id=customer_id) ;;
     sql: ${TABLE}.platform ;;
   }
 
+  dimension: source {
+    type: string
+    sql: ${TABLE}.source ;;
+  }
+
   dimension: user_id {
+    primary_key: yes
+    tags: ["user_id"]
     type: string
     sql: ${TABLE}.user_id ;;
   }
@@ -88,6 +103,11 @@ from a inner join customers.customers on user_id=customer_id) ;;
   measure: count {
     type: count
     drill_fields: [detail*]
+  }
+
+  measure: number_of_platforms_by_user {
+    type: count_distinct
+    sql: ${source};;
   }
 
 

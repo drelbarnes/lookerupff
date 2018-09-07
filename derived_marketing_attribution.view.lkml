@@ -2,11 +2,11 @@ view: derived_marketing_attribution {
   derived_table: {
     sql:  with
 
-                        android as
+                     android as
                         (select a.timestamp as visitingtimestamp,
                                 os as platform,
                               -- advertising_partner_name as trafficchannel,
-                              context_campaign_source as trafficchanneltype,
+                              context_campaign_source,
                               context_campaign_name,
                               context_Campaign_medium,
                               c.id
@@ -18,7 +18,7 @@ view: derived_marketing_attribution {
                         (select a.timestamp as visitingtimestamp,
                                 os as platform,
                               -- advertising_partner_name as trafficchannel,
-                              context_campaign_source as trafficchanneltype,
+                              context_campaign_source,
                               context_campaign_name,
                               context_Campaign_medium,
                               c.id
@@ -30,7 +30,7 @@ view: derived_marketing_attribution {
                         (select a.timestamp as visitingtimestamp,
                               os as platform,
                               -- advertising_partner_name as trafficchannel,
-                              context_campaign_source as trafficchanneltype,
+                              context_campaign_source,
                               context_campaign_name,
                               context_Campaign_medium,
                               c.id
@@ -42,7 +42,7 @@ view: derived_marketing_attribution {
                         (select a.timestamp as visitingtimestamp,
                               os as platform,
                               -- advertising_partner_name as trafficchannel,
-                              context_campaign_source as trafficchanneltype,
+                              context_campaign_source,
                               context_campaign_name,
                               context_Campaign_medium,
                               c.id
@@ -53,7 +53,7 @@ view: derived_marketing_attribution {
                         web as
                         (select a.timestamp as visitingtimestamp,
                               'web' as platform,
-                              a.context_campaign_source as trafficchanneltype,
+                              a.context_campaign_source,
                               a.context_campaign_name,
                               a.context_Campaign_medium,
                               b.user_id as id
@@ -92,9 +92,9 @@ view: derived_marketing_attribution {
     sql: ${TABLE}.platform ;;
   }
 
-  dimension: trafficchanneltype {
+  dimension: context_campaign_source {
     type: string
-    sql: ${TABLE}.trafficchanneltype ;;
+    sql: ${TABLE}.context_campaign_source ;;
   }
 
   dimension: context_campaign_name {
@@ -107,12 +107,7 @@ view: derived_marketing_attribution {
     sql: ${TABLE}.context_campaign_medium ;;
   }
 
-  dimension: context_campaign_source {
-    type: string
-    sql: ${TABLE}.context_campaign_source ;;
-  }
-
-  dimension: id {
+dimension: id {
     type: string
     sql: ${TABLE}.id ;;
   }
@@ -121,10 +116,9 @@ view: derived_marketing_attribution {
     fields: [
       visitingtimestamp_time,
       platform,
-      trafficchanneltype,
+      context_campaign_source,
       context_campaign_name,
       context_campaign_medium,
-      context_campaign_source,
       id
     ]
   }
