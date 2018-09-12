@@ -1,8 +1,11 @@
 view: titles {
   derived_table: {
-    sql: select month,
+    sql: with a as
+    (select month,
        year,
        case when platform = 'Comcast SVOD' then 'Comcast' else platform end as platform,
+       case when platform not in ('Amazon','Vimeo','Comcast SVOD') then 'All Others' else platform
+            end as platform_,
        up_title,
        studio,
        views,
@@ -13,7 +16,17 @@ view: titles {
        lf_sf,
        content_type,
        datetime
- from svod_titles.svod_titles ;;
+ from svod_titles.svod_titles)
+
+select *, case when platform_ = 'Comcast SVOD' then 'Comcast' else platform_ end as platform__ from a
+
+;;
+  }
+
+
+  dimension: platform_ {
+    type: string
+    sql: ${TABLE}.platform__;;
   }
 
   dimension: category {
