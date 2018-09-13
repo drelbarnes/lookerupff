@@ -1,5 +1,7 @@
 view: mvpd_subs {
-  sql_table_name: svod_titles.mvpd_subs ;;
+  derived_table: {
+    sql: select amazon, comcast, d2c, date(date) as date from svod_titles.mvpd_subs;;
+    }
 
   dimension: amazon {
     type: number
@@ -16,17 +18,8 @@ view: mvpd_subs {
     sql: ${TABLE}.d2c ;;
   }
 
-  dimension_group: date {
-    type: time
-    timeframes: [
-      raw,
-      time,
-      date,
-      week,
-      month,
-      quarter,
-      year
-    ]
+  dimension: date {
+    type: date_month
     sql: ${TABLE}.date ;;
   }
 
