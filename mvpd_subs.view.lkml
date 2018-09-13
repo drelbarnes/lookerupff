@@ -20,20 +20,14 @@ view: mvpd_subs {
     type: time
     timeframes: [
       raw,
+      time,
       date,
       week,
       month,
       quarter,
       year
     ]
-    convert_tz: no
-    datatype: date
     sql: ${TABLE}.date ;;
-  }
-
-  measure: count {
-    type: count
-    drill_fields: []
   }
 
   measure: amazon_ {
@@ -49,5 +43,10 @@ view: mvpd_subs {
   measure: d2c_ {
     type: sum
     sql: ${TABLE}.d2c ;;
+  }
+
+  measure: count {
+    type: count
+    drill_fields: []
   }
 }
