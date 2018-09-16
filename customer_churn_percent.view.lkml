@@ -32,7 +32,16 @@ case
         when (DATEDIFF('day', (DATE(customer_created_at)), (DATE(event_created_at))))>35 and (DATEDIFF('day', (DATE(customer_created_at)), (DATE(event_created_at))))<=42 then '36-42 Days'
         when (DATEDIFF('day', (DATE(customer_created_at)), (DATE(event_created_at))))>42 and (DATEDIFF('day', (DATE(customer_created_at)), (DATE(event_created_at))))<=49 then '43-49 Days'
         when (DATEDIFF('day', (DATE(customer_created_at)), (DATE(event_created_at))))>49 and (DATEDIFF('day', (DATE(customer_created_at)), (DATE(event_created_at))))<=56 then '49-56 Days'
-        else '56+ Days'
+        when (DATEDIFF('day', (DATE(customer_created_at)), (DATE(event_created_at))))>56 and (DATEDIFF('day', (DATE(customer_created_at)), (DATE(event_created_at))))<=63 then '57-63 Days'
+        when (DATEDIFF('day', (DATE(customer_created_at)), (DATE(event_created_at))))>63 and (DATEDIFF('day', (DATE(customer_created_at)), (DATE(event_created_at))))<=70 then '64-70 Days'
+        when (DATEDIFF('day', (DATE(customer_created_at)), (DATE(event_created_at))))>70 and (DATEDIFF('day', (DATE(customer_created_at)), (DATE(event_created_at))))<=77 then '71-77 Days'
+        when (DATEDIFF('day', (DATE(customer_created_at)), (DATE(event_created_at))))>77 and (DATEDIFF('day', (DATE(customer_created_at)), (DATE(event_created_at))))<=84 then '78-84 Days'
+        when (DATEDIFF('day', (DATE(customer_created_at)), (DATE(event_created_at))))>84 and (DATEDIFF('day', (DATE(customer_created_at)), (DATE(event_created_at))))<=91 then '85-91 Days'
+        when (DATEDIFF('day', (DATE(customer_created_at)), (DATE(event_created_at))))>91 and (DATEDIFF('day', (DATE(customer_created_at)), (DATE(event_created_at))))<=98 then '92-98 Days'
+        when (DATEDIFF('day', (DATE(customer_created_at)), (DATE(event_created_at))))>98 and (DATEDIFF('day', (DATE(customer_created_at)), (DATE(event_created_at))))<=105 then '99-105 Days'
+        when (DATEDIFF('day', (DATE(customer_created_at)), (DATE(event_created_at))))>105 and (DATEDIFF('day', (DATE(customer_created_at)), (DATE(event_created_at))))<=112 then '106-112 Days'
+        when (DATEDIFF('day', (DATE(customer_created_at)), (DATE(event_created_at))))>112 and (DATEDIFF('day', (DATE(customer_created_at)), (DATE(event_created_at))))<=119 then '113-119 Days'
+        else '120+ Days'
         end AS "days_since_creation",
 sum(cast(churn_count as decimal)) as churn_count,
 cast(free_trial_created as decimal) as free_trial_created
