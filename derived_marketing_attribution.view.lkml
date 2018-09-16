@@ -10,6 +10,10 @@ view: derived_marketing_attribution {
                                           last_attributed_touch_data_tilde_advertising_partner_name AS context_campaign_source,
                                           last_attributed_touch_data_tilde_campaign AS context_campaign_name,
                                           last_attributed_touch_data_tilde_channel AS context_Campaign_medium,
+                                          last_attributed_touch_data_tilde_ad_set_name AS ad_set_name,
+                                          last_attributed_touch_data_tilde_ad_set_id AS ad_set_id,
+                                          last_attributed_touch_data_tilde_ad_name AS ad_name,
+                                          last_attributed_touch_data_tilde_ad_id AS ad_id,
                                           c.id
                                     from customers.social_ads as a left join android.signupstarted as b
                                     on a.user_data_aaid = b.context_device_advertising_id inner join android.users as c on b.context_device_advertising_id = c.context_device_advertising_id WHERE a.name = 'INSTALL')
@@ -23,6 +27,10 @@ view: derived_marketing_attribution {
                                           last_attributed_touch_data_tilde_advertising_partner_name AS context_campaign_source,
                                           last_attributed_touch_data_tilde_campaign AS context_campaign_name,
                                           last_attributed_touch_data_tilde_channel AS context_Campaign_medium,
+                                          last_attributed_touch_data_tilde_ad_set_name AS ad_set_name,
+                                          last_attributed_touch_data_tilde_ad_set_id AS ad_set_id,
+                                          last_attributed_touch_data_tilde_ad_name AS ad_name,
+                                          last_attributed_touch_data_tilde_ad_id AS ad_id,
                                           c.id
                                     from customers.social_ads as a left join android.signupstarted as b
                                     on a.user_data_aaid = b.context_device_advertising_id inner join android.users as c on b.context_device_advertising_id = c.context_device_advertising_id WHERE a.name = 'REINSTALL')
@@ -36,6 +44,10 @@ view: derived_marketing_attribution {
                                           last_attributed_touch_data_tilde_advertising_partner_name AS context_campaign_source,
                                           last_attributed_touch_data_tilde_campaign AS context_campaign_name,
                                           last_attributed_touch_data_tilde_channel AS context_Campaign_medium,
+                                          last_attributed_touch_data_tilde_ad_set_name AS ad_set_name,
+                                          last_attributed_touch_data_tilde_ad_set_id AS ad_set_id,
+                                          last_attributed_touch_data_tilde_ad_name AS ad_name,
+                                          last_attributed_touch_data_tilde_ad_id AS ad_id,
                                           c.id
                                     from customers.social_ads as a left join ios.signupstarted as b
                                     on a.user_data_idfa = b.context_device_advertising_id inner join ios.users as c on b.context_device_advertising_id = c.context_device_advertising_id WHERE a.name = 'INSTALL')
@@ -49,6 +61,10 @@ view: derived_marketing_attribution {
                                           last_attributed_touch_data_tilde_advertising_partner_name AS context_campaign_source,
                                           last_attributed_touch_data_tilde_campaign AS context_campaign_name,
                                           last_attributed_touch_data_tilde_channel AS context_Campaign_medium,
+                                          last_attributed_touch_data_tilde_ad_set_name AS ad_set_name,
+                                          last_attributed_touch_data_tilde_ad_set_id AS ad_set_id,
+                                          last_attributed_touch_data_tilde_ad_name AS ad_name,
+                                          last_attributed_touch_data_tilde_ad_id AS ad_id,
                                           c.id
                                     from customers.social_ads as a left join ios.signupstarted as b
                                     on a.user_data_idfa = b.context_device_advertising_id inner join ios.users as c on b.context_device_advertising_id = c.context_device_advertising_id WHERE a.name = 'REINSTALL')
@@ -61,6 +77,10 @@ view: derived_marketing_attribution {
                                           a.context_campaign_source,
                                           a.context_campaign_name,
                                           a.context_Campaign_medium,
+                                          '' AS ad_set_name,
+                                          '' AS ad_set_id,
+                                          '' AS ad_name,
+                                          '' AS ad_id,
                                           a.user_id as id
                                     from javascript.pages as a left join javascript.subscribed as b on a.anonymous_id = b.anonymous_id)
 
@@ -100,6 +120,26 @@ view: derived_marketing_attribution {
   dimension: platform {
     type: string
     sql: ${TABLE}.platform ;;
+  }
+
+  dimension: ad_set_name {
+    type: string
+    sql: ${TABLE}.ad_set_name ;;
+  }
+
+  dimension: ad_set_id {
+    type: number
+    sql: ${TABLE}.ad_set_id ;;
+  }
+
+  dimension: ad_name {
+    type: string
+    sql: ${TABLE}.ad_name ;;
+  }
+
+  dimension: ad_id {
+    type: number
+    sql: ${TABLE}.ad_id ;;
   }
 
   dimension: context_campaign_source {
