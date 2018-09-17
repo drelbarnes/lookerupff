@@ -128,6 +128,7 @@ view: customers {
   }
 
 
+
   measure: days_churned {
     type: number
     sql:  DATEDIFF('day', ${event_created_at}::timestamp, ${customer_created_at}::timestamp) ;;
@@ -141,8 +142,11 @@ view: customers {
 
 dimension: days_since_created {
   type: number
-  sql:  DATEDIFF('day', ${customer_created_at}::timestamp, ${event_created_at}::timestamp);;
+  sql:  DATEDIFF('day', ${customer_created_at}::date, ${event_created_at}::date);;
 }
+
+
+
 
   dimension: weeks_since_created {
     type: number
@@ -151,7 +155,7 @@ dimension: days_since_created {
 
   dimension: months_since_created {
     type: number
-    sql:  DATEDIFF('month', ${customer_created_at}::timestamp, ${event_created_at}::timestamp);;
+    sql:  DATEDIFF('month', ${customer_created_at}::date, ${event_created_at}::date);;
   }
 
 
@@ -348,10 +352,22 @@ dimension: days_since_created {
     sql:
       case
         when ${status}='enabled' then 1
-        when ${status}='cancelled' then 0
+        when ${status}='cancelled' AND ${days_since_created} < 15 then 0
       else null end
     ;;
   }
+
+
+#Get1 Free Trial Cancelled
+  dimension: cancelled_during_free_trial {
+    case: {
+      when: {
+        sql: ${days_since_created} = 14;;
+        label: "Free Trial Cancelled"
+      }
+    }
+  }
+
 
 #Get Marketing Opt-In by case
   dimension: get_marketing_opt_in {
@@ -363,10 +379,6 @@ dimension: days_since_created {
       else null end
     ;;
   }
-
-
-
-
 
   measure: revenue_ {
     type: sum

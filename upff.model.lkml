@@ -259,8 +259,10 @@ explore: javascript_authentication {label: "Web Authentication"}
 explore: javascript_derived_timeupdate {}
 explore: derived_marketing_attribution {label: "Attribution: Cross Platform"}
 explore: ios_branch_install {label: "iOS Branch Install"}
+explore: ios_branch_open {label: "iOS Branch Open"}
 explore: ios_branch_reinstall {label: "iOS Branch Re-Install"}
 explore: ios_identifies {label: "iOS Identifies"}
 explore: android_branch_install {label: "Android Branch Install"}
 explore: android_branch_reinstall {label: "Android Branch Re-Install"}
 explore: derived_subscriber_platform_total {label: "Subscriber Platform Total"}
+explore: customers_social_ads {label: "Marketing Attribution"}
