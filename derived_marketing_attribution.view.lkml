@@ -15,7 +15,7 @@ view: derived_marketing_attribution {
                                           last_attributed_touch_data_tilde_ad_name AS ad_name,
                                           last_attributed_touch_data_tilde_ad_id AS ad_id,
                                           c.id
-                                    from customers.social_ads as a left join android.signupstarted as b
+                                    from customers.social_ads as a inner join android.signupstarted as b
                                     on a.user_data_aaid = b.context_device_advertising_id inner join android.users as c on b.context_device_advertising_id = c.context_device_advertising_id WHERE a.name = 'INSTALL')
                                     ,
 
@@ -32,7 +32,7 @@ view: derived_marketing_attribution {
                                           last_attributed_touch_data_tilde_ad_name AS ad_name,
                                           last_attributed_touch_data_tilde_ad_id AS ad_id,
                                           c.id
-                                    from customers.social_ads as a left join android.signupstarted as b
+                                    from customers.social_ads as a inner join android.signupstarted as b
                                     on a.user_data_aaid = b.context_device_advertising_id inner join android.users as c on b.context_device_advertising_id = c.context_device_advertising_id WHERE a.name = 'REINSTALL')
                                     ,
 
@@ -49,7 +49,7 @@ view: derived_marketing_attribution {
                                           last_attributed_touch_data_tilde_ad_name AS ad_name,
                                           last_attributed_touch_data_tilde_ad_id AS ad_id,
                                           c.id
-                                    from customers.social_ads as a left join ios.signupstarted as b
+                                    from customers.social_ads as a inner join ios.signupstarted as b
                                     on a.user_data_idfa = b.context_device_advertising_id inner join ios.users as c on b.context_device_advertising_id = c.context_device_advertising_id WHERE a.name = 'INSTALL')
                                     ,
 
@@ -66,7 +66,7 @@ view: derived_marketing_attribution {
                                           last_attributed_touch_data_tilde_ad_name AS ad_name,
                                           last_attributed_touch_data_tilde_ad_id AS ad_id,
                                           c.id
-                                    from customers.social_ads as a left join ios.signupstarted as b
+                                    from customers.social_ads as a inner join ios.signupstarted as b
                                     on a.user_data_idfa = b.context_device_advertising_id inner join ios.users as c on b.context_device_advertising_id = c.context_device_advertising_id WHERE a.name = 'REINSTALL')
                                     ,
 
@@ -82,7 +82,7 @@ view: derived_marketing_attribution {
                                           '' AS ad_name,
                                           '' AS ad_id,
                                           b.id
-                                    from javascript.subscribed as a left join javascript.users as b on a.user_id = b.id)
+                                    from javascript.subscribed as a inner join javascript.users as b on a.user_id = b.id)
 
                                     (select * from android
                                     union all
