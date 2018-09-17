@@ -78,6 +78,12 @@ explore: customers_v2 {
     relationship: one_to_one
   }
 
+  join: all_play {
+    type:  inner
+    sql_on: ${all_play.user_id} = ${customers_v2.customer_id};;
+    relationship: one_to_one
+  }
+
   join: mailchimp_email_campaigns {
     type:  inner
     sql_on: ${mailchimp_email_campaigns.userid} = ${customers_v2.customer_id};;
