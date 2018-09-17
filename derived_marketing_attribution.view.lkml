@@ -71,7 +71,7 @@ view: derived_marketing_attribution {
                                     ,
 
                                     web as
-                                    (select b.timestamp as visitingtimestamp,
+                                    (select a.original_timestamp as visitingtimestamp,
                                           'web' as platform,
                                           '' AS event,
                                           a.context_campaign_source,
@@ -81,8 +81,8 @@ view: derived_marketing_attribution {
                                           '' AS ad_set_id,
                                           '' AS ad_name,
                                           '' AS ad_id,
-                                          a.user_id as id
-                                    from javascript.pages as a left join javascript.subscribed as b on a.anonymous_id = b.anonymous_id)
+                                          b.id
+                                    from javascript.subscribed as a left join javascript.users as b on a.user_id = b.id)
 
                                     (select * from android
                                     union all
