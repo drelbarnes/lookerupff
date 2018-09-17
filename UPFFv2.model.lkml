@@ -61,6 +61,12 @@ explore: customers {
     relationship: one_to_one
   }
 
+  join: all_play {
+    type:  inner
+    sql_on: ${all_play.user_id} = ${customers.customer_id};;
+    relationship: one_to_one
+  }
+
 }
 
 explore: customers_v2 {
@@ -75,6 +81,12 @@ explore: customers_v2 {
   join: all_firstplay {
     type:  inner
     sql_on: ${all_firstplay.user_id} = ${customers_v2.customer_id};;
+    relationship: one_to_one
+  }
+
+  join: all_play {
+    type:  inner
+    sql_on: ${all_play.user_id} = ${customers_v2.customer_id};;
     relationship: one_to_one
   }
 
