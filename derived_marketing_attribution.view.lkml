@@ -3,7 +3,7 @@ view: derived_marketing_attribution {
     sql:  with
 
                                  android as
-                                    (select b.timestamp as visitingtimestamp,
+                                    (select  b.timestamp as visitingtimestamp,
                                             user_data_os as platform,
                                             a.name AS event,
                                           -- advertising_partner_name as trafficchannel,
@@ -16,28 +16,42 @@ view: derived_marketing_attribution {
                                           last_attributed_touch_data_tilde_ad_id AS ad_id,
                                           c.id
                                     from customers.social_ads as a inner join android.signupstarted as b
-                                    on a.user_data_aaid = b.context_device_advertising_id inner join android.users as c on b.context_device_advertising_id = c.context_device_advertising_id WHERE a.name = 'INSTALL')
+                                    on a.user_data_aaid = b.context_device_advertising_id inner join android.users as c on b.context_device_advertising_id = c.context_device_advertising_id WHERE context_Campaign_medium = 'Facebook')
                                     ,
-
-                                    android_ as
-                                     (select b.timestamp as visitingtimestamp,
-                                            user_data_os as platform,
-                                            a.name AS event,
+                                    android_install as
+                                    (select  b.timestamp as visitingtimestamp,
+                                            os as platform,
+                                            'INSTALL' AS event,
                                           -- advertising_partner_name as trafficchannel,
-                                          last_attributed_touch_data_tilde_advertising_partner_name AS context_campaign_source,
-                                          last_attributed_touch_data_tilde_campaign AS context_campaign_name,
-                                          last_attributed_touch_data_tilde_channel AS context_Campaign_medium,
-                                          last_attributed_touch_data_tilde_ad_set_name AS ad_set_name,
-                                          last_attributed_touch_data_tilde_ad_set_id AS ad_set_id,
-                                          last_attributed_touch_data_tilde_ad_name AS ad_name,
-                                          last_attributed_touch_data_tilde_ad_id AS ad_id,
-                                          c.id
-                                    from customers.social_ads as a inner join android.signupstarted as b
-                                    on a.user_data_aaid = b.context_device_advertising_id inner join android.users as c on b.context_device_advertising_id = c.context_device_advertising_id WHERE a.name = 'REINSTALL')
+                                          context_campaign_source as trafficchanneltype,
+                                          context_campaign_name,
+                                          context_Campaign_medium,
+                                          '' AS ad_set_name,
+                                          '' AS ad_set_id,
+                                          '' AS ad_name,
+                                          '' AS ad_id,
+                                         c.id
+                                    from android.branch_install as a inner join android.signupstarted as b
+                                    on a.context_ip = b.context_ip inner join android.users as c on b.context_ip = c.context_ip)
                                     ,
-
+                                    android_reinstall as
+                                    (select  b.timestamp as visitingtimestamp,
+                                            os as platform,
+                                            'REINSTALL' AS event,
+                                          -- advertising_partner_name as trafficchannel,
+                                          context_campaign_source as trafficchanneltype,
+                                          context_campaign_name,
+                                          context_Campaign_medium,
+                                          '' AS ad_set_name,
+                                          '' AS ad_set_id,
+                                          '' AS ad_name,
+                                          '' AS ad_id,
+                                          c.id
+                                    from android.branch_reinstall as a inner join android.signupstarted as b
+                                    on a.context_ip = b.context_ip inner join android.users as c on b.context_ip = c.context_ip)
+                                    ,
                                     ios as
-                                     (select b.timestamp as visitingtimestamp,
+                                    (select  b.timestamp as visitingtimestamp,
                                             user_data_os as platform,
                                             a.name AS event,
                                           -- advertising_partner_name as trafficchannel,
@@ -50,28 +64,10 @@ view: derived_marketing_attribution {
                                           last_attributed_touch_data_tilde_ad_id AS ad_id,
                                           c.id
                                     from customers.social_ads as a inner join ios.signupstarted as b
-                                    on a.user_data_idfa = b.context_device_advertising_id inner join ios.users as c on b.context_device_advertising_id = c.context_device_advertising_id WHERE a.name = 'INSTALL')
+                                    on a.user_data_idfa = b.context_device_advertising_id inner join ios.users as c on b.context_device_advertising_id = c.context_device_advertising_id WHERE context_Campaign_medium = 'Facebook')
                                     ,
-
-                                    ios_ as
-                                    (select b.timestamp as visitingtimestamp,
-                                            user_data_os as platform,
-                                            a.name AS event,
-                                          -- advertising_partner_name as trafficchannel,
-                                          last_attributed_touch_data_tilde_advertising_partner_name AS context_campaign_source,
-                                          last_attributed_touch_data_tilde_campaign AS context_campaign_name,
-                                          last_attributed_touch_data_tilde_channel AS context_Campaign_medium,
-                                          last_attributed_touch_data_tilde_ad_set_name AS ad_set_name,
-                                          last_attributed_touch_data_tilde_ad_set_id AS ad_set_id,
-                                          last_attributed_touch_data_tilde_ad_name AS ad_name,
-                                          last_attributed_touch_data_tilde_ad_id AS ad_id,
-                                          c.id
-                                    from customers.social_ads as a inner join ios.signupstarted as b
-                                    on a.user_data_idfa = b.context_device_advertising_id inner join ios.users as c on b.context_device_advertising_id = c.context_device_advertising_id WHERE a.name = 'REINSTALL')
-                                    ,
-
                                     web as
-                                    (select a.original_timestamp as visitingtimestamp,
+                                    (select  a.original_timestamp as visitingtimestamp,
                                           'web' as platform,
                                           '' AS event,
                                           a.context_campaign_source,
@@ -86,11 +82,11 @@ view: derived_marketing_attribution {
 
                                     (select * from android
                                     union all
-                                    select * from android_
+                                    select * from android_install
+                                    union all
+                                    select * from android_reinstall
                                     union all
                                     select * from ios
-                                    union all
-                                    select * from ios_
                                     union all
                                     select * from web)
 
@@ -159,6 +155,7 @@ view: derived_marketing_attribution {
 
   dimension: id {
     type: string
+    primary_key: yes
     sql: ${TABLE}.id ;;
   }
 
