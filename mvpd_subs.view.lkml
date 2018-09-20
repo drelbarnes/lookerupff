@@ -1,6 +1,6 @@
 view: mvpd_subs {
   derived_table: {
-    sql: select amazon, comcast, d2c, date(date) as date from svod_titles.mvpd_subs;;
+    sql: select amazon, comcast, d2c, cox, "dish/sling" as dish, date(date) as date from svod_titles.mvpd_subs;;
     }
 
   dimension: amazon {
@@ -16,6 +16,16 @@ view: mvpd_subs {
   dimension: d2c {
     type: number
     sql: ${TABLE}.d2c ;;
+  }
+
+  dimension: dish {
+    type: number
+    sql: ${TABLE}.dish ;;
+  }
+
+  dimension: cox {
+    type: number
+    sql: ${TABLE}.cox ;;
   }
 
   dimension: date {
@@ -36,6 +46,16 @@ view: mvpd_subs {
   measure: d2c_ {
     type: sum
     sql: ${TABLE}.d2c ;;
+  }
+
+  measure: dish_ {
+    type: sum
+    sql: ${TABLE}.dish ;;
+  }
+
+  measure: cox_ {
+    type: sum
+    sql: ${TABLE}.cox ;;
   }
 
   measure: count {
