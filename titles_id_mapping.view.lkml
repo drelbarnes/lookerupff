@@ -7,6 +7,16 @@ view: titles_id_mapping {
     sql: ${TABLE}.id ;;
   }
 
+dimension: collection {
+  type: string
+  sql: ${TABLE}.collection ;;
+}
+
+dimension: collection_id {
+  type: string
+  sql: ${TABLE}.collection_id ;;
+}
+
   dimension_group: date {
     type: time
     timeframes: [
@@ -40,6 +50,11 @@ view: titles_id_mapping {
   dimension: title {
     type: string
     sql: ${TABLE}.title ;;
+  }
+
+  dimension: duration {
+    type: number
+    sql: ${TABLE}.duration ;;
   }
 
   measure: count {
