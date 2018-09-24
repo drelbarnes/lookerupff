@@ -250,8 +250,37 @@ explore: ios_view {label: "iOS Views"}
 explore: android_view {label: "Android Views"}
 explore: android_signin {label: "Android Sign-in"}
 explore: ios_signin { label: "iOS Sign-in"}
-explore: android_signupstarted {label: "Android Signupstarted"}
-explore: ios_signupstarted { label: "iOS Signupstarted"}
+explore: android_signupstarted {
+  label: "Android Signupstarted"
+
+    join: customers_social_ads {
+      type: inner
+      sql_on: ${android_signupstarted.context_device_advertising_id} = ${customers_social_ads.user_data_aaid};;
+      relationship: one_to_one
+    }
+
+    join: android_users {
+      type: inner
+      sql_on: ${android_signupstarted.context_traits_user_id} = ${android_users.id};;
+      relationship: one_to_one
+    }
+  }
+explore: ios_signupstarted {
+  label: "iOS Signupstarted"
+
+    join: customers_social_ads {
+      type: inner
+      sql_on: ${ios_signupstarted.context_device_advertising_id} = ${customers_social_ads.user_data_idfa};;
+      relationship: one_to_one
+    }
+
+    join: ios_users {
+      type: inner
+      sql_on: ${ios_signupstarted.user_id} = ${ios_users.id};;
+      relationship: one_to_one
+    }
+
+  }
 explore: javascript_timeupdate {label: "Web Timeupdate"}
 explore: ios_timeupdate {label: "iOS Timeupdate"}
 explore: android_timeupdate {}
