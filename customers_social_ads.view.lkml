@@ -3,7 +3,7 @@ view: customers_social_ads {
 
   dimension: id {
     primary_key: yes
-    type: string
+    type: number
     sql: ${TABLE}.id ;;
   }
 
@@ -422,14 +422,23 @@ view: customers_social_ads {
     sql: ${TABLE}.seconds_from_last_attributed_touch_to_event ;;
   }
 
-  dimension: timestamp {
-    type: string
+  dimension_group: timestamp {
+    type: time
     sql: ${TABLE}.timestamp ;;
   }
 
-  dimension: timestamp_iso {
-    type: string
-    sql: ${TABLE}.timestamp_iso ;;
+  dimension_group: timestamp_iso{
+    type: time
+    timeframes: [
+      raw,
+      time,
+      date,
+      week,
+      month,
+      quarter,
+      year
+    ]
+    sql: CAST(${TABLE}.timestamp_iso AS TIMESTAMP);;
   }
 
   dimension: user_data_aaid {

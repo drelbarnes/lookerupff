@@ -294,4 +294,13 @@ explore: ios_identifies {label: "iOS Identifies"}
 explore: android_branch_install {label: "Android Branch Install"}
 explore: android_branch_reinstall {label: "Android Branch Re-Install"}
 explore: derived_subscriber_platform_total {label: "Subscriber Platform Total"}
-explore: customers_social_ads {label: "Marketing Attribution"}
+explore: customers_social_ads {
+
+    label: "Marketing Attribution"
+    join: ios_signupstarted {
+      type: inner
+      sql_on: ${customers_social_ads.user_data_idfa} = ${ios_signupstarted.context_device_advertising_id};;
+      relationship: one_to_one
+    }
+
+  }
