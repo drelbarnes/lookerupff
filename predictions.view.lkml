@@ -23,6 +23,7 @@ view: training_input {
         field: bigquery_subscribers.get_status
         value: "NOT NULL"
       }
+
       expression_custom_filter: ${bigquery_derived_all_firstplay.timestamp_date} >= ${bigquery_subscribers.customer_created_date} AND ${bigquery_derived_all_firstplay.timestamp_date}<= add_days(14,${bigquery_subscribers.customer_created_date});;
     }
   }

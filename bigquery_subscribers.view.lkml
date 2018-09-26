@@ -198,6 +198,12 @@ view: bigquery_subscribers {
     html: {{ rendered_value | date: "%a" }} ;;
   }
 
+  dimension: days_in_trial{
+    description: "Number of days a user is in free trial"
+    type: number
+    sql:  DATE_DIFF(${current_date}, ${bigquery_subscribers.customer_created_date}, DAY) ;;
+  }
+
 
   #------------------------ End New Dimensions
 }
