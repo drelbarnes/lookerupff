@@ -1,14 +1,18 @@
 connection: "google_bigquery_db"
 
-include: "*.view.lkml"
+include: "*bigquery_derived_all_firstplay.view.lkml"
+include: "*bigquery_android_firstplay.view.lkml"
+include: "*bigquery_subscribers.view.lkml"
+include: "*bigquery_android_firstplay.view.lkml"
+include: "predictions.view.lkml"
 
-datagroup: google_bigquery_db_default_datagroup {
+datagroup: upff_google_datagroup {
   # sql_trigger: SELECT MAX(id) FROM etl_log;;
   max_cache_age: "1 hour"
+  sql_trigger: SELECT CURRENT_DATE() ;;
 }
 
-persist_with: google_bigquery_db_default_datagroup
-
+persist_with: upff_google_datagroup
 
 explore: bigquery_subscribers {
 
@@ -16,18 +20,18 @@ explore: bigquery_subscribers {
 
 }
 
-explore: bigquery_derived_all_firstplay { label: "All First Play"
+explore: bigquery_derived_all_firstplay {
 
   join: bigquery_subscribers {
-    type:  left_outer
+    type:  inner
     sql_on: ${bigquery_subscribers.customer_id} = SAFE_CAST(${bigquery_derived_all_firstplay.user_id} AS INT64);;
-    relationship: one_to_one
+    relationship: one_to_many
   }
 
-  }
+}
 explore: bigquery_android_firstplay {
 
-  label: "First Play"
+label: "First Play"
 
     join: bigquery_subscribers {
       type:  inner
@@ -36,7 +40,6 @@ explore: bigquery_android_firstplay {
     }
 
 }
-
 
 # include all views in this project
 # include: "my_dashboard.dashboard.lookml"   # include a LookML dashboard called my_dashboard

@@ -1,7 +1,13 @@
 connection: "upff"
 
-# include all the views
-include: "*.view"
+# include views
+include: "ios_users.view"
+include: "javascript_users.view"
+include: "javascript_identifies.view"
+include: "android_users.view"
+include: "javascript_subscribed.view"
+include: "javascript_users.view"
+include: "javascript_play.view"
 
 datagroup: upff_default_datagroup {
   # sql_trigger: SELECT MAX(id) FROM etl_log;;
@@ -92,6 +98,7 @@ explore: javascript_subscribed {
 }
 
 # Web Suscriber Plays
+include: "javascript_firstplay.view"
 explore: javascript_users {
 
   label: "Web Subscriber Plays"
@@ -102,6 +109,7 @@ explore: javascript_users {
     relationship: one_to_one
   }
 
+
   join: javascript_firstplay {
     type:  inner
     sql_on: ${javascript_users.id} = ${javascript_firstplay.user_id} ;;
@@ -110,6 +118,7 @@ explore: javascript_users {
 
 }
 
+include: "javascript_uptv_pages.view"
 explore: javascript_uptv_pages {
   label: "Cross-Domain Subs"
   join: subscribed {
@@ -131,9 +140,10 @@ explore: javascript_uptv_pages {
   }
 }
 
-
+include: "analytics.view"
 explore: analytics{}
 
+include: "php_get_customers.view"
 explore: php_get_customers{
   label: "Mktg Opt-In Subscribers"
   description: "Marketing Opt-In Subs"
@@ -144,6 +154,11 @@ explore: php_get_customers{
   }
 }
 
+include: "customers.view"
+include: "all_firstplay.view"
+include: "delighted_survey_question_answered.view"
+include: "mailchimp_email_campaigns.view"
+include: "customers_customers.view"
 explore: customers{
 
  join: android_users {
@@ -157,6 +172,7 @@ explore: customers{
     sql_on: ${customers.customer_id} = ${ios_users.id};;
     relationship: one_to_one
   }
+
 
   join: all_firstplay {
     type: left_outer
@@ -185,11 +201,14 @@ explore: customers{
 
 }
 
+include: "javascript_subscribed.view"
+include: "purchase_event.view"
+include: "customers_info_facts.view"
 explore: subscribed {}
 explore: purchase_event{label: "Subscribers"}
 explore: customers_info_facts{}
 
-
+include: "analytics_v2.view"
 #Delighted.com // Feedback Survey Responses
 explore: delighted_survey_question_answered {
   label: "Delighted Feedback"
@@ -221,6 +240,7 @@ explore: delighted_survey_question_answered {
 
 }
 
+include: "ios_firstplay.view"
 #iOS // get user plays
 explore: ios_users_firstplay {
   label: "iOS Subscribers Play"
@@ -233,6 +253,8 @@ explore: ios_users_firstplay {
   }
 }
 
+include: "android_users.view"
+include: "android_play.view"
 #Android // get user plays
 explore: android_users_play {
   label: "Android Subscribers Play"
@@ -244,6 +266,15 @@ explore: android_users_play {
     relationship: one_to_one
   }
 }
+
+include: "javascript_pages.view"
+include: "ios_view.view"
+include: "android_view.view"
+include: "android_signin.view"
+include: "ios_signin.view"
+include: "signupstarted.view"
+include: "customers_social_ads.view"
+include: "ios_signupstarted.view"
 
 explore: javascript_pages {label: "Web Pages Views"}
 explore: ios_view {label: "iOS Views"}
@@ -281,6 +312,21 @@ explore: ios_signupstarted {
     }
 
   }
+
+include: "javascript_timeupdate.view"
+include: "ios_timeupdate.view"
+include: "android_timeupdate.view"
+include: "javascript_authentication.view"
+include: "javascript_derived_timeupdate.view"
+include: "derived_marketing_attribution.view"
+include: "ios_branch_install.view"
+include: "ios_branch_open.view"
+include: "ios_branch_reinstall.view"
+include: "ios_identifies.view"
+include: "android_branch_install.view"
+include: "android_branch_reinstall.view"
+include: "derived_subscriber_platform_total.view"
+
 explore: javascript_timeupdate {label: "Web Timeupdate"}
 explore: ios_timeupdate {label: "iOS Timeupdate"}
 explore: android_timeupdate {}

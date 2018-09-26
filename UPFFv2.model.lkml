@@ -1,7 +1,14 @@
 connection: "upff"
 
 # include all the views
-include: "*.view"
+# include views
+include: "ios_users.view"
+include: "javascript_users.view"
+include: "javascript_identifies.view"
+include: "android_users.view"
+include: "javascript_subscribed.view"
+include: "javascript_users.view"
+include: "javascript_play.view"
 
 datagroup: upff_default_datagroup {
   # sql_trigger: SELECT MAX(id) FROM etl_log;;
@@ -9,6 +16,9 @@ datagroup: upff_default_datagroup {
 }
 
 persist_with: upff_default_datagroup
+
+include: "ios_application_installed.view"
+include: "ios_signupstarted.view"
 
 explore: application_installed{
   join: ios_signupstarted {
@@ -18,6 +28,7 @@ explore: application_installed{
   }
 }
 
+include: "analytics.view"
 explore: analytics{}
 explore: analytics_v2 {
 
@@ -40,7 +51,12 @@ explore: analytics_v2 {
   }
 
 }
+
+include: "javascript_subscribed.view"
 explore: subscribed {}
+
+include: "customers.view"
+include: "customers_analytics.view"
 explore: customers {
 
   join: customers_analytics {
@@ -97,6 +113,22 @@ explore: customers_v2 {
   }
 
 }
+
+include: "customers_churn_reasons_aggregated.view"
+include: "customers_churn_custom_reasons.view"
+include: "afinn_lexicon.view"
+include: "purchase_event.view"
+include: "http_api_users.view"
+include: "heartlandia.view"
+include: "Viewership.view"
+include: "ads_compare.view"
+include: "Lifetime_Value.view"
+include: "churn_texts.view"
+include: "LTV_CPA.view"
+include: "customer_churn_percent.view"
+include: "android_play.view"
+include:  "ios_play.view"
+
 explore: churn_reasons_aggregated {}
 explore: churn_custom_reasons {}
 explore: afinn_lexicon {}
@@ -123,6 +155,11 @@ explore: all_play {
 
 }
 
+include: "all_firstplay.view"
+include: "customers_customers.view"
+include: "analytics_v2.view"
+include: "mailchimp_email_campaigns.view"
+include: "delighted_survey_question_answered.view"
 explore: all_firstplay {
 
 
@@ -152,6 +189,8 @@ explore: all_firstplay {
 
 }
 
+include: "javascript_users.view"
+include: "all_play.view"
 # Web Suscriber Plays
 explore: javascript_users {
   label: "Web Subscriber Video ID"
@@ -169,6 +208,28 @@ explore: javascript_users {
   }
 
 }
+
+include: "javascript_timeupdate.view"
+include: "ios_timeupdate.view"
+include: "android_timeupdate.view"
+include: "javascript_authentication.view"
+include: "javascript_derived_timeupdate.view"
+include: "derived_marketing_attribution.view"
+include: "ios_branch_install.view"
+include: "ios_branch_open.view"
+include: "ios_branch_reinstall.view"
+include: "ios_identifies.view"
+include: "android_branch_install.view"
+include: "android_branch_reinstall.view"
+include: "derived_subscriber_platform_total.view"
+include: "mvpd_subs.view"
+include: "mtd_revenue.view"
+include: "upff_linear_ratings.view"
+include: "uptv_daily_day_part.view"
+include: "uptv_daily_key_demo.view"
+include: "top_play.view"
+include: "campaign_wicket_export.view"
+include: "svod_titles.view"
 
 explore: titles {}
 explore: mvpd_subs {}
