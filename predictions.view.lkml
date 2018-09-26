@@ -58,7 +58,7 @@ view: testing_input {
       column: days_since_created { field: bigquery_subscribers.days_since_created }
       filters: {
         field: bigquery_subscribers.customer_created_time
-        value: "after 60 days ago"
+        value: "after 60 days ago,before 14 days ago"
       }
       filters: {
         field: bigquery_subscribers.days_since_created
@@ -200,9 +200,9 @@ view: future_purchase_model_training_info {
   }
 }
 ########################################## PREDICT FUTURE ############################
+explore: future_purchase_prediction {}
 view: future_input {
-  derived_table: {
-    explore_source: bigquery_derived_all_firstplay {
+  derived_table: {explore_source: bigquery_derived_all_firstplay {
       column: count {}
       column: user_id {}
       column: platform {}
@@ -213,21 +213,10 @@ view: future_input {
       column: get_status { field: bigquery_subscribers.get_status }
       column: days_since_created { field: bigquery_subscribers.days_since_created }
       filters: {
-        field: bigquery_subscribers.action_type
-        value: "-NULL"
-      }
-      filters: {
         field: bigquery_subscribers.customer_created_time
-        value: "before 14 days ago"
+        value: "after 14 days ago"
       }
-      filters: {
-        field: bigquery_subscribers.days_since_created
-        value: ">0"
-      }
-      filters: {
-        field: bigquery_subscribers.get_status
-        value: "NOT NULL"
-      }
+      expression_custom_filter: ${bigquery_derived_all_firstplay.timestamp_date} >= ${bigquery_subscribers.customer_created_date} AND ${bigquery_derived_all_firstplay.timestamp_date}<= add_days(14,${bigquery_subscribers.customer_created_date});;
     }
   }
   dimension: count {
@@ -241,9 +230,6 @@ view: future_input {
     type: number
   }
   dimension: state {}
-  dimension: get_status {
-    type: number
-  }
   dimension: days_since_created {
     type: number
   }
@@ -254,7 +240,8 @@ view: future_purchase_prediction {
           MODEL ${future_purchase_model.SQL_TABLE_NAME},
           (SELECT * FROM ${future_input.SQL_TABLE_NAME}));;
   }
-  dimension: get_status {
+  dimension: user_id {}
+  dimension: predicted_get_status {
     type: number
     description: "Binary classification based on max predicted value"
   }

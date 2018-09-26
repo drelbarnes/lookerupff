@@ -17,7 +17,6 @@ persist_with: upff_google_datagroup
 explore: bigquery_subscribers {
 
   label: "Subscribers"
-
 }
 
 explore: bigquery_derived_all_firstplay {
@@ -26,6 +25,11 @@ explore: bigquery_derived_all_firstplay {
     type:  inner
     sql_on: ${bigquery_subscribers.customer_id} = SAFE_CAST(${bigquery_derived_all_firstplay.user_id} AS INT64);;
     relationship: one_to_many
+  }
+
+  join: future_purchase_prediction {
+    relationship: one_to_one
+    sql_on: ${bigquery_derived_all_firstplay.user_id} = ${future_purchase_prediction.user_id} ;;
   }
 
 }
@@ -40,6 +44,7 @@ label: "First Play"
     }
 
 }
+
 
 # include all views in this project
 # include: "my_dashboard.dashboard.lookml"   # include a LookML dashboard called my_dashboard
