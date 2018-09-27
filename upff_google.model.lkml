@@ -1,10 +1,12 @@
 connection: "google_bigquery_db"
 
-include: "*bigquery_derived_all_firstplay.view.lkml"
-include: "*bigquery_android_firstplay.view.lkml"
-include: "*bigquery_subscribers.view.lkml"
-include: "*bigquery_android_firstplay.view.lkml"
+include: "bigquery_delighted_survey_question_answered.view.lkml"
+include: "bigquery_derived_all_firstplay.view.lkml"
+include: "bigquery_android_firstplay.view.lkml"
+include: "bigquery_subscribers.view.lkml"
+include: "bigquery_android_firstplay.view.lkml"
 include: "predictions.view.lkml"
+
 
 datagroup: upff_google_datagroup {
   # sql_trigger: SELECT MAX(id) FROM etl_log;;
@@ -27,10 +29,17 @@ explore: bigquery_derived_all_firstplay {
     relationship: one_to_many
   }
 
+  join: bigquery_delighted_survey_question_answered {
+    type: left_outer
+    sql_on: ${bigquery_delighted_survey_question_answered.user_id} = ${bigquery_derived_all_firstplay.user_id};;
+    relationship: one_to_many
+  }
+
   join: future_purchase_prediction {
     relationship: one_to_one
     sql_on: ${bigquery_derived_all_firstplay.user_id} = ${future_purchase_prediction.user_id} ;;
   }
+
 
 }
 explore: bigquery_android_firstplay {

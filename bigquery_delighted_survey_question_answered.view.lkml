@@ -1,4 +1,4 @@
-view: delighted_survey_question_answered {
+view: bigquery_delighted_survey_question_answered {
   sql_table_name: delighted.survey_question_answered ;;
 
   dimension: id {
@@ -39,7 +39,6 @@ view: delighted_survey_question_answered {
 
   dimension: context_traits_email {
     type: string
-    tags: ["email"]
     sql: ${TABLE}.context_traits_email ;;
   }
 
@@ -51,6 +50,20 @@ view: delighted_survey_question_answered {
   dimension: event_text {
     type: string
     sql: ${TABLE}.event_text ;;
+  }
+
+  dimension_group: loaded {
+    type: time
+    timeframes: [
+      raw,
+      time,
+      date,
+      week,
+      month,
+      quarter,
+      year
+    ]
+    sql: ${TABLE}.loaded_at ;;
   }
 
   dimension: original_timestamp {
@@ -176,11 +189,6 @@ view: delighted_survey_question_answered {
     sql: ${TABLE}.survey_type ;;
   }
 
-  dimension: day_on {
-    type: number
-    sql:  DATEDIFF('day', ${customers_v2.customer_created_at}::timestamp, ${timestamp_date}::timestamp) ;;
-  }
-
   dimension_group: timestamp {
     type: time
     timeframes: [
@@ -197,14 +205,7 @@ view: delighted_survey_question_answered {
 
   dimension: user_id {
     type: string
-    tags: ["user_id"]
     sql: ${TABLE}.user_id ;;
-  }
-
-  dimension: uuid {
-    type: number
-    value_format_name: id
-    sql: ${TABLE}.uuid ;;
   }
 
   dimension_group: uuid_ts {
@@ -221,77 +222,31 @@ view: delighted_survey_question_answered {
     sql: ${TABLE}.uuid_ts ;;
   }
 
-
-  #Get Promoters by case
-  dimension: promoters {
-    case: {
-                  when: {
-                    sql: ${TABLE}.survey_question_answer = 9 OR
-                        ${TABLE}.survey_question_answer = 10 ;;
-                    label: "Promoters"
-                  }
-                  when: {
-                    sql: ${TABLE}.survey_question_answer  = 7 OR
-                        ${TABLE}.survey_question_answer  = 8 ;;
-                    label: "Passives"
-                  }
-                  when: {
-                    sql: ${TABLE}.survey_question_answer <= 6 ;;
-                    label: "Detractors"
-                  }
-                   else: "Nevers"
-      }
-  }
-
-  measure: detractors {
-    type: count_distinct
-    sql: ${TABLE}.user_id ;;
-    filters: {
-      field: customers_v2.status
-      value: "enabled"
-    }
-    filters: {
-      field: promoters # Reference fields from other joined views with view_name.field_name syntax
-      value: "Detractors" # Minus sign means "not" in this case, but check notation docs for details
-    }
-  }
-
-  measure: passives {
-    type: count_distinct
-    sql: ${TABLE}.user_id ;;
-    filters: {
-      field: customers_v2.status
-      value: "enabled"
-    }
-    filters: {
-      field: promoters # Reference fields from other joined views with view_name.field_name syntax
-      value: "Passives" # Minus sign means "not" in this case, but check notation docs for details
-    }
-  }
-
-  measure: promoterz {
-    type: count_distinct
-    sql: ${TABLE}.user_id ;;
-    filters: {
-      field: customers_v2.status
-      value: "enabled"
-    }
-    filters: {
-      field: promoters # Reference fields from other joined views with view_name.field_name syntax
-      value: "Promoters" # Minus sign means "not" in this case, but check notation docs for details
-    }
-  }
-
-
   measure: count {
     type: count
-    drill_fields: [id, survey_question_name, context_integration_name, context_library_name, survey_name]
+    drill_fields: [id, survey_name, context_integration_name, context_library_name, survey_question_name]
   }
 
-
-  measure: count_distinct_userids{
-    type: count_distinct
-    sql: ${user_id};;
+#Get Promoters by case
+  dimension: promoters {
+    case: {
+      when: {
+        sql: SAFE_CAST(${TABLE}.survey_question_answer AS INT64) = 9 OR
+          SAFE_CAST(${TABLE}.survey_question_answer AS INT64) = 10 ;;
+        label: "Promoters"
+      }
+      when: {
+        sql: SAFE_CAST(${TABLE}.survey_question_answer AS INT64)  = 7 OR
+          SAFE_CAST(${TABLE}.survey_question_answer AS INT64)  = 8 ;;
+        label: "Passives"
+      }
+      when: {
+        sql: SAFE_CAST(${TABLE}.survey_question_answer AS INT64) <= 6 ;;
+        label: "Detractors"
+      }
+      else: "Nevers"
+    }
   }
+
 
 }

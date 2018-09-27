@@ -11,9 +11,11 @@ view: training_input {
       column: state { field: bigquery_subscribers.state }
       column: get_status { field: bigquery_subscribers.get_status }
       column: days_since_created { field: bigquery_subscribers.days_since_created }
+      column: promoters { field: bigquery_delighted_survey_question_answered.promoters }
+
       filters: {
         field: bigquery_subscribers.customer_created_time
-        value: "before 60 days ago"
+        value: "after 150 days ago,before 14 days ago"
       }
       filters: {
         field: bigquery_subscribers.days_since_created
@@ -44,6 +46,7 @@ view: training_input {
   dimension: days_since_created {
     type: number
   }
+  dimension: promoters {}
 }
 view: testing_input {
   derived_table: {
@@ -57,9 +60,11 @@ view: testing_input {
       column: state { field: bigquery_subscribers.state }
       column: get_status { field: bigquery_subscribers.get_status }
       column: days_since_created { field: bigquery_subscribers.days_since_created }
+      column: promoters { field: bigquery_delighted_survey_question_answered.promoters }
+
       filters: {
         field: bigquery_subscribers.customer_created_time
-        value: "after 60 days ago,before 14 days ago"
+        value: "after 30 days ago,before 14 days ago"
       }
       filters: {
         field: bigquery_subscribers.days_since_created
@@ -89,6 +94,7 @@ view: testing_input {
   dimension: days_since_created {
     type: number
   }
+  dimension: promoters {}
 }
 ######################## MODEL #############################
 view: future_purchase_model {
@@ -213,6 +219,8 @@ view: future_input {
       column: state { field: bigquery_subscribers.state }
       column: get_status { field: bigquery_subscribers.get_status }
       column: days_since_created { field: bigquery_subscribers.days_since_created }
+      column: promoters { field: bigquery_delighted_survey_question_answered.promoters }
+
       filters: {
         field: bigquery_subscribers.customer_created_time
         value: "after 14 days ago"
@@ -224,6 +232,7 @@ view: future_input {
     type: number
   }
   dimension: user_id {}
+  dimension: email {}
   dimension: platform {}
   dimension: source {}
   dimension: day_of_week {}
@@ -234,6 +243,7 @@ view: future_input {
   dimension: days_since_created {
     type: number
   }
+  dimension: promoters {}
 }
 view: future_purchase_prediction {
   derived_table: {

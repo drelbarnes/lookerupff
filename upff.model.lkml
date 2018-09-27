@@ -214,7 +214,7 @@ explore: delighted_survey_question_answered {
   label: "Delighted Feedback"
 
   join: customers_v2 {
-    type: inner
+    type: left_outer
     sql_on: ${delighted_survey_question_answered.user_id} = ${customers_v2.customer_id};;
     relationship: one_to_one
   }
