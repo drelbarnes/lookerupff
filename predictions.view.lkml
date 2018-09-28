@@ -10,7 +10,7 @@ view: training_input {
       column: marketing_opt_in { field: bigquery_subscribers.marketing_opt_in }
       column: state { field: bigquery_subscribers.state }
       column: get_status { field: bigquery_subscribers.get_status }
-      column: days_since_created { field: bigquery_subscribers.days_since_created }
+      column: subscription_length { field: bigquery_subscribers.days_since_created }
       column: promoters { field: bigquery_delighted_survey_question_answered.promoters }
 
       filters: {
@@ -18,7 +18,7 @@ view: training_input {
         value: "after 150 days ago,before 14 days ago"
       }
       filters: {
-        field: bigquery_subscribers.days_since_created
+        field: bigquery_subscribers.subscription_length
         value: ">0"
       }
       filters: {
@@ -43,7 +43,7 @@ view: training_input {
   dimension: get_status {
     type: number
   }
-  dimension: days_since_created {
+  dimension: subscription_length {
     type: number
   }
   dimension: promoters {}
@@ -59,7 +59,7 @@ view: testing_input {
       column: marketing_opt_in { field: bigquery_subscribers.marketing_opt_in }
       column: state { field: bigquery_subscribers.state }
       column: get_status { field: bigquery_subscribers.get_status }
-      column: days_since_created { field: bigquery_subscribers.days_since_created }
+      column: subscription_length { field: bigquery_subscribers.days_since_created }
       column: promoters { field: bigquery_delighted_survey_question_answered.promoters }
 
       filters: {
@@ -67,7 +67,7 @@ view: testing_input {
         value: "after 30 days ago,before 14 days ago"
       }
       filters: {
-        field: bigquery_subscribers.days_since_created
+        field: bigquery_subscribers.subscription_length
         value: ">0"
       }
       filters: {
@@ -91,7 +91,7 @@ view: testing_input {
   dimension: get_status {
     type: number
   }
-  dimension: days_since_created {
+  dimension: subscription_length {
     type: number
   }
   dimension: promoters {}
@@ -218,7 +218,7 @@ view: future_input {
       column: marketing_opt_in { field: bigquery_subscribers.marketing_opt_in }
       column: state { field: bigquery_subscribers.state }
       column: get_status { field: bigquery_subscribers.get_status }
-      column: days_since_created { field: bigquery_subscribers.days_since_created }
+      column: subscription_length { field: bigquery_subscribers.subscription_length }
       column: promoters { field: bigquery_delighted_survey_question_answered.promoters }
 
       filters: {
@@ -240,7 +240,7 @@ view: future_input {
     type: number
   }
   dimension: state {}
-  dimension: days_since_created {
+  dimension: subscription_length {
     type: number
   }
   dimension: promoters {}
@@ -252,6 +252,8 @@ view: future_purchase_prediction {
           (SELECT * FROM ${future_input.SQL_TABLE_NAME}));;
   }
   dimension: user_id {}
+  dimension: subscription_length {}
+  dimension: promoters {}
   dimension: predicted_get_status {
     type: number
     description: "Binary classification based on max predicted value"
