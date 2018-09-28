@@ -10,7 +10,7 @@ view: training_input {
       column: marketing_opt_in { field: bigquery_subscribers.marketing_opt_in }
       column: state { field: bigquery_subscribers.state }
       column: get_status { field: bigquery_subscribers.get_status }
-#       column: days_since_created { field: bigquery_subscribers.days_since_created }
+      column: days_since_created { field: bigquery_subscribers.days_since_created }
       column: promoters { field: bigquery_delighted_survey_question_answered.promoters }
 
       filters: {
@@ -43,9 +43,9 @@ view: training_input {
   dimension: get_status {
     type: number
   }
-#   dimension: days_since_created {
-#     type: number
-#   }
+  dimension: days_since_created {
+    type: number
+  }
   dimension: promoters {}
 }
 view: testing_input {
@@ -59,7 +59,7 @@ view: testing_input {
       column: marketing_opt_in { field: bigquery_subscribers.marketing_opt_in }
       column: state { field: bigquery_subscribers.state }
       column: get_status { field: bigquery_subscribers.get_status }
-#       column: days_since_created { field: bigquery_subscribers.days_since_created }
+      column: days_since_created { field: bigquery_subscribers.days_since_created }
       column: promoters { field: bigquery_delighted_survey_question_answered.promoters }
 
       filters: {
@@ -218,7 +218,7 @@ view: future_input {
       column: marketing_opt_in { field: bigquery_subscribers.marketing_opt_in }
       column: state { field: bigquery_subscribers.state }
       column: get_status { field: bigquery_subscribers.get_status }
-#       column: days_since_created { field: bigquery_subscribers.days_since_created }
+      column: days_since_created { field: bigquery_subscribers.days_since_created }
       column: promoters { field: bigquery_delighted_survey_question_answered.promoters }
 
       filters: {
@@ -240,9 +240,9 @@ view: future_input {
     type: number
   }
   dimension: state {}
-#   dimension: days_since_created {
-#     type: number
-#   }
+  dimension: days_since_created {
+    type: number
+  }
   dimension: promoters {}
 }
 view: future_purchase_prediction {
