@@ -1,11 +1,19 @@
 connection: "google_bigquery_db"
 
-include: "bigquery_delighted_survey_question_answered.view.lkml"
+
+
+include: "bigquery_derived_timeupdate.view.lkml"
+include: "bigquery_derived_views.view.lkml"
 include: "bigquery_derived_all_firstplay.view.lkml"
+include: "bigquery_derived_addwatchlist.view.lkml"
+include: "bigquery_delighted_survey_question_answered.view.lkml"
 include: "bigquery_android_firstplay.view.lkml"
 include: "bigquery_subscribers.view.lkml"
 include: "bigquery_android_firstplay.view.lkml"
 include: "predictions.view.lkml"
+include: "bigquery_derived_signin.view.lkml"
+
+
 
 
 datagroup: upff_google_datagroup {
@@ -16,23 +24,77 @@ datagroup: upff_google_datagroup {
 
 persist_with: upff_google_datagroup
 
+
+explore: bigquery_derived_addwatchlist {}
+explore: bigquery_derived_timeupdate {}
+explore: bigquery_derived_views {}
+
 explore: bigquery_subscribers {
 
   label: "Subscribers"
+
+  join: bigquery_derived_addwatchlist {
+    type: left_outer
+    sql_on: ${bigquery_subscribers.customer_id} = SAFE_CAST(${bigquery_derived_addwatchlist.user_id} AS INT64);;
+    relationship: one_to_many
+  }
+
+  join: bigquery_derived_signin {
+    type: left_outer
+    sql_on: ${bigquery_subscribers.customer_id} = SAFE_CAST(${bigquery_derived_signin.user_id} AS INT64);;
+    relationship: one_to_many
+  }
+
+  join: bigquery_derived_timeupdate {
+    type: left_outer
+    sql_on: ${bigquery_subscribers.customer_id} = SAFE_CAST(${bigquery_derived_timeupdate.user_id} AS INT64);;
+    relationship: one_to_many
+  }
+
+  join: bigquery_derived_views {
+    type: left_outer
+    sql_on: ${bigquery_subscribers.customer_id} = SAFE_CAST(${bigquery_derived_views.user_id} AS INT64);;
+    relationship: one_to_many
+  }
+
 }
 
 explore: bigquery_derived_all_firstplay {
 
-  join: bigquery_subscribers {
-    type:  inner
-    sql_on: ${bigquery_subscribers.customer_id} = SAFE_CAST(${bigquery_derived_all_firstplay.user_id} AS INT64);;
+  join: bigquery_derived_views{
+    type: left_outer
+    sql_on: ${bigquery_subscribers.customer_id} = SAFE_CAST(${bigquery_derived_views.user_id} AS INT64);;
     relationship: one_to_many
+  }
+
+  join: bigquery_derived_timeupdate{
+    type: left_outer
+    sql_on: ${bigquery_subscribers.customer_id} = SAFE_CAST(${bigquery_derived_timeupdate.user_id} AS INT64);;
+    relationship: one_to_many
+  }
+
+  join: bigquery_derived_addwatchlist {
+    type: left_outer
+    sql_on: ${bigquery_subscribers.customer_id} = SAFE_CAST(${bigquery_derived_addwatchlist.user_id} AS INT64);;
+    relationship: one_to_many
+  }
+
+  join: bigquery_derived_signin {
+    type: left_outer
+    sql_on: ${bigquery_subscribers.customer_id} = SAFE_CAST(${bigquery_derived_signin.user_id} AS INT64);;
+    relationship: one_to_many
+  }
+
+  join: bigquery_subscribers {
+    type:  left_outer
+    sql_on: ${bigquery_subscribers.customer_id} = SAFE_CAST(${bigquery_derived_all_firstplay.user_id} AS INT64);;
+    relationship: one_to_one
   }
 
   join: bigquery_delighted_survey_question_answered {
     type: left_outer
     sql_on: ${bigquery_delighted_survey_question_answered.user_id} = ${bigquery_derived_all_firstplay.user_id};;
-    relationship: one_to_many
+    relationship: one_to_one
   }
 
   join: future_purchase_prediction {
@@ -45,12 +107,6 @@ explore: bigquery_derived_all_firstplay {
 explore: bigquery_android_firstplay {
 
 label: "First Play"
-
-    join: bigquery_subscribers {
-      type:  inner
-      sql_on: ${bigquery_subscribers.customer_id} = SAFE_CAST(${bigquery_android_firstplay.user_id} AS INT64);;
-      relationship: one_to_many
-    }
 
 }
 

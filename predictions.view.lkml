@@ -3,23 +3,25 @@ view: training_input {
   derived_table: {
     explore_source: bigquery_derived_all_firstplay {
       column: count {}
+      column: number_of_platforms_by_user {}
       column: user_id {}
       column: platform {}
       column: source {}
+      column: frequency { field: bigquery_subscribers.frequency }
       column: day_of_week { field: bigquery_subscribers.day_of_week }
       column: marketing_opt_in { field: bigquery_subscribers.marketing_opt_in }
       column: state { field: bigquery_subscribers.state }
       column: get_status { field: bigquery_subscribers.get_status }
-      column: subscription_length { field: bigquery_subscribers.days_since_created }
+      #column: subscription_length { field: bigquery_subscribers.days_since_created }
       column: promoters { field: bigquery_delighted_survey_question_answered.promoters }
+      column: addwatchlist { field: bigquery_subscribers.addwatchlist_count }
+      #column: signin { field: bigquery_subscribers.signin_count }
+      column: views { field: bigquery_subscribers.views_count }
+      #column: timecode { field: bigquery_subscribers.timecode }
 
       filters: {
         field: bigquery_subscribers.customer_created_time
         value: "after 150 days ago,before 30 days ago"
-      }
-      filters: {
-        field: bigquery_subscribers.subscription_length
-        value: ">0"
       }
       filters: {
         field: bigquery_subscribers.get_status
@@ -29,12 +31,16 @@ view: training_input {
       expression_custom_filter: ${bigquery_derived_all_firstplay.timestamp_date} >= ${bigquery_subscribers.customer_created_date} AND ${bigquery_derived_all_firstplay.timestamp_date}<= add_days(14,${bigquery_subscribers.customer_created_date});;
     }
   }
-  dimension: count {
-    type: number
-  }
+  dimension: count { type: number }
+  dimension: views { type: number }
+  dimension: number_of_platforms_by_user { type: number }
+  #dimension: signin { type: number }
+  dimension: addwatchlist { type: number }
+
   dimension: user_id {}
   dimension: platform {}
   dimension: source {}
+  dimension: frequency {}
   dimension: day_of_week {}
   dimension: marketing_opt_in {
     type: number
@@ -43,46 +49,52 @@ view: training_input {
   dimension: get_status {
     type: number
   }
-  dimension: subscription_length {
-    type: number
-  }
+
   dimension: promoters {}
 }
 view: testing_input {
   derived_table: {
     explore_source: bigquery_derived_all_firstplay {
       column: count {}
+      column: number_of_platforms_by_user {}
       column: user_id {}
       column: platform {}
       column: source {}
-       column: day_of_week { field: bigquery_subscribers.day_of_week }
+      column: frequency { field: bigquery_subscribers.frequency }
+      column: day_of_week { field: bigquery_subscribers.day_of_week }
       column: marketing_opt_in { field: bigquery_subscribers.marketing_opt_in }
       column: state { field: bigquery_subscribers.state }
       column: get_status { field: bigquery_subscribers.get_status }
-      column: subscription_length { field: bigquery_subscribers.days_since_created }
+      #column: subscription_length { field: bigquery_subscribers.days_since_created }
       column: promoters { field: bigquery_delighted_survey_question_answered.promoters }
+      column: addwatchlist { field: bigquery_subscribers.addwatchlist_count }
+      #column: signin { field: bigquery_subscribers.signin_count }
+      column: views { field: bigquery_subscribers.views_count }
+      #column: timecode { field: bigquery_subscribers.timecode }
 
       filters: {
         field: bigquery_subscribers.customer_created_time
         value: "after 30 days ago,before 14 days ago"
       }
       filters: {
-        field: bigquery_subscribers.subscription_length
-        value: ">0"
-      }
-      filters: {
         field: bigquery_subscribers.get_status
         value: "NOT NULL"
       }
+
       expression_custom_filter: ${bigquery_derived_all_firstplay.timestamp_date} >= ${bigquery_subscribers.customer_created_date} AND ${bigquery_derived_all_firstplay.timestamp_date}<= add_days(14,${bigquery_subscribers.customer_created_date});;
     }
   }
   dimension: count {
     type: number
   }
+  dimension: views { type: number }
+  dimension: number_of_platforms_by_user { type: number }
+  dimension: addwatchlist { type: number }
+  #dimension: signin { type: number }
   dimension: user_id {}
   dimension: platform {}
   dimension: source {}
+  dimension: frequency {}
   dimension: day_of_week {}
   dimension: marketing_opt_in {
     type: number
@@ -96,9 +108,6 @@ view: testing_input {
     type: number
   }
 
-  dimension: subscription_length {
-    type: number
-  }
 
   dimension: promoters {}
 }
@@ -217,15 +226,22 @@ explore: future_purchase_prediction {}
 view: future_input {
   derived_table: {explore_source: bigquery_derived_all_firstplay {
       column: count {}
+      column: number_of_platforms_by_user {}
       column: user_id {}
       column: platform {}
       column: source {}
+      column: frequency { field: bigquery_subscribers.frequency }
       column: day_of_week { field: bigquery_subscribers.day_of_week }
       column: marketing_opt_in { field: bigquery_subscribers.marketing_opt_in }
       column: state { field: bigquery_subscribers.state }
       column: get_status { field: bigquery_subscribers.get_status }
-      column: subscription_length { field: bigquery_subscribers.subscription_length }
+      #column: subscription_length { field: bigquery_subscribers.subscription_length }
       column: promoters { field: bigquery_delighted_survey_question_answered.promoters }
+      column: addwatchlist { field: bigquery_subscribers.addwatchlist_count }
+      #column: signin { field: bigquery_subscribers.signin_count }
+      column: views { field: bigquery_subscribers.views_count }
+      #column: timecode { field: bigquery_subscribers.timecode }
+      #column: addwatchlist { field: bigquery_derived_addwatchlist.count }
 
       filters: {
         field: bigquery_subscribers.customer_created_time
@@ -234,21 +250,22 @@ view: future_input {
       expression_custom_filter: ${bigquery_derived_all_firstplay.timestamp_date} >= ${bigquery_subscribers.customer_created_date} AND ${bigquery_derived_all_firstplay.timestamp_date}<= add_days(14,${bigquery_subscribers.customer_created_date});;
     }
   }
-  dimension: count {
-    type: number
-  }
+  dimension: count { type: number }
+  dimension: views { type: number }
+  dimension: number_of_platforms_by_user { type: number }
+  dimension: addwatchlist { type: number }
+  #dimension: signin { type: number }
   dimension: user_id {}
   dimension: email {}
   dimension: platform {}
   dimension: source {}
+  dimension: frequency {}
   dimension: day_of_week {}
   dimension: marketing_opt_in {
     type: number
   }
   dimension: state {}
-  dimension: subscription_length {
-    type: number
-  }
+
   dimension: promoters {}
 }
 view: future_purchase_prediction {
@@ -258,8 +275,13 @@ view: future_purchase_prediction {
           (SELECT * FROM ${future_input.SQL_TABLE_NAME}));;
   }
   dimension: user_id {}
-  dimension: subscription_length {}
+  #dimension: subscription_length {}
   dimension: promoters {}
+  dimension: addwatchlist{ type: number }
+  dimension: views { type: number }
+  dimension: number_of_platforms_by_user { type: number }
+
+  #dimension: signin { type: number }
   dimension: predicted_get_status {
     type: number
     description: "Binary classification based on max predicted value"

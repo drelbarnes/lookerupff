@@ -204,6 +204,42 @@ view: bigquery_subscribers {
     sql:  DATE_DIFF(${current_date}, ${bigquery_subscribers.customer_created_date}, DAY) ;;
   }
 
+  measure: timecode {
+    type: number
+    value_format: "0"
+    sql: ${bigquery_derived_timeupdate.timecode_count};;
+  }
+
+  dimension: addwatchlist {
+    type:  string
+    sql: ${bigquery_derived_addwatchlist.event};;
+  }
+
+  measure: addwatchlist_count {
+    type: count_distinct
+    sql: ${addwatchlist};;
+  }
+
+  dimension: signgin {
+    type:  string
+    sql: ${bigquery_derived_signin.event};;
+  }
+
+  measure: signin_count {
+    type: number
+    sql: COUNT(${signgin});;
+  }
+
+  dimension: views {
+    type:  string
+    sql: ${bigquery_derived_views.user_id};;
+  }
+
+  measure: views_count {
+    type: number
+    sql: COUNT(${views});;
+  }
+
 
   #------------------------ End New Dimensions
 }
