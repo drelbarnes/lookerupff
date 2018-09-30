@@ -104,11 +104,6 @@ view: testing_input {
     type: number
   }
 
-  dimension: days_since_created {
-    type: number
-  }
-
-
   dimension: promoters {}
 }
 ######################## MODEL #############################
