@@ -65,6 +65,11 @@ from a inner join customers.subscribers on SAFE_CAST(user_id AS INT64) = custome
     sql: ${TABLE}.timestamp ;;
   }
 
+  dimension: timecode {
+    type: number
+    sql:  ${bigquery_subscribers_timeupdate.timecode_count};;
+  }
+
   measure: count {
     type: count
     drill_fields: [detail*]

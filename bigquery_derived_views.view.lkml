@@ -12,7 +12,7 @@ view: bigquery_derived_views {
         select a.timestamp,
                 SAFE_CAST(a.user_id AS STRING),
                 b.platform,
-                'Android' as source
+                'iOS' as source
          from ios.view as a left join customers.subscribers as b
          on user_id = b.customer_id
          union all

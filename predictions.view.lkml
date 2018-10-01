@@ -17,12 +17,13 @@ view: training_input {
       column: addwatchlist { field: bigquery_subscribers.addwatchlist_count }
       #column: signin { field: bigquery_subscribers.signin_count }
       column: views { field: bigquery_subscribers.views_count }
-      #column: timecode { field: bigquery_subscribers.timecode }
+      #column: timecode { field: bigquery_subscribers.timecode_count }
 
       filters: {
         field: bigquery_subscribers.customer_created_time
         value: "after 150 days ago,before 30 days ago"
       }
+
       filters: {
         field: bigquery_subscribers.get_status
         value: "NOT NULL"
@@ -36,7 +37,7 @@ view: training_input {
   dimension: number_of_platforms_by_user { type: number }
   #dimension: signin { type: number }
   dimension: addwatchlist { type: number }
-
+  #dimension: timecode { type: number }
   dimension: user_id {}
   dimension: platform {}
   dimension: source {}
@@ -70,12 +71,13 @@ view: testing_input {
       column: addwatchlist { field: bigquery_subscribers.addwatchlist_count }
       #column: signin { field: bigquery_subscribers.signin_count }
       column: views { field: bigquery_subscribers.views_count }
-      #column: timecode { field: bigquery_subscribers.timecode }
+      #column: timecode { field: bigquery_subscribers.timecode_count }
 
       filters: {
         field: bigquery_subscribers.customer_created_time
         value: "after 30 days ago,before 14 days ago"
       }
+
       filters: {
         field: bigquery_subscribers.get_status
         value: "NOT NULL"
@@ -87,10 +89,12 @@ view: testing_input {
   dimension: count {
     type: number
   }
+
   dimension: views { type: number }
+  #dimension: timecode { type: number }
   dimension: number_of_platforms_by_user { type: number }
   dimension: addwatchlist { type: number }
-  #dimension: signin { type: number }
+  dimension: signin { type: number }
   dimension: user_id {}
   dimension: platform {}
   dimension: source {}
@@ -235,18 +239,22 @@ view: future_input {
       column: addwatchlist { field: bigquery_subscribers.addwatchlist_count }
       #column: signin { field: bigquery_subscribers.signin_count }
       column: views { field: bigquery_subscribers.views_count }
-      #column: timecode { field: bigquery_subscribers.timecode }
-      #column: addwatchlist { field: bigquery_derived_addwatchlist.count }
+      #column: timecode { field: bigquery_subscribers.timecode_count }
 
       filters: {
         field: bigquery_subscribers.customer_created_time
         value: "after 14 days ago"
+      }
+      filters: {
+        field: bigquery_derived_timeupdate.timecode_count
+        value: "not 0"
       }
       expression_custom_filter: ${bigquery_derived_all_firstplay.timestamp_date} >= ${bigquery_subscribers.customer_created_date} AND ${bigquery_derived_all_firstplay.timestamp_date}<= add_days(14,${bigquery_subscribers.customer_created_date});;
     }
   }
   dimension: count { type: number }
   dimension: views { type: number }
+  #dimension: timecode { type: number }
   dimension: number_of_platforms_by_user { type: number }
   dimension: addwatchlist { type: number }
   #dimension: signin { type: number }
@@ -274,6 +282,7 @@ view: future_purchase_prediction {
   dimension: promoters {}
   dimension: addwatchlist{ type: number }
   dimension: views { type: number }
+  #dimension: timecode { type: number }
   dimension: number_of_platforms_by_user { type: number }
 
   #dimension: signin { type: number }

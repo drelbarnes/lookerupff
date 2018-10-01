@@ -2,6 +2,7 @@ connection: "google_bigquery_db"
 
 
 
+include: "bigquery_subscribers_timeupdate.view.lkml"
 include: "bigquery_derived_timeupdate.view.lkml"
 include: "bigquery_derived_views.view.lkml"
 include: "bigquery_derived_all_firstplay.view.lkml"
@@ -27,6 +28,7 @@ persist_with: upff_google_datagroup
 
 explore: bigquery_derived_addwatchlist {}
 explore: bigquery_derived_timeupdate {}
+explore: bigquery_subscribers_timeupdate {}
 explore: bigquery_derived_views {}
 
 explore: bigquery_subscribers {
@@ -51,6 +53,12 @@ explore: bigquery_subscribers {
     relationship: one_to_many
   }
 
+  join: bigquery_subscribers_timeupdate {
+    type: left_outer
+    sql_on: ${bigquery_subscribers.customer_id} = ${bigquery_subscribers_timeupdate.user_id};;
+    relationship: one_to_many
+  }
+
   join: bigquery_derived_views {
     type: left_outer
     sql_on: ${bigquery_subscribers.customer_id} = SAFE_CAST(${bigquery_derived_views.user_id} AS INT64);;
@@ -66,6 +74,13 @@ explore: bigquery_derived_all_firstplay {
     sql_on: ${bigquery_subscribers.customer_id} = SAFE_CAST(${bigquery_derived_views.user_id} AS INT64);;
     relationship: one_to_many
   }
+
+  join: bigquery_subscribers_timeupdate {
+    type: left_outer
+    sql_on: ${bigquery_subscribers_timeupdate.user_id} = SAFE_CAST(${bigquery_derived_all_firstplay.user_id} AS INT64);;
+    relationship: one_to_many
+  }
+
 
   join: bigquery_derived_timeupdate{
     type: left_outer

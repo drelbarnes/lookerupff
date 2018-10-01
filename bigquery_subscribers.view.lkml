@@ -210,6 +210,11 @@ view: bigquery_subscribers {
     sql: ${bigquery_derived_timeupdate.timecode_count};;
   }
 
+  dimension: timecode_count {
+    type: number
+    sql:  ${bigquery_subscribers_timeupdate.timecode_count};;
+  }
+
   dimension: addwatchlist {
     type:  string
     sql: ${bigquery_derived_addwatchlist.event};;
