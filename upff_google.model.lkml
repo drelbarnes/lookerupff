@@ -13,6 +13,7 @@ include: "bigquery_subscribers.view.lkml"
 include: "bigquery_android_firstplay.view.lkml"
 include: "predictions.view.lkml"
 include: "bigquery_derived_signin.view.lkml"
+include: "bigquery_views.view.lkml"
 
 
 
@@ -68,6 +69,12 @@ explore: bigquery_subscribers {
 }
 
 explore: bigquery_derived_all_firstplay {
+
+  join: bigquery_views{
+    type: left_outer
+    sql_on: ${bigquery_views.user_id} = SAFE_CAST(${bigquery_derived_all_firstplay.user_id} AS INT64);;
+    relationship: one_to_many
+  }
 
   join: bigquery_derived_views{
     type: left_outer
