@@ -161,6 +161,12 @@ include: "mailchimp_email_campaigns.view"
 include: "customers_customers.view"
 explore: customers{
 
+  join: javascript_users {
+    type:  left_outer
+    sql_on: ${customers.customer_id} = ${javascript_users.id};;
+    relationship: one_to_one
+  }
+
  join: android_users {
     type:  left_outer
     sql_on: ${customers.customer_id} = ${android_users.id};;
