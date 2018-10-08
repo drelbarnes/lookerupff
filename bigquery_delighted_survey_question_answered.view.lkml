@@ -1,5 +1,7 @@
 view: bigquery_delighted_survey_question_answered {
-  sql_table_name: delighted.survey_question_answered ;;
+  derived_table: {
+  sql: select * from delighted.survey_question_answered where survey_question_name='NPS question';;}
+
 
   dimension: id {
     primary_key: yes

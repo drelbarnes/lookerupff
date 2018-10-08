@@ -1,125 +1,185 @@
 ######################## TRAINING/TESTING INPUTS #############################
+explore: training_input {}
+explore: testing_input {}
+# If necessary, uncomment the line below to include explore_source.
+
+include: "upff_google.model.lkml"
+
 view: training_input {
   derived_table: {
-    explore_source: bigquery_derived_all_firstplay {
-      column: count {}
-      column: number_of_platforms_by_user {}
-      column: user_id {}
-      column: platform {}
-      column: source {}
-      column: frequency { field: bigquery_subscribers.frequency }
-      column: day_of_week { field: bigquery_subscribers.day_of_week }
-      column: marketing_opt_in { field: bigquery_subscribers.marketing_opt_in }
-      column: state { field: bigquery_subscribers.state }
-      column: get_status { field: bigquery_subscribers.get_status }
-      #column: subscription_length { field: bigquery_subscribers.days_since_created }
+    explore_source: bigquery_subscribers_v2 {
+      column: user_id { field: bigquery_conversion_model_firstplay.user_id }
+      column: get_status {}
+      column: addwatchlist_count { field: bigquery_conversion_model_addwatchlist.addwatchlist_count }
+      column: error_count { field: bigquery_conversion_model_error.error_count }
+      column: bates_play { field: bigquery_conversion_model_firstplay.bates_play }
+      column: heartland_play { field: bigquery_conversion_model_firstplay.heartland_play }
+      column: other_play { field: bigquery_conversion_model_firstplay.other_play }
+      column: removewatchlist_count { field: bigquery_conversion_model_removewatchlist.removewatchlist_count }
+      column: bates_duration { field: bigquery_conversion_model_timeupdate.bates_duration }
+      column: heartland_duration { field: bigquery_conversion_model_timeupdate.heartland_duration }
+      derived_column: bates_2 {sql:bates_play*bates_duration;;}
+      derived_column: heartland_2 {sql:heartland_play*heartland_duration;;}
+      derived_column: other_2 {sql:other_play*other_duration;;}
+      derived_column: total_play {sql:bates_play+heartland_play+other_play;;}
+      derived_column: total_duration {sql:bates_duration+heartland_duration+other_play;;}
+      column: other_duration { field: bigquery_conversion_model_timeupdate.other_duration }
+      column: view_count { field: bigquery_conversion_model_view.view_count }
       column: promoters { field: bigquery_delighted_survey_question_answered.promoters }
-      column: addwatchlist { field: bigquery_subscribers.addwatchlist_count }
-      #column: signin { field: bigquery_subscribers.signin_count }
-      column: views { field: bigquery_views.views_count }
-      column: timecode { field: bigquery_subscribers.timecode_count }
-
+      column: platform {}
+      column: frequency {}
+      column: state {}
       filters: {
-        field: bigquery_subscribers.customer_created_time
-        value: "after 150 days ago,before 30 days ago"
+        field: bigquery_subscribers_v2.customer_created_date
+        value: "after 150 days ago,before 45 days ago"
       }
-
       filters: {
-        field: bigquery_subscribers.timecode_count
-        value: "not 0"
-      }
-
-      filters: {
-        field: bigquery_subscribers.get_status
+        field: bigquery_subscribers_v2.get_status
         value: "NOT NULL"
       }
-
-      expression_custom_filter: ${bigquery_derived_all_firstplay.timestamp_date} >= ${bigquery_subscribers.customer_created_date} AND ${bigquery_derived_all_firstplay.timestamp_date}<= add_days(14,${bigquery_subscribers.customer_created_date});;
     }
   }
-  dimension: count { type: number }
-  dimension: views { type: number }
-  dimension: number_of_platforms_by_user { type: number }
-  #dimension: signin { type: number }
-  dimension: addwatchlist { type: number }
-  dimension: timecode { type: number }
+  dimension: total_play {}
+  dimension: total_duration {}
   dimension: user_id {}
-  dimension: platform {}
-  dimension: source {}
-  dimension: frequency {}
-  dimension: day_of_week {}
-  dimension: marketing_opt_in {
-    type: number
-  }
-  dimension: state {}
-  dimension: get_status {
+  dimension: get_status {  }
+  dimension: addwatchlist_count {
     type: number
   }
 
+  dimension: platform {}
+  dimension: state {}
+  dimension: frequency {}
+
+  dimension: error_count {
+    type: number
+  }
+  dimension: bates_play {
+    type: number
+  }
+  dimension: heartland_play {
+    type: number
+  }
+  dimension: other_play {
+    type: number
+  }
+  dimension: removewatchlist_count {
+    type: number
+  }
+  dimension: bates_duration {
+    type: number
+  }
+  dimension: heartland_duration {
+    type: number
+  }
+  dimension: other_duration {
+    type: number
+  }
+
+  dimension: bates_2 {
+    type: number
+  }
+  dimension: heartland_2 {
+    type: number
+  }
+  dimension: other_2 {
+    type: number
+  }
+  dimension: view_count {
+    type: number
+  }
   dimension: promoters {}
 }
+
+
+# If necessary, uncomment the line below to include explore_source.
+
+# include: "upff_google.model.lkml"
+
 view: testing_input {
   derived_table: {
-    explore_source: bigquery_derived_all_firstplay {
-      column: count {}
-      column: number_of_platforms_by_user {}
-      column: user_id {}
-      column: platform {}
-      column: source {}
-      column: frequency { field: bigquery_subscribers.frequency }
-      column: day_of_week { field: bigquery_subscribers.day_of_week }
-      column: marketing_opt_in { field: bigquery_subscribers.marketing_opt_in }
-      column: state { field: bigquery_subscribers.state }
-      column: get_status { field: bigquery_subscribers.get_status }
-      #column: subscription_length { field: bigquery_subscribers.days_since_created }
+    explore_source: bigquery_subscribers_v2 {
+      column: user_id { field: bigquery_conversion_model_firstplay.user_id }
+      column: get_status {}
+      column: addwatchlist_count { field: bigquery_conversion_model_addwatchlist.addwatchlist_count }
+      column: error_count { field: bigquery_conversion_model_error.error_count }
+      column: bates_play { field: bigquery_conversion_model_firstplay.bates_play }
+      column: heartland_play { field: bigquery_conversion_model_firstplay.heartland_play }
+      column: other_play { field: bigquery_conversion_model_firstplay.other_play }
+      column: removewatchlist_count { field: bigquery_conversion_model_removewatchlist.removewatchlist_count }
+      column: bates_duration { field: bigquery_conversion_model_timeupdate.bates_duration }
+      column: heartland_duration { field: bigquery_conversion_model_timeupdate.heartland_duration }
+      column: other_duration { field: bigquery_conversion_model_timeupdate.other_duration }
+      derived_column: bates_2 {sql:bates_play*bates_duration;;}
+      derived_column: heartland_2 {sql:heartland_play*heartland_duration;;}
+      derived_column: other_2 {sql:other_play*other_duration;;}
+      derived_column: total_play {sql:bates_play+heartland_play+other_play;;}
+      derived_column: total_duration {sql:bates_duration+heartland_duration+other_play;;}
+      column: view_count { field: bigquery_conversion_model_view.view_count }
       column: promoters { field: bigquery_delighted_survey_question_answered.promoters }
-      column: addwatchlist { field: bigquery_subscribers.addwatchlist_count }
-      #column: signin { field: bigquery_subscribers.signin_count }
-      column: views { field: bigquery_views.views_count }
-      column: timecode { field: bigquery_subscribers.timecode_count }
-
+      column: platform {}
+      column: frequency {}
+      column: state {}
       filters: {
-        field: bigquery_subscribers.customer_created_time
-        value: "after 30 days ago,before 14 days ago"
+        field: bigquery_subscribers_v2.customer_created_date
+        value: "after 45 days ago,before 14 days ago"
       }
-
       filters: {
-        field: bigquery_subscribers.timecode_count
-        value: "not 0"
-      }
-
-      filters: {
-        field: bigquery_subscribers.get_status
+        field: bigquery_subscribers_v2.get_status
         value: "NOT NULL"
       }
-
-      expression_custom_filter: ${bigquery_derived_all_firstplay.timestamp_date} >= ${bigquery_subscribers.customer_created_date} AND ${bigquery_derived_all_firstplay.timestamp_date}<= add_days(14,${bigquery_subscribers.customer_created_date});;
     }
   }
-  dimension: count {
-    type: number
-  }
-
-  dimension: views { type: number }
-  dimension: timecode { type: number }
-  dimension: number_of_platforms_by_user { type: number }
-  dimension: addwatchlist { type: number }
-  dimension: signin { type: number }
+  dimension: total_play {}
+  dimension: total_duration {}
   dimension: user_id {}
   dimension: platform {}
-  dimension: source {}
+  dimension: state {}
   dimension: frequency {}
-  dimension: day_of_week {}
-  dimension: marketing_opt_in {
+  dimension: get_status {  }
+  dimension: addwatchlist_count {
     type: number
   }
-  dimension: state {}
-  dimension: get_status {
+  dimension: error_count {
+    type: number
+  }
+  dimension: bates_play {
+    type: number
+  }
+  dimension: heartland_play {
+    type: number
+  }
+  dimension: other_play {
+    type: number
+  }
+  dimension: removewatchlist_count {
+    type: number
+  }
+  dimension: bates_duration {
+    type: number
+  }
+  dimension: heartland_duration {
+    type: number
+  }
+  dimension: other_duration {
+    type: number
+  }
+  dimension: bates_2 {
+    type: number
+  }
+  dimension: heartland_2 {
+    type: number
+  }
+  dimension: other_2 {
     type: number
   }
 
+  dimension: view_count {
+    type: number
+  }
   dimension: promoters {}
 }
+
 ######################## MODEL #############################
 view: future_purchase_model {
   derived_table: {
@@ -229,6 +289,30 @@ view: future_purchase_model_training_info {
     sql: ${duration_ms}/1000 ;;
     value_format_name: decimal_1
   }
+}
+
+# ############################################ WEIGHTS #################################
+explore: cat_weights {}
+view: cat_weights {
+  derived_table: {
+    sql: select a.*, category.category as cat, category.weight as catweight from ml.weights(
+        MODEL ${future_purchase_model.SQL_TABLE_NAME}) as a, UNNEST(category_weights) AS category
+        ;;
+  }
+
+dimension: cat{type:string}
+dimension: catweight {type:number}
+
+}
+explore: weights {}
+view: weights {
+  derived_table: {
+    sql: select * from ml.weights(
+        MODEL ${future_purchase_model.SQL_TABLE_NAME});;
+  }
+
+  dimension: processed_input {type:string}
+  dimension: weight {type:number}
 }
 ########################################## PREDICT FUTURE ############################
 explore: future_purchase_prediction {}

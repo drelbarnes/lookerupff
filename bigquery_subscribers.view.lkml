@@ -221,8 +221,8 @@ view: bigquery_subscribers {
   }
 
   measure: addwatchlist_count {
-    type: count_distinct
-    sql: ${addwatchlist};;
+    type: number
+    sql:count(${addwatchlist});;
   }
 
   dimension: signgin {
