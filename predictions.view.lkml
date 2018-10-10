@@ -41,6 +41,7 @@ view: training_input {
       column: bates_duration_day_1 { field: bigquery_conversion_model_timeupdate.bates_duration_day_1 }
       column: bates_duration_day_2 { field: bigquery_conversion_model_timeupdate.bates_duration_day_2 }
       column: bates_duration_day_3 { field: bigquery_conversion_model_timeupdate.bates_duration_day_3 }
+      column: bates_duration_day_4 { field: bigquery_conversion_model_timeupdate.bates_duration_day_4 }
 # #       column: bates_duration_day_6 { field: bigquery_conversion_model_timeupdate.bates_duration_day_6 }
 # #       column: bates_duration_day_7 { field: bigquery_conversion_model_timeupdate.bates_duration_day_7 }
 # #       column: bates_duration_day_8 { field: bigquery_conversion_model_timeupdate.bates_duration_day_8 }
@@ -67,7 +68,7 @@ view: training_input {
       column: heartland_duration_day_1 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_1 }
       column: heartland_duration_day_2 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_2 }
       column: heartland_duration_day_3 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_3 }
-# #       column: heartland_duration_day_4 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_4 }
+      column: heartland_duration_day_4 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_4 }
 # #       column: heartland_duration_day_5 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_5 }
 # #       column: heartland_duration_day_6 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_6 }
 # #       column: heartland_duration_day_7 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_7 }
@@ -95,7 +96,7 @@ view: training_input {
       column: other_duration_day_1 { field: bigquery_conversion_model_timeupdate.other_duration_day_1 }
       column: other_duration_day_2 { field: bigquery_conversion_model_timeupdate.other_duration_day_2 }
       column: other_duration_day_3 { field: bigquery_conversion_model_timeupdate.other_duration_day_3 }
-# #       column: other_duration_day_4 { field: bigquery_conversion_model_timeupdate.other_duration_day_4 }
+      column: other_duration_day_4 { field: bigquery_conversion_model_timeupdate.other_duration_day_4 }
 # #       column: other_duration_day_5 { field: bigquery_conversion_model_timeupdate.other_duration_day_5 }
 # #       column: other_duration_day_6 { field: bigquery_conversion_model_timeupdate.other_duration_day_6 }
 # #       column: other_duration_day_7 { field: bigquery_conversion_model_timeupdate.other_duration_day_7 }
@@ -121,7 +122,7 @@ view: training_input {
 # #       derived_column: other_day_13 {sql: other_play_day_13*other_duration_day_13;;}
 # #       derived_column: other_day_14 {sql: other_play_day_14*other_duration_day_14;;}
 
-      expression_custom_filter: ${bigquery_subscribers_v2.subscription_length}>28 AND ${bigquery_subscribers_v2.subscription_length}<=90;;
+      expression_custom_filter: ${bigquery_subscribers_v2.subscription_length}>30 AND ${bigquery_subscribers_v2.subscription_length}<=120;;
       filters: {
         field: bigquery_subscribers_v2.get_status
         value: "NOT NULL"
@@ -583,6 +584,7 @@ view: testing_input {
       column: bates_duration_day_1 { field: bigquery_conversion_model_timeupdate.bates_duration_day_1 }
       column: bates_duration_day_2 { field: bigquery_conversion_model_timeupdate.bates_duration_day_2 }
       column: bates_duration_day_3 { field: bigquery_conversion_model_timeupdate.bates_duration_day_3 }
+      column: bates_duration_day_4 { field: bigquery_conversion_model_timeupdate.bates_duration_day_4 }
 # #       column: bates_duration_day_6 { field: bigquery_conversion_model_timeupdate.bates_duration_day_6 }
 # #       column: bates_duration_day_7 { field: bigquery_conversion_model_timeupdate.bates_duration_day_7 }
 # #       column: bates_duration_day_8 { field: bigquery_conversion_model_timeupdate.bates_duration_day_8 }
@@ -609,7 +611,7 @@ view: testing_input {
       column: heartland_duration_day_1 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_1 }
       column: heartland_duration_day_2 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_2 }
       column: heartland_duration_day_3 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_3 }
-# #       column: heartland_duration_day_4 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_4 }
+      column: heartland_duration_day_4 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_4 }
 # #       column: heartland_duration_day_5 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_5 }
 # #       column: heartland_duration_day_6 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_6 }
 # #       column: heartland_duration_day_7 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_7 }
@@ -637,7 +639,7 @@ view: testing_input {
       column: other_duration_day_1 { field: bigquery_conversion_model_timeupdate.other_duration_day_1 }
       column: other_duration_day_2 { field: bigquery_conversion_model_timeupdate.other_duration_day_2 }
       column: other_duration_day_3 { field: bigquery_conversion_model_timeupdate.other_duration_day_3 }
-# #       column: other_duration_day_4 { field: bigquery_conversion_model_timeupdate.other_duration_day_4 }
+      column: other_duration_day_4 { field: bigquery_conversion_model_timeupdate.other_duration_day_4 }
 # #       column: other_duration_day_5 { field: bigquery_conversion_model_timeupdate.other_duration_day_5 }
 # #       column: other_duration_day_6 { field: bigquery_conversion_model_timeupdate.other_duration_day_6 }
 # #       column: other_duration_day_7 { field: bigquery_conversion_model_timeupdate.other_duration_day_7 }
@@ -663,7 +665,7 @@ view: testing_input {
 # #       derived_column: other_day_13 {sql: other_play_day_13*other_duration_day_13;;}
 # #       derived_column: other_day_14 {sql: other_play_day_14*other_duration_day_14;;}
 
-      expression_custom_filter: ${bigquery_subscribers_v2.subscription_length}>14 AND ${bigquery_subscribers_v2.subscription_length}<=28;;
+      expression_custom_filter: ${bigquery_subscribers_v2.subscription_length}>14 AND ${bigquery_subscribers_v2.subscription_length}<=30;;
       filters: {
         field: bigquery_subscribers_v2.get_status
         value: "NOT NULL"
@@ -1093,7 +1095,7 @@ view: future_purchase_model {
         , max_iterations = 99
         ) AS
       SELECT
-         * EXCEPT(customer_id,state)
+         * EXCEPT(customer_id)
       FROM ${training_input.SQL_TABLE_NAME};;
   }
 }
@@ -1107,7 +1109,7 @@ view: future_purchase_model_evaluation {
   derived_table: {
     sql: SELECT * FROM ml.EVALUATE(
           MODEL ${future_purchase_model.SQL_TABLE_NAME},
-          (SELECT * FROM ${testing_input.SQL_TABLE_NAME}), struct(0.45 as threshold));;
+          (SELECT * FROM ${testing_input.SQL_TABLE_NAME}), struct(0.5 as threshold));;
   }
   dimension: recall {
     type: number
