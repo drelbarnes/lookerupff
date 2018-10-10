@@ -74,22 +74,76 @@ view: bigquery_conversion_model_timeupdate {
 --   date_diff(date(timestamp),date(customer_created_at),day) as daydiff,
   sum(case when content = 'Heartland' then timecode else 0 end) as heartland_duration,
   sum(case when content = 'Bringing Up Bates' then timecode else 0 end) as bates_duration,
-  sum(case when content = 'Other' then timecode else 0 end) as other_duration
+  sum(case when content = 'Other' then timecode else 0 end) as other_duration,
+  sum(case when content = 'Heartland' and date_diff(date(timestamp), date(customer_created_at), day)<5 then timecode else 0 end) as heartland_duration_day_1,
+  sum(case when content = 'Heartland' and date_diff(date(timestamp), date(customer_created_at), day)>=5 and date_diff(date(timestamp), date(customer_created_at), day)<11 then timecode else 0 end) as heartland_duration_day_2,
+  sum(case when content = 'Heartland' and date_diff(date(timestamp), date(customer_created_at), day)>=11 and date_diff(date(timestamp), date(customer_created_at), day)<16 then timecode else 0 end) as heartland_duration_day_3,
+  sum(case when content = 'Bringing Up Bates' and date_diff(date(timestamp), date(customer_created_at), day)<5 then timecode else 0 end) as bates_duration_day_1,
+  sum(case when content = 'Bringing Up Bates' and date_diff(date(timestamp), date(customer_created_at), day)>=5 and date_diff(date(timestamp), date(customer_created_at), day)<11 then timecode else 0 end) as bates_duration_day_2,
+  sum(case when content = 'Bringing Up Bates' and date_diff(date(timestamp), date(customer_created_at), day)>=11 and date_diff(date(timestamp), date(customer_created_at), day)<16 then timecode else 0 end) as bates_duration_day_3,
+  sum(case when content = 'Other' and date_diff(date(timestamp), date(customer_created_at), day)<5 then timecode else 0 end) as other_duration_day_1,
+  sum(case when content = 'Other' and date_diff(date(timestamp), date(customer_created_at), day)>=5 and date_diff(date(timestamp), date(customer_created_at), day)<11 then timecode else 0 end) as other_duration_day_2,
+  sum(case when content = 'Other' and date_diff(date(timestamp), date(customer_created_at), day)>=11 and date_diff(date(timestamp), date(customer_created_at), day)<16 then timecode else 0 end) as other_duration_day_3
 FROM
   b LEFT JOIN customers.subscribers ON SAFE_CAST(user_id AS int64)=SAFE_CAST(customer_id AS int64)
 where date(timestamp)>=date(customer_created_at) and date(timestamp)<=date_add(date(customer_created_at), interval 14 day)
 group by 1,2,3,4,5
-order by user_id)
+order by user_id),
 
-select customer_id as user_id,
+d as
+(select customer_id as user_id,
        a.platform,
        a.frequency,
        case when a.campaign is not null then a.campaign else 'unavailable' end as campaign,
        a.customer_created_at,
        case when heartland_duration is null then 0 else heartland_duration end as heartland_duration,
        case when bates_duration is null then 0 else bates_duration end as bates_duration,
-       case when other_duration is null then 0 else other_duration end as other_duration
-from customers.subscribers as a left join c on customer_id=safe_cast(user_id as int64)
+       case when other_duration is null then 0 else other_duration end as other_duration,
+       case when heartland_duration_day_1 is null then 0 else heartland_duration_day_1 end as heartland_duration_day_1,
+       case when heartland_duration_day_2 is null then 0 else heartland_duration_day_2 end as heartland_duration_day_2,
+       case when heartland_duration_day_3 is null then 0 else heartland_duration_day_3 end as heartland_duration_day_3,
+       case when bates_duration_day_1 is null then 0 else bates_duration_day_1 end as bates_duration_day_1,
+       case when bates_duration_day_2 is null then 0 else bates_duration_day_2 end as bates_duration_day_2,
+       case when bates_duration_day_3 is null then 0 else bates_duration_day_3 end as bates_duration_day_3,
+       case when other_duration_day_1 is null then 0 else other_duration_day_1 end as other_duration_day_1,
+       case when other_duration_day_2 is null then 0 else other_duration_day_2 end as other_duration_day_2,
+       case when other_duration_day_3 is null then 0 else other_duration_day_3 end as other_duration_day_3
+from customers.subscribers as a left join c on customer_id=safe_cast(user_id as int64)),
+
+e as
+(select
+       avg(heartland_duration) hl_avg, stddev(heartland_duration) as hl_std,
+       avg(bates_duration) b_avg, stddev(bates_duration) as b_std,
+       avg(other_duration) o_avg, stddev(other_duration) as o_std,
+       avg(heartland_duration_day_1) hl1_avg, stddev(heartland_duration_day_1) as hl1_std,
+       avg(heartland_duration_day_2) hl2_avg, stddev(heartland_duration_day_2) as hl2_std,
+       avg(heartland_duration_day_3) hl3_avg, stddev(heartland_duration_day_3) as hl3_std,
+       avg(bates_duration_day_1) b1_avg, stddev(bates_duration_day_1) as b1_std,
+       avg(bates_duration_day_2) b2_avg, stddev(bates_duration_day_2) as b2_std,
+       avg(bates_duration_day_3) b3_avg, stddev(bates_duration_day_3) as b3_std,
+       avg(other_duration_day_1) o1_avg, stddev(other_duration_day_1) as o1_std,
+       avg(other_duration_day_2) o2_avg, stddev(other_duration_day_2) as o2_std,
+       avg(other_duration_day_3) o3_avg, stddev(other_duration_day_3) as o3_std
+       from d)
+
+select user_id,
+        platform,
+        frequency,
+        campaign,
+        (heartland_duration - hl_avg)/hl_std as heartland_duration,
+        (bates_duration - b_avg)/b_std as bates_duration,
+        (other_duration - o_avg)/o_std as other_duration,
+        (heartland_duration_day_1 - hl1_avg)/hl1_std as heartland_duration_day_1,
+        (heartland_duration_day_2 - hl2_avg)/hl2_std as heartland_duration_day_2,
+        (heartland_duration_day_3 - hl3_avg)/hl3_std as heartland_duration_day_3,
+        (bates_duration_day_1 - b1_avg)/b1_std as bates_duration_day_1,
+        (bates_duration_day_2 - b2_avg)/b2_std as bates_duration_day_2,
+        (bates_duration_day_3 - b3_avg)/b3_std as bates_duration_day_3,
+        (other_duration_day_1 - o1_avg)/o1_std as other_duration_day_1,
+        (other_duration_day_2 - o2_avg)/o2_std as other_duration_day_2,
+        (other_duration_day_3 - o3_avg)/o3_std as other_duration_day_3
+ from d, e
+
 
  ;;
   }
@@ -126,7 +180,22 @@ from customers.subscribers as a left join c on customer_id=safe_cast(user_id as 
 
   dimension: heartland_duration {
     type: number
-    sql: ${TABLE}.heartland_duration ;;
+    sql: ${TABLE}.heartland_duration;;
+  }
+
+  dimension: heartland_duration_day_1 {
+    type: number
+    sql: ${TABLE}.heartland_duration_day_1 ;;
+  }
+
+  dimension: heartland_duration_day_2 {
+    type: number
+    sql: ${TABLE}.heartland_duration_day_2 ;;
+  }
+
+  dimension: heartland_duration_day_3 {
+    type: number
+    sql: ${TABLE}.heartland_duration_day_3 ;;
   }
 
   dimension: bates_duration {
@@ -134,8 +203,41 @@ from customers.subscribers as a left join c on customer_id=safe_cast(user_id as 
     sql: ${TABLE}.bates_duration ;;
   }
 
-  dimension: other_duration {
+  dimension: bates_duration_day_1 {
+    type: number
+    sql: ${TABLE}.bates_duration_day_1 ;;
+  }
+
+  dimension: bates_duration_day_2 {
+    type: number
+    sql: ${TABLE}.bates_duration_day_2 ;;
+  }
+
+  dimension: bates_duration_day_3 {
+    type: number
+    sql: ${TABLE}.bates_duration_day_3 ;;
+  }
+
+  dimension: other_duration{
     type: number
     sql: ${TABLE}.other_duration ;;
   }
+
+  dimension: other_duration_day_1 {
+    type: number
+    sql: ${TABLE}.other_duration_day_1 ;;
+  }
+
+  dimension: other_duration_day_2 {
+    type: number
+    sql: ${TABLE}.other_duration_day_2 ;;
+  }
+
+  dimension: other_duration_day_3 {
+    type: number
+    sql: ${TABLE}.other_duration_day_3 ;;
+  }
+
+
+
   }

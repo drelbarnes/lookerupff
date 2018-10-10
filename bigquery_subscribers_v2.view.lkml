@@ -153,9 +153,20 @@
       sql:
       case
         when ${status}='enabled' then 1
-        when ${status}='cancelled' AND ${days_since_created} < 18 then 0
+        when ${status} in ('cancelled', 'disabled','expired','refunded') AND ${days_since_created} < 15 then 0
       else null end
     ;;
+    }
+
+    dimension: subscription_length{
+      description: "Number of days a user has been on the service"
+      type: number
+      sql:  DATE_DIFF(${current_date}, ${customer_created_date}, DAY) ;;
+    }
+
+    dimension: day_of_week {
+      type: date_day_of_week
+      sql: ${TABLE}.customer_created_at ;;
     }
 
     measure: count {

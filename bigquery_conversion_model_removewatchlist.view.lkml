@@ -22,15 +22,29 @@ FROM
   customers.subscribers left JOIN b ON SAFE_CAST(user_id AS int64)=SAFE_CAST(customer_id AS int64)
 where date(timestamp)>=date(customer_created_at) and date(timestamp)<=date_add(date(customer_created_at), interval 14 day)
 group by 1,2,3,4,5
-order by user_id)
+order by user_id),
 
-select customer_id as user_id,
+d as
+(select customer_id as user_id,
        a.platform,
        a.frequency,
        case when a.campaign is not null then a.campaign else 'unavailable' end as campaign,
        a.customer_created_at,
        case when removewatchlist_count is null then 0 else removewatchlist_count end as removewatchlist_count
-from customers.subscribers as a left join c on customer_id=safe_cast(user_id as int64)
+from customers.subscribers as a left join c on customer_id=safe_cast(user_id as int64)),
+
+e as
+(select avg(removewatchlist_count) as r_avg, stddev(removewatchlist_count) as r_std
+from d)
+
+select user_id,
+platform,
+frequency,
+campaign,
+customer_created_at,
+(removewatchlist_count-r_avg)/r_std as removewatchlist_count
+from d,e
+
 
  ;;
 }

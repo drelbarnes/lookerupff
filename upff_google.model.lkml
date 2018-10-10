@@ -19,6 +19,7 @@ include: "bigquery_conversion_model_timeupdate.view.lkml"
 include: "bigquery_conversion_model_view.view.lkml"
 include: "bigquery_subscribers_v2.view.lkml"
 
+
 datagroup: upff_google_datagroup {
   # sql_trigger: SELECT MAX(id) FROM etl_log;;
   max_cache_age: "1 hour"
@@ -29,6 +30,7 @@ explore: bigquery_derived_addwatchlist {}
 explore: bigquery_derived_timeupdate {}
 explore: bigquery_subscribers_timeupdate {}
 explore: bigquery_derived_views {}
+
 
 explore: bigquery_subscribers_v2 {
 
