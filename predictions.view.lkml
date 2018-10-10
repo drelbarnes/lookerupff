@@ -20,12 +20,19 @@ view: training_input {
       column: view_count { field: bigquery_conversion_model_view.view_count }
       column: promoters { field: bigquery_delighted_survey_question_answered.promoters }
        column: platform {}
+      column: marketing_opt_in {}
 #       column: bates_play { field: bigquery_conversion_model_firstplay.bates_play}
 #       column: heartland_play { field: bigquery_conversion_model_firstplay.heartland_play}
 #       column: other_play { field: bigquery_conversion_model_firstplay.other_play }
 #       column: bates_duration { field: bigquery_conversion_model_timeupdate.bates_duration }
 #       column: heartland_duration { field: bigquery_conversion_model_timeupdate.heartland_duration }
 #       column: other_duration { field: bigquery_conversion_model_timeupdate.other_duration }
+#       derived_column: bates_days {sql:bates_play*days_played;;}
+#       derived_column: heartland_days {sql:heartland_play*days_played;;}
+#       derived_column: other_days {sql: other_play*days_played;;}
+#       derived_column: bates_duration_days {sql:bates_duration*days_played;;}
+#       derived_column: heartland_duration_days {sql:heartland_duration*days_played;;}
+#       derived_column: other_duration_days {sql: other_duration*days_played;;}
       column: bates_play_day_1 { field: bigquery_conversion_model_firstplay.bates_play_day_1 }
       column: bates_play_day_2 { field: bigquery_conversion_model_firstplay.bates_play_day_2 }
       column: bates_play_day_3 { field: bigquery_conversion_model_firstplay.bates_play_day_3 }
@@ -562,13 +569,20 @@ view: testing_input {
       column: error_count { field: bigquery_conversion_model_error.error_count }
       column: view_count { field: bigquery_conversion_model_view.view_count }
       column: promoters { field: bigquery_delighted_survey_question_answered.promoters }
-       column: platform {}
+      column: platform {}
+      column: marketing_opt_in {}
 #       column: bates_play { field: bigquery_conversion_model_firstplay.bates_play}
 #       column: heartland_play { field: bigquery_conversion_model_firstplay.heartland_play}
 #       column: other_play { field: bigquery_conversion_model_firstplay.other_play }
 #       column: bates_duration { field: bigquery_conversion_model_timeupdate.bates_duration }
 #       column: heartland_duration { field: bigquery_conversion_model_timeupdate.heartland_duration }
 #       column: other_duration { field: bigquery_conversion_model_timeupdate.other_duration }
+#       derived_column: bates_days {sql:bates_play*days_played;;}
+#       derived_column: heartland_days {sql:heartland_play*days_played;;}
+#       derived_column: other_days {sql: other_play*days_played;;}
+#       derived_column: bates_duration_days {sql:bates_duration*days_played;;}
+#       derived_column: heartland_duration_days {sql:heartland_duration*days_played;;}
+#       derived_column: other_duration_days {sql: other_duration*days_played;;}
       column: bates_play_day_1 { field: bigquery_conversion_model_firstplay.bates_play_day_1 }
       column: bates_play_day_2 { field: bigquery_conversion_model_firstplay.bates_play_day_2 }
       column: bates_play_day_3 { field: bigquery_conversion_model_firstplay.bates_play_day_3 }
@@ -1095,7 +1109,7 @@ view: future_purchase_model {
         , max_iterations = 99
         ) AS
       SELECT
-         * EXCEPT(customer_id)
+         * EXCEPT(customer_id, error_count)
       FROM ${training_input.SQL_TABLE_NAME};;
   }
 }
@@ -1233,36 +1247,53 @@ view: weights {
 ########################################## PREDICT FUTURE ############################
 explore: future_purchase_prediction {}
 view: future_input {
-  derived_table: {explore_source: bigquery_derived_all_firstplay {
-      column: count {}
-      column: number_of_platforms_by_user {}
-      column: user_id {}
-      column: platform {}
-      column: source {}
-      column: frequency { field: bigquery_subscribers.frequency }
-      column: day_of_week { field: bigquery_subscribers.day_of_week }
-      column: marketing_opt_in { field: bigquery_subscribers.marketing_opt_in }
-      column: state { field: bigquery_subscribers.state }
-      column: get_status { field: bigquery_subscribers.get_status }
-      #column: subscription_length { field: bigquery_subscribers.subscription_length }
-      column: promoters { field: bigquery_delighted_survey_question_answered.promoters }
-      column: addwatchlist { field: bigquery_subscribers.addwatchlist_count }
-      #column: signin { field: bigquery_subscribers.signin_count }
-      column: views { field: bigquery_views.views_count }
-      column: timecode { field: bigquery_subscribers.timecode_count }
-
-      filters: {
-        field: bigquery_subscribers.customer_created_time
-        value: "after 14 days ago"
-      }
-
-      filters: {
-        field: bigquery_derived_timeupdate.timecode_count
-        value: "not 0"
-      }
-      expression_custom_filter: ${bigquery_derived_all_firstplay.timestamp_date} >= ${bigquery_subscribers.customer_created_date} AND ${bigquery_derived_all_firstplay.timestamp_date}<= add_days(14,${bigquery_subscribers.customer_created_date});;
+  derived_table: {
+  explore_source: bigquery_subscribers_v2 {
+    column: day_of_week {}
+    column: days_played {field: bigquery_conversion_model_firstplay.days_played}
+    column: customer_id {}
+    column: frequency {}
+    column: state {}
+    column: get_status {}
+    column: addwatchlist_count { field: bigquery_conversion_model_addwatchlist.addwatchlist_count }
+    column: removewatchlist_count { field: bigquery_conversion_model_removewatchlist.removewatchlist_count }
+    column: error_count { field: bigquery_conversion_model_error.error_count }
+    column: view_count { field: bigquery_conversion_model_view.view_count }
+    column: promoters { field: bigquery_delighted_survey_question_answered.promoters }
+    column: marketing_opt_in {}
+    column: platform {}
+    column: bates_play_day_1 { field: bigquery_conversion_model_firstplay.bates_play_day_1 }
+    column: bates_play_day_2 { field: bigquery_conversion_model_firstplay.bates_play_day_2 }
+    column: bates_play_day_3 { field: bigquery_conversion_model_firstplay.bates_play_day_3 }
+    column: bates_play_day_4 { field: bigquery_conversion_model_firstplay.bates_play_day_4 }
+    column: heartland_play_day_1 { field: bigquery_conversion_model_firstplay.heartland_play_day_1 }
+    column: heartland_play_day_2 { field: bigquery_conversion_model_firstplay.heartland_play_day_2 }
+    column: heartland_play_day_3 { field: bigquery_conversion_model_firstplay.heartland_play_day_3 }
+    column: heartland_play_day_4 { field: bigquery_conversion_model_firstplay.heartland_play_day_4 }
+    column: other_play_day_1 { field: bigquery_conversion_model_firstplay.other_play_day_1 }
+    column: other_play_day_2 { field: bigquery_conversion_model_firstplay.other_play_day_2 }
+    column: other_play_day_3 { field: bigquery_conversion_model_firstplay.other_play_day_3 }
+    column: other_play_day_4 { field: bigquery_conversion_model_firstplay.other_play_day_4 }
+    column: bates_duration_day_1 { field: bigquery_conversion_model_timeupdate.bates_duration_day_1 }
+    column: bates_duration_day_2 { field: bigquery_conversion_model_timeupdate.bates_duration_day_2 }
+    column: bates_duration_day_3 { field: bigquery_conversion_model_timeupdate.bates_duration_day_3 }
+    column: bates_duration_day_4 { field: bigquery_conversion_model_timeupdate.bates_duration_day_4 }
+    column: heartland_duration_day_1 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_1 }
+    column: heartland_duration_day_2 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_2 }
+    column: heartland_duration_day_3 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_3 }
+    column: heartland_duration_day_4 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_4 }
+    column: other_duration_day_1 { field: bigquery_conversion_model_timeupdate.other_duration_day_1 }
+    column: other_duration_day_2 { field: bigquery_conversion_model_timeupdate.other_duration_day_2 }
+    column: other_duration_day_3 { field: bigquery_conversion_model_timeupdate.other_duration_day_3 }
+    column: other_duration_day_4 { field: bigquery_conversion_model_timeupdate.other_duration_day_4 }
+    expression_custom_filter: ${bigquery_subscribers_v2.subscription_length}>11 AND ${bigquery_subscribers_v2.subscription_length}<=14;;
+    filters: {
+      field: bigquery_subscribers_v2.get_status
+      value: "NULL"
     }
   }
+  }
+
   dimension: count { type: number }
   dimension: views { type: number }
   dimension: timecode { type: number }
@@ -1288,13 +1319,43 @@ view: future_purchase_prediction {
           MODEL ${future_purchase_model.SQL_TABLE_NAME},
           (SELECT * FROM ${future_input.SQL_TABLE_NAME}));;
   }
-  dimension: user_id {}
-  #dimension: subscription_length {}
+  dimension: day_of_week {}
+  dimension: days_played {}
+  dimension: customer_id {}
+  dimension: frequency {}
+  dimension: state {}
+  dimension: get_status {}
+  dimension: addwatchlist_count {}
+  dimension: removewatchlist_count {}
+  dimension: error_count {}
+  dimension: view_count {}
   dimension: promoters {}
-  dimension: addwatchlist{ type: number }
-  dimension: views { type: number }
-  #dimension: timecode { type: number }
-  dimension: number_of_platforms_by_user { type: number }
+  dimension: platform {}
+  dimension: bates_play_day_1 {}
+  dimension: bates_play_day_2 {}
+  dimension: bates_play_day_3 {}
+  dimension: bates_play_day_4 {}
+  dimension: heartland_play_day_1 {}
+  dimension: heartland_play_day_2 {}
+  dimension: heartland_play_day_3 {}
+  dimension: heartland_play_day_4 {}
+  dimension: other_play_day_1 {}
+  dimension: other_play_day_2 {}
+  dimension: other_play_day_3 {}
+  dimension: other_play_day_4 {}
+  dimension: bates_duration_day_1 {}
+  dimension: bates_duration_day_2 {}
+  dimension: bates_duration_day_3 {}
+  dimension: bates_duration_day_4 {}
+  dimension: heartland_duration_day_1 { }
+  dimension: heartland_duration_day_2 { }
+  dimension: heartland_duration_day_3 { }
+  dimension: heartland_duration_day_4 { }
+  dimension: other_duration_day_1 { }
+  dimension: other_duration_day_2 { }
+  dimension: other_duration_day_3 { }
+  dimension: other_duration_day_4 {}
+
 
   #dimension: signin { type: number }
   dimension: predicted_get_status {
@@ -1316,98 +1377,4 @@ view: future_purchase_prediction {
     value_format_name: percent_2
     sql: ${predicted_get_status_probability} ;;
   }
-  # parameters to allow for dynamic inputs on User Finder dashboard
-  parameter: campaign_cost_per_recipient {
-    description: "Enter estimated cost per recipient for targeted campaign in USD"
-    type: number
-    default_value: "0.75"
-    allowed_value: {
-      label: "$0.25"
-      value: "0.25"
-    }
-    allowed_value: {
-      label: "$0.50"
-      value: "0.50"
-    }
-    allowed_value: {
-      label: "$0.75"
-      value: "0.75"
-    }
-    allowed_value: {
-      label: "$1.00"
-      value: "1.00"
-    }
-    allowed_value: {
-      label: "$1.25"
-      value: "1.25"
-    }
   }
-  measure: estimated_campaign_cost_per_recipient {
-    label:"Est. Campaign Cost per Recipient"
-    type: max
-    sql: {% parameter campaign_cost_per_recipient %} ;;
-    value_format_name: usd
-  }
-  parameter: lifetime_revenue_per_customer {
-    description: "Enter estimated lifetime value per customer"
-    type: number
-    default_value: "150.00"
-    allowed_value: {
-      label: "$100"
-      value: "100.00"
-    }
-    allowed_value: {
-      label: "$125"
-      value: "125.00"
-    }
-    allowed_value: {
-      label: "$150"
-      value: "150.00"
-    }
-    allowed_value: {
-      label: "$175"
-      value: "175.00"
-    }
-    allowed_value: {
-      label: "$200"
-      value: "200.00"
-    }
-  }
-  measure: estimated_lifetime_revenue_per_customer {
-    label:"Est. Lifetime Revenue per Customer"
-    type: max
-    sql: {% parameter lifetime_revenue_per_customer %} ;;
-    value_format_name: usd
-  }
-  parameter: conversion_boost_from_campaign {
-    description: "Enter % increase in customer acquisition as a result of targeted campaign"
-    type: number
-    default_value: "0.30"
-    allowed_value: {
-      label: "10.0%"
-      value: "0.10"
-    }
-    allowed_value: {
-      label: "20.0%"
-      value: "0.20"
-    }
-    allowed_value: {
-      label: "30.0%"
-      value: "0.30"
-    }
-    allowed_value: {
-      label: "40.0%"
-      value: "0.40"
-    }
-    allowed_value: {
-      label: "50.0%"
-      value: "0.50"
-    }
-  }
-  measure: estimated_conversion_boost_from_campaign {
-    label:"Est. Conversion Boost from Campaign"
-    type: max
-    sql: {% parameter conversion_boost_from_campaign %} ;;
-    value_format_name: percent_1
-  }
-}

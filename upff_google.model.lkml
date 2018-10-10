@@ -155,7 +155,7 @@ explore: bigquery_derived_all_firstplay {
   }
   join: future_purchase_prediction {
     relationship: one_to_one
-    sql_on: ${bigquery_derived_all_firstplay.user_id} = ${future_purchase_prediction.user_id} ;;
+    sql_on: ${bigquery_derived_all_firstplay.user_id} = ${future_purchase_prediction.customer_id} ;;
   }
 }
 explore: bigquery_android_firstplay {
