@@ -1,7 +1,14 @@
 view: all_firstplay {
   derived_table: {
-    sql: (with a as
-        (select a.timestamp,trim(upper(split_part(series,'|',1))) as series,
+    sql:
+
+    (with a as
+        (select a.timestamp,
+                b.date as release_date,
+                trim(upper(split_part(series,'|',1))) as series,
+                collection,
+                case when series is null and upper(collection)=upper(title) then 'movie'
+                     when series is not null then 'series' else 'other' end as type,
                 cast(a.video_id as int) as video_id,
                 trim(upper(split_part(season,'Season',2))) as season,
                 episode,trim(upper(title)) as title,
@@ -12,7 +19,11 @@ view: all_firstplay {
          on a.user_id = c.customer_id
          union all
          select a.timestamp,
+                b.date as release_date,
                 trim(upper(split_part(series,'|',1))) as series,
+                collection,
+                case when series is null and upper(collection)=upper(title) then 'movie'
+                     when series is not null then 'series' else 'other' end as type,
                 cast(a.video_id as int) as video_id,
                 trim(upper(split_part(season,'Season',2))) as season,
                 episode,trim(upper(title)) as title,
@@ -23,7 +34,11 @@ view: all_firstplay {
          on a.user_id = c.customer_id
          union all
          select a.timestamp,
+                b.date as release_date,
                 trim(upper(split_part(series,'|',1))) as series,
+                collection,
+                case when series is null and upper(collection)=upper(b.title) then 'movie'
+                     when series is not null then 'series' else 'other' end as type,
                 cast(b.id as int) as video_id,
                 trim(upper(split_part(season,'Season',2))) as season,
                 episode,trim(upper(split_part(a.title,'-',1))) as title,
@@ -36,12 +51,17 @@ view: all_firstplay {
         )
 
 select a.*, status
-from a inner join customers.customers on user_id = customer_id) ;;
+from a inner join customers.customers on user_id = customer_id);;
   }
 
   dimension: title {
     type: string
     sql: ${TABLE}.title;;
+  }
+
+  dimension: type {
+    type: string
+    sql: ${TABLE}.type ;;
   }
 
   dimension: series {
@@ -62,6 +82,11 @@ from a inner join customers.customers on user_id = customer_id) ;;
   dimension: status {
     type: string
     sql: ${TABLE}.status ;;
+  }
+
+  dimension: collection {
+    type: string
+    sql: ${TABLE}.collection ;;
   }
 
   dimension: platform {
@@ -98,6 +123,11 @@ from a inner join customers.customers on user_id = customer_id) ;;
       year
     ]
     sql: ${TABLE}.timestamp ;;
+  }
+
+  dimension: release_date {
+    type: date
+    sql: ${TABLE}.release_date ;;
   }
 
   measure: count {

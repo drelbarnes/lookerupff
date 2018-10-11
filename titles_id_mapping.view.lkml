@@ -1,3 +1,4 @@
+explore: titles_id_mapping {}
 view: titles_id_mapping {
   sql_table_name: svod_titles.titles_id_mapping ;;
 

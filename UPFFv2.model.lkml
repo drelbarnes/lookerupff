@@ -9,6 +9,7 @@ include: "android_users.view"
 include: "javascript_subscribed.view"
 include: "javascript_users.view"
 include: "javascript_play.view"
+include: "titles_id_mapping.view"
 
 datagroup: upff_default_datagroup {
   # sql_trigger: SELECT MAX(id) FROM etl_log;;
