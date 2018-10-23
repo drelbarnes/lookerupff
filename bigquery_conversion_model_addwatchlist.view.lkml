@@ -34,7 +34,7 @@ d as
 from customers.subscribers as a left join c on customer_id=safe_cast(user_id as int64)),
 
 e as
-(select avg(addwatchlist_count) as awl_avg, stddev(addwatchlist_count) as awl_std
+(select max(addwatchlist_count) as awl_max, min(addwatchlist_count) as awl_min
 from d)
 
 select user_id,
@@ -42,8 +42,9 @@ platform,
 frequency,
 campaign,
 customer_created_at,
-(addwatchlist_count-awl_avg)/awl_std as addwatchlist_count
+(addwatchlist_count-awl_min)/(awl_max-awl_min) as addwatchlist_count
 from d,e
+order by addwatchlist_count desc
 
  ;;
   }

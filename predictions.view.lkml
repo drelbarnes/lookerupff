@@ -21,18 +21,16 @@ view: training_input {
       column: promoters { field: bigquery_delighted_survey_question_answered.promoters }
        column: platform {}
       column: marketing_opt_in {}
+      column: number_of_platforms {}
 #       column: bates_play { field: bigquery_conversion_model_firstplay.bates_play}
 #       column: heartland_play { field: bigquery_conversion_model_firstplay.heartland_play}
 #       column: other_play { field: bigquery_conversion_model_firstplay.other_play }
 #       column: bates_duration { field: bigquery_conversion_model_timeupdate.bates_duration }
 #       column: heartland_duration { field: bigquery_conversion_model_timeupdate.heartland_duration }
 #       column: other_duration { field: bigquery_conversion_model_timeupdate.other_duration }
-#       derived_column: bates_days {sql:bates_play*days_played;;}
-#       derived_column: heartland_days {sql:heartland_play*days_played;;}
-#       derived_column: other_days {sql: other_play*days_played;;}
-#       derived_column: bates_duration_days {sql:bates_duration*days_played;;}
-#       derived_column: heartland_duration_days {sql:heartland_duration*days_played;;}
-#       derived_column: other_duration_days {sql: other_duration*days_played;;}
+#       derived_column: bates {sql:bates_play*bates_duration;;}
+#       derived_column: heartland {sql:heartland_play*heartland_duration;;}
+#       derived_column: other {sql: other_play*other_duration;;}
       column: bates_play_day_1 { field: bigquery_conversion_model_firstplay.bates_play_day_1 }
       column: bates_play_day_2 { field: bigquery_conversion_model_firstplay.bates_play_day_2 }
       column: bates_play_day_3 { field: bigquery_conversion_model_firstplay.bates_play_day_3 }
@@ -49,505 +47,36 @@ view: training_input {
       column: bates_duration_day_2 { field: bigquery_conversion_model_timeupdate.bates_duration_day_2 }
       column: bates_duration_day_3 { field: bigquery_conversion_model_timeupdate.bates_duration_day_3 }
       column: bates_duration_day_4 { field: bigquery_conversion_model_timeupdate.bates_duration_day_4 }
-# #       column: bates_duration_day_6 { field: bigquery_conversion_model_timeupdate.bates_duration_day_6 }
-# #       column: bates_duration_day_7 { field: bigquery_conversion_model_timeupdate.bates_duration_day_7 }
-# #       column: bates_duration_day_8 { field: bigquery_conversion_model_timeupdate.bates_duration_day_8 }
-# #       column: bates_duration_day_9 { field: bigquery_conversion_model_timeupdate.bates_duration_day_9 }
-# #       column: bates_duration_day_10 { field: bigquery_conversion_model_timeupdate.bates_duration_day_10 }
-# #       column: bates_duration_day_11 { field: bigquery_conversion_model_timeupdate.bates_duration_day_11 }
-# #       column: bates_duration_day_12 { field: bigquery_conversion_model_timeupdate.bates_duration_day_12 }
-# #       column: bates_duration_day_13 { field: bigquery_conversion_model_timeupdate.bates_duration_day_13 }
-# #       column: bates_duration_day_14 { field: bigquery_conversion_model_timeupdate.bates_duration_day_14 }
 #       derived_column: bates_day_1 {sql: bates_play_day_1*bates_duration_day_1;;}
 #       derived_column: bates_day_2 {sql: bates_play_day_2*bates_duration_day_2;;}
 #       derived_column: bates_day_3 {sql: bates_play_day_3*bates_duration_day_3;;}
-# #       derived_column: bates_day_4 {sql: bates_play_day_4*bates_duration_day_4;;}
-# #       derived_column: bates_day_5 {sql: bates_play_day_5*bates_duration_day_5;;}
-# #       derived_column: bates_day_6 {sql: bates_play_day_6*bates_duration_day_6;;}
-# #       derived_column: bates_day_7 {sql: bates_play_day_7*bates_duration_day_7;;}
-# #       derived_column: bates_day_8 {sql: bates_play_day_8*bates_duration_day_8;;}
-# #       derived_column: bates_day_9 {sql: bates_play_day_9*bates_duration_day_9;;}
-# #       derived_column: bates_day_10 {sql: bates_play_day_10*bates_duration_day_10;;}
-# #       derived_column: bates_day_11 {sql: bates_play_day_11*bates_duration_day_11;;}
-# #       derived_column: bates_day_12 {sql: bates_play_day_12*bates_duration_day_12;;}
-# #       derived_column: bates_day_13 {sql: bates_play_day_13*bates_duration_day_13;;}
-# #       derived_column: bates_day_14 {sql: bates_play_day_14*bates_duration_day_14;;}
+#       derived_column: bates_day_4 {sql: bates_play_day_4*bates_duration_day_4;;}
       column: heartland_duration_day_1 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_1 }
       column: heartland_duration_day_2 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_2 }
       column: heartland_duration_day_3 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_3 }
       column: heartland_duration_day_4 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_4 }
-# #       column: heartland_duration_day_5 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_5 }
-# #       column: heartland_duration_day_6 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_6 }
-# #       column: heartland_duration_day_7 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_7 }
-# #       column: heartland_duration_day_8 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_8 }
-# #       column: heartland_duration_day_9 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_9 }
-# #       column: heartland_duration_day_10 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_10 }
-# #       column: heartland_duration_day_11 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_11 }
-# #       column: heartland_duration_day_12 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_12 }
-# #       column: heartland_duration_day_13 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_13 }
-# #       column: heartland_duration_day_14 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_14 }
 #       derived_column: heartland_day_1 {sql: heartland_play_day_1*heartland_duration_day_1;;}
 #       derived_column: heartland_day_2 {sql: heartland_play_day_2*heartland_duration_day_2;;}
 #       derived_column: heartland_day_3 {sql: heartland_play_day_3*heartland_duration_day_3;;}
-# #       derived_column: heartland_day_4 {sql: heartland_play_day_4*heartland_duration_day_4;;}
-# #       derived_column: heartland_day_5 {sql: heartland_play_day_5*heartland_duration_day_5;;}
-# #       derived_column: heartland_day_6 {sql: heartland_play_day_6*heartland_duration_day_6;;}
-# #       derived_column: heartland_day_7 {sql: heartland_play_day_7*heartland_duration_day_7;;}
-# #       derived_column: heartland_day_8 {sql: heartland_play_day_8*heartland_duration_day_8;;}
-# #       derived_column: heartland_day_9 {sql: heartland_play_day_9*heartland_duration_day_9;;}
-# #       derived_column: heartland_day_10 {sql: heartland_play_day_10*heartland_duration_day_10;;}
-# #       derived_column: heartland_day_11 {sql: heartland_play_day_11*heartland_duration_day_11;;}
-# #       derived_column: heartland_day_12 {sql: heartland_play_day_12*heartland_duration_day_12;;}
-# #       derived_column: heartland_day_13 {sql: heartland_play_day_13*heartland_duration_day_13;;}
-# #       derived_column: heartland_day_14 {sql: heartland_play_day_14*heartland_duration_day_14;;}
+#       derived_column: heartland_day_4 {sql: heartland_play_day_4*heartland_duration_day_4;;}
       column: other_duration_day_1 { field: bigquery_conversion_model_timeupdate.other_duration_day_1 }
       column: other_duration_day_2 { field: bigquery_conversion_model_timeupdate.other_duration_day_2 }
       column: other_duration_day_3 { field: bigquery_conversion_model_timeupdate.other_duration_day_3 }
       column: other_duration_day_4 { field: bigquery_conversion_model_timeupdate.other_duration_day_4 }
-# #       column: other_duration_day_5 { field: bigquery_conversion_model_timeupdate.other_duration_day_5 }
-# #       column: other_duration_day_6 { field: bigquery_conversion_model_timeupdate.other_duration_day_6 }
-# #       column: other_duration_day_7 { field: bigquery_conversion_model_timeupdate.other_duration_day_7 }
-# #       column: other_duration_day_8 { field: bigquery_conversion_model_timeupdate.other_duration_day_8 }
-# #       column: other_duration_day_9 { field: bigquery_conversion_model_timeupdate.other_duration_day_9 }
-# #       column: other_duration_day_10 { field: bigquery_conversion_model_timeupdate.other_duration_day_10 }
-# #       column: other_duration_day_11 { field: bigquery_conversion_model_timeupdate.other_duration_day_11 }
-# #       column: other_duration_day_12 { field: bigquery_conversion_model_timeupdate.other_duration_day_12 }
-# #       column: other_duration_day_13 { field: bigquery_conversion_model_timeupdate.other_duration_day_13 }
-# #       column: other_duration_day_14 { field: bigquery_conversion_model_timeupdate.other_duration_day_14 }
 #       derived_column: other_day_1 {sql: other_play_day_1*other_duration_day_1;;}
 #       derived_column: other_day_2 {sql: other_play_day_2*other_duration_day_2;;}
 #       derived_column: other_day_3 {sql: other_play_day_3*other_duration_day_3;;}
-# #       derived_column: other_day_4 {sql: other_play_day_4*other_duration_day_4;;}
-# #       derived_column: other_day_5 {sql: other_play_day_5*other_duration_day_5;;}
-# #       derived_column: other_day_6 {sql: other_play_day_6*other_duration_day_6;;}
-# #       derived_column: other_day_7 {sql: other_play_day_7*other_duration_day_7;;}
-# #       derived_column: other_day_8 {sql: other_play_day_8*other_duration_day_8;;}
-# #       derived_column: other_day_9 {sql: other_play_day_9*other_duration_day_9;;}
-# #       derived_column: other_day_10 {sql: other_play_day_10*other_duration_day_10;;}
-# #       derived_column: other_day_11 {sql: other_play_day_11*other_duration_day_11;;}
-# #       derived_column: other_day_12 {sql: other_play_day_12*other_duration_day_12;;}
-# #       derived_column: other_day_13 {sql: other_play_day_13*other_duration_day_13;;}
-# #       derived_column: other_day_14 {sql: other_play_day_14*other_duration_day_14;;}
+#       derived_column: other_day_4 {sql: other_play_day_4*other_duration_day_4;;}
 
-      expression_custom_filter: ${bigquery_subscribers_v2.subscription_length}>30 AND ${bigquery_subscribers_v2.subscription_length}<=120;;
+
+      expression_custom_filter: ${bigquery_subscribers_v2.subscription_length}>28 AND ${bigquery_subscribers_v2.subscription_length}<=108;;
       filters: {
         field: bigquery_subscribers_v2.get_status
         value: "NOT NULL"
       }
     }
   }
-  dimension: customer_id {
-    type: number
-  }
 
-  dimension: days_played {type:number}
-  dimension: day_of_week {}
-
-  dimension: frequency {}
-
-  dimension: state {}
-
-  dimension: get_status {
-    type: number
-  }
-  dimension: addwatchlist_count {
-    type: number
-  }
-  dimension: removewatchlist_count {
-    type: number
-  }
-  dimension: error_count {
-    type: number
-  }
-  dimension: view_count {
-    type: number
-  }
-  dimension: promoters {}
-  dimension: platform {}
-  dimension: bates_play_day_1 {
-    type: number
-  }
-  dimension: bates_play_day_2 {
-    type: number
-  }
-  dimension: bates_play_day_3 {
-    type: number
-  }
-  dimension: bates_play_day_4 {
-    type: number
-  }
-  dimension: bates_play_day_5 {
-    type: number
-  }
-  dimension: bates_play_day_6 {
-    type: number
-  }
-  dimension: bates_play_day_7 {
-    type: number
-  }
-  dimension: bates_play_day_8 {
-    type: number
-  }
-  dimension: bates_play_day_9 {
-    type: number
-  }
-  dimension: bates_play_day_10 {
-    type: number
-  }
-  dimension: bates_play_day_11 {
-    type: number
-  }
-  dimension: bates_play_day_12 {
-    type: number
-  }
-  dimension: bates_play_day_13 {
-    type: number
-  }
-  dimension: bates_play_day_14 {
-    type: number
-  }
-
-#   dimension: bates_day_1 {
-#     type: number
-#   }
-#   dimension: bates_day_2 {
-#     type: number
-#   }
-#   dimension: bates_day_3 {
-#     type: number
-#   }
-#   dimension: bates_day_4 {
-#     type: number
-#   }
-#   dimension: bates_day_5 {
-#     type: number
-#   }
-#   dimension: bates_day_6 {
-#     type: number
-#   }
-#   dimension: bates_day_7 {
-#     type: number
-#   }
-#   dimension: bates_day_8 {
-#     type: number
-#   }
-#   dimension: bates_day_9 {
-#     type: number
-#   }
-#   dimension: bates_day_10 {
-#     type: number
-#   }
-#   dimension: bates_day_11 {
-#     type: number
-#   }
-#   dimension: bates_day_12 {
-#     type: number
-#   }
-#   dimension: bates_day_13 {
-#     type: number
-#   }
-#   dimension: bates_day_14 {
-#     type: number
-#   }
-
-  dimension: heartland_play_day_1 {
-    type: number
-  }
-  dimension: heartland_play_day_2 {
-    type: number
-  }
-  dimension: heartland_play_day_3 {
-    type: number
-  }
-  dimension: heartland_play_day_4 {
-    type: number
-  }
-  dimension: heartland_play_day_5 {
-    type: number
-  }
-  dimension: heartland_play_day_6 {
-    type: number
-  }
-  dimension: heartland_play_day_7 {
-    type: number
-  }
-  dimension: heartland_play_day_8 {
-    type: number
-  }
-  dimension: heartland_play_day_9 {
-    type: number
-  }
-  dimension: heartland_play_day_10 {
-    type: number
-  }
-  dimension: heartland_play_day_11 {
-    type: number
-  }
-  dimension: heartland_play_day_12 {
-    type: number
-  }
-  dimension: heartland_play_day_13 {
-    type: number
-  }
-  dimension: heartland_play_day_14 {
-    type: number
-  }
-
-#   dimension: heartland_day_1 {
-#     type: number
-#   }
-#   dimension: heartland_day_2 {
-#     type: number
-#   }
-#   dimension: heartland_day_3 {
-#     type: number
-#   }
-#   dimension: heartland_day_4 {
-#     type: number
-#   }
-#   dimension: heartland_day_5 {
-#     type: number
-#   }
-#   dimension: heartland_day_6 {
-#     type: number
-#   }
-#   dimension: heartland_day_7 {
-#     type: number
-#   }
-#   dimension: heartland_day_8 {
-#     type: number
-#   }
-#   dimension: heartland_day_9 {
-#     type: number
-#   }
-#   dimension: heartland_day_10 {
-#     type: number
-#   }
-#   dimension: heartland_day_11 {
-#     type: number
-#   }
-#   dimension: heartland_day_12 {
-#     type: number
-#   }
-#   dimension: heartland_day_13 {
-#     type: number
-#   }
-#   dimension: heartland_day_14 {
-#     type: number
-#   }
-
-  dimension: other_play_day_1 {
-    type: number
-  }
-  dimension: other_play_day_2 {
-    type: number
-  }
-  dimension: other_play_day_3 {
-    type: number
-  }
-  dimension: other_play_day_4 {
-    type: number
-  }
-  dimension: other_play_day_5 {
-    type: number
-  }
-  dimension: other_play_day_6 {
-    type: number
-  }
-  dimension: other_play_day_7 {
-    type: number
-  }
-  dimension: other_play_day_8 {
-    type: number
-  }
-  dimension: other_play_day_9 {
-    type: number
-  }
-  dimension: other_play_day_10 {
-    type: number
-  }
-  dimension: other_play_day_11 {
-    type: number
-  }
-  dimension: other_play_day_12 {
-    type: number
-  }
-  dimension: other_play_day_13 {
-    type: number
-  }
-  dimension: other_play_day_14 {
-    type: number
-  }
-
-#   dimension: other_day_1 {
-#     type: number
-#   }
-#   dimension: other_day_2 {
-#     type: number
-#   }
-#   dimension: other_day_3 {
-#     type: number
-#   }
-#   dimension: other_day_4 {
-#     type: number
-#   }
-#   dimension: other_day_5 {
-#     type: number
-#   }
-#   dimension: other_day_6 {
-#     type: number
-#   }
-#   dimension: other_day_7 {
-#     type: number
-#   }
-#   dimension: other_day_8 {
-#     type: number
-#   }
-#   dimension: other_day_9 {
-#     type: number
-#   }
-#   dimension: other_day_10 {
-#     type: number
-#   }
-#   dimension: other_day_11 {
-#     type: number
-#   }
-#   dimension: other_day_12 {
-#     type: number
-#   }
-#   dimension: other_day_13 {
-#     type: number
-#   }
-#   dimension: other_day_14 {
-#     type: number
-#   }
-
-  dimension: bates_duration_day_1 {
-    type: number
-  }
-  dimension: bates_duration_day_2 {
-    type: number
-  }
-  dimension: bates_duration_day_3 {
-    type: number
-  }
-  dimension: bates_duration_day_4 {
-    type: number
-  }
-  dimension: bates_duration_day_5 {
-    type: number
-  }
-  dimension: bates_duration_day_6 {
-    type: number
-  }
-  dimension: bates_duration_day_7 {
-    type: number
-  }
-  dimension: bates_duration_day_8 {
-    type: number
-  }
-  dimension: bates_duration_day_9 {
-    type: number
-  }
-  dimension: bates_duration_day_10 {
-    type: number
-  }
-  dimension: bates_duration_day_11 {
-    type: number
-  }
-  dimension: bates_duration_day_12 {
-    type: number
-  }
-  dimension: bates_duration_day_13 {
-    type: number
-  }
-  dimension: bates_duration_day_14 {
-    type: number
-  }
-  dimension: heartland_duration_day_1 {
-    type: number
-  }
-  dimension: heartland_duration_day_2 {
-    type: number
-  }
-  dimension: heartland_duration_day_3 {
-    type: number
-  }
-  dimension: heartland_duration_day_4 {
-    type: number
-  }
-  dimension: heartland_duration_day_5 {
-    type: number
-  }
-  dimension: heartland_duration_day_6 {
-    type: number
-  }
-  dimension: heartland_duration_day_7 {
-    type: number
-  }
-  dimension: heartland_duration_day_8 {
-    type: number
-  }
-  dimension: heartland_duration_day_9 {
-    type: number
-  }
-  dimension: heartland_duration_day_10 {
-    type: number
-  }
-  dimension: heartland_duration_day_11 {
-    type: number
-  }
-  dimension: heartland_duration_day_12 {
-    type: number
-  }
-  dimension: heartland_duration_day_13 {
-    type: number
-  }
-  dimension: heartland_duration_day_14 {
-    type: number
-  }
-  dimension: other_duration_day_1 {
-    type: number
-  }
-  dimension: other_duration_day_2 {
-    type: number
-  }
-  dimension: other_duration_day_3 {
-    type: number
-  }
-  dimension: other_duration_day_4 {
-    type: number
-  }
-  dimension: other_duration_day_5 {
-    type: number
-  }
-  dimension: other_duration_day_6 {
-    type: number
-  }
-  dimension: other_duration_day_7 {
-    type: number
-  }
-  dimension: other_duration_day_8 {
-    type: number
-  }
-  dimension: other_duration_day_9 {
-    type: number
-  }
-  dimension: other_duration_day_10 {
-    type: number
-  }
-  dimension: other_duration_day_11 {
-    type: number
-  }
-  dimension: other_duration_day_12 {
-    type: number
-  }
-  dimension: other_duration_day_13 {
-    type: number
-  }
-  dimension: other_duration_day_14 {
-    type: number
-  }
 }
 
 
@@ -571,18 +100,16 @@ view: testing_input {
       column: promoters { field: bigquery_delighted_survey_question_answered.promoters }
       column: platform {}
       column: marketing_opt_in {}
+      column: number_of_platforms {}
 #       column: bates_play { field: bigquery_conversion_model_firstplay.bates_play}
 #       column: heartland_play { field: bigquery_conversion_model_firstplay.heartland_play}
 #       column: other_play { field: bigquery_conversion_model_firstplay.other_play }
 #       column: bates_duration { field: bigquery_conversion_model_timeupdate.bates_duration }
 #       column: heartland_duration { field: bigquery_conversion_model_timeupdate.heartland_duration }
 #       column: other_duration { field: bigquery_conversion_model_timeupdate.other_duration }
-#       derived_column: bates_days {sql:bates_play*days_played;;}
-#       derived_column: heartland_days {sql:heartland_play*days_played;;}
-#       derived_column: other_days {sql: other_play*days_played;;}
-#       derived_column: bates_duration_days {sql:bates_duration*days_played;;}
-#       derived_column: heartland_duration_days {sql:heartland_duration*days_played;;}
-#       derived_column: other_duration_days {sql: other_duration*days_played;;}
+#       derived_column: bates {sql:bates_play*bates_duration;;}
+#       derived_column: heartland {sql:heartland_play*heartland_duration;;}
+#       derived_column: other {sql: other_play*other_duration;;}
       column: bates_play_day_1 { field: bigquery_conversion_model_firstplay.bates_play_day_1 }
       column: bates_play_day_2 { field: bigquery_conversion_model_firstplay.bates_play_day_2 }
       column: bates_play_day_3 { field: bigquery_conversion_model_firstplay.bates_play_day_3 }
@@ -599,502 +126,35 @@ view: testing_input {
       column: bates_duration_day_2 { field: bigquery_conversion_model_timeupdate.bates_duration_day_2 }
       column: bates_duration_day_3 { field: bigquery_conversion_model_timeupdate.bates_duration_day_3 }
       column: bates_duration_day_4 { field: bigquery_conversion_model_timeupdate.bates_duration_day_4 }
-# #       column: bates_duration_day_6 { field: bigquery_conversion_model_timeupdate.bates_duration_day_6 }
-# #       column: bates_duration_day_7 { field: bigquery_conversion_model_timeupdate.bates_duration_day_7 }
-# #       column: bates_duration_day_8 { field: bigquery_conversion_model_timeupdate.bates_duration_day_8 }
-# #       column: bates_duration_day_9 { field: bigquery_conversion_model_timeupdate.bates_duration_day_9 }
-# #       column: bates_duration_day_10 { field: bigquery_conversion_model_timeupdate.bates_duration_day_10 }
-# #       column: bates_duration_day_11 { field: bigquery_conversion_model_timeupdate.bates_duration_day_11 }
-# #       column: bates_duration_day_12 { field: bigquery_conversion_model_timeupdate.bates_duration_day_12 }
-# #       column: bates_duration_day_13 { field: bigquery_conversion_model_timeupdate.bates_duration_day_13 }
-# #       column: bates_duration_day_14 { field: bigquery_conversion_model_timeupdate.bates_duration_day_14 }
 #       derived_column: bates_day_1 {sql: bates_play_day_1*bates_duration_day_1;;}
 #       derived_column: bates_day_2 {sql: bates_play_day_2*bates_duration_day_2;;}
 #       derived_column: bates_day_3 {sql: bates_play_day_3*bates_duration_day_3;;}
-# #       derived_column: bates_day_4 {sql: bates_play_day_4*bates_duration_day_4;;}
-# #       derived_column: bates_day_5 {sql: bates_play_day_5*bates_duration_day_5;;}
-# #       derived_column: bates_day_6 {sql: bates_play_day_6*bates_duration_day_6;;}
-# #       derived_column: bates_day_7 {sql: bates_play_day_7*bates_duration_day_7;;}
-# #       derived_column: bates_day_8 {sql: bates_play_day_8*bates_duration_day_8;;}
-# #       derived_column: bates_day_9 {sql: bates_play_day_9*bates_duration_day_9;;}
-# #       derived_column: bates_day_10 {sql: bates_play_day_10*bates_duration_day_10;;}
-# #       derived_column: bates_day_11 {sql: bates_play_day_11*bates_duration_day_11;;}
-# #       derived_column: bates_day_12 {sql: bates_play_day_12*bates_duration_day_12;;}
-# #       derived_column: bates_day_13 {sql: bates_play_day_13*bates_duration_day_13;;}
-# #       derived_column: bates_day_14 {sql: bates_play_day_14*bates_duration_day_14;;}
+#       derived_column: bates_day_4 {sql: bates_play_day_4*bates_duration_day_4;;}
       column: heartland_duration_day_1 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_1 }
       column: heartland_duration_day_2 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_2 }
       column: heartland_duration_day_3 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_3 }
       column: heartland_duration_day_4 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_4 }
-# #       column: heartland_duration_day_5 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_5 }
-# #       column: heartland_duration_day_6 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_6 }
-# #       column: heartland_duration_day_7 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_7 }
-# #       column: heartland_duration_day_8 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_8 }
-# #       column: heartland_duration_day_9 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_9 }
-# #       column: heartland_duration_day_10 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_10 }
-# #       column: heartland_duration_day_11 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_11 }
-# #       column: heartland_duration_day_12 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_12 }
-# #       column: heartland_duration_day_13 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_13 }
-# #       column: heartland_duration_day_14 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_14 }
 #       derived_column: heartland_day_1 {sql: heartland_play_day_1*heartland_duration_day_1;;}
 #       derived_column: heartland_day_2 {sql: heartland_play_day_2*heartland_duration_day_2;;}
 #       derived_column: heartland_day_3 {sql: heartland_play_day_3*heartland_duration_day_3;;}
-# #       derived_column: heartland_day_4 {sql: heartland_play_day_4*heartland_duration_day_4;;}
-# #       derived_column: heartland_day_5 {sql: heartland_play_day_5*heartland_duration_day_5;;}
-# #       derived_column: heartland_day_6 {sql: heartland_play_day_6*heartland_duration_day_6;;}
-# #       derived_column: heartland_day_7 {sql: heartland_play_day_7*heartland_duration_day_7;;}
-# #       derived_column: heartland_day_8 {sql: heartland_play_day_8*heartland_duration_day_8;;}
-# #       derived_column: heartland_day_9 {sql: heartland_play_day_9*heartland_duration_day_9;;}
-# #       derived_column: heartland_day_10 {sql: heartland_play_day_10*heartland_duration_day_10;;}
-# #       derived_column: heartland_day_11 {sql: heartland_play_day_11*heartland_duration_day_11;;}
-# #       derived_column: heartland_day_12 {sql: heartland_play_day_12*heartland_duration_day_12;;}
-# #       derived_column: heartland_day_13 {sql: heartland_play_day_13*heartland_duration_day_13;;}
-# #       derived_column: heartland_day_14 {sql: heartland_play_day_14*heartland_duration_day_14;;}
+#       derived_column: heartland_day_4 {sql: heartland_play_day_4*heartland_duration_day_4;;}
       column: other_duration_day_1 { field: bigquery_conversion_model_timeupdate.other_duration_day_1 }
       column: other_duration_day_2 { field: bigquery_conversion_model_timeupdate.other_duration_day_2 }
       column: other_duration_day_3 { field: bigquery_conversion_model_timeupdate.other_duration_day_3 }
       column: other_duration_day_4 { field: bigquery_conversion_model_timeupdate.other_duration_day_4 }
-# #       column: other_duration_day_5 { field: bigquery_conversion_model_timeupdate.other_duration_day_5 }
-# #       column: other_duration_day_6 { field: bigquery_conversion_model_timeupdate.other_duration_day_6 }
-# #       column: other_duration_day_7 { field: bigquery_conversion_model_timeupdate.other_duration_day_7 }
-# #       column: other_duration_day_8 { field: bigquery_conversion_model_timeupdate.other_duration_day_8 }
-# #       column: other_duration_day_9 { field: bigquery_conversion_model_timeupdate.other_duration_day_9 }
-# #       column: other_duration_day_10 { field: bigquery_conversion_model_timeupdate.other_duration_day_10 }
-# #       column: other_duration_day_11 { field: bigquery_conversion_model_timeupdate.other_duration_day_11 }
-# #       column: other_duration_day_12 { field: bigquery_conversion_model_timeupdate.other_duration_day_12 }
-# #       column: other_duration_day_13 { field: bigquery_conversion_model_timeupdate.other_duration_day_13 }
-# #       column: other_duration_day_14 { field: bigquery_conversion_model_timeupdate.other_duration_day_14 }
 #       derived_column: other_day_1 {sql: other_play_day_1*other_duration_day_1;;}
 #       derived_column: other_day_2 {sql: other_play_day_2*other_duration_day_2;;}
 #       derived_column: other_day_3 {sql: other_play_day_3*other_duration_day_3;;}
-# #       derived_column: other_day_4 {sql: other_play_day_4*other_duration_day_4;;}
-# #       derived_column: other_day_5 {sql: other_play_day_5*other_duration_day_5;;}
-# #       derived_column: other_day_6 {sql: other_play_day_6*other_duration_day_6;;}
-# #       derived_column: other_day_7 {sql: other_play_day_7*other_duration_day_7;;}
-# #       derived_column: other_day_8 {sql: other_play_day_8*other_duration_day_8;;}
-# #       derived_column: other_day_9 {sql: other_play_day_9*other_duration_day_9;;}
-# #       derived_column: other_day_10 {sql: other_play_day_10*other_duration_day_10;;}
-# #       derived_column: other_day_11 {sql: other_play_day_11*other_duration_day_11;;}
-# #       derived_column: other_day_12 {sql: other_play_day_12*other_duration_day_12;;}
-# #       derived_column: other_day_13 {sql: other_play_day_13*other_duration_day_13;;}
-# #       derived_column: other_day_14 {sql: other_play_day_14*other_duration_day_14;;}
+#       derived_column: other_day_4 {sql: other_play_day_4*other_duration_day_4;;}
 
-      expression_custom_filter: ${bigquery_subscribers_v2.subscription_length}>14 AND ${bigquery_subscribers_v2.subscription_length}<=30;;
+      expression_custom_filter: ${bigquery_subscribers_v2.subscription_length}>14 AND ${bigquery_subscribers_v2.subscription_length}<=28;;
       filters: {
         field: bigquery_subscribers_v2.get_status
         value: "NOT NULL"
       }
     }
   }
-  dimension: customer_id {
-    type: number
-  }
 
-  dimension: state {}
-  dimension: days_played {type:number}
-  dimension: day_of_week {}
-  dimension: frequency {}
-  dimension: get_status {
-    type: number
-  }
-  dimension: addwatchlist_count {
-    type: number
-  }
-  dimension: removewatchlist_count {
-    type: number
-  }
-  dimension: error_count {
-    type: number
-  }
-  dimension: view_count {
-    type: number
-  }
-  dimension: promoters {}
-  dimension: platform {}
-  dimension: bates_play_day_1 {
-    type: number
-  }
-  dimension: bates_play_day_2 {
-    type: number
-  }
-  dimension: bates_play_day_3 {
-    type: number
-  }
-  dimension: bates_play_day_4 {
-    type: number
-  }
-  dimension: bates_play_day_5 {
-    type: number
-  }
-  dimension: bates_play_day_6 {
-    type: number
-  }
-  dimension: bates_play_day_7 {
-    type: number
-  }
-  dimension: bates_play_day_8 {
-    type: number
-  }
-  dimension: bates_play_day_9 {
-    type: number
-  }
-  dimension: bates_play_day_10 {
-    type: number
-  }
-  dimension: bates_play_day_11 {
-    type: number
-  }
-  dimension: bates_play_day_12 {
-    type: number
-  }
-  dimension: bates_play_day_13 {
-    type: number
-  }
-  dimension: bates_play_day_14 {
-    type: number
-  }
-
-  dimension: bates_day_1 {
-    type: number
-  }
-  dimension: bates_day_2 {
-    type: number
-  }
-  dimension: bates_day_3 {
-    type: number
-  }
-  dimension: bates_day_4 {
-    type: number
-  }
-  dimension: bates_day_5 {
-    type: number
-  }
-  dimension: bates_day_6 {
-    type: number
-  }
-  dimension: bates_day_7 {
-    type: number
-  }
-  dimension: bates_day_8 {
-    type: number
-  }
-  dimension: bates_day_9 {
-    type: number
-  }
-  dimension: bates_day_10 {
-    type: number
-  }
-  dimension: bates_day_11 {
-    type: number
-  }
-  dimension: bates_day_12 {
-    type: number
-  }
-  dimension: bates_day_13 {
-    type: number
-  }
-  dimension: bates_day_14 {
-    type: number
-  }
-
-  dimension: heartland_play_day_1 {
-    type: number
-  }
-  dimension: heartland_play_day_2 {
-    type: number
-  }
-  dimension: heartland_play_day_3 {
-    type: number
-  }
-  dimension: heartland_play_day_4 {
-    type: number
-  }
-  dimension: heartland_play_day_5 {
-    type: number
-  }
-  dimension: heartland_play_day_6 {
-    type: number
-  }
-  dimension: heartland_play_day_7 {
-    type: number
-  }
-  dimension: heartland_play_day_8 {
-    type: number
-  }
-  dimension: heartland_play_day_9 {
-    type: number
-  }
-  dimension: heartland_play_day_10 {
-    type: number
-  }
-  dimension: heartland_play_day_11 {
-    type: number
-  }
-  dimension: heartland_play_day_12 {
-    type: number
-  }
-  dimension: heartland_play_day_13 {
-    type: number
-  }
-  dimension: heartland_play_day_14 {
-    type: number
-  }
-
-  dimension: heartland_day_1 {
-    type: number
-  }
-  dimension: heartland_day_2 {
-    type: number
-  }
-  dimension: heartland_day_3 {
-    type: number
-  }
-  dimension: heartland_day_4 {
-    type: number
-  }
-  dimension: heartland_day_5 {
-    type: number
-  }
-  dimension: heartland_day_6 {
-    type: number
-  }
-  dimension: heartland_day_7 {
-    type: number
-  }
-  dimension: heartland_day_8 {
-    type: number
-  }
-  dimension: heartland_day_9 {
-    type: number
-  }
-  dimension: heartland_day_10 {
-    type: number
-  }
-  dimension: heartland_day_11 {
-    type: number
-  }
-  dimension: heartland_day_12 {
-    type: number
-  }
-  dimension: heartland_day_13 {
-    type: number
-  }
-  dimension: heartland_day_14 {
-    type: number
-  }
-
-  dimension: other_play_day_1 {
-    type: number
-  }
-  dimension: other_play_day_2 {
-    type: number
-  }
-  dimension: other_play_day_3 {
-    type: number
-  }
-  dimension: other_play_day_4 {
-    type: number
-  }
-  dimension: other_play_day_5 {
-    type: number
-  }
-  dimension: other_play_day_6 {
-    type: number
-  }
-  dimension: other_play_day_7 {
-    type: number
-  }
-  dimension: other_play_day_8 {
-    type: number
-  }
-  dimension: other_play_day_9 {
-    type: number
-  }
-  dimension: other_play_day_10 {
-    type: number
-  }
-  dimension: other_play_day_11 {
-    type: number
-  }
-  dimension: other_play_day_12 {
-    type: number
-  }
-  dimension: other_play_day_13 {
-    type: number
-  }
-  dimension: other_play_day_14 {
-    type: number
-  }
-
-  dimension: other_day_1 {
-    type: number
-  }
-  dimension: other_day_2 {
-    type: number
-  }
-  dimension: other_day_3 {
-    type: number
-  }
-  dimension: other_day_4 {
-    type: number
-  }
-  dimension: other_day_5 {
-    type: number
-  }
-  dimension: other_day_6 {
-    type: number
-  }
-  dimension: other_day_7 {
-    type: number
-  }
-  dimension: other_day_8 {
-    type: number
-  }
-  dimension: other_day_9 {
-    type: number
-  }
-  dimension: other_day_10 {
-    type: number
-  }
-  dimension: other_day_11 {
-    type: number
-  }
-  dimension: other_day_12 {
-    type: number
-  }
-  dimension: other_day_13 {
-    type: number
-  }
-  dimension: other_day_14 {
-    type: number
-  }
-
-  dimension: bates_duration_day_1 {
-    type: number
-  }
-  dimension: bates_duration_day_2 {
-    type: number
-  }
-  dimension: bates_duration_day_3 {
-    type: number
-  }
-  dimension: bates_duration_day_4 {
-    type: number
-  }
-  dimension: bates_duration_day_5 {
-    type: number
-  }
-  dimension: bates_duration_day_6 {
-    type: number
-  }
-  dimension: bates_duration_day_7 {
-    type: number
-  }
-  dimension: bates_duration_day_8 {
-    type: number
-  }
-  dimension: bates_duration_day_9 {
-    type: number
-  }
-  dimension: bates_duration_day_10 {
-    type: number
-  }
-  dimension: bates_duration_day_11 {
-    type: number
-  }
-  dimension: bates_duration_day_12 {
-    type: number
-  }
-  dimension: bates_duration_day_13 {
-    type: number
-  }
-  dimension: bates_duration_day_14 {
-    type: number
-  }
-  dimension: heartland_duration_day_1 {
-    type: number
-  }
-  dimension: heartland_duration_day_2 {
-    type: number
-  }
-  dimension: heartland_duration_day_3 {
-    type: number
-  }
-  dimension: heartland_duration_day_4 {
-    type: number
-  }
-  dimension: heartland_duration_day_5 {
-    type: number
-  }
-  dimension: heartland_duration_day_6 {
-    type: number
-  }
-  dimension: heartland_duration_day_7 {
-    type: number
-  }
-  dimension: heartland_duration_day_8 {
-    type: number
-  }
-  dimension: heartland_duration_day_9 {
-    type: number
-  }
-  dimension: heartland_duration_day_10 {
-    type: number
-  }
-  dimension: heartland_duration_day_11 {
-    type: number
-  }
-  dimension: heartland_duration_day_12 {
-    type: number
-  }
-  dimension: heartland_duration_day_13 {
-    type: number
-  }
-  dimension: heartland_duration_day_14 {
-    type: number
-  }
-  dimension: other_duration_day_1 {
-    type: number
-  }
-  dimension: other_duration_day_2 {
-    type: number
-  }
-  dimension: other_duration_day_3 {
-    type: number
-  }
-  dimension: other_duration_day_4 {
-    type: number
-  }
-  dimension: other_duration_day_5 {
-    type: number
-  }
-  dimension: other_duration_day_6 {
-    type: number
-  }
-  dimension: other_duration_day_7 {
-    type: number
-  }
-  dimension: other_duration_day_8 {
-    type: number
-  }
-  dimension: other_duration_day_9 {
-    type: number
-  }
-  dimension: other_duration_day_10 {
-    type: number
-  }
-  dimension: other_duration_day_11 {
-    type: number
-  }
-  dimension: other_duration_day_12 {
-    type: number
-  }
-  dimension: other_duration_day_13 {
-    type: number
-  }
-  dimension: other_duration_day_14 {
-    type: number
-  }
 }
 
 ######################## MODEL #############################
@@ -1105,11 +165,11 @@ view: future_purchase_model {
       CREATE OR REPLACE MODEL ${SQL_TABLE_NAME}
       OPTIONS(model_type='logistic_reg'
         , labels=['get_status']
-        , min_rel_progress = 0.0005
+        , min_rel_progress = 0.00000005
         , max_iterations = 99
         ) AS
       SELECT
-         * EXCEPT(customer_id, error_count)
+         * EXCEPT(customer_id)
       FROM ${training_input.SQL_TABLE_NAME};;
   }
 }
@@ -1260,8 +320,17 @@ view: future_input {
     column: error_count { field: bigquery_conversion_model_error.error_count }
     column: view_count { field: bigquery_conversion_model_view.view_count }
     column: promoters { field: bigquery_delighted_survey_question_answered.promoters }
-    column: marketing_opt_in {}
     column: platform {}
+    column: marketing_opt_in {}
+#       column: bates_play { field: bigquery_conversion_model_firstplay.bates_play}
+#       column: heartland_play { field: bigquery_conversion_model_firstplay.heartland_play}
+#       column: other_play { field: bigquery_conversion_model_firstplay.other_play }
+#       column: bates_duration { field: bigquery_conversion_model_timeupdate.bates_duration }
+#       column: heartland_duration { field: bigquery_conversion_model_timeupdate.heartland_duration }
+#       column: other_duration { field: bigquery_conversion_model_timeupdate.other_duration }
+#       derived_column: bates {sql:bates_play*bates_duration;;}
+#       derived_column: heartland {sql:heartland_play*heartland_duration;;}
+#       derived_column: other {sql: other_play*other_duration;;}
     column: bates_play_day_1 { field: bigquery_conversion_model_firstplay.bates_play_day_1 }
     column: bates_play_day_2 { field: bigquery_conversion_model_firstplay.bates_play_day_2 }
     column: bates_play_day_3 { field: bigquery_conversion_model_firstplay.bates_play_day_3 }
@@ -1278,14 +347,27 @@ view: future_input {
     column: bates_duration_day_2 { field: bigquery_conversion_model_timeupdate.bates_duration_day_2 }
     column: bates_duration_day_3 { field: bigquery_conversion_model_timeupdate.bates_duration_day_3 }
     column: bates_duration_day_4 { field: bigquery_conversion_model_timeupdate.bates_duration_day_4 }
+    derived_column: bates_day_1 {sql: bates_play_day_1*bates_duration_day_1;;}
+    derived_column: bates_day_2 {sql: bates_play_day_2*bates_duration_day_2;;}
+    derived_column: bates_day_3 {sql: bates_play_day_3*bates_duration_day_3;;}
+    derived_column: bates_day_4 {sql: bates_play_day_4*bates_duration_day_4;;}
     column: heartland_duration_day_1 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_1 }
     column: heartland_duration_day_2 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_2 }
     column: heartland_duration_day_3 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_3 }
     column: heartland_duration_day_4 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_4 }
+    derived_column: heartland_day_1 {sql: heartland_play_day_1*heartland_duration_day_1;;}
+    derived_column: heartland_day_2 {sql: heartland_play_day_2*heartland_duration_day_2;;}
+    derived_column: heartland_day_3 {sql: heartland_play_day_3*heartland_duration_day_3;;}
+    derived_column: heartland_day_4 {sql: heartland_play_day_4*heartland_duration_day_4;;}
     column: other_duration_day_1 { field: bigquery_conversion_model_timeupdate.other_duration_day_1 }
     column: other_duration_day_2 { field: bigquery_conversion_model_timeupdate.other_duration_day_2 }
     column: other_duration_day_3 { field: bigquery_conversion_model_timeupdate.other_duration_day_3 }
     column: other_duration_day_4 { field: bigquery_conversion_model_timeupdate.other_duration_day_4 }
+    derived_column: other_day_1 {sql: other_play_day_1*other_duration_day_1;;}
+    derived_column: other_day_2 {sql: other_play_day_2*other_duration_day_2;;}
+    derived_column: other_day_3 {sql: other_play_day_3*other_duration_day_3;;}
+    derived_column: other_day_4 {sql: other_play_day_4*other_duration_day_4;;}
+
     expression_custom_filter: ${bigquery_subscribers_v2.subscription_length}>11 AND ${bigquery_subscribers_v2.subscription_length}<=14;;
     filters: {
       field: bigquery_subscribers_v2.get_status

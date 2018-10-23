@@ -34,7 +34,7 @@ d as
 from customers.subscribers as a left join c on customer_id=safe_cast(user_id as int64)),
 
 e as
-(select avg(removewatchlist_count) as r_avg, stddev(removewatchlist_count) as r_std
+(select max(removewatchlist_count) as r_max, min(removewatchlist_count) as r_min
 from d)
 
 select user_id,
@@ -42,8 +42,9 @@ platform,
 frequency,
 campaign,
 customer_created_at,
-(removewatchlist_count-r_avg)/r_std as removewatchlist_count
+(removewatchlist_count-r_min)/(r_max-r_min) as removewatchlist_count
 from d,e
+order by removewatchlist_count desc
 
 
  ;;

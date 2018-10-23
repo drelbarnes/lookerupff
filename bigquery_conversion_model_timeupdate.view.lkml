@@ -1,7 +1,7 @@
 view: bigquery_conversion_model_timeupdate {
   derived_table: {
     sql:
-    WITH
+     WITH
   a AS (
   SELECT
     id AS video_id,
@@ -118,43 +118,45 @@ from customers.subscribers as a left join c on customer_id=safe_cast(user_id as 
 
 e as
 (select
-       avg(heartland_duration) hl_avg, stddev(heartland_duration) as hl_std,
-       avg(bates_duration) b_avg, stddev(bates_duration) as b_std,
-       avg(other_duration) o_avg, stddev(other_duration) as o_std,
-       avg(heartland_duration_day_1) hl1_avg, stddev(heartland_duration_day_1) as hl1_std,
-       avg(heartland_duration_day_2) hl2_avg, stddev(heartland_duration_day_2) as hl2_std,
-       avg(heartland_duration_day_3) hl3_avg, stddev(heartland_duration_day_3) as hl3_std,
-       avg(heartland_duration_day_4) hl4_avg, stddev(heartland_duration_day_4) as hl4_std,
-       avg(bates_duration_day_1) b1_avg, stddev(bates_duration_day_1) as b1_std,
-       avg(bates_duration_day_2) b2_avg, stddev(bates_duration_day_2) as b2_std,
-       avg(bates_duration_day_3) b3_avg, stddev(bates_duration_day_3) as b3_std,
-       avg(bates_duration_day_4) b4_avg, stddev(bates_duration_day_4) as b4_std,
-       avg(other_duration_day_1) o1_avg, stddev(other_duration_day_1) as o1_std,
-       avg(other_duration_day_2) o2_avg, stddev(other_duration_day_2) as o2_std,
-       avg(other_duration_day_3) o3_avg, stddev(other_duration_day_3) as o3_std,
-       avg(other_duration_day_4) o4_avg, stddev(other_duration_day_4) as o4_std
+       max(heartland_duration) hl_max, min(heartland_duration) as hl_min,
+       max(bates_duration) b_max, min(bates_duration) as b_min,
+       max(other_duration) o_max, min(other_duration) as o_min,
+       max(heartland_duration_day_1) hl1_max, min(heartland_duration_day_1) as hl1_min,
+       max(heartland_duration_day_2) hl2_max, min(heartland_duration_day_2) as hl2_min,
+       max(heartland_duration_day_3) hl3_max, min(heartland_duration_day_3) as hl3_min,
+       max(heartland_duration_day_4) hl4_max, min(heartland_duration_day_4) as hl4_min,
+       max(bates_duration_day_1) b1_max, min(bates_duration_day_1) as b1_min,
+       max(bates_duration_day_2) b2_max, min(bates_duration_day_2) as b2_min,
+       max(bates_duration_day_3) b3_max, min(bates_duration_day_3) as b3_min,
+       max(bates_duration_day_4) b4_max, min(bates_duration_day_4) as b4_min,
+       max(other_duration_day_1) o1_max, min(other_duration_day_1) as o1_min,
+       max(other_duration_day_2) o2_max, min(other_duration_day_2) as o2_min,
+       max(other_duration_day_3) o3_max, min(other_duration_day_3) as o3_min,
+       max(other_duration_day_4) o4_max, min(other_duration_day_4) as o4_min
        from d)
+
 
 select user_id,
         platform,
         frequency,
         campaign,
-        (heartland_duration - hl_avg)/hl_std as heartland_duration,
-        (bates_duration - b_avg)/b_std as bates_duration,
-        (other_duration - o_avg)/o_std as other_duration,
-        (heartland_duration_day_1 - hl1_avg)/hl1_std as heartland_duration_day_1,
-        (heartland_duration_day_2 - hl2_avg)/hl2_std as heartland_duration_day_2,
-        (heartland_duration_day_3 - hl3_avg)/hl3_std as heartland_duration_day_3,
-        (heartland_duration_day_4 - hl4_avg)/hl4_std as heartland_duration_day_4,
-        (bates_duration_day_1 - b1_avg)/b1_std as bates_duration_day_1,
-        (bates_duration_day_2 - b2_avg)/b2_std as bates_duration_day_2,
-        (bates_duration_day_3 - b3_avg)/b3_std as bates_duration_day_3,
-        (bates_duration_day_4 - b4_avg)/b4_std as bates_duration_day_4,
-        (other_duration_day_1 - o1_avg)/o1_std as other_duration_day_1,
-        (other_duration_day_2 - o2_avg)/o2_std as other_duration_day_2,
-        (other_duration_day_3 - o3_avg)/o3_std as other_duration_day_3,
-        (other_duration_day_4 - o4_avg)/o4_std as other_duration_day_4
+        (heartland_duration - hl_min)/(hl_max-hl_min) as heartland_duration,
+        (bates_duration - b_min)/(b_max-b_min) as bates_duration,
+        (other_duration - o_min)/(o_max-o_min) as other_duration,
+        (heartland_duration_day_1 - hl1_min)/(hl1_max-hl1_min) as heartland_duration_day_1,
+        (heartland_duration_day_2 - hl2_min)/(hl2_max-hl2_min) as heartland_duration_day_2,
+        (heartland_duration_day_3 - hl3_min)/(hl3_max-hl3_min) as heartland_duration_day_3,
+        (heartland_duration_day_4 - hl4_min)/(hl4_max-hl4_min) as heartland_duration_day_4,
+        (bates_duration_day_1 - b1_min)/(b1_max-b1_min) as bates_duration_day_1,
+        (bates_duration_day_2 - b2_min)/(b2_max-b2_min) as bates_duration_day_2,
+        (bates_duration_day_3 - b3_min)/(b3_max-b3_min) as bates_duration_day_3,
+        (bates_duration_day_4 - b4_min)/(b4_max-b4_min) as bates_duration_day_4,
+        (other_duration_day_1 - o1_min)/(o1_max-o1_min) as other_duration_day_1,
+        (other_duration_day_2 - o2_min)/(o2_max-o2_min) as other_duration_day_2,
+        (other_duration_day_3 - o3_min)/(o3_max-o3_min) as other_duration_day_3,
+        (other_duration_day_4 - o4_min)/(o4_max-o4_min) as other_duration_day_4
  from d, e
+ order by 5 desc
 
 
  ;;

@@ -18,6 +18,12 @@ dimension: collection_id {
   sql: ${TABLE}.collection_id ;;
 }
 
+dimension: type {
+  type: string
+  sql:  case when ${series} is null and upper(${collection})=upper(${title}) then 'Movies'
+                     when ${series} is not null then 'Series' else 'Movies' end  ;;
+}
+
   dimension_group: date {
     type: time
     timeframes: [

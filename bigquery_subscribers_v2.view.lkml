@@ -1,5 +1,26 @@
   view: bigquery_subscribers_v2 {
-    sql_table_name: customers.subscribers ;;
+    derived_table: {
+      sql:
+with a as
+
+(select distinct id as user_id, 'web' as source from javascript.users
+union all
+select distinct id as user_id, 'android' as source from android.users
+union all
+select distinct id as user_id, 'ios' as source from ios.users),
+
+b as
+(select user_id, count(1) as number_of_platforms from a group by 1 order by 2 desc)
+
+select s.*,
+       number_of_platforms
+from customers.subscribers as s inner join b on s.customer_id=safe_cast(user_id as int64) ;;
+    }
+
+    dimension: number_of_platforms {
+      type: number
+      sql: ${TABLE}.number_of_platforms/3 ;;
+    }
 
     dimension: action {
       type: string
