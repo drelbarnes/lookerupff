@@ -116,6 +116,7 @@ from a inner join customers.customers on user_id = customer_id);;
     timeframes: [
       raw,
       time,
+      hour_of_day,
       date,
       week,
       month,
