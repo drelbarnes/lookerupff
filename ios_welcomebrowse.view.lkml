@@ -1,4 +1,4 @@
-view: welcomebrowse {
+view: ios_welcomebrowse {
   sql_table_name: ios.welcomebrowse ;;
 
   dimension: id {

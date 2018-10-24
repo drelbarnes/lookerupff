@@ -1,4 +1,4 @@
-view: subscribetapped {
+view: ios_subscribetapped {
   sql_table_name: ios.subscribetapped ;;
 
   dimension: id {

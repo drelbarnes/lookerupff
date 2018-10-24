@@ -238,6 +238,12 @@ view: redshift_php_get_mobile_app_installs {
     drill_fields: [detail*]
   }
 
+  measure: count_ids {
+    type: count_distinct
+    sql: ${anonymous_id} ;;
+    drill_fields: [detail*]
+  }
+
   # ----- Sets of fields for drilling ------
   set: detail {
     fields: [

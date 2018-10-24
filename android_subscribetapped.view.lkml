@@ -1,5 +1,5 @@
-view: ios_signup {
-  sql_table_name: ios.signup ;;
+view: android_subscribetapped {
+  sql_table_name: android.subscribetapped ;;
 
   dimension: id {
     primary_key: yes
@@ -12,13 +12,8 @@ view: ios_signup {
     sql: ${TABLE}.anonymous_id ;;
   }
 
-  dimension: collection_id {
-    type: number
-    sql: ${TABLE}.collection_id ;;
-  }
-
   dimension: context_app_build {
-    type: string
+    type: number
     sql: ${TABLE}.context_app_build ;;
   }
 
@@ -62,9 +57,9 @@ view: ios_signup {
     sql: ${TABLE}.context_device_model ;;
   }
 
-  dimension: context_device_token {
+  dimension: context_device_name {
     type: string
-    sql: ${TABLE}.context_device_token ;;
+    sql: ${TABLE}.context_device_name ;;
   }
 
   dimension: context_device_type {
@@ -92,6 +87,11 @@ view: ios_signup {
     sql: ${TABLE}.context_locale ;;
   }
 
+  dimension: context_network_bluetooth {
+    type: yesno
+    sql: ${TABLE}.context_network_bluetooth ;;
+  }
+
   dimension: context_network_carrier {
     type: string
     sql: ${TABLE}.context_network_carrier ;;
@@ -117,6 +117,11 @@ view: ios_signup {
     sql: ${TABLE}.context_os_version ;;
   }
 
+  dimension: context_screen_density {
+    type: number
+    sql: ${TABLE}.context_screen_density ;;
+  }
+
   dimension: context_screen_height {
     type: number
     sql: ${TABLE}.context_screen_height ;;
@@ -130,6 +135,26 @@ view: ios_signup {
   dimension: context_timezone {
     type: string
     sql: ${TABLE}.context_timezone ;;
+  }
+
+  dimension: context_traits_anonymous_id {
+    type: string
+    sql: ${TABLE}.context_traits_anonymous_id ;;
+  }
+
+  dimension: context_traits_user_id {
+    type: string
+    sql: ${TABLE}.context_traits_user_id ;;
+  }
+
+  dimension: context_user_agent {
+    type: string
+    sql: ${TABLE}.context_user_agent ;;
+  }
+
+  dimension: device {
+    type: string
+    sql: ${TABLE}.device ;;
   }
 
   dimension: device_id {
@@ -219,6 +244,11 @@ view: ios_signup {
     sql: ${TABLE}.session_id ;;
   }
 
+  dimension: subscription_id {
+    type: string
+    sql: ${TABLE}.subscription_id ;;
+  }
+
   dimension_group: timestamp {
     type: time
     timeframes: [
@@ -239,19 +269,8 @@ view: ios_signup {
   }
 
   dimension: user_id {
-    type: number
-    # hidden: yes
+    type: string
     sql: ${TABLE}.user_id ;;
-  }
-
-  dimension: useremail {
-    type: string
-    sql: ${TABLE}.useremail ;;
-  }
-
-  dimension: username {
-    type: string
-    sql: ${TABLE}.username ;;
   }
 
   dimension: uuid {
@@ -274,11 +293,6 @@ view: ios_signup {
     sql: ${TABLE}.uuid_ts ;;
   }
 
-  dimension: video_id {
-    type: number
-    sql: ${TABLE}.video_id ;;
-  }
-
   dimension: view {
     type: string
     sql: ${TABLE}.view ;;
@@ -293,15 +307,11 @@ view: ios_signup {
   set: detail {
     fields: [
       id,
-      name,
+      context_device_name,
       context_os_name,
+      name,
       context_library_name,
-      username,
-      context_app_name,
-      users.context_os_name,
-      users.context_library_name,
-      users.context_app_name,
-      users.id
+      context_app_name
     ]
   }
 }

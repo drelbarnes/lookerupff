@@ -8,6 +8,13 @@ include: "android_users.view"
 include: "javascript_subscribed.view"
 include: "javascript_users.view"
 include: "javascript_play.view"
+include: "redshift_php_get_mobile_app_installs.view"
+include: "ios_authentication.view"
+include: "ios_subscribetapped.view"
+include: "android_subscribetapped.view"
+include: "ios_signup.view"
+include: "android_signup.view"
+include: "ios_welcomebrowse.view"
 
 datagroup: upff_default_datagroup {
   # sql_trigger: SELECT MAX(id) FROM etl_log;;
@@ -355,4 +362,46 @@ explore: customers_social_ads {
       relationship: one_to_one
     }
 
+
   }
+
+explore: redshift_php_get_mobile_app_installs {
+
+  label: "Mobile Attribution"
+  join: ios_signupstarted {
+    type: inner
+    sql_on: ${redshift_php_get_mobile_app_installs.anonymous_id} = ${ios_signupstarted.anonymous_id};;
+    relationship: one_to_one
+  }
+
+  join: ios_welcomebrowse {
+    type: inner
+    sql_on: ${ios_signupstarted.anonymous_id} = ${ios_welcomebrowse.anonymous_id};;
+    relationship: one_to_one
+  }
+
+  join: android_signup {
+    type: inner
+    sql_on: ${redshift_php_get_mobile_app_installs.anonymous_id} = ${android_signup.anonymous_id};;
+    relationship: one_to_one
+  }
+
+  join: ios_users {
+    type: inner
+    sql_on: ${ios_welcomebrowse.context_ip} = ${ios_users.context_ip};;
+    relationship: one_to_one
+  }
+
+  join: ios_signin {
+    type: inner
+    sql_on: ${ios_welcomebrowse.anonymous_id} = ${ios_signin.anonymous_id};;
+    relationship: one_to_one
+  }
+
+  join: authentication {
+    type: inner
+    sql_on: ${ios_welcomebrowse.anonymous_id} = ${authentication.anonymous_id};;
+    relationship: one_to_one
+  }
+
+}
