@@ -15,6 +15,7 @@ include: "android_subscribetapped.view"
 include: "ios_signup.view"
 include: "android_signup.view"
 include: "ios_welcomebrowse.view"
+include: "android_welcomebrowse.view"
 
 datagroup: upff_default_datagroup {
   # sql_trigger: SELECT MAX(id) FROM etl_log;;
@@ -380,6 +381,17 @@ explore: redshift_php_get_mobile_app_installs {
     relationship: one_to_one
   }
 
+  join: android_signupstarted {
+    type: inner
+    sql_on: ${redshift_php_get_mobile_app_installs.anonymous_id} = ${android_signupstarted.anonymous_id};;
+    relationship: one_to_one
+  }
+
+  join: android_welcomebrowse {
+    type: inner
+    sql_on: ${android_signupstarted.anonymous_id} = ${android_welcomebrowse.anonymous_id};;
+    relationship: one_to_one
+  }
 
 
   join: ios_users {
