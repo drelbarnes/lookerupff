@@ -33,7 +33,7 @@ d as
 from customers.subscribers as a left join c on customer_id=safe_cast(user_id as int64)),
 
 e as
-(select avg(view_count) as v_avg, stddev(view_count) as v_std
+(select max(view_count) as v_max, min(view_count) as v_min
 from d)
 
 select user_id,
@@ -41,7 +41,7 @@ platform,
 frequency,
 campaign,
 customer_created_at,
-(view_count-v_avg)/v_std as view_count
+(view_count-v_min)/(v_max-v_min) as view_count
 from d,e;;
   }
 

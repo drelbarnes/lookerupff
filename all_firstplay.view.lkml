@@ -10,8 +10,8 @@ view: all_firstplay {
                 case when series is null and upper(collection)=upper(title) then 'movie'
                      when series is not null then 'series' else 'other' end as type,
                 cast(a.video_id as int) as video_id,
-                trim(upper(split_part(season,'Season',2))) as season,
-                episode,trim(upper(title)) as title,
+                trim((split_part(season,'Season',2))) as season,
+                episode,trim((title)) as title,
                 user_id,
                 c.platform,
                 'Android' as source
@@ -25,8 +25,8 @@ view: all_firstplay {
                 case when series is null and upper(collection)=upper(title) then 'movie'
                      when series is not null then 'series' else 'other' end as type,
                 cast(a.video_id as int) as video_id,
-                trim(upper(split_part(season,'Season',2))) as season,
-                episode,trim(upper(title)) as title,
+                trim((split_part(season,'Season',2))) as season,
+                episode,trim((title)) as title,
                 user_id,
                 c.platform,
                 'iOS' as source
@@ -40,8 +40,8 @@ view: all_firstplay {
                 case when series is null and upper(collection)=upper(b.title) then 'movie'
                      when series is not null then 'series' else 'other' end as type,
                 cast(b.id as int) as video_id,
-                trim(upper(split_part(season,'Season',2))) as season,
-                episode,trim(upper(split_part(a.title,'-',1))) as title,
+                trim((split_part(season,'Season',2))) as season,
+                episode,trim((split_part(a.title,'-',1))) as title,
                 user_id,
                 c.platform,
                 'Web' as source
@@ -116,6 +116,7 @@ from a inner join customers.customers on user_id = customer_id);;
     timeframes: [
       raw,
       time,
+      hour_of_day,
       date,
       week,
       month,
@@ -149,4 +150,53 @@ from a inner join customers.customers on user_id = customer_id);;
       user_id
     ]
   }
+
+# ------
+# Filters
+# ------
+
+## filter determining time range for all "A" measures
+  filter: time_a {
+    type: date_time
+  }
+
+## flag for "A" measures to only include appropriate time range
+  dimension: group_a {
+    hidden: no
+    type: yesno
+    sql: {% condition time_a %} ${release_date} {% endcondition %}
+      ;;
+  }
+
+## filter determining time range for all "B" measures
+  filter: time_b {
+    type: date_time
+  }
+
+## flag for "B" measures to only include appropriate time range
+  dimension: group_b {
+    hidden: no
+    type: yesno
+    sql: {% condition time_b %} ${release_date} {% endcondition %}
+      ;;
+  }
+
+  measure: count_a {
+    type: count
+    filters: {
+      field: group_a
+      value: "yes"
+    }
+  }
+
+  measure: count_b {
+    type: count
+    filters: {
+      field: group_b
+      value: "yes"
+    }
+  }
+
+
+
 }

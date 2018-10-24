@@ -1,7 +1,7 @@
 view: bigquery_conversion_model_firstplay {
   derived_table: {
     sql:
-    WITH
+     WITH
       a AS (
       SELECT
         id AS video_id,
@@ -155,45 +155,47 @@ view: bigquery_conversion_model_firstplay {
     from d left join f on d.user_id=safe_cast(f.user_id as int64)),
 
     h as
-    (select avg(watched_heartland) hl_avg, stddev(watched_heartland) as hl_std,
-           avg(watched_bates) b_avg, stddev(watched_bates) as b_std,
-           avg(watched_other) o_avg, stddev(watched_other) as o_std,
-           avg(watched_heartland_day_1) hl1_avg, stddev(watched_heartland_day_1) as hl1_std,
-           avg(watched_heartland_day_2) hl2_avg, stddev(watched_heartland_day_2) as hl2_std,
-           avg(watched_heartland_day_3) hl3_avg, stddev(watched_heartland_day_3) as hl3_std,
-           avg(watched_heartland_day_4) hl4_avg, stddev(watched_heartland_day_4) as hl4_std,
-           avg(watched_bates_day_1) b1_avg, stddev(watched_bates_day_1) as b1_std,
-           avg(watched_bates_day_2) b2_avg, stddev(watched_bates_day_2) as b2_std,
-           avg(watched_bates_day_3) b3_avg, stddev(watched_bates_day_3) as b3_std,
-           avg(watched_bates_day_4) b4_avg, stddev(watched_bates_day_4) as b4_std,
-           avg(watched_other_day_1) o1_avg, stddev(watched_other_day_1) as o1_std,
-           avg(watched_other_day_2) o2_avg, stddev(watched_other_day_2) as o2_std,
-           avg(watched_other_day_3) o3_avg, stddev(watched_other_day_3) as o3_std,
-           avg(watched_other_day_4) o4_avg, stddev(watched_other_day_4) as o4_std,
-           avg(days_played) dp_avg, stddev(days_played) as dp_std
+    (select max(watched_heartland) hl_max, min(watched_heartland) as hl_min,
+           max(watched_bates) b_max, min(watched_bates) as b_min,
+           max(watched_other) o_max, min(watched_other) as o_min,
+           max(watched_heartland_day_1) hl1_max, min(watched_heartland_day_1) as hl1_min,
+           max(watched_heartland_day_2) hl2_max, min(watched_heartland_day_2) as hl2_min,
+           max(watched_heartland_day_3) hl3_max, min(watched_heartland_day_3) as hl3_min,
+           max(watched_heartland_day_4) hl4_max, min(watched_heartland_day_4) as hl4_min,
+           max(watched_bates_day_1) b1_max, min(watched_bates_day_1) as b1_min,
+           max(watched_bates_day_2) b2_max, min(watched_bates_day_2) as b2_min,
+           max(watched_bates_day_3) b3_max, min(watched_bates_day_3) as b3_min,
+           max(watched_bates_day_4) b4_max, min(watched_bates_day_4) as b4_min,
+           max(watched_other_day_1) o1_max, min(watched_other_day_1) as o1_min,
+           max(watched_other_day_2) o2_max, min(watched_other_day_2) as o2_min,
+           max(watched_other_day_3) o3_max, min(watched_other_day_3) as o3_min,
+           max(watched_other_day_4) o4_max, min(watched_other_day_4) as o4_min,
+           max(days_played) dp_max, min(days_played) as dp_min
            from g)
+
 
      select user_id,
             platform,
             frequency,
             campaign,
-            (watched_heartland - hl_avg)/hl_std as watched_heartland,
-            (watched_bates - b_avg)/b_std as watched_bates,
-            (watched_other - o_avg)/o_std as watched_other,
-            (watched_heartland_day_1 - hl1_avg)/hl1_std as watched_heartland_day_1,
-            (watched_heartland_day_2 - hl2_avg)/hl2_std as watched_heartland_day_2,
-            (watched_heartland_day_3 - hl3_avg)/hl3_std as watched_heartland_day_3,
-            (watched_heartland_day_4 - hl4_avg)/hl4_std as watched_heartland_day_4,
-            (watched_bates_day_1 - b1_avg)/b1_std as watched_bates_day_1,
-            (watched_bates_day_2 - b2_avg)/b2_std as watched_bates_day_2,
-            (watched_bates_day_3 - b3_avg)/b3_std as watched_bates_day_3,
-            (watched_bates_day_4 - b4_avg)/b4_std as watched_bates_day_4,
-            (watched_other_day_1 - o1_avg)/o1_std as watched_other_day_1,
-            (watched_other_day_2 - o2_avg)/o2_std as watched_other_day_2,
-            (watched_other_day_3 - o3_avg)/o3_std as watched_other_day_3,
-            (watched_other_day_4 - o4_avg)/o4_std as watched_other_day_4,
-            (days_played - dp_avg)/dp_std as days_played
+            (watched_heartland - hl_min)/(hl_max - hl_min) as watched_heartland,
+            (watched_bates - b_min)/(b_max - b_min) as watched_bates,
+            (watched_other - o_min)/(o_max-o_min) as watched_other,
+            (watched_heartland_day_1 - hl1_min)/(hl1_max-hl1_min) as watched_heartland_day_1,
+            (watched_heartland_day_2 - hl2_min)/(hl2_max-hl2_min) as watched_heartland_day_2,
+            (watched_heartland_day_3 - hl3_min)/(hl3_max-hl3_min) as watched_heartland_day_3,
+            (watched_heartland_day_4 - hl4_min)/(hl4_max-hl4_min) as watched_heartland_day_4,
+            (watched_bates_day_1 - b1_min)/(b1_max-b1_min) as watched_bates_day_1,
+            (watched_bates_day_2 - b2_min)/(b2_max-b2_min) as watched_bates_day_2,
+            (watched_bates_day_3 - b3_min)/(b3_max-b3_min) as watched_bates_day_3,
+            (watched_bates_day_4 - b4_min)/(b4_max-b4_min) as watched_bates_day_4,
+            (watched_other_day_1 - o1_min)/(o1_max-o1_min) as watched_other_day_1,
+            (watched_other_day_2 - o2_min)/(o2_max-o2_min) as watched_other_day_2,
+            (watched_other_day_3 - o3_min)/(o3_max-o3_min) as watched_other_day_3,
+            (watched_other_day_4 - o4_min)/(o4_max-o4_min) as watched_other_day_4,
+            (days_played - dp_min)/(dp_max-dp_min) as days_played
      from g, h
+
      ;;}
 
       dimension: user_id {

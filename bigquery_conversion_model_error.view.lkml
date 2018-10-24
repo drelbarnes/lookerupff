@@ -34,7 +34,7 @@ d as
 from customers.subscribers as a left join c on customer_id=safe_cast(user_id as int64)),
 
 e as
-(select avg(error_count) as e_avg, stddev(error_count) as e_std
+(select max(error_count) as e_max, min(error_count) as e_min
 from d)
 
 select user_id,
@@ -42,8 +42,9 @@ platform,
 frequency,
 campaign,
 customer_created_at,
-(error_count-e_avg)/e_std as error_count
+(error_count-e_min)/(e_max-e_min) as error_count
 from d,e
+order by error_count desc
 
  ;;
   }

@@ -10,6 +10,7 @@ include: "javascript_subscribed.view"
 include: "javascript_users.view"
 include: "javascript_play.view"
 include: "titles_id_mapping.view"
+include: "daily_spend.view"
 
 datagroup: upff_default_datagroup {
   # sql_trigger: SELECT MAX(id) FROM etl_log;;
@@ -20,6 +21,8 @@ persist_with: upff_default_datagroup
 
 include: "ios_application_installed.view"
 include: "ios_signupstarted.view"
+
+explore: daily_spend {}
 
 explore: application_installed{
   join: ios_signupstarted {
