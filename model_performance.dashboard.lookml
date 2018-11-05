@@ -4,7 +4,7 @@
   elements:
   - title: Loss Curve
     name: Loss Curve
-    model: bqml_ga_demo
+    model: upff_google
     explore: future_purchase_model_training_info
     type: looker_area
     fields:
@@ -47,7 +47,7 @@
     height: 6
   - title: Total Training Time (sec)
     name: Total Training Time (sec)
-    model: bqml_ga_demo
+    model: upff_google
     explore: future_purchase_model_training_info
     type: single_value
     fields:
@@ -94,7 +94,7 @@
     height: 2
   - title: Average Iteration Duration (sec)
     name: Average Iteration Duration (sec)
-    model: bqml_ga_demo
+    model: upff_google
     explore: future_purchase_model_training_info
     type: single_value
     fields:
@@ -141,7 +141,7 @@
     height: 2
   - title: Training Details
     name: Training Details
-    model: bqml_ga_demo
+    model: upff_google
     explore: future_purchase_model_training_info
     type: table
     fields:
@@ -201,7 +201,7 @@
     height: 6
   - title: Accuracy (static)
     name: Accuracy (static)
-    model: bqml_ga_demo
+    model: upff_google
     explore: future_purchase_model_evaluation
     type: single_value
     fields:
@@ -224,7 +224,7 @@
     height: 2
   - title: Recall (static)
     name: Recall (static)
-    model: bqml_ga_demo
+    model: upff_google
     explore: future_purchase_model_evaluation
     type: single_value
     fields:
@@ -247,7 +247,7 @@
     height: 2
   - title: Precision-Recall Curve
     name: Precision-Recall Curve
-    model: bqml_ga_demo
+    model: upff_google
     explore: roc_curve
     type: looker_line
     fields:
@@ -302,7 +302,7 @@
     height: 6
   - title: F1 Score (static)
     name: F1 Score (static)
-    model: bqml_ga_demo
+    model: upff_google
     explore: future_purchase_model_evaluation
     type: single_value
     fields:
@@ -325,7 +325,7 @@
     height: 2
   - title: Total Iterations
     name: Total Iterations
-    model: bqml_ga_demo
+    model: upff_google
     explore: future_purchase_model_training_info
     type: single_value
     fields:
@@ -372,7 +372,7 @@
     height: 2
   - title: ROC Curve Details (use thresholds for filter values)
     name: ROC Curve Details (use thresholds for filter values)
-    model: bqml_ga_demo
+    model: upff_google
     explore: roc_curve
     type: table
     fields:
@@ -406,7 +406,7 @@
     height: 3
   - title: True Positives
     name: True Positives
-    model: bqml_ga_demo
+    model: upff_google
     explore: roc_curve
     type: single_value
     fields:
@@ -455,7 +455,7 @@
     height: 3
   - title: False Positive
     name: False Positive
-    model: bqml_ga_demo
+    model: upff_google
     explore: roc_curve
     type: single_value
     fields:
@@ -504,7 +504,7 @@
     height: 3
   - title: True Negatives
     name: True Negatives
-    model: bqml_ga_demo
+    model: upff_google
     explore: roc_curve
     type: single_value
     fields:
@@ -553,7 +553,7 @@
     height: 3
   - title: False Negatives
     name: False Negatives
-    model: bqml_ga_demo
+    model: upff_google
     explore: roc_curve
     type: single_value
     fields:
@@ -602,7 +602,7 @@
     height: 3
   - title: Accuracy (threshold)
     name: Accuracy (threshold)
-    model: bqml_ga_demo
+    model: upff_google
     explore: roc_curve
     type: single_value
     fields:
@@ -651,7 +651,7 @@
     height: 2
   - title: Recall (threshold)
     name: Recall (threshold)
-    model: bqml_ga_demo
+    model: upff_google
     explore: roc_curve
     type: single_value
     fields:
@@ -700,7 +700,7 @@
     height: 2
   - title: Precision (threshold)
     name: Precision (threshold)
-    model: bqml_ga_demo
+    model: upff_google
     explore: roc_curve
     type: single_value
     fields:
@@ -749,7 +749,7 @@
     height: 2
   - title: F1 (threshold)
     name: F1 (threshold)
-    model: bqml_ga_demo
+    model: upff_google
     explore: roc_curve
     type: single_value
     fields:
@@ -806,7 +806,7 @@
     height: 2
   - title: ROC Curve
     name: ROC Curve
-    model: bqml_ga_demo
+    model: upff_google
     explore: roc_curve
     type: looker_line
     fields:

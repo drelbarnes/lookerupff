@@ -69,7 +69,7 @@ view: training_input {
 #       derived_column: other_day_4 {sql: other_play_day_4*other_duration_day_4;;}
 
 
-      expression_custom_filter: ${bigquery_subscribers_v2.subscription_length}>28 AND ${bigquery_subscribers_v2.subscription_length}<=108;;
+      expression_custom_filter: ${bigquery_subscribers_v2.subscription_length}>28 AND ${bigquery_subscribers_v2.subscription_length}<=105;;
       filters: {
         field: bigquery_subscribers_v2.get_status
         value: "NOT NULL"
@@ -183,7 +183,7 @@ view: future_purchase_model_evaluation {
   derived_table: {
     sql: SELECT * FROM ml.EVALUATE(
           MODEL ${future_purchase_model.SQL_TABLE_NAME},
-          (SELECT * FROM ${testing_input.SQL_TABLE_NAME}), struct(0.5 as threshold));;
+          (SELECT * FROM ${testing_input.SQL_TABLE_NAME}), struct(0.505 as threshold));;
   }
   dimension: recall {
     type: number

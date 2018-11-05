@@ -18,6 +18,16 @@ include: "bigquery_conversion_model_removewatchlist.view.lkml"
 include: "bigquery_conversion_model_timeupdate.view.lkml"
 include: "bigquery_conversion_model_view.view.lkml"
 include: "bigquery_subscribers_v2.view.lkml"
+include: "bigquery_churn_model_customers.view.lkml"
+include: "bigquery_churn_model_addwatchlist.view.lkml"
+include: "bigquery_churn_model_error.view.lkml"
+include: "bigquery_churn_model_firstplay.view.lkml"
+include: "bigquery_churn_model_removewatchlist.view.lkml"
+include: "bigquery_churn_model_timeupdate.view.lkml"
+include: "bigquery_churn_model_view.view.lkml"
+include: "bigquery_churn_model.view.lkml"
+include: "bigquery_churn_model_predictions.view.lkml"
+include: "model_performance.dashboard.lookml"
 
 
 datagroup: upff_google_datagroup {
@@ -30,6 +40,25 @@ explore: bigquery_derived_addwatchlist {}
 explore: bigquery_derived_timeupdate {}
 explore: bigquery_subscribers_timeupdate {}
 explore: bigquery_derived_views {}
+
+explore: bigquery_churn_model {}
+
+explore: bigquery_churn_model_customers {
+
+  join: bigquery_churn_model_addwatchlist {
+    type: left_outer
+    sql_on: ${bigquery_churn_model_customers.customer_id}=safe_cast(${bigquery_churn_model_addwatchlist.user_id} as int64) and
+    ${bigquery_churn_model_addwatchlist.timestamp_date} between ${bigquery_churn_model_customers.start_date} and ${bigquery_churn_model_customers.end_date};;
+    relationship: one_to_one
+  }
+
+  join: bigquery_churn_model_error {
+    type: left_outer
+    sql_on: ${bigquery_churn_model_customers.customer_id}=safe_cast(${bigquery_churn_model_error.user_id} as int64) and
+            ${bigquery_churn_model_error.timestamp_date} between ${bigquery_churn_model_customers.start_date} and ${bigquery_churn_model_customers.end_date};;
+    relationship: one_to_one
+  }
+}
 
 
 explore: bigquery_subscribers_v2 {
