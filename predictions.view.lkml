@@ -79,9 +79,7 @@ view: training_input {
 
 }
 
-
 # If necessary, uncomment the line below to include explore_source.
-
 # include: "upff_google.model.lkml"
 
 view: testing_input {
@@ -384,8 +382,12 @@ view: future_input {
   dimension: number_of_platforms_by_user { type: number }
   dimension: addwatchlist { type: number }
   #dimension: signin { type: number }
-  dimension: user_id {}
-  dimension: email {}
+  dimension: user_id {
+    tags: ["user_id"]
+  }
+  dimension: email {
+    tags: ["email"]
+  }
   dimension: platform {}
   dimension: source {}
   dimension: frequency {}
@@ -405,10 +407,15 @@ view: future_purchase_prediction {
   }
   dimension: day_of_week {}
   dimension: days_played {}
-  dimension: customer_id {}
+  dimension: customer_id {
+    tags: ["user_id"]
+  }
   dimension: frequency {}
   dimension: state {}
   dimension: get_status {}
+  dimension: email {
+    tags: ["email"]
+  }
   dimension: addwatchlist_count {}
   dimension: removewatchlist_count {}
   dimension: error_count {}
