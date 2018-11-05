@@ -314,6 +314,7 @@ view: future_input {
     column: customer_id {}
     column: frequency {}
     column: state {}
+    column: email {}
     column: get_status {}
     column: addwatchlist_count { field: bigquery_conversion_model_addwatchlist.addwatchlist_count }
     column: removewatchlist_count { field: bigquery_conversion_model_removewatchlist.removewatchlist_count }
@@ -369,7 +370,7 @@ view: future_input {
 #       derived_column: other_day_3 {sql: other_play_day_3*other_duration_day_3;;}
 #       derived_column: other_day_4 {sql: other_play_day_4*other_duration_day_4;;}
 
-    expression_custom_filter: ${bigquery_subscribers_v2.subscription_length}>11 AND ${bigquery_subscribers_v2.subscription_length}<=14;;
+    expression_custom_filter: ${bigquery_subscribers_v2.subscription_length}>8 AND ${bigquery_subscribers_v2.subscription_length}<=14;;
     filters: {
       field: bigquery_subscribers_v2.get_status
       value: "NULL"
