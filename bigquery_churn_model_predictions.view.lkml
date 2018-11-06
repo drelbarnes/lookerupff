@@ -31,7 +31,7 @@ view: churn_training_input {
 #       derived_column: other_duration_num {sql:other_duration*(num+1);;}
       filters: {
         field: bigquery_churn_model.event_created_at_date
-        value: "2018/07/05 to 2018/10/30"
+        value: "2018/07/05 to 2018/10/20"
       }
     }
   }
@@ -88,6 +88,7 @@ view: churn_testing_input {
     explore_source: bigquery_churn_model {
       column: customer_id {}
       column: num {}
+      column: max_num {}
       column: state {}
       column: addwatchlist {}
       column: bates_duration {}
@@ -109,13 +110,15 @@ view: churn_testing_input {
 #       derived_column: other_duration_num {sql:other_duration*(num+1);;}
       filters: {
         field: bigquery_churn_model.event_created_at_date
-        value: "after 5 days ago"
+        value: "after 15 days ago"
       }
+      expression_custom_filter: ${bigquery_churn_model.max_num}=${bigquery_churn_model.num};;
     }
   }
   dimension: customer_id {
     type: number
   }
+  dimension: max_num { type:number}
   dimension: num {
     type: number
   }

@@ -49,7 +49,7 @@ case when TO_CHAR(DATE_TRUNC('month', date_start), 'YYYY-MM') = '2018-07' then s
                 spend
         from fb_perf)
 
-        (select date_start as timestamp, sum(spend) as spend from t1 group by date_start)
+        (select date_start as timestamp, free_trial_created, sum(spend) as spend from t1 inner join customers_analytics on date_start=customers_analytics.timestamp group by 1,2)
  ;;
   }
 
@@ -63,9 +63,21 @@ case when TO_CHAR(DATE_TRUNC('month', date_start), 'YYYY-MM') = '2018-07' then s
     sql: ${TABLE}.timestamp ;;
   }
 
-  dimension: spend {
-    type: number
+  measure: spend {
+    type: sum
     sql: ${TABLE}.spend ;;
+    value_format_name: usd
+  }
+
+  measure: free_trial_created {
+    type: sum
+    sql: ${TABLE}.free_trial_created ;;
+  }
+
+  measure: CPFT {
+    type: number
+    sql: ${spend}/${free_trial_created} ;;
+    value_format_name: usd
   }
 
   set: detail {

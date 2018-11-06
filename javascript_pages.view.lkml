@@ -1,3 +1,4 @@
+
 view: javascript_pages {
   sql_table_name: javascript.pages ;;
 
@@ -207,6 +208,11 @@ view: javascript_pages {
   measure: total_views {
     type: count_distinct
     sql: ${TABLE}.user_id ;;
+  }
+
+  measure: views {
+    type: count_distinct
+    sql: ${anonymous_id} ;;
   }
 
   # ----- Sets of fields for drilling ------

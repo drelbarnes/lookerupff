@@ -358,7 +358,7 @@ group by num)
 select m.customer_id,
        event_created_at,
        m.num,
-       max_num
+       max_num,
        state,
        churn_status,
        platform,
