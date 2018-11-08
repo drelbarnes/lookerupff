@@ -384,6 +384,7 @@ view: future_input {
   #dimension: signin { type: number }
   dimension: user_id {
     tags: ["user_id"]
+    type: number
   }
   dimension: email {
     tags: ["email"]
@@ -409,6 +410,7 @@ view: future_purchase_prediction {
   dimension: days_played {}
   dimension: customer_id {
     tags: ["user_id"]
+    type: number
   }
   dimension: frequency {}
   dimension: state {}
@@ -460,9 +462,8 @@ view: future_purchase_prediction {
   }
 
   dimension: predicted_probability {
-    value_format: "0"
     type: number
-    sql:  ${predicted_get_status_probability} * 100;;
+    sql:  ${predicted_get_status_probability};;
   }
 
   measure: max_predicted_score {
