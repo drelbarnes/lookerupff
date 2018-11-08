@@ -460,6 +460,7 @@ view: future_purchase_prediction {
   }
 
   dimension: predicted_probability {
+    value_format: "0"
     type: number
     sql:  ${predicted_get_status_probability};;
   }
