@@ -7,14 +7,17 @@ view: bigquery_churn_model {
 
       b as
       (select *,
-             case when status in ("enabled") then (date_diff(current_date, date_add(date(customer_created_at), interval 14 day), month))-1
-                  when status in ("cancelled","disabled","refunded","expired") then (date_diff(date(event_created_at), date_add(date(customer_created_at), interval 14 day), month))-1
+             case when status in ("enabled") then (date_diff(current_date, date_add(date(customer_created_at), interval 14 day), month))
+                  when status in ("cancelled","disabled","refunded","expired") and (date_diff(date(event_created_at), date_add(date(customer_created_at), interval 14 day), month))>=0
+                       then (date_diff(date(event_created_at), date_add(date(customer_created_at), interval 14 day), month))
+                  when status in ("cancelled","disabled","refunded","expired") and (date_diff(date(event_created_at), date_add(date(customer_created_at), interval 14 day), month))<0 then 0
              end as months_since_conversion,
              case when status in ("enabled") then date_diff(current_date, date_add(date(customer_created_at), interval 14 day), day)
                   when status in ("cancelled","disabled","refunded","expired") then date_diff(date(event_created_at), date_add(date(customer_created_at), interval 14 day), day)
              end as days_since_conversion
       from customers.subscribers
-      where status is not null or status not in ("free_trial","paused")),
+      where status is not null or status not in ("free_trial","paused")
+      order by months_since_conversion desc),
 
       c as
       (select customer_id,
@@ -353,6 +356,7 @@ n as
        max(other_plays) as op_max,
        max(other_duration) as od_max
 from m
+where num<12
 group by num)
 
 select m.customer_id,
@@ -361,7 +365,9 @@ select m.customer_id,
        max_num,
        state,
        churn_status,
+       end_date,
        platform,
+       status,
        (addwatchlist-awl_min)/(awl_max-awl_min) as addwatchlist,
        (error-error_min)/(error_max-error_min) as error,
        (removewatchlist-rwl_min)/(rwl_max-rwl_min) as removewatchlist,
@@ -523,8 +529,17 @@ from m left join n on m.num=n.num
     sql: ${TABLE}.start_date ;;
   }
 
-  dimension: end_date {
-    type: date
+  dimension_group: end_date {
+    type: time
+    timeframes: [
+      raw,
+      time,
+      date,
+      week,
+      month,
+      quarter,
+      year
+    ]
     sql: ${TABLE}.end_date ;;
   }
 
@@ -611,8 +626,6 @@ from m left join n on m.num=n.num
       months_since_conversion,
       days_since_conversion,
       num,
-      start_date,
-      end_date,
       churn_status,
       addwatchlist,
       error,

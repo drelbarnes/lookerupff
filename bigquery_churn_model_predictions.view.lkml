@@ -29,10 +29,7 @@ view: churn_training_input {
 #       derived_column: other_plays_num {sql:other_plays*(num+1);;}
 #       derived_column: heartland_duration_num {sql:heartland_duration*(num+1);;}
 #       derived_column: other_duration_num {sql:other_duration*(num+1);;}
-      filters: {
-        field: bigquery_churn_model.event_created_at_date
-        value: "2018/07/05 to 2018/10/20"
-      }
+      expression_custom_filter: ${bigquery_churn_model.end_date_date} <= add_days(-60,now()) AND ${bigquery_churn_model.end_date_date} > add_days(-180,now()) ;;
     }
   }
   dimension: customer_id {
@@ -88,7 +85,6 @@ view: churn_testing_input {
     explore_source: bigquery_churn_model {
       column: customer_id {}
       column: num {}
-      column: max_num {}
       column: state {}
       column: addwatchlist {}
       column: bates_duration {}
@@ -108,17 +104,10 @@ view: churn_testing_input {
 #       derived_column: other_plays_num {sql:other_plays*(num+1);;}
 #       derived_column: heartland_duration_num {sql:heartland_duration*(num+1);;}
 #       derived_column: other_duration_num {sql:other_duration*(num+1);;}
-      filters: {
-        field: bigquery_churn_model.event_created_at_date
-        value: "after 15 days ago"
-      }
-      expression_custom_filter: ${bigquery_churn_model.max_num}=${bigquery_churn_model.num};;
+      expression_custom_filter: ${bigquery_churn_model.end_date_date} <= add_days(-31,now()) AND ${bigquery_churn_model.end_date_date} >= add_days(-59,now()) ;;
     }
   }
-  dimension: customer_id {
-    type: number
-  }
-  dimension: max_num { type:number}
+  dimension: customer_id {type: number}
   dimension: num {
     type: number
   }
@@ -185,7 +174,7 @@ view: churn_model_evaluation {
   derived_table: {
     sql: SELECT * FROM ml.EVALUATE(
           MODEL ${churn_model.SQL_TABLE_NAME},
-          (SELECT * FROM ${churn_testing_input.SQL_TABLE_NAME}), struct(0.5 as threshold));;
+          (SELECT * FROM ${churn_testing_input.SQL_TABLE_NAME}), struct(0.25 as threshold));;
   }
   dimension: recall {
     type: number
@@ -202,7 +191,7 @@ view: churn_confusion_matrix {
   derived_table: {
     sql: SELECT * FROM ml.confusion_matrix(
         MODEL ${churn_model.SQL_TABLE_NAME},
-        (SELECT * FROM ${churn_testing_input.SQL_TABLE_NAME}));;
+        (SELECT * FROM ${churn_testing_input.SQL_TABLE_NAME}),struct(0.25 as threshold));;
   }
 
   dimension: expected_label {}
@@ -304,162 +293,161 @@ view: churn_weights {
   }
 
   dimension: processed_input {type:string}
-  dimension: weight {type:number}
+  dimension: weight {type:number}}
 
 # ########################################## PREDICT FUTURE ############################
-# explore: future_purchase_prediction {}
-# view: future_input {
-#   derived_table: {
-#     explore_source: bigquery_subscribers_v2 {
-#       column: day_of_week {}
-#       column: days_played {field: bigquery_conversion_model_firstplay.days_played}
-#       column: customer_id {}
-#       column: frequency {}
-#       column: state {}
-#       column: get_status {}
-#       column: addwatchlist_count { field: bigquery_conversion_model_addwatchlist.addwatchlist_count }
-#       column: removewatchlist_count { field: bigquery_conversion_model_removewatchlist.removewatchlist_count }
-#       column: error_count { field: bigquery_conversion_model_error.error_count }
-#       column: view_count { field: bigquery_conversion_model_view.view_count }
-#       column: promoters { field: bigquery_delighted_survey_question_answered.promoters }
-#       column: platform {}
-#       column: marketing_opt_in {}
-#       column: number_of_platforms {}
-# #       column: bates_play { field: bigquery_conversion_model_firstplay.bates_play}
-# #       column: heartland_play { field: bigquery_conversion_model_firstplay.heartland_play}
-# #       column: other_play { field: bigquery_conversion_model_firstplay.other_play }
-# #       column: bates_duration { field: bigquery_conversion_model_timeupdate.bates_duration }
-# #       column: heartland_duration { field: bigquery_conversion_model_timeupdate.heartland_duration }
-# #       column: other_duration { field: bigquery_conversion_model_timeupdate.other_duration }
-# #       derived_column: bates {sql:bates_play*bates_duration;;}
-# #       derived_column: heartland {sql:heartland_play*heartland_duration;;}
-# #       derived_column: other {sql: other_play*other_duration;;}
-#       column: bates_play_day_1 { field: bigquery_conversion_model_firstplay.bates_play_day_1 }
-#       column: bates_play_day_2 { field: bigquery_conversion_model_firstplay.bates_play_day_2 }
-#       column: bates_play_day_3 { field: bigquery_conversion_model_firstplay.bates_play_day_3 }
-#       column: bates_play_day_4 { field: bigquery_conversion_model_firstplay.bates_play_day_4 }
-#       column: heartland_play_day_1 { field: bigquery_conversion_model_firstplay.heartland_play_day_1 }
-#       column: heartland_play_day_2 { field: bigquery_conversion_model_firstplay.heartland_play_day_2 }
-#       column: heartland_play_day_3 { field: bigquery_conversion_model_firstplay.heartland_play_day_3 }
-#       column: heartland_play_day_4 { field: bigquery_conversion_model_firstplay.heartland_play_day_4 }
-#       column: other_play_day_1 { field: bigquery_conversion_model_firstplay.other_play_day_1 }
-#       column: other_play_day_2 { field: bigquery_conversion_model_firstplay.other_play_day_2 }
-#       column: other_play_day_3 { field: bigquery_conversion_model_firstplay.other_play_day_3 }
-#       column: other_play_day_4 { field: bigquery_conversion_model_firstplay.other_play_day_4 }
-#       column: bates_duration_day_1 { field: bigquery_conversion_model_timeupdate.bates_duration_day_1 }
-#       column: bates_duration_day_2 { field: bigquery_conversion_model_timeupdate.bates_duration_day_2 }
-#       column: bates_duration_day_3 { field: bigquery_conversion_model_timeupdate.bates_duration_day_3 }
-#       column: bates_duration_day_4 { field: bigquery_conversion_model_timeupdate.bates_duration_day_4 }
-# #       derived_column: bates_day_1 {sql: bates_play_day_1*bates_duration_day_1;;}
-# #       derived_column: bates_day_2 {sql: bates_play_day_2*bates_duration_day_2;;}
-# #       derived_column: bates_day_3 {sql: bates_play_day_3*bates_duration_day_3;;}
-# #       derived_column: bates_day_4 {sql: bates_play_day_4*bates_duration_day_4;;}
-#       column: heartland_duration_day_1 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_1 }
-#       column: heartland_duration_day_2 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_2 }
-#       column: heartland_duration_day_3 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_3 }
-#       column: heartland_duration_day_4 { field: bigquery_conversion_model_timeupdate.heartland_duration_day_4 }
-# #       derived_column: heartland_day_1 {sql: heartland_play_day_1*heartland_duration_day_1;;}
-# #       derived_column: heartland_day_2 {sql: heartland_play_day_2*heartland_duration_day_2;;}
-# #       derived_column: heartland_day_3 {sql: heartland_play_day_3*heartland_duration_day_3;;}
-# #       derived_column: heartland_day_4 {sql: heartland_play_day_4*heartland_duration_day_4;;}
-#       column: other_duration_day_1 { field: bigquery_conversion_model_timeupdate.other_duration_day_1 }
-#       column: other_duration_day_2 { field: bigquery_conversion_model_timeupdate.other_duration_day_2 }
-#       column: other_duration_day_3 { field: bigquery_conversion_model_timeupdate.other_duration_day_3 }
-#       column: other_duration_day_4 { field: bigquery_conversion_model_timeupdate.other_duration_day_4 }
-# #       derived_column: other_day_1 {sql: other_play_day_1*other_duration_day_1;;}
-# #       derived_column: other_day_2 {sql: other_play_day_2*other_duration_day_2;;}
-# #       derived_column: other_day_3 {sql: other_play_day_3*other_duration_day_3;;}
-# #       derived_column: other_day_4 {sql: other_play_day_4*other_duration_day_4;;}
-#
-#       expression_custom_filter: ${bigquery_subscribers_v2.subscription_length}>11 AND ${bigquery_subscribers_v2.subscription_length}<=14;;
-#       filters: {
-#         field: bigquery_subscribers_v2.get_status
-#         value: "NULL"
-#       }
-#     }
-#   }
-#
-#   dimension: count { type: number }
-#   dimension: views { type: number }
-#   dimension: timecode { type: number }
-#   dimension: number_of_platforms_by_user { type: number }
-#   dimension: addwatchlist { type: number }
-#   #dimension: signin { type: number }
-#   dimension: user_id {}
-#   dimension: email {}
-#   dimension: platform {}
-#   dimension: source {}
-#   dimension: frequency {}
-#   dimension: day_of_week {}
-#   dimension: marketing_opt_in {
-#     type: number
-#   }
-#   dimension: state {}
-#
-#   dimension: promoters {}
-# }
-# view: future_purchase_prediction {
-#   derived_table: {
-#     sql: SELECT * FROM ml.PREDICT(
-#           MODEL ${future_purchase_model.SQL_TABLE_NAME},
-#           (SELECT * FROM ${future_input.SQL_TABLE_NAME}));;
-#   }
-#   dimension: day_of_week {}
-#   dimension: days_played {}
-#   dimension: customer_id {}
-#   dimension: frequency {}
-#   dimension: state {}
-#   dimension: get_status {}
-#   dimension: addwatchlist_count {}
-#   dimension: removewatchlist_count {}
-#   dimension: error_count {}
-#   dimension: view_count {}
-#   dimension: promoters {}
-#   dimension: platform {}
-#   dimension: bates_play_day_1 {}
-#   dimension: bates_play_day_2 {}
-#   dimension: bates_play_day_3 {}
-#   dimension: bates_play_day_4 {}
-#   dimension: heartland_play_day_1 {}
-#   dimension: heartland_play_day_2 {}
-#   dimension: heartland_play_day_3 {}
-#   dimension: heartland_play_day_4 {}
-#   dimension: other_play_day_1 {}
-#   dimension: other_play_day_2 {}
-#   dimension: other_play_day_3 {}
-#   dimension: other_play_day_4 {}
-#   dimension: bates_duration_day_1 {}
-#   dimension: bates_duration_day_2 {}
-#   dimension: bates_duration_day_3 {}
-#   dimension: bates_duration_day_4 {}
-#   dimension: heartland_duration_day_1 { }
-#   dimension: heartland_duration_day_2 { }
-#   dimension: heartland_duration_day_3 { }
-#   dimension: heartland_duration_day_4 { }
-#   dimension: other_duration_day_1 { }
-#   dimension: other_duration_day_2 { }
-#   dimension: other_duration_day_3 { }
-#   dimension: other_duration_day_4 {}
-#
-#
-#   #dimension: signin { type: number }
-#   dimension: predicted_get_status {
-#     type: number
-#     description: "Binary classification based on max predicted value"
-#   }
-#   dimension: predicted_get_status_probability {
-#     value_format_name: percent_2
-#     type: number
-#     sql:  ${TABLE}.predicted_get_status_probs[ORDINAL(1)].prob;;
-#   }
-#   measure: max_predicted_score {
-#     type: max
-#     value_format_name: percent_2
-#     sql: ${predicted_get_status_probability} ;;
-#   }
-#   measure: average_predicted_score {
-#     type: average
-#     value_format_name: percent_2
-#     sql: ${predicted_get_status_probability} ;;
-#   }
-}
+explore: churn_prediction {}
+  view: churn_future_input {
+    derived_table: {
+      explore_source: bigquery_churn_model {
+        column: customer_id {}
+        column: num {}
+        column: state {}
+        column: addwatchlist {}
+        column: bates_duration {}
+        column: bates_plays {}
+        column: churn_status {}
+        column: error {}
+        column: heartland_duration {}
+        column: heartland_plays {}
+        column: other_duration {}
+        column: other_plays {}
+        column: platform {}
+        column: removewatchlist {}
+        column: view {}
+#       derived_column: bates_plays_num {sql:bates_plays*(num+1);;}
+#       derived_column: bates_duration_num {sql:bates_duration*(num+1);;}
+#       derived_column: heartland_plays_num {sql:heartland_plays*(num+1);;}
+#       derived_column: other_plays_num {sql:other_plays*(num+1);;}
+#       derived_column: heartland_duration_num {sql:heartland_duration*(num+1);;}
+#       derived_column: other_duration_num {sql:other_duration*(num+1);;}
+        filters: {
+          field: bigquery_churn_model.status
+          value: "enabled"
+        }
+        expression_custom_filter: ${bigquery_churn_model.end_date_date} >= add_days(-29,now()) ;;
+      }
+    }
+    dimension: customer_id {type: number}
+    dimension: num {
+      type: number
+    }
+    dimension: state {}
+    dimension: addwatchlist {
+      type: number
+    }
+    dimension: bates_duration {
+      type: number
+    }
+    dimension: bates_plays {
+      type: number
+    }
+    dimension: churn_status {
+      type: number
+    }
+    dimension: error {
+      type: number
+    }
+    dimension: heartland_duration {
+      type: number
+    }
+    dimension: heartland_plays {
+      type: number
+    }
+    dimension: other_duration {
+      type: number
+    }
+    dimension: other_plays {
+      type: number
+    }
+    dimension: platform {}
+    dimension: removewatchlist {
+      type: number
+    }
+    dimension: view {
+      type: number
+    }
+  }
+
+  view: churn_prediction {
+    derived_table: {
+      sql: SELECT * FROM ml.PREDICT(
+          MODEL ${churn_model.SQL_TABLE_NAME},
+          (SELECT * FROM ${churn_future_input.SQL_TABLE_NAME}),struct(0.25 as threshold));;
+    }
+
+    dimension: customer_id {type: number}
+    dimension: num {
+      type: number
+    }
+    dimension: state {}
+    dimension: addwatchlist {
+      type: number
+    }
+    dimension: bates_duration {
+      type: number
+    }
+    dimension: bates_plays {
+      type: number
+    }
+    dimension: churn_status {
+      type: number
+    }
+    dimension: error {
+      type: number
+    }
+    dimension: heartland_duration {
+      type: number
+    }
+    dimension: heartland_plays {
+      type: number
+    }
+    dimension: other_duration {
+      type: number
+    }
+    dimension: other_plays {
+      type: number
+    }
+    dimension: platform {}
+    dimension: removewatchlist {
+      type: number
+    }
+    dimension: view {
+      type: number
+    }
+
+    dimension: predicted_churn_status {
+      type: number
+      description: "Binary classification based on max predicted value"
+    }
+    dimension: predicted_churn_status_probability {
+      value_format_name: percent_2
+      type: number
+      sql:  ${TABLE}.predicted_churn_status_probs[ORDINAL(1)].prob;;
+    }
+    measure: max_predicted_score {
+      type: max
+      value_format_name: percent_2
+      sql: ${predicted_churn_status_probability} ;;
+    }
+    measure: min_predicted_score {
+      type: min
+      value_format_name: percent_2
+      sql: ${predicted_churn_status_probability} ;;
+    }
+    measure: average_predicted_score {
+      type: average
+      value_format_name: percent_2
+      sql: ${predicted_churn_status_probability} ;;
+    }
+    measure: median_predicted_score {
+      type: median
+      value_format_name: percent_2
+      sql: ${predicted_churn_status_probability} ;;
+    }
+
+    measure: count {
+      type: count
+    }
+
+    }

@@ -28,6 +28,7 @@ include: "bigquery_churn_model_view.view.lkml"
 include: "bigquery_churn_model.view.lkml"
 include: "bigquery_churn_model_predictions.view.lkml"
 include: "model_performance.dashboard.lookml"
+include: "churn_model_performance.dashboard.lookml"
 
 
 datagroup: upff_google_datagroup {

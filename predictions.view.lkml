@@ -181,7 +181,7 @@ view: future_purchase_model_evaluation {
   derived_table: {
     sql: SELECT * FROM ml.EVALUATE(
           MODEL ${future_purchase_model.SQL_TABLE_NAME},
-          (SELECT * FROM ${testing_input.SQL_TABLE_NAME}), struct(0.505 as threshold));;
+          (SELECT * FROM ${testing_input.SQL_TABLE_NAME}), struct(0.46 as threshold));;
   }
   dimension: recall {
     type: number
@@ -198,7 +198,7 @@ view: confusion_matrix {
   derived_table: {
     sql: SELECT * FROM ml.confusion_matrix(
         MODEL ${future_purchase_model.SQL_TABLE_NAME},
-        (SELECT * FROM ${testing_input.SQL_TABLE_NAME}));;
+        (SELECT * FROM ${testing_input.SQL_TABLE_NAME}),struct(0.46 as threshold));;
   }
 
   dimension: expected_label {}
