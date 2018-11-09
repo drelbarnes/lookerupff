@@ -29,6 +29,7 @@ include: "bigquery_churn_model.view.lkml"
 include: "bigquery_churn_model_predictions.view.lkml"
 include: "model_performance.dashboard.lookml"
 include: "churn_model_performance.dashboard.lookml"
+include: "bigquery_marketing_cost.view"
 
 
 datagroup: upff_google_datagroup {
@@ -225,6 +226,8 @@ explore: bigquery_conversion_model_firstplay {
   }
 
 }
+
+explore: bigquery_marketing_cost {}
 
 
 # include all views in this project
