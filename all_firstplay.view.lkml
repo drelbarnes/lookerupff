@@ -141,6 +141,17 @@ from a inner join customers.customers on user_id = customer_id);;
     sql: ${source};;
   }
 
+  measure: user_count {
+    type: count_distinct
+    sql: ${user_id} ;;
+  }
+
+  measure: views_per_user {
+    type: number
+    sql: 1.00*${count}/${user_count} ;;
+    value_format: "0.00"
+  }
+
 
 # ----- Sets of fields for drilling ------
   set: detail {
@@ -197,6 +208,33 @@ from a inner join customers.customers on user_id = customer_id);;
     }
   }
 
+  parameter: date_granularity {
+    type: string
+    allowed_value: { value: "Day" }
+    allowed_value: { value: "Week"}
+    allowed_value: { value: "Month" }
+    allowed_value: { value: "Quarter" }
+    allowed_value: { value: "Year" }
+  }
+
+  dimension: date {
+    label_from_parameter: date_granularity
+    sql:
+       CASE
+         WHEN {% parameter date_granularity %} = 'Day' THEN
+           ${timestamp_date}::VARCHAR
+         WHEN {% parameter date_granularity %} = 'Week' THEN
+           ${timestamp_week}::VARCHAR
+         WHEN {% parameter date_granularity %} = 'Month' THEN
+           ${timestamp_month}::VARCHAR
+         WHEN {% parameter date_granularity %} = 'Quarter' THEN
+           ${timestamp_quarter}::VARCHAR
+         WHEN {% parameter date_granularity %} = 'Year' THEN
+           ${timestamp_year}::VARCHAR
+         ELSE
+           NULL
+       END ;;
+  }
 
 
 }

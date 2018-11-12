@@ -52,6 +52,12 @@ from a inner join customers.subscribers on SAFE_CAST(user_id AS INT64) = custome
     sql: ${TABLE}.timecode / 1000 ;;
   }
 
+  dimension: hours_watched {
+    type: number
+    sql: ${timecode}/3600 ;;
+    value_format: "0.00"
+  }
+
   dimension: user_id {
     primary_key: yes
     tags: ["user_id"]
@@ -79,10 +85,29 @@ from a inner join customers.subscribers on SAFE_CAST(user_id AS INT64) = custome
     drill_fields: [detail*]
   }
 
+
   measure: timecode_count {
     type: sum
     value_format: "0"
     sql: ${timecode} ;;
+  }
+
+  measure: hours_count {
+    type: sum
+    value_format: "0.00"
+    sql: ${hours_watched};;
+  }
+
+
+  measure: user_count {
+    type: count_distinct
+    sql: ${user_id} ;;
+  }
+
+  measure: hours_watched_per_user {
+    type: number
+    sql: 1.00*${hours_count}/${user_count} ;;
+    value_format: "0.00"
   }
 
 # ----- Sets of fields for drilling ------
@@ -91,6 +116,34 @@ from a inner join customers.subscribers on SAFE_CAST(user_id AS INT64) = custome
       platform,
       user_id
     ]
+  }
+
+  parameter: date_granularity {
+    type: string
+    allowed_value: { value: "Day" }
+    allowed_value: { value: "Week"}
+    allowed_value: { value: "Month" }
+    allowed_value: { value: "Quarter" }
+    allowed_value: { value: "Year" }
+  }
+
+  dimension: date {
+    label_from_parameter: date_granularity
+    sql:
+       CASE
+         WHEN {% parameter date_granularity %} = 'Day' THEN
+           ${timestamp_date}::VARCHAR
+         WHEN {% parameter date_granularity %} = 'Week' THEN
+           ${timestamp_week}::VARCHAR
+         WHEN {% parameter date_granularity %} = 'Month' THEN
+           ${timestamp_month}::VARCHAR
+         WHEN {% parameter date_granularity %} = 'Quarter' THEN
+           ${timestamp_quarter}::VARCHAR
+         WHEN {% parameter date_granularity %} = 'Year' THEN
+           ${timestamp_year}::VARCHAR
+         ELSE
+           NULL
+       END ;;
   }
 
 }
