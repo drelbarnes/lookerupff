@@ -1,22 +1,23 @@
-view: bigquery_derived_timeupdate {
-
+view: bigquery_timeupdate {
   derived_table: {
-    sql:  with a1 as
+    sql: with a1 as
 (select sent_at,
         user_id,
         (split(title," - ")) as title,
-        a.current_time as _current_time
+        a.current_time as _current_time,
+        duration
 from javascript.timeupdate as a),
 
 a2 as
 (select sent_at,
         user_id,
         title[safe_ordinal(1)] as title,
-        _current_time
+        _current_time,
+        duration
  from a1 order by 1),
 
  a3 as
-(select *
+(select * except(duration)
  from svod_titles.titles_id_mapping
  where (series is null and upper(collection)=upper(title)) or series is not null),
 
@@ -53,10 +54,10 @@ group by 1,2,3,4)
 
 select b.*,
        collection,
-      title,
+       title,
        case when series is null and upper(collection)=upper(title) then 'movie'
                      when series is not null then 'series' else 'other' end as type
-from b inner join a3 on video_id=safe_cast(id as string) ;;
+from b inner join a3 on video_id=safe_cast(id as string);;
   }
 
   dimension: title {
@@ -208,5 +209,4 @@ from b inner join a3 on video_id=safe_cast(id as string) ;;
       user_id
     ]
   }
-
 }

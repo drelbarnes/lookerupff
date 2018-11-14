@@ -1,11 +1,10 @@
-view: bigquery_derived_timeupdate {
-
+view: timeupdate {
   derived_table: {
-    sql:  with a1 as
+    sql: with a1 as
 (select sent_at,
         user_id,
         (split(title," - ")) as title,
-        a.current_time as _current_time
+        a._current_time
 from javascript.timeupdate as a),
 
 a2 as
@@ -24,7 +23,7 @@ b as
 (select safe_cast(id as string) as user_id,
        safe_cast(b.id as string) as video_id,
        duration,
-       safe_cast(date(sent_at) as timestamp) as timestamp,
+       cast(date(sent_at) as timestamp) as timestamp,
        max(a._current_time) as timecode,
        'Web' as source
 from a2 as a inner join a3 as b on trim(upper(a.title))=trim(upper(b.title))
@@ -34,7 +33,7 @@ union all
 select safe_cast(user_id as string) as user_id,
         safe_cast(video_id as string) as video_id,
         duration,
-        safe_cast(date(sent_at) as timestamp) as timestamp,
+        cast(date(sent_at) as timestamp) as timestamp,
         max(timecode) as timecode,
         'Android' as source
 from android.timeupdate
@@ -44,7 +43,7 @@ union all
 select safe_cast(user_id as string) as user_id,
         video_id,
         duration,
-        safe_cast(date(sent_at) as timestamp) as timestamp,
+        cast(date(sent_at) as timestamp) as timestamp,
         max(timecode) as timecode,
         'iOS' as source
 from ios.timeupdate as a
@@ -53,7 +52,6 @@ group by 1,2,3,4)
 
 select b.*,
        collection,
-      title,
        case when series is null and upper(collection)=upper(title) then 'movie'
                      when series is not null then 'series' else 'other' end as type
 from b inner join a3 on video_id=safe_cast(id as string) ;;
@@ -174,7 +172,7 @@ from b inner join a3 on video_id=safe_cast(id as string) ;;
 
   measure: hours_count {
     type: sum
-    value_format: "#,##0"
+    value_format: "0.00"
     sql: ${hours_watched};;
   }
 
@@ -208,5 +206,6 @@ from b inner join a3 on video_id=safe_cast(id as string) ;;
       user_id
     ]
   }
+
 
 }

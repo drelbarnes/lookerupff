@@ -1,57 +1,61 @@
-view: all_firstplay {
+view: bigquery_allfirstplay {
   derived_table: {
-    sql:
+    sql: with a1 as
+(select sent_at as timestamp,
+        user_id,
+        (split(title," - ")) as title
+from javascript.firstplay),
 
-    (with a as
-        (select a.timestamp,
+a2 as
+(select timestamp,
+        user_id,
+        title[safe_ordinal(1)] as title
+ from a1 order by 1),
+
+a as
+        (select sent_at as timestamp,
                 b.date as release_date,
-                trim(upper(split_part(series,'|',1))) as series,
                 collection,
                 case when series is null and upper(collection)=upper(title) then 'movie'
                      when series is not null then 'series' else 'other' end as type,
-                cast(a.video_id as int) as video_id,
-                trim((split_part(season,'Season',2))) as season,
-                episode,trim((title)) as title,
+                cast(a.video_id as int64) as video_id,
+                trim((title)) as title,
                 user_id,
                 c.platform,
                 'Android' as source
          from android.firstplay as a left join svod_titles.titles_id_mapping as b on a.video_id = b.id left join customers.customers as c
-         on a.user_id = c.customer_id
+         on safe_cast(a.user_id as int64) = c.customer_id
          union all
-         select a.timestamp,
+         select sent_at as timestamp,
                 b.date as release_date,
-                trim(upper(split_part(series,'|',1))) as series,
                 collection,
                 case when series is null and upper(collection)=upper(title) then 'movie'
                      when series is not null then 'series' else 'other' end as type,
-                cast(a.video_id as int) as video_id,
-                trim((split_part(season,'Season',2))) as season,
-                episode,trim((title)) as title,
+                cast(a.video_id as int64) as video_id,
+                trim((title)) as title,
                 user_id,
                 c.platform,
                 'iOS' as source
-         from ios.firstplay as a left join svod_titles.titles_id_mapping as b on a.video_id = b.id left join customers.customers as c
-         on a.user_id = c.customer_id
+         from ios.firstplay as a left join svod_titles.titles_id_mapping as b on safe_cast(a.video_id as int64) = b.id left join customers.customers as c
+         on safe_cast(a.user_id as int64) = c.customer_id
          union all
-         select a.timestamp,
+         select timestamp,
                 b.date as release_date,
-                trim(upper(split_part(series,'|',1))) as series,
                 collection,
                 case when series is null and upper(collection)=upper(b.title) then 'movie'
                      when series is not null then 'series' else 'other' end as type,
-                cast(b.id as int) as video_id,
-                trim((split_part(season,'Season',2))) as season,
-                episode,trim((split_part(a.title,'-',1))) as title,
+                cast(b.id as int64) as video_id,
+                trim(b.title) as title,
                 user_id,
                 c.platform,
                 'Web' as source
-         from javascript.firstplay as a left join svod_titles.titles_id_mapping as b on trim(upper(b.title)) = trim(upper(split_part(a.title,'-',1)))
+         from a2 as a left join svod_titles.titles_id_mapping as b on trim(upper(b.title)) = a.title
          left join customers.customers as c
-         on a.user_id = c.customer_id
-        )
+         on safe_cast(a.user_id as int64) = c.customer_id)
+
 
 select a.*
-from a );;
+from a;;
   }
 
   dimension: title {
@@ -235,6 +239,5 @@ from a );;
            NULL
        END ;;
   }
-
 
 }

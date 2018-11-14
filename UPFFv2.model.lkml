@@ -12,6 +12,7 @@ include: "javascript_play.view"
 include: "titles_id_mapping.view"
 include: "daily_spend.view"
 include: "app_installers.view.lkml"
+include: "timeupdate.view.lkml"
 
 
 datagroup: upff_default_datagroup {
@@ -23,6 +24,8 @@ persist_with: upff_default_datagroup
 
 include: "ios_application_installed.view"
 include: "ios_signupstarted.view"
+
+explore: timeupdate {}
 
 explore: daily_spend {}
 
