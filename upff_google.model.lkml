@@ -34,6 +34,7 @@ include: "bigquery_allfirstplay.view.lkml"
 include: "bigquery_timeupdate.view.lkml"
 include: "bigquery_topmovies.view.lkml"
 include: "bigquery_topseries.view.lkml"
+include: "bigquery_prior_days_title_performance.view.lkml"
 
 
 datagroup: upff_google_datagroup {
@@ -50,6 +51,7 @@ explore: bigquery_allfirstplay {}
 explore: bigquery_timeupdate {}
 explore: bigquery_topmovies {}
 explore: bigquery_topseries {}
+explore: bigquery_prior_days_title_performance {}
 
 explore: bigquery_churn_model {}
 
