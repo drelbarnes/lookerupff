@@ -13,7 +13,7 @@ a2 as
         user_id,
         title[safe_ordinal(1)] as title,
         _current_time
- from a1 order by 1),
+ from a1),
 
  a3 as
 (select *
@@ -158,7 +158,7 @@ union all
       quarter,
       year
     ]
-    sql: ${TABLE}.timestamp ;;
+    sql: safe_cast(${TABLE}.timestamp as timestamp) ;;
   }
 
   measure: count {
