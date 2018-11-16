@@ -63,10 +63,10 @@ view: bigquery_topmovies {
         COUNT(*) AS bigquery_allfirstplay_count
       FROM bigquery_allfirstplay
 
-      WHERE (bigquery_allfirstplay.type = 'movie') AND (((bigquery_allfirstplay.timestamp ) >= ((TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY), INTERVAL -29 DAY))) AND (bigquery_allfirstplay.timestamp ) < ((TIMESTAMP_ADD(TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY), INTERVAL -29 DAY), INTERVAL 30 DAY)))))
+      WHERE (bigquery_allfirstplay.type = 'movie') AND (((bigquery_allfirstplay.timestamp ) >= ((TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY), INTERVAL -13 DAY))) AND (bigquery_allfirstplay.timestamp ) < ((TIMESTAMP_ADD(TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY), INTERVAL -13 DAY), INTERVAL 14 DAY)))))
       GROUP BY 1
       ORDER BY 2 DESC
-      LIMIT 50)
+      LIMIT 20)
 
       select a.* from bigquery_allfirstplay as a inner join t on a.title=bigquery_allfirstplay_title
        ;;

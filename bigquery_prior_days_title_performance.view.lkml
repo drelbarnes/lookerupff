@@ -164,7 +164,7 @@ view: bigquery_prior_days_title_performance {
   dimension: percent_complete {
     type: number
     sql: ${TABLE}.percent_complete ;;
-    value_format: "0.00\%"
+    value_format: "0\%"
   }
 
   dimension: prior_day_user_count {
@@ -194,7 +194,7 @@ view: bigquery_prior_days_title_performance {
   dimension: prior_day_percent_complete {
     type: number
     sql: ${TABLE}.prior_day_percent_complete ;;
-    value_format: "0.00\%"
+    value_format: "0\%"
   }
 
   dimension: prior_week_user_count {
@@ -224,7 +224,7 @@ view: bigquery_prior_days_title_performance {
   dimension: prior_week_percent_complete {
     type: number
     sql: ${TABLE}.prior_week_percent_complete ;;
-    value_format: "0.00\%"
+    value_format: "0\%"
   }
 
   set: detail {

@@ -130,13 +130,13 @@ union all
   dimension: hours_watched {
     type: number
     sql: ${timecode}/3600 ;;
-    value_format: "0.00"
+    value_format: "#,##0"
   }
 
   dimension: minutes_watched {
     type: number
     sql: ${timecode}/60 ;;
-    value_format: "0.00"
+    value_format: "#,##0"
   }
 
   dimension: user_id {
@@ -174,7 +174,7 @@ union all
 
   measure: percent_completed {
     type: number
-    value_format: "0.00\%"
+    value_format: "0\%"
     sql: 100.00*${timecode_count}/${duration_count} ;;
   }
 
@@ -192,7 +192,7 @@ union all
 
   measure: minutes_count {
     type: sum
-    value_format: "0.00"
+    value_format: "#,##0"
     sql: ${minutes_watched};;
   }
 
@@ -203,14 +203,14 @@ union all
 
   measure: hours_watched_per_user {
     type: number
-    sql: 1.00*${hours_count}/${user_count} ;;
-    value_format: "0.00"
+    sql: 1*${hours_count}/${user_count} ;;
+    value_format: "#,##0"
   }
 
   measure: minutes_watched_per_user {
     type: number
-    sql: 1.00*${minutes_count}/${user_count} ;;
-    value_format: "0.00"
+    sql: 1*${minutes_count}/${user_count} ;;
+    value_format: "#,##0"
   }
 
 # ----- Sets of fields for drilling ------
