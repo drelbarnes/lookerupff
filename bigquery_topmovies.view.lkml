@@ -66,7 +66,7 @@ view: bigquery_topmovies {
       WHERE (bigquery_allfirstplay.type = 'movie') AND (((bigquery_allfirstplay.timestamp ) >= ((TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY), INTERVAL -13 DAY))) AND (bigquery_allfirstplay.timestamp ) < ((TIMESTAMP_ADD(TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY), INTERVAL -13 DAY), INTERVAL 14 DAY)))))
       GROUP BY 1
       ORDER BY 2 DESC
-      LIMIT 20)
+      LIMIT 15)
 
       select a.* from bigquery_allfirstplay as a inner join t on a.title=bigquery_allfirstplay_title
        ;;

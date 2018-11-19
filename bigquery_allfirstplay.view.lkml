@@ -1,6 +1,6 @@
 view: bigquery_allfirstplay {
   derived_table: {
-    sql: with a1 as
+    sql:  with a1 as
 (select sent_at as timestamp,
         user_id,
         (split(title," - ")) as title
@@ -36,7 +36,7 @@ a as
                 user_id,
                 c.platform,
                 'iOS' as source
-         from ios.firstplay as a left join svod_titles.titles_id_mapping as b on safe_cast(a.video_id as int64) = b.id left join customers.customers as c
+         from ios.firstplay as a left join svod_titles.titles_id_mapping as b on a.video_id = safe_cast(b.id as string) left join customers.customers as c
          on safe_cast(a.user_id as int64) = c.customer_id
          union all
          select timestamp,
@@ -55,7 +55,8 @@ a as
 
 
 select a.*
-from a;;
+from a
+         ;;
   }
 
   dimension: title {
