@@ -71,6 +71,11 @@ union all
   from a4 inner join a3 on a4.title=a3.title ;;
   }
 
+  dimension: current_date {
+    type: date
+    sql: current_date() ;;
+  }
+
   dimension: title {
     type: string
     sql: ${TABLE}.title;;

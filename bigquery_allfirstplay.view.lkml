@@ -59,6 +59,11 @@ from a
          ;;
   }
 
+  dimension: current_date {
+    type: date
+    sql: current_date() ;;
+  }
+
   dimension: title {
     type: string
     sql: ${TABLE}.title;;

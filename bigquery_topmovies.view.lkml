@@ -72,6 +72,11 @@ view: bigquery_topmovies {
        ;;
   }
 
+  dimension: current_date {
+    type: date
+    sql: current_date() ;;
+  }
+
   measure: count {
     type: count
     drill_fields: [detail*]
