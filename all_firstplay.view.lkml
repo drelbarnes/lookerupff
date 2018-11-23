@@ -54,6 +54,11 @@ select a.*
 from a );;
   }
 
+  dimension: current_date {
+    type: date
+    sql: current_date ;;
+  }
+
   dimension: title {
     type: string
     sql: ${TABLE}.title;;
@@ -144,6 +149,11 @@ from a );;
   measure: user_count {
     type: count_distinct
     sql: ${user_id} ;;
+  }
+
+  measure: plays_count {
+    type: count_distinct
+    sql: ${user_id}||cast(${timestamp_date} as varchar)||${title} ;;
   }
 
   measure: views_per_user {

@@ -13,50 +13,67 @@ a2 as
         user_id,
         title[safe_ordinal(1)] as title,
         _current_time
- from a1 order by 1),
+ from a1),
 
  a3 as
 (select *
  from svod_titles.titles_id_mapping
  where (series is null and upper(collection)=upper(title)) or series is not null),
 
-b as
-(select safe_cast(id as string) as user_id,
-       safe_cast(b.id as string) as video_id,
-       duration,
-       safe_cast(date(sent_at) as timestamp) as timestamp,
-       max(a._current_time) as timecode,
-       'Web' as source
-from a2 as a inner join a3 as b on trim(upper(a.title))=trim(upper(b.title))
-where safe_cast(id as string) != '0'
-group by 1,2,3,4
-union all
-select safe_cast(user_id as string) as user_id,
-        safe_cast(video_id as string) as video_id,
-        duration,
-        safe_cast(date(sent_at) as timestamp) as timestamp,
-        max(timecode) as timecode,
-        'Android' as source
-from android.timeupdate
-where safe_cast(user_id as string) != '0'
-group by 1,2,3,4
-union all
-select safe_cast(user_id as string) as user_id,
-        video_id,
-        duration,
-        safe_cast(date(sent_at) as timestamp) as timestamp,
-        max(timecode) as timecode,
-        'iOS' as source
-from ios.timeupdate as a
-where safe_cast(user_id as string) != '0'
-group by 1,2,3,4)
+a4 as
+((SELECT
+    a2.title,
+    user_id,
+    date(sent_at) as timestamp,
+    a3.duration*60 as duration,
+    max(_current_time) as timecode,
+   'web' AS source
+  FROM
+    a2 inner join a3 on trim(upper(a2.title))=trim(upper(a3.title))
+  WHERE
+    user_id IS NOT NULL and safe_cast(user_id as string)!='0'
+  GROUP BY 1,2,3,4)
 
-select b.*,
-       collection,
-      title,
-       case when series is null and upper(collection)=upper(title) then 'movie'
+union all
+
+(SELECT
+    title,
+    user_id,
+    date(sent_at) as timestamp,
+    a3.duration*60 as duration,
+    max(timecode) as timecode,
+   'iOS' AS source
+  FROM
+    ios.timeupdate as a inner join a3 on safe_cast(a.video_id as int64)=a3.id
+  WHERE
+    user_id IS NOT NULL and safe_cast(user_id as string)!='0'
+  GROUP BY 1,2,3,4)
+
+  union all
+
+(SELECT
+    title,
+    user_id,
+    date(sent_at) as timestamp,
+    a3.duration*60 as duration,
+    max(timecode) as timecode,
+   'Android' AS source
+  FROM
+    android.timeupdate as a inner join a3 on a.video_id=a3.id
+  WHERE
+    user_id IS NOT NULL and safe_cast(user_id as string)!='0'
+  GROUP BY 1,2,3,4))
+
+  select a4.*,
+         collection,
+         case when series is null and upper(collection)=upper(a3.title) then 'movie'
                      when series is not null then 'series' else 'other' end as type
-from b inner join a3 on video_id=safe_cast(id as string) ;;
+  from a4 inner join a3 on a4.title=a3.title ;;
+  }
+
+  dimension: current_date {
+    type: date
+    sql: current_date() ;;
   }
 
   dimension: title {
@@ -118,13 +135,13 @@ from b inner join a3 on video_id=safe_cast(id as string) ;;
   dimension: hours_watched {
     type: number
     sql: ${timecode}/3600 ;;
-    value_format: "0.00"
+    value_format: "#,##0"
   }
 
   dimension: minutes_watched {
     type: number
     sql: ${timecode}/60 ;;
-    value_format: "0.00"
+    value_format: "#,##0"
   }
 
   dimension: user_id {
@@ -146,7 +163,7 @@ from b inner join a3 on video_id=safe_cast(id as string) ;;
       quarter,
       year
     ]
-    sql: ${TABLE}.timestamp ;;
+    sql: safe_cast(${TABLE}.timestamp as timestamp) ;;
   }
 
   measure: count {
@@ -162,7 +179,7 @@ from b inner join a3 on video_id=safe_cast(id as string) ;;
 
   measure: percent_completed {
     type: number
-    value_format: "0.00\%"
+    value_format: "0\%"
     sql: 100.00*${timecode_count}/${duration_count} ;;
   }
 
@@ -180,7 +197,7 @@ from b inner join a3 on video_id=safe_cast(id as string) ;;
 
   measure: minutes_count {
     type: sum
-    value_format: "0.00"
+    value_format: "#,##0"
     sql: ${minutes_watched};;
   }
 
@@ -191,14 +208,14 @@ from b inner join a3 on video_id=safe_cast(id as string) ;;
 
   measure: hours_watched_per_user {
     type: number
-    sql: 1.00*${hours_count}/${user_count} ;;
-    value_format: "0.00"
+    sql: 1*${hours_count}/${user_count} ;;
+    value_format: "#,##0"
   }
 
   measure: minutes_watched_per_user {
     type: number
-    sql: 1.00*${minutes_count}/${user_count} ;;
-    value_format: "0.00"
+    sql: 1*${minutes_count}/${user_count} ;;
+    value_format: "#,##0"
   }
 
 # ----- Sets of fields for drilling ------

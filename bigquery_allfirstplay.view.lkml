@@ -1,6 +1,6 @@
 view: bigquery_allfirstplay {
   derived_table: {
-    sql: with a1 as
+    sql:  with a1 as
 (select sent_at as timestamp,
         user_id,
         (split(title," - ")) as title
@@ -36,7 +36,7 @@ a as
                 user_id,
                 c.platform,
                 'iOS' as source
-         from ios.firstplay as a left join svod_titles.titles_id_mapping as b on safe_cast(a.video_id as int64) = b.id left join customers.customers as c
+         from ios.firstplay as a left join svod_titles.titles_id_mapping as b on a.video_id = safe_cast(b.id as string) left join customers.customers as c
          on safe_cast(a.user_id as int64) = c.customer_id
          union all
          select timestamp,
@@ -49,13 +49,19 @@ a as
                 user_id,
                 c.platform,
                 'Web' as source
-         from a2 as a left join svod_titles.titles_id_mapping as b on trim(upper(b.title)) = a.title
+         from a2 as a left join svod_titles.titles_id_mapping as b on trim(upper(b.title)) = trim(upper(a.title))
          left join customers.customers as c
          on safe_cast(a.user_id as int64) = c.customer_id)
 
 
 select a.*
-from a;;
+from a
+         ;;
+  }
+
+  dimension: current_date {
+    type: date
+    sql: current_date() ;;
   }
 
   dimension: title {
@@ -140,6 +146,11 @@ from a;;
     drill_fields: [detail*]
   }
 
+  measure: play_count {
+    type: count_distinct
+    sql: concat(${title},${user_id},cast(${timestamp_date} as string)) ;;
+  }
+
   measure: number_of_platforms_by_user {
     type: count_distinct
     sql: ${source};;
@@ -152,7 +163,7 @@ from a;;
 
   measure: views_per_user {
     type: number
-    sql: 1.00*${count}/${user_count} ;;
+    sql: 1.00*${play_count}/${user_count} ;;
     value_format: "0.00"
   }
 

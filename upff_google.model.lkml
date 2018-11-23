@@ -32,6 +32,9 @@ include: "churn_model_performance.dashboard.lookml"
 include: "bigquery_marketing_cost.view"
 include: "bigquery_allfirstplay.view.lkml"
 include: "bigquery_timeupdate.view.lkml"
+include: "bigquery_topmovies.view.lkml"
+include: "bigquery_topseries.view.lkml"
+include: "bigquery_prior_days_title_performance.view.lkml"
 include: "bigquery_android_view.view.lkml"
 include: "bigquery_android_users.view.lkml"
 
@@ -48,6 +51,9 @@ explore: bigquery_subscribers_timeupdate {}
 explore: bigquery_derived_views {}
 explore: bigquery_allfirstplay {}
 explore: bigquery_timeupdate {}
+explore: bigquery_topmovies {}
+explore: bigquery_topseries {}
+explore: bigquery_prior_days_title_performance {}
 
 explore: bigquery_churn_model {}
 
