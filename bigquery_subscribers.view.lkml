@@ -65,6 +65,7 @@ view: bigquery_subscribers {
 
   dimension: email {
     type: string
+    tags: ["email"]
     sql:  ${TABLE}.email ;;
   }
 
