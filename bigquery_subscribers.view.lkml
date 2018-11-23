@@ -65,7 +65,7 @@ view: bigquery_subscribers {
 
   dimension: email {
     type: string
-    sql: ${TABLE}.email ;;
+    sql:  ${TABLE}.email ;;
   }
 
   dimension_group: event_created {

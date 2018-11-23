@@ -32,6 +32,8 @@ include: "churn_model_performance.dashboard.lookml"
 include: "bigquery_marketing_cost.view"
 include: "bigquery_allfirstplay.view.lkml"
 include: "bigquery_timeupdate.view.lkml"
+include: "bigquery_android_view.view.lkml"
+include: "bigquery_android_users.view.lkml"
 
 
 datagroup: upff_google_datagroup {
@@ -113,13 +115,21 @@ explore: bigquery_subscribers_v2 {
 
 }
 
-
-
-
-
-
-explore: bigquery_subscribers {
+  explore: bigquery_subscribers {
   label: "Subscribers"
+
+  join: bigquery_android_view {
+    relationship: many_to_one
+    sql_on: SAFE_CAST(${bigquery_android_view.user_id} AS INT64) = ${bigquery_subscribers.customer_id} ;;
+  }
+
+  join: bigquery_android_users {
+    type: inner
+    relationship: one_to_one
+    sql_on: SAFE_CAST(${bigquery_android_users.id} AS INT64) = ${bigquery_subscribers.customer_id} ;;
+  }
+
+
   join: bigquery_derived_addwatchlist {
     type: inner
     sql_on: ${bigquery_subscribers.customer_id} = SAFE_CAST(${bigquery_derived_addwatchlist.user_id} AS INT64);;

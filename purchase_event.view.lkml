@@ -259,6 +259,11 @@ view: purchase_event {
     sql: ${TABLE}.uuid_ts ;;
   }
 
+  dimension: topic {
+    type: string
+    sql: ${TABLE}.topic ;;
+  }
+
   measure: count {
     type: count
     drill_fields: [detail*]
