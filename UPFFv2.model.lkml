@@ -13,6 +13,9 @@ include: "titles_id_mapping.view"
 include: "daily_spend.view"
 include: "app_installers.view.lkml"
 include: "timeupdate.view.lkml"
+include: "daily_cpa.view.lkml"
+
+explore: daily_cpa {}
 
 
 datagroup: upff_default_datagroup {
