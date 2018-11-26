@@ -35,7 +35,7 @@ include: "bigquery_timeupdate.view.lkml"
 include: "bigquery_topmovies.view.lkml"
 include: "bigquery_topseries.view.lkml"
 include: "bigquery_prior_days_title_performance.view.lkml"
-
+include: "bigquery_timeupdate_7day_vs_28day.view.lkml"
 
 datagroup: upff_google_datagroup {
   # sql_trigger: SELECT MAX(id) FROM etl_log;;
@@ -52,6 +52,8 @@ explore: bigquery_timeupdate {}
 explore: bigquery_topmovies {}
 explore: bigquery_topseries {}
 explore: bigquery_prior_days_title_performance {}
+explore: bigquery_churn_model_view {}
+explore: bigquery_timeupdate_7day_vs_28day {}
 
 explore: bigquery_churn_model {}
 
