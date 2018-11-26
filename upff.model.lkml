@@ -383,6 +383,11 @@ explore: redshift_php_get_mobile_app_installs {
     relationship: one_to_one
   }
 
+  join: android_users {
+    type: inner
+    sql_on: ${android_conversion.anonymous_id} = ${android_users.context_traits_anonymous_id};;
+    relationship: one_to_one
+  }
 
   join: ios_users {
     type: inner

@@ -36,6 +36,8 @@ include: "bigquery_topmovies.view.lkml"
 include: "bigquery_topseries.view.lkml"
 include: "bigquery_prior_days_title_performance.view.lkml"
 include: "bigquery_timeupdate_7day_vs_28day.view.lkml"
+include: "bigquery_android_view.view.lkml"
+include: "bigquery_android_users.view.lkml"
 
 datagroup: upff_google_datagroup {
   # sql_trigger: SELECT MAX(id) FROM etl_log;;
@@ -121,13 +123,21 @@ explore: bigquery_subscribers_v2 {
 
 }
 
-
-
-
-
-
-explore: bigquery_subscribers {
+  explore: bigquery_subscribers {
   label: "Subscribers"
+
+  join: bigquery_android_view {
+    relationship: many_to_one
+    sql_on: SAFE_CAST(${bigquery_android_view.user_id} AS INT64) = ${bigquery_subscribers.customer_id} ;;
+  }
+
+  join: bigquery_android_users {
+    type: inner
+    relationship: one_to_one
+    sql_on: SAFE_CAST(${bigquery_android_users.id} AS INT64) = ${bigquery_subscribers.customer_id} ;;
+  }
+
+
   join: bigquery_derived_addwatchlist {
     type: inner
     sql_on: ${bigquery_subscribers.customer_id} = SAFE_CAST(${bigquery_derived_addwatchlist.user_id} AS INT64);;
