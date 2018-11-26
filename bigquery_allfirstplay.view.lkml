@@ -163,8 +163,8 @@ from a
 
   measure: views_per_user {
     type: number
-    sql: 1.00*${play_count}/${user_count} ;;
-    value_format: "0.00"
+    sql: 1.0*${play_count}/${user_count} ;;
+    value_format: "0.0"
   }
 
 

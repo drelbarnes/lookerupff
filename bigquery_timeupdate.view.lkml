@@ -207,8 +207,8 @@ union all
 
   measure: hours_watched_per_user {
     type: number
-    sql: 1.00*${hours_count}/${user_count} ;;
-    value_format: "0"
+    sql: 1.0*${hours_count}/${user_count} ;;
+    value_format: "0.0"
   }
 
   measure: minutes_watched_per_user {
