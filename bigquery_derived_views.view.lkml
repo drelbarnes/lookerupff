@@ -51,6 +51,10 @@ from a inner join customers.subscribers on SAFE_CAST(user_id AS INT64) = custome
   dimension_group: timestamp {
     type: time
     timeframes: [
+      hour,
+      minute,
+      second,
+      hour_of_day,
       raw,
       time,
       date,
