@@ -152,7 +152,8 @@ view: bigquery_conversion_model_firstplay {
     g as
     (select d.*,
            coalesce(days_played,0) as days_played
-    from d left join f on d.user_id=safe_cast(f.user_id as int64)),
+    from d left join f on d.user_id=safe_cast(f.user_id as int64)
+    where d.user_id<>0),
 
     h as
     (select max(watched_heartland) hl_max, min(watched_heartland) as hl_min,

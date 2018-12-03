@@ -31,7 +31,8 @@ d as
        case when a.campaign is not null then a.campaign else 'unavailable' end as campaign,
        a.customer_created_at,
        case when addwatchlist_count is null then 0 else addwatchlist_count end as addwatchlist_count
-from customers.subscribers as a left join c on customer_id=safe_cast(user_id as int64)),
+from customers.subscribers as a left join c on customer_id=safe_cast(user_id as int64)
+where customer_id<>0),
 
 e as
 (select max(addwatchlist_count) as awl_max, min(addwatchlist_count) as awl_min

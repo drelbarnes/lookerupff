@@ -67,6 +67,7 @@ from customers.subscribers as s inner join b on s.customer_id=safe_cast(user_id 
       type: time
       timeframes: [
         raw,
+        day_of_month,
         time,
         date,
         week,
@@ -75,6 +76,13 @@ from customers.subscribers as s inner join b on s.customer_id=safe_cast(user_id 
         year
       ]
       sql: ${TABLE}.customer_created_at ;;
+    }
+
+    dimension: customer_created_at_day {
+      type: string
+      sql: case when extract(DAY from ${TABLE}.customer_created_at) between 1 and 10 then "Beginning"
+                when extract(DAY from ${TABLE}.customer_created_at) between 11 and 20 then "Middle"
+                when extract(DAY from ${TABLE}.customer_created_at)>20 then "End" end;;
     }
 
     dimension: customer_id {
@@ -174,7 +182,7 @@ from customers.subscribers as s inner join b on s.customer_id=safe_cast(user_id 
       sql:
       case
         when ${status}='enabled' then 1
-        when ${status} in ('cancelled', 'disabled','expired','refunded') AND ${days_since_created} < 15 then 0
+        when ${status} in ('cancelled', 'disabled','expired','refunded') AND ${days_since_created} < 28 then 0
       else null end
     ;;
     }

@@ -1,8 +1,7 @@
 view: bigquery_conversion_model_timeupdate {
   derived_table: {
     sql:
-
-    with a1 as
+with a1 as
 (select sent_at,
         user_id,
         (split(title," - ")) as title,
@@ -130,7 +129,8 @@ d as
        case when other_duration_day_2 is null then 0 else other_duration_day_2 end as other_duration_day_2,
        case when other_duration_day_3 is null then 0 else other_duration_day_3 end as other_duration_day_3,
        case when other_duration_day_4 is null then 0 else other_duration_day_4 end as other_duration_day_4
-from customers.subscribers as a left join c on customer_id=safe_cast(user_id as int64)),
+from customers.subscribers as a left join c on customer_id=safe_cast(user_id as int64)
+where customer_id<>0),
 
 e as
 (select

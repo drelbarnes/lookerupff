@@ -9,6 +9,7 @@ view: training_input {
   derived_table: {
     explore_source: bigquery_subscribers_v2 {
       column: day_of_week {}
+      column: customer_created_at_day {}
       column: days_played {field: bigquery_conversion_model_firstplay.days_played}
       column: customer_id {}
       column: frequency {}
@@ -69,7 +70,7 @@ view: training_input {
 #       derived_column: other_day_4 {sql: other_play_day_4*other_duration_day_4;;}
 
 
-      expression_custom_filter: ${bigquery_subscribers_v2.subscription_length}>28 AND ${bigquery_subscribers_v2.subscription_length}<=105;;
+      expression_custom_filter: ${bigquery_subscribers_v2.subscription_length}>28 AND ${bigquery_subscribers_v2.subscription_length}<=84;;
       filters: {
         field: bigquery_subscribers_v2.get_status
         value: "NOT NULL"
@@ -86,6 +87,7 @@ view: testing_input {
   derived_table: {
     explore_source: bigquery_subscribers_v2 {
       column: day_of_week {}
+      column: customer_created_at_day {}
       column: days_played {field: bigquery_conversion_model_firstplay.days_played}
       column: customer_id {}
       column: frequency {}
@@ -145,7 +147,7 @@ view: testing_input {
 #       derived_column: other_day_3 {sql: other_play_day_3*other_duration_day_3;;}
 #       derived_column: other_day_4 {sql: other_play_day_4*other_duration_day_4;;}
 
-      expression_custom_filter: ${bigquery_subscribers_v2.subscription_length}>14 AND ${bigquery_subscribers_v2.subscription_length}<=28;;
+      expression_custom_filter: ${bigquery_subscribers_v2.subscription_length}>14 AND ${bigquery_subscribers_v2.subscription_length}<=28 AND ${bigquery_subscribers_v2.days_since_created}<15;;
       filters: {
         field: bigquery_subscribers_v2.get_status
         value: "NOT NULL"
@@ -308,6 +310,7 @@ view: future_input {
   derived_table: {
   explore_source: bigquery_subscribers_v2 {
     column: day_of_week {}
+    column: customer_created_at_day {}
     column: days_played {field: bigquery_conversion_model_firstplay.days_played}
     column: customer_id {}
     column: frequency {}

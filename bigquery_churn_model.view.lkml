@@ -331,7 +331,8 @@ m as
              left join rwl1 on e.customer_id=rwl1.customer_id and e.num=rwl1.num
              left join view1 on e.customer_id=view1.customer_id and e.num=view1.num
              left join fp1 on e.customer_id=fp1.customer_id and e.num=fp1.num
-             left join duration1 on e.customer_id=duration1.customer_id and e.num=duration1.num),
+             left join duration1 on e.customer_id=duration1.customer_id and e.num=duration1.num
+      where e.customer_id <>0),
 
 n as
 (select num,

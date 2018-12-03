@@ -30,7 +30,8 @@ d as
        case when a.campaign is not null then a.campaign else 'unavailable' end as campaign,
        a.customer_created_at,
        case when view_count is null then 0 else view_count end as view_count
-from customers.subscribers as a left join c on customer_id=safe_cast(user_id as int64)),
+from customers.subscribers as a left join c on customer_id=safe_cast(user_id as int64)
+where customer_id<>0),
 
 e as
 (select max(view_count) as v_max, min(view_count) as v_min
