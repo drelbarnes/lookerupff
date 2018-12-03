@@ -38,6 +38,7 @@ include: "bigquery_prior_days_title_performance.view.lkml"
 include: "bigquery_timeupdate_7day_vs_28day.view.lkml"
 include: "bigquery_android_view.view.lkml"
 include: "bigquery_android_users.view.lkml"
+include: "bigquery_personas.view.lkml"
 
 datagroup: upff_google_datagroup {
   # sql_trigger: SELECT MAX(id) FROM etl_log;;
@@ -45,6 +46,7 @@ datagroup: upff_google_datagroup {
   sql_trigger: SELECT CURRENT_DATE() ;;
 }
 persist_with: upff_google_datagroup
+explore: bigquery_personas {}
 explore: bigquery_derived_addwatchlist {}
 explore: bigquery_derived_timeupdate {}
 explore: bigquery_subscribers_timeupdate {}
