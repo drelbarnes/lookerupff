@@ -221,7 +221,29 @@ include: "javascript_subscribed.view"
 include: "purchase_event.view"
 include: "customers_info_facts.view"
 explore: subscribed {}
-explore: purchase_event{label: "Subscribers"}
+explore: purchase_event
+        {
+          label: "Subscribers"
+
+            join: android_users {
+              type: inner
+              sql_on: ${purchase_event.user_id} = ${android_users.id};;
+              relationship: one_to_one
+            }
+
+          join: android_conversion {
+            type: inner
+            sql_on: ${android_users.context_traits_anonymous_id} = ${android_conversion.anonymous_id};;
+            relationship: one_to_one
+          }
+
+          join: redshift_php_get_mobile_app_installs {
+            type: inner
+            sql_on: ${redshift_php_get_mobile_app_installs.anonymous_id} = ${android_conversion.anonymous_id};;
+            relationship: one_to_one
+          }
+
+        }
 explore: customers_info_facts{}
 
 include: "analytics_v2.view"
