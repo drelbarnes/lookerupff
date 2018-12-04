@@ -39,6 +39,8 @@ include: "bigquery_timeupdate_7day_vs_28day.view.lkml"
 include: "bigquery_android_view.view.lkml"
 include: "bigquery_android_users.view.lkml"
 include: "bigquery_personas.view.lkml"
+include: "bigquery_analytics.view.lkml"
+include: "bigquery_firstplay.view.lkml"
 
 datagroup: upff_google_datagroup {
   # sql_trigger: SELECT MAX(id) FROM etl_log;;
@@ -46,12 +48,19 @@ datagroup: upff_google_datagroup {
   sql_trigger: SELECT CURRENT_DATE() ;;
 }
 persist_with: upff_google_datagroup
+explore: bigquery_firstplay {}
 explore: bigquery_personas {}
 explore: bigquery_derived_addwatchlist {}
 explore: bigquery_derived_timeupdate {}
 explore: bigquery_subscribers_timeupdate {}
 explore: bigquery_derived_views {}
-explore: bigquery_allfirstplay {}
+explore: bigquery_allfirstplay {
+  join: bigquery_analytics {
+    type: left_outer
+    sql_on: ${bigquery_allfirstplay.timestamp_date}=${bigquery_analytics.timestamp_date} ;;
+    relationship: one_to_one
+  }
+}
 explore: bigquery_timeupdate {}
 explore: bigquery_topmovies {}
 explore: bigquery_topseries {}
