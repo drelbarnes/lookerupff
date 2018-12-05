@@ -1,10 +1,10 @@
 view: bigquery_firstplay {
   derived_table: {
-    sql: select user_id, timestamp from android.firstplay
+    sql: select user_id, timestamp, safe_cast(video_id as string) as title from android.firstplay
       union all
-      select user_id, timestamp from ios.firstplay
+      select user_id, timestamp, video_id as title from ios.firstplay
       union all
-      select user_id, timestamp from javascript.firstplay
+      select user_id, timestamp, title from javascript.firstplay
        ;;
   }
 
@@ -16,6 +16,11 @@ view: bigquery_firstplay {
   dimension: user_id {
     type: string
     sql: ${TABLE}.user_id ;;
+  }
+
+  dimension: title {
+    type: string
+    sql: ${TABLE}.title ;;
   }
 
   dimension_group: timestamp {
@@ -30,7 +35,7 @@ view: bigquery_firstplay {
 
   measure: play_count {
     type: count_distinct
-    sql: concat(${user_id},cast(${timestamp_date} as string)) ;;
+    sql: concat(${user_id},${title},cast(${timestamp_date} as string)) ;;
   }
 
   measure: views_per_user {
