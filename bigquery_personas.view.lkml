@@ -17,7 +17,7 @@ with a as
                   when status in ("cancelled","disabled","refunded","expired") then date_diff(date(event_created_at), date_add(date(customer_created_at), interval 14 day), day)
              end as days_since_conversion
       from customers.subscribers
-      where status is not null or status not in ("free_trial","paused")
+      where status is not null or status not in ("free_trial","paused") and platform<>'roku'
       order by months_since_conversion desc),
 
       c as
@@ -41,7 +41,8 @@ with a as
                   when status<>"enabled" and num=max_num then date(event_created_at) end as end_date,
              case when status="enabled" or num<max_num then 0
                   when status<>"enabled" and num=max_num then 1 end as churn_status
-      from d inner join c on d.customer_id=c.customer_id),
+      from d inner join c on d.customer_id=c.customer_id
+      where platform<>'roku'),
 
       awl as
       (SELECT user_id,timestamp, 1 as addwatchlist FROM javascript.addwatchlist where user_id is not null
@@ -329,7 +330,7 @@ with a as
               case when bates_duration is null then 0 else bates_duration end as bates_duration,
               case when heartland_duration is null then 0 else heartland_duration end as heartland_duration,
               case when other_duration is null then 0 else other_duration end as other_duration
-      from e left join duration on customer_id=safe_cast(user_id as int64) and date(timestamp) between start_date and end_date),
+      from e left join duration on customer_id=safe_cast(user_id as int64) and (timestamp) between start_date and end_date),
 
       duration1 as
       (select customer_id,
