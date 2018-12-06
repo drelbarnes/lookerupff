@@ -365,8 +365,7 @@ n as
        max(other_plays) as op_max,
        max(other_duration) as od_max,
        max(days_since_conversion) as days_max
-from m
-where)
+from m)
 
 select m.customer_id,
              state,
@@ -386,7 +385,6 @@ select m.customer_id,
        (other_plays-op_min)/(op_max-op_min) as other_plays,
        (other_duration-od_min)/(od_max-od_min) as other_duration
 from m,n
-where
  ;;
   }
 
