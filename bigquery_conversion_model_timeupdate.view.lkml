@@ -5,7 +5,7 @@ with a1 as
 (select sent_at,
         user_id,
         (split(title," - ")) as title,
-        a.current_time as _current_time
+        (a.current_time) as _current_time
 from javascript.timeupdate as a),
 
 a2 as
@@ -16,7 +16,9 @@ a2 as
  from a1),
 
  a3 as
-(select *
+(select distinct title,
+                 id,
+                 duration
  from svod_titles.titles_id_mapping
  where (series is null and upper(collection)=upper(title)) or series is not null),
 
