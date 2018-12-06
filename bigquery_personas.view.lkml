@@ -79,7 +79,7 @@ with a as
       error1 as
       (select customer_id,
              num,
-             sum(error)-1 as error
+             sum(error) as error
       from g
       group by 1,2),
 
@@ -119,7 +119,7 @@ with a as
       view1 as
       (select customer_id,
              num,
-             sum(view)-1 as view
+             sum(view) as view
       from j
       group by 1,2),
 
@@ -127,7 +127,7 @@ with a as
       (WITH
             a AS (
             SELECT
-              id AS video_id,
+              distinct id AS video_id,
               CASE
                 WHEN series LIKE '%Heartland%' THEN 'Heartland'
                 WHEN series LIKE '%Bringing Up Bates%' THEN 'Bringing Up Bates'
@@ -220,7 +220,7 @@ with a as
       (WITH
         a AS (
         SELECT
-          id AS video_id,
+          distinct id AS video_id,
           CASE
             WHEN series LIKE '%Heartland%' THEN 'Heartland'
             WHEN series LIKE '%Bringing Up Bates%' THEN 'Bringing Up Bates'
@@ -228,6 +228,33 @@ with a as
           END AS content
         FROM
           svod_titles.titles_id_mapping),
+
+        web0 as
+        (select user_id,
+                date(sent_at) as timestamp,
+                title,
+                max(a.current_time) as timecode
+         from javascript.timeupdate as a
+         where user_id <> '0' and user_id is not null
+         group by 1,2,3),
+
+         android0 as
+        (select user_id,
+                date(sent_at) as timestamp,
+                video_id,
+                max(timecode) as timecode
+         from android.timeupdate
+         where user_id <> '0' and user_id is not null
+         group by 1,2,3),
+
+         ios0 as
+        (select user_id,
+                date(sent_at) as timestamp,
+                video_id,
+                max(timecode) as timecode
+         from ios.timeupdate
+         where user_id <> '0' and user_id is not null
+         group by 1,2,3),
 
         web AS (
         SELECT
@@ -239,11 +266,9 @@ with a as
             WHEN upper(title) LIKE '%BRINGING UP BATES%' THEN 'Bringing Up Bates'
             ELSE 'Other'
           END AS content,
-          current_time as timecode
+          timecode
         FROM
-          javascript.timeupdate
-        WHERE
-          user_id IS NOT NULL),
+          web0),
 
         android AS (
         SELECT
@@ -253,11 +278,11 @@ with a as
           content,
           timecode
         FROM
-          android.timeupdate
+          android0
         INNER JOIN
           a
         ON
-          timeupdate.video_id=a.video_id),
+          android0.video_id=a.video_id),
 
         ios AS (
         SELECT
@@ -267,11 +292,11 @@ with a as
           content,
           timecode
         FROM
-          ios.timeupdate
+          ios0
         INNER JOIN
           a
         ON
-          SAFE_CAST(timeupdate.video_id AS int64)=SAFE_CAST(a.video_id AS int64))
+          SAFE_CAST(ios0.video_id AS int64)=SAFE_CAST(a.video_id AS int64))
 
 
         SELECT user_id,
