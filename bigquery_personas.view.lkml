@@ -339,15 +339,10 @@ with a as
              sum(heartland_duration) as heartland_duration,
              sum(other_duration) as other_duration
       from l
-      group by 1,2),
+      group by 1,2)
 
-m as
+
 (select      e.customer_id,
-             state,
-             status,
-             frequency,
-             platform,
-             months_since_conversion,
              days_since_conversion,
              sum(case when months_since_conversion=0 then addwatchlist else addwatchlist*((e.num)/months_since_conversion) end) as addwatchlist,
              sum(case when months_since_conversion=0 then error else error*((e.num)/months_since_conversion) end) as error,
@@ -365,54 +360,8 @@ m as
              left join view1 on e.customer_id=view1.customer_id and e.num=view1.num
              left join fp1 on e.customer_id=fp1.customer_id and e.num=fp1.num
              left join duration1 on e.customer_id=duration1.customer_id and e.num=duration1.num
-      where e.customer_id <>0
-      group by 1,2,3,4,5,6,7),
-
-n as
-(select avg(addwatchlist) as awl_avg,
-       avg(error) as error_avg,
-       avg(removewatchlist) as rwl_avg,
-       avg(view) as view_avg,
-       avg(bates_plays) as bp_avg,
-       avg(bates_duration) as bd_avg,
-       avg(heartland_plays) as hlp_avg,
-       avg(heartland_duration) as hld_avg,
-       avg(other_plays) as op_avg,
-       avg(other_duration) as od_avg,
-       avg(days_since_conversion) as days_avg,
-       stddev(addwatchlist) as awl_stddev,
-       stddev(error) as error_stddev,
-       stddev(removewatchlist) as rwl_stddev,
-       stddev(view) as view_stddev,
-       stddev(bates_plays) as bp_stddev,
-       stddev(bates_duration) as bd_stddev,
-       stddev(heartland_plays) as hlp_stddev,
-       stddev(heartland_duration) as hld_stddev,
-       stddev(other_plays) as op_stddev,
-       stddev(other_duration) as od_stddev,
-       stddev(days_since_conversion) as days_stddev
-from m
-where status='enabled')
-
-select m.customer_id,
-             state,
-             status,
-             frequency,
-             platform,
-             months_since_conversion,
-             (days_since_conversion-days_avg)/(days_stddev) as tenure,
-       (addwatchlist-awl_avg)/(awl_stddev) as addwatchlist,
-       (error-error_avg)/(error_stddev) as error,
-       (removewatchlist-rwl_avg)/(rwl_stddev) as removewatchlist,
-       (view-view_avg)/(view_stddev) as view,
-       (bates_plays-bp_avg)/(bp_stddev) as bates_plays,
-       (bates_duration-bd_avg)/(bd_stddev) as bates_duration,
-       (heartland_plays-hlp_avg)/(hlp_stddev) as heartland_plays,
-       (heartland_duration-hld_avg)/(hld_stddev) as heartland_duration,
-       (other_plays-op_avg)/(op_stddev) as other_plays,
-       (other_duration-od_avg)/(od_stddev) as other_duration
-from m,n
-where status='enabled'
+      where e.customer_id <>0 and status='enabled'
+      group by 1,2)
  ;;
   }
 
