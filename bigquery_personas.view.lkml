@@ -455,6 +455,11 @@ with a as
     sql: ${TABLE}.other_duration ;;
   }
 
+  dimension: days_since_conversion {
+    type: number
+    sql: ${TABLE}.days_since_conversion ;;
+  }
+
   set: detail {
     fields: [
       customer_id,
