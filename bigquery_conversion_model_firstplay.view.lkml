@@ -4,7 +4,7 @@ view: bigquery_conversion_model_firstplay {
      WITH
       a AS (
       SELECT
-        disrinct id AS video_id,
+        distinct id AS video_id,
         CASE
           WHEN series LIKE '%Heartland%' THEN 'Heartland'
           WHEN series LIKE '%Bringing Up Bates%' THEN 'Bringing Up Bates'

@@ -16,7 +16,12 @@ a2 as
  from a1),
 
  a3 as
-(select distinct title,
+(select distinct CASE
+      WHEN collection LIKE '%Heartland%' THEN 'Heartland'
+      WHEN collection LIKE '%Bringing Up Bates%' THEN 'Bringing Up Bates'
+      ELSE 'Other'
+    END AS content,
+                 title,
                  id,
                  duration
  from svod_titles.titles_id_mapping
@@ -68,18 +73,11 @@ union all
 
 a5 as
 (select a4.*,
-         collection,
-         case when series is null and upper(collection)=upper(a3.title) then 'movie'
-                     when series is not null then 'series' else 'other' end as type
+        content
 from a4 inner join a3 on a4.title=a3.title),
 
 b as
-(select *,
-        CASE
-      WHEN collection LIKE '%Heartland%' THEN 'Heartland'
-      WHEN collection LIKE '%Bringing Up Bates%' THEN 'Bringing Up Bates'
-      ELSE 'Other'
-    END AS content
+(select *
 from a5),
 
  c as
@@ -175,6 +173,7 @@ select user_id,
         (other_duration_day_3 - o3_min)/(o3_max-o3_min) as other_duration_day_3,
         (other_duration_day_4 - o4_min)/(o4_max-o4_min) as other_duration_day_4
  from d, e
+ order by heartland_duration desc
  ;;
   }
   dimension: user_id {

@@ -190,9 +190,11 @@ from a
   dimension: group_a {
     hidden: no
     type: yesno
-    sql: {% condition time_a %} ${release_date} {% endcondition %}
+    sql: {% condition time_a %} ${timestamp_raw} {% endcondition %}
       ;;
   }
+
+
 
 ## filter determining time range for all "B" measures
   filter: time_b {
@@ -203,25 +205,71 @@ from a
   dimension: group_b {
     hidden: no
     type: yesno
-    sql: {% condition time_b %} ${release_date} {% endcondition %}
+    sql: {% condition time_b %} ${timestamp_raw} {% endcondition %}
       ;;
   }
 
-  measure: count_a {
-    type: count
+  filter: time_c {
+    type: date_time
+  }
+## flag for "C" measures to only include appropriate time range
+  dimension: group_c {
+    hidden: no
+    type: yesno
+    sql: {% condition time_c %} ${timestamp_raw} {% endcondition %}
+      ;;
+  }
+
+  filter: time_d {
+    type: date_time
+  }
+
+## flag for "D" measures to only include appropriate time range
+  dimension: group_d {
+    hidden: no
+    type: yesno
+    sql: {% condition time_d %} ${timestamp_raw} {% endcondition %}
+      ;;
+  }
+
+
+
+  measure: plays_a {
+    type: count_distinct
     filters: {
       field: group_a
       value: "yes"
     }
+    sql: concat(${title},${user_id},cast(${timestamp_date} as string)) ;;
   }
 
-  measure: count_b {
-    type: count
+  measure: plays_b {
+    type: count_distinct
     filters: {
       field: group_b
       value: "yes"
     }
+    sql: concat(${title},${user_id},cast(${timestamp_date} as string)) ;;
   }
+
+  measure: plays_c {
+    type: count_distinct
+    filters: {
+      field: group_c
+      value: "yes"
+    }
+    sql: concat(${title},${user_id},cast(${timestamp_date} as string)) ;;
+  }
+
+  measure: plays_d {
+    type: count_distinct
+    filters: {
+      field: group_d
+      value: "yes"
+    }
+    sql: concat(${title},${user_id},cast(${timestamp_date} as string)) ;;
+  }
+
 
   parameter: date_granularity {
     type: string

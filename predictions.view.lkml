@@ -166,7 +166,7 @@ view: future_purchase_model {
       OPTIONS(model_type='logistic_reg'
         , labels=['get_status']
         , min_rel_progress = 0.00000005
-        , max_iterations = 99
+        , max_iterations = 10
         ) AS
       SELECT
          * EXCEPT(customer_id)

@@ -12,7 +12,7 @@ a2 as
         user_id,
         title[safe_ordinal(1)] as title,
         _current_time
- from a1 order by 1),
+ from a1),
 
  a3 as
 (select *
@@ -216,6 +216,73 @@ union all
     sql: 1.00*${minutes_count}/${user_count} ;;
     value_format: "0"
   }
+
+## filter determining time range for all "A" measures
+  filter: time_a {
+    type: date_time
+  }
+
+## flag for "A" measures to only include appropriate time range
+  dimension: group_a {
+    hidden: no
+    type: yesno
+    sql: {% condition time_a %} ${timestamp_raw} {% endcondition %}
+      ;;
+  }
+
+  measure: hours_a {
+    type: sum
+    filters: {
+      field: group_a
+      value: "yes"
+    }
+    sql: ${hours_watched} ;;
+    value_format: "#,##0"
+  }
+
+## filter determining time range for all "b" measures
+  filter: time_b {
+    type: date_time
+  }
+
+## flag for "B" measures to only include appropriate time range
+  dimension: group_b {
+    hidden: no
+    type: yesno
+    sql: {% condition time_b %} ${timestamp_raw} {% endcondition %}
+      ;;
+  }
+
+  measure: hours_b {
+    type: sum
+    filters: {
+      field: group_b
+      value: "yes"
+    }
+    sql: ${hours_watched} ;;
+    value_format: "#,##0"
+  }
+
+  measure: user_count_a {
+    type: count_distinct
+    filters: {
+      field: group_a
+      value: "yes"
+    }
+    sql: ${user_id}  ;;
+    value_format: "#,##0"
+  }
+
+  measure: user_count_b {
+    type: count_distinct
+    filters: {
+      field: group_b
+      value: "yes"
+    }
+    sql: ${user_id} ;;
+    value_format: "#,##0"
+  }
+
 
 # ----- Sets of fields for drilling ------
   set: detail {

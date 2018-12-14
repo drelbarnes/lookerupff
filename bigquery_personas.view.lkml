@@ -55,7 +55,7 @@ with a as
       (select customer_id,
               num,
              case when addwatchlist is null then 0 else 1 end as addwatchlist
-      from e left join awl on customer_id=safe_cast(user_id as int64) and date(timestamp) between start_date and end_date),
+      from e inner join awl on customer_id=safe_cast(user_id as int64) and date(timestamp) between start_date and end_date),
 
       awl1 as
       (select customer_id,
@@ -75,7 +75,7 @@ with a as
       (select customer_id,
               num,
              case when error is null then 0 else 1 end as error
-      from e left join error on customer_id=safe_cast(user_id as int64) and date(timestamp) between start_date and end_date),
+      from e inner join error on customer_id=safe_cast(user_id as int64) and date(timestamp) between start_date and end_date),
 
       error1 as
       (select customer_id,
@@ -95,7 +95,7 @@ with a as
       (select customer_id,
               num,
               case when removewatchlist is null then 0 else 1 end as removewatchlist
-      from e left join rwl on customer_id=safe_cast(user_id as int64) and date(timestamp) between start_date and end_date),
+      from e inner join rwl on customer_id=safe_cast(user_id as int64) and date(timestamp) between start_date and end_date),
 
       rwl1 as
       (select customer_id,
@@ -115,7 +115,7 @@ with a as
       (select customer_id,
               num,
               case when view is null then 0 else 1 end as view
-      from e left join view on customer_id=safe_cast(user_id as int64) and date(timestamp) between start_date and end_date),
+      from e inner join view on customer_id=safe_cast(user_id as int64) and date(timestamp) between start_date and end_date),
 
       view1 as
       (select customer_id,
