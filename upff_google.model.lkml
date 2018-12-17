@@ -41,6 +41,12 @@ include: "bigquery_android_users.view.lkml"
 include: "bigquery_personas.view.lkml"
 include: "bigquery_analytics.view.lkml"
 include: "bigquery_firstplay.view.lkml"
+include: "bigquery_ios_branch_install.view.lkml"
+include: "bigquery_ios_branch_reinstall.view.lkml"
+include: "bigquery_android_branch_install.view.lkml"
+include: "bigquery_android_branch_reinstall.view.lkml"
+include: "bigquery_clickthroughs.view.lkml"
+include: "bigquery_conversions.view.lkml"
 
 datagroup: upff_google_datagroup {
   # sql_trigger: SELECT MAX(id) FROM etl_log;;
@@ -48,6 +54,17 @@ datagroup: upff_google_datagroup {
   sql_trigger: SELECT CURRENT_DATE() ;;
 }
 persist_with: upff_google_datagroup
+explore: bigquery_clickthroughs {
+  join: bigquery_conversions {
+    type: inner
+    sql_on: ${bigquery_clickthroughs.anonymous_id}=${bigquery_conversions.anonymous_id} ;;
+    relationship: one_to_one
+  }
+}
+explore: bigquery_android_branch_install {}
+explore: bigquery_android_branch_reinstall {}
+explore: bigquery_ios_branch_install {}
+explore: bigquery_ios_branch_reinstall {}
 explore: bigquery_firstplay {}
 explore: bigquery_personas {}
 explore: bigquery_derived_addwatchlist {}
