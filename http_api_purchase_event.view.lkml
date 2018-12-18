@@ -1,4 +1,4 @@
-view: purchase_event {
+view: http_api_purchase_event {
   sql_table_name: http_api.purchase_event ;;
 
   dimension: id {

@@ -218,16 +218,16 @@ explore: customers{
 }
 
 include: "javascript_subscribed.view"
-include: "purchase_event.view"
+include: "http_api_purchase_event.view"
 include: "customers_info_facts.view"
 explore: subscribed {}
-explore: purchase_event
+explore: http_api_purchase_event
         {
           label: "Subscribers"
 
             join: android_users {
               type: inner
-              sql_on: ${purchase_event.user_id} = ${android_users.id};;
+              sql_on: ${http_api_purchase_event.user_id} = ${android_users.id};;
               relationship: one_to_one
             }
 

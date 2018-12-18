@@ -47,6 +47,8 @@ include: "bigquery_android_branch_install.view.lkml"
 include: "bigquery_android_branch_reinstall.view.lkml"
 include: "bigquery_clickthroughs.view.lkml"
 include: "bigquery_conversions.view.lkml"
+include: "bigquery_pixel_api_email_opened.view.lkml"
+include: "bigquery_http_api_purchase_event.view.lkml"
 
 datagroup: upff_google_datagroup {
   # sql_trigger: SELECT MAX(id) FROM etl_log;;
@@ -278,6 +280,17 @@ explore: bigquery_conversion_model_firstplay {
 }
 
 explore: bigquery_marketing_cost {}
+
+explore: bigquery_pixel_api_email_opened {
+
+  label: "Email Opens > Conversions"
+  join: bigquery_http_api_purchase_event {
+    type: inner
+    sql_on: ${bigquery_pixel_api_email_opened.user_id} = ${bigquery_http_api_purchase_event.user_id};;
+    relationship: many_to_many
+  }
+
+}
 
 
 # include all views in this project

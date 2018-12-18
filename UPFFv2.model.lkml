@@ -129,7 +129,7 @@ explore: customers_v2 {
 include: "customers_churn_reasons_aggregated.view"
 include: "customers_churn_custom_reasons.view"
 include: "afinn_lexicon.view"
-include: "purchase_event.view"
+include: "http_api_purchase_event.view"
 include: "http_api_users.view"
 include: "heartlandia.view"
 include: "Viewership.view"
@@ -144,7 +144,7 @@ include:  "ios_play.view"
 explore: churn_reasons_aggregated {}
 explore: churn_custom_reasons {}
 explore: afinn_lexicon {}
-explore: purchase_event {}
+explore: http_api_purchase_event {}
 explore: http_api_users {}
 explore: ios_identifies {}
 explore: heartlandia {}
