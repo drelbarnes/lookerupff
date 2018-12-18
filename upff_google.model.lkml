@@ -286,7 +286,8 @@ explore: bigquery_pixel_api_email_opened {
   label: "Email Opens > Conversions"
   join: bigquery_http_api_purchase_event {
     type: inner
-    sql_on: ${bigquery_pixel_api_email_opened.user_id} = ${bigquery_http_api_purchase_event.user_id} AND ${bigquery_pixel_api_email_opened.received_date} < ${bigquery_http_api_purchase_event.received_date};;
+    sql_on: ${bigquery_pixel_api_email_opened.user_id} = ${bigquery_http_api_purchase_event.user_id}  AND (DATE_DIFF(${bigquery_http_api_purchase_event.received_date}, ${bigquery_pixel_api_email_opened.received_date}, DAY) <= 15);;
+    #Attribution window of 15 Days
     relationship: many_to_many
   }
 
