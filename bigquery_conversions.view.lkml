@@ -1,23 +1,27 @@
 view: bigquery_conversions {
   derived_table: {
     sql: select
-      anonymous_id,
+      user_id,anonymous_id,
              received_at,
              "Web" as os
       from javascript.conversion
       union all
-      select anonymous_id,
+      select user_id, anonymous_id,
       received_at,
              "Android" as os
       from android.conversion
       union all
-      select anonymous_id,
+      select user_id, anonymous_id,
       received_at,
              "iOS" as os
       from ios.conversion
        ;;
   }
 
+  dimension: user_id {
+    type: string
+    sql: ${TABLE}.user_id ;;
+  }
 
   dimension: anonymous_id {
     type: string
