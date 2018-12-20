@@ -17,9 +17,9 @@ view: bigquery_quick_signup_subs {
   }
 
   dimension: phone {
-    type: number
+    type: string
     tags: ["phone"]
-    sql: ${TABLE}.Phone ;;
+    sql: ${TABLE}.Phone;;
   }
 
   dimension: user_id {
