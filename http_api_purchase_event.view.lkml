@@ -264,6 +264,11 @@ view: http_api_purchase_event {
     sql: ${TABLE}.topic ;;
   }
 
+  dimension: moptin {
+    type: yesno
+    sql: ${TABLE}.moptin ;;
+  }
+
   measure: count {
     type: count
     drill_fields: [detail*]
