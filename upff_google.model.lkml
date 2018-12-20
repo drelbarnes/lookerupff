@@ -310,7 +310,16 @@ explore: bigquery_pixel_api_email_opened {
 
 }
 
-explore: bigquery_quick_signup_subs{}
+explore: bigquery_quick_signup_subs{
+
+  join: bigquery_http_api_purchase_event {
+    type: inner
+    sql_on: ${bigquery_quick_signup_subs.user_id} = ${bigquery_http_api_purchase_event.user_id};;
+    #Attribution window of 15 Days
+    relationship: one_to_many
+  }
+
+}
 
 
 # include all views in this project
