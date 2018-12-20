@@ -49,6 +49,7 @@ include: "bigquery_clickthroughs.view.lkml"
 include: "bigquery_conversions.view.lkml"
 include: "bigquery_pixel_api_email_opened.view.lkml"
 include: "bigquery_http_api_purchase_event.view.lkml"
+include: "bigquery_quick_signup_subs.view.lkml"
 
 datagroup: upff_google_datagroup {
   # sql_trigger: SELECT MAX(id) FROM etl_log;;
@@ -307,10 +308,9 @@ explore: bigquery_pixel_api_email_opened {
     relationship: many_to_many
   }
 
-
-
-
 }
+
+explore: bigquery_quick_signup_subs{}
 
 
 # include all views in this project
