@@ -18,6 +18,7 @@ view: bigquery_quick_signup_subs {
 
   dimension: phone {
     type: string
+    tags: ["phone"]
     sql: ${TABLE}.Phone ;;
   }
 
