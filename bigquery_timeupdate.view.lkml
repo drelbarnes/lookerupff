@@ -67,7 +67,7 @@ union all
          collection,
          case when series is null and upper(collection)=upper(a3.title) then 'movie'
                      when series is not null then 'series' else 'other' end as type
-  from a4 inner join a3 on a4.title=a3.title;;
+  from a4 inner join a3 on a4.title=a3.title and a3.duration>0;;
   }
 
   dimension: current_date {
