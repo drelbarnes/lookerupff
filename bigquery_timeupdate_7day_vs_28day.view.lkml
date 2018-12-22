@@ -85,7 +85,7 @@ view: bigquery_timeupdate_7day_vs_28day {
                count(distinct user_id)/7 as avg_7_day_user_count,
                case when sum(duration)=0 then null else coalesce(100.00*(COALESCE(SUM(timecode ), 0))/(COALESCE(SUM(duration ), 0)),0) end as avg_7_day_percent_complete
         from timeupdate
-        where date(timestamp) < date_sub(current_date(), interval 1 day) and date(timestamp) > date_sub(current_date(), interval 8 day)
+        where date(timestamp) < date_sub(current_date(), interval 1 day) and date(timestamp) > date_sub(current_date(), interval 9 day)
         group by 1,2),
 
         days28 as
@@ -94,7 +94,7 @@ view: bigquery_timeupdate_7day_vs_28day {
                count(distinct user_id)/28 as avg_28_day_user_count,
                case when sum(duration)=0 then null else coalesce(100.00*(COALESCE(SUM(timecode ), 0))/(COALESCE(SUM(duration ), 0)),0) end as avg_28_day_percent_complete
         from timeupdate
-        where date(timestamp) < date_sub(current_date(), interval 1 day) and date(timestamp) > date_sub(current_date(), interval 29 day)
+        where date(timestamp) < date_sub(current_date(), interval 1 day) and date(timestamp) > date_sub(current_date(), interval 30 day)
         group by 1,2)
 
         select b1.*,
