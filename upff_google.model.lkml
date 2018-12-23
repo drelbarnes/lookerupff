@@ -296,7 +296,7 @@ explore: bigquery_pixel_api_email_opened {
 
   join: bigquery_http_api_purchase_event {
     type: inner
-    sql_on: ${bigquery_pixel_api_email_opened.user_id} = ${bigquery_http_api_purchase_event.user_id} AND (DATE_DIFF(${bigquery_http_api_purchase_event.received_date}, ${bigquery_pixel_api_email_opened.received_date}, DAY) <= 15);;
+    sql_on: ${bigquery_pixel_api_email_opened.user_id} = ${bigquery_http_api_purchase_event.user_id} AND (DATE_DIFF(${bigquery_http_api_purchase_event.received_date}, ${bigquery_pixel_api_email_opened.received_date}, DAY) <= 3);;
     #Attribution window of 15 Days
     relationship: many_to_many
   }
