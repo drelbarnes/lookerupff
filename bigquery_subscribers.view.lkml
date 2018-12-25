@@ -100,7 +100,7 @@ view: bigquery_subscribers {
 
   dimension: marketing_opt_in {
     type: number
-    sql: ${TABLE}.marketing_opt_in ;;
+    sql: SAFE_CAST(${TABLE}.marketing_opt_in AS int64);;
   }
 
   dimension: platform {

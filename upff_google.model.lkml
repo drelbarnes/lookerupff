@@ -50,6 +50,7 @@ include: "bigquery_conversions.view.lkml"
 include: "bigquery_pixel_api_email_opened.view.lkml"
 include: "bigquery_http_api_purchase_event.view.lkml"
 include: "bigquery_quick_signup_subs.view.lkml"
+include: "bigquery_php_get_user_on_email_list.view.lkml"
 
 datagroup: upff_google_datagroup {
   # sql_trigger: SELECT MAX(id) FROM etl_log;;
@@ -229,7 +230,7 @@ explore: bigquery_derived_all_firstplay {
   }
   join: bigquery_subscribers {
     type:  left_outer
-    sql_on: ${bigquery_subscribers.customer_id} = SAFE_CAST(${bigquery_derived_all_firstplay.user_id} AS INT64);;
+    sql_on:  SAFE_CAST(${bigquery_subscribers.customer_id} AS INT64) = SAFE_CAST(${bigquery_derived_all_firstplay.user_id} AS INT64);;
     relationship: one_to_one
   }
   join: bigquery_delighted_survey_question_answered {
@@ -315,6 +316,19 @@ explore: bigquery_quick_signup_subs{
   join: bigquery_http_api_purchase_event {
     type: inner
     sql_on: ${bigquery_quick_signup_subs.user_id} = ${bigquery_http_api_purchase_event.user_id};;
+    #Attribution window of 15 Days
+    relationship: one_to_many
+  }
+
+}
+
+explore: bigquery_php_get_user_on_email_list {
+
+  label: "Quick Sign-ups Subscribers"
+
+  join: bigquery_http_api_purchase_event {
+    type: inner
+    sql_on: ${bigquery_php_get_user_on_email_list.email} = ${bigquery_http_api_purchase_event.email};;
     #Attribution window of 15 Days
     relationship: one_to_many
   }
