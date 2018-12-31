@@ -78,6 +78,7 @@ view: bigquery_php_get_user_on_email_list {
 
   dimension: phone {
     type: string
+    tags:["phone"]
     sql: ${TABLE}.phone ;;
   }
 
