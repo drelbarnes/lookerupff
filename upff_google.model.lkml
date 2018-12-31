@@ -51,6 +51,7 @@ include: "bigquery_pixel_api_email_opened.view.lkml"
 include: "bigquery_http_api_purchase_event.view.lkml"
 include: "bigquery_quick_signup_subs.view.lkml"
 include: "bigquery_php_get_user_on_email_list.view.lkml"
+include: "bigquery_manual_subscribers_with_phone_numbers.view.lkml"
 
 datagroup: upff_google_datagroup {
   # sql_trigger: SELECT MAX(id) FROM etl_log;;
@@ -331,6 +332,48 @@ explore: bigquery_php_get_user_on_email_list {
     sql_on: ${bigquery_php_get_user_on_email_list.email} = ${bigquery_http_api_purchase_event.email};;
     #Attribution window of 15 Days
     relationship: one_to_many
+  }
+
+}
+
+explore: bigquery_manual_subscribers_with_phone_numbers {
+
+  label: "Subscribers with Phone Numbers"
+
+  join: bigquery_subscribers {
+    type: inner
+    sql_on: ${bigquery_manual_subscribers_with_phone_numbers.email} = ${bigquery_subscribers.email};;
+    relationship: one_to_one
+  }
+
+  join: bigquery_derived_signin {
+    type: inner
+    sql_on: ${bigquery_subscribers.customer_id} = ${bigquery_derived_signin.user_id};;
+    relationship: one_to_one
+  }
+
+  join: bigquery_derived_addwatchlist {
+    type: inner
+    sql_on: ${bigquery_subscribers.customer_id} = ${bigquery_derived_addwatchlist.user_id};;
+    relationship: one_to_one
+  }
+
+  join: bigquery_derived_timeupdate {
+    type: inner
+    sql_on: ${bigquery_subscribers.customer_id} = ${bigquery_derived_timeupdate.user_id};;
+    relationship: one_to_one
+  }
+
+  join: bigquery_derived_views {
+    type: inner
+    sql_on: ${bigquery_subscribers.customer_id} = ${bigquery_derived_views.user_id};;
+    relationship: one_to_one
+  }
+
+  join: bigquery_subscribers_timeupdate {
+    type: inner
+    sql_on: ${bigquery_subscribers.customer_id} = ${bigquery_subscribers_timeupdate.user_id};;
+    relationship: one_to_one
   }
 
 }
