@@ -246,6 +246,10 @@ view: bigquery_subscribers {
     sql: COUNT(${views});;
   }
 
+  measure: count_distinct {
+    type: count_distinct
+    sql: ${email};;
+  }
 
   #------------------------ End New Dimensions
 }

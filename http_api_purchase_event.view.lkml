@@ -274,6 +274,11 @@ view: http_api_purchase_event {
     drill_fields: [detail*]
   }
 
+  measure: distinct_count {
+    type: count_distinct
+    sql: ${email} ;;
+  }
+
   # ----- Sets of fields for drilling ------
   set: detail {
     fields: [
