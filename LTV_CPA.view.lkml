@@ -23,7 +23,7 @@ where date(sent_at)=current_date),
       ),
       google_perf as (
         select  apr.date_start,
-                sum(campaigncost+spend) as spend
+                sum(campaigncost) as spend
           from  (select  apr.date_start,
                 sum((apr.cost/1000000)) as campaigncost
           from  adwords.campaign_performance_reports as apr
