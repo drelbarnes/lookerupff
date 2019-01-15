@@ -52,6 +52,9 @@ include: "bigquery_http_api_purchase_event.view.lkml"
 include: "bigquery_quick_signup_subs.view.lkml"
 include: "bigquery_php_get_user_on_email_list.view.lkml"
 include: "bigquery_manual_subscribers_with_phone_numbers.view.lkml"
+include: "bigquery_facebook_insights.view.lkml"
+include: "bigquery_javascript_firstplay.view.lkml"
+include: "bigquery_users.view.lkml"
 
 datagroup: upff_google_datagroup {
   # sql_trigger: SELECT MAX(id) FROM etl_log;;
@@ -378,6 +381,17 @@ explore: bigquery_manual_subscribers_with_phone_numbers {
 
 }
 
+explore: bigquery_facebook_insights {}
+explore: bigquery_javascript_firstplay {
+
+  join: bigquery_users {
+    type: inner
+    sql_on: ${bigquery_javascript_firstplay.user_id} = ${bigquery_users.id};;
+    #Attribution window of 15 Days
+    relationship: one_to_many
+  }
+
+}
 
 # include all views in this project
 # include: "my_dashboard.dashboard.lookml"   # include a LookML dashboard called my_dashboard

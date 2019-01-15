@@ -433,6 +433,11 @@ view: bigquery_javascript_firstplay {
     drill_fields: [detail*]
   }
 
+  measure: distinct_count {
+    type: count_distinct
+    sql:  ${user_id} ;;
+  }
+
   # ----- Sets of fields for drilling ------
   set: detail {
     fields: [

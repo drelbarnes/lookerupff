@@ -18,7 +18,7 @@ a as
                 collection,
                 case when series is null and upper(collection)=upper(title) then 'movie'
                      when series is not null then 'series' else 'other' end as type,
-                cast(a.video_id as int64) as video_id,
+                safe_cast(a.video_id as int64) as video_id,
                 trim((title)) as title,
                 user_id,
                 c.platform,
@@ -31,7 +31,7 @@ a as
                 collection,
                 case when series is null and upper(collection)=upper(title) then 'movie'
                      when series is not null then 'series' else 'other' end as type,
-                cast(a.video_id as int64) as video_id,
+                safe_cast(a.video_id as int64) as video_id,
                 trim((title)) as title,
                 user_id,
                 c.platform,
@@ -44,7 +44,7 @@ a as
                 collection,
                 case when series is null and upper(collection)=upper(b.title) then 'movie'
                      when series is not null then 'series' else 'other' end as type,
-                cast(b.id as int64) as video_id,
+                safe_cast(b.id as int64) as video_id,
                 trim(b.title) as title,
                 user_id,
                 c.platform,
