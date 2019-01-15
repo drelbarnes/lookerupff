@@ -4,6 +4,7 @@ view: bigquery_users {
   dimension: id {
     primary_key: yes
     type: string
+    tags: ["user_id"]
     sql: ${TABLE}.id ;;
   }
 
@@ -100,6 +101,7 @@ view: bigquery_users {
 
   dimension: email {
     type: string
+    tags: ["email"]
     sql: ${TABLE}.email ;;
   }
 
