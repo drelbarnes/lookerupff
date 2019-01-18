@@ -15,11 +15,12 @@ view: bigquery_topmovies {
       a as
               (select sent_at as timestamp,
                       b.date as release_date,
+                      1 as status_1,
                       collection,
                       case when series is null and upper(collection)=upper(title) then 'movie'
                            when series is not null then 'series' else 'other' end as type,
                       cast(a.video_id as int64) as video_id,
-                      trim((title)) as title,
+                      trim((title)) as title1,
                       user_id,
                       c.platform,
                       'Android' as source
@@ -28,11 +29,12 @@ view: bigquery_topmovies {
                union all
                select sent_at as timestamp,
                       b.date as release_date,
+                      1 as status_1,
                       collection,
                       case when series is null and upper(collection)=upper(title) then 'movie'
                            when series is not null then 'series' else 'other' end as type,
                       cast(a.video_id as int64) as video_id,
-                      trim((title)) as title,
+                      trim((title)) as title1,
                       user_id,
                       c.platform,
                       'iOS' as source
@@ -41,11 +43,12 @@ view: bigquery_topmovies {
                union all
                select timestamp,
                       b.date as release_date,
+                      1 as status_1,
                       collection,
                       case when series is null and upper(collection)=upper(b.title) then 'movie'
                            when series is not null then 'series' else 'other' end as type,
                       cast(b.id as int64) as video_id,
-                      trim(b.title) as title,
+                      trim(b.title) as title1,
                       user_id,
                       c.platform,
                       'Web' as source
@@ -59,16 +62,17 @@ view: bigquery_topmovies {
 
       t as
       (SELECT
-        bigquery_allfirstplay.title AS bigquery_allfirstplay_title,
+        bigquery_allfirstplay.title1 AS bigquery_allfirstplay_title,
+        1 as status_2,
         COUNT(*) AS bigquery_allfirstplay_count
       FROM bigquery_allfirstplay
 
       WHERE (bigquery_allfirstplay.type = 'movie') AND (((bigquery_allfirstplay.timestamp ) >= ((TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY), INTERVAL -13 DAY))) AND (bigquery_allfirstplay.timestamp ) < ((TIMESTAMP_ADD(TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY), INTERVAL -13 DAY), INTERVAL 14 DAY)))))
       GROUP BY 1
-      ORDER BY 2 DESC
-      LIMIT 15)
+      ORDER BY 3 DESC
+      LIMIT 14)
 
-      select a.* from bigquery_allfirstplay as a inner join t on a.title=bigquery_allfirstplay_title
+      select a.*, case when status_1+status_2=2 then a.title1 else "All Other Movies" end as title  from bigquery_allfirstplay as a left join t on a.title1=bigquery_allfirstplay_title
        ;;
   }
 
