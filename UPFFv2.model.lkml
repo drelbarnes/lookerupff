@@ -16,6 +16,7 @@ include: "timeupdate.view.lkml"
 include: "daily_cpa.view.lkml"
 include: "mtd_free_trials.view.lkml"
 
+
 explore: mtd_free_trials{}
 
 explore: daily_cpa {}

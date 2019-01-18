@@ -55,6 +55,9 @@ include: "bigquery_manual_subscribers_with_phone_numbers.view.lkml"
 include: "bigquery_facebook_insights.view.lkml"
 include: "bigquery_javascript_firstplay.view.lkml"
 include: "bigquery_users.view.lkml"
+include: "monthly_platform_user_count.view.lkml"
+
+explore: monthly_platform_user_count {}
 
 datagroup: upff_google_datagroup {
   # sql_trigger: SELECT MAX(id) FROM etl_log;;
