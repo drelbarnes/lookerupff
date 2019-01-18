@@ -1,6 +1,11 @@
 view: monthly_platform_user_count {
   derived_table: {
-    sql: select user_id,platform,max(sent_at) as sent_at from http_api.purchase_event where topic="customer.product.renewed" group by 1,2
+    sql: select user_id,
+                platform,
+                max(sent_at) as sent_at
+        from http_api.purchase_event
+        where topic="customer.product.renewed" and email not like '%uptv.com%'
+        group by 1,2
       ;;
   }
 
