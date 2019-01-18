@@ -13,7 +13,7 @@ view: bigquery_timeupdate_7day_vs_28day {
               user_id,
               title[safe_ordinal(1)] as title,
               _current_time
-       from a1 order by 1),
+       from a1),
 
        a3 as
       (select *
