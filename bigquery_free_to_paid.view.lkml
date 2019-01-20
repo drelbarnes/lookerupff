@@ -1,11 +1,12 @@
 view: bigquery_free_to_paid {
   derived_table: {
     sql: select
-      user_id, email, topic, context_campaign_name, anonymous_id,
-             received_at,
+      c.user_id, p.email, p.topic, p.context_campaign_name, p.anonymous_id,
+             pe.received_at,
              "Web" as os
-      from bigquery_javascript_conversion AS c, bigquery_http_api_purchase_event AS p INNER JOIN ON c.email = p.email
+      from biqquery_javascript_pages AS p, bigquery_javascript_conversion AS c, bigquery_http_api_purchase_event AS pe WHERE p.anonymous_id = c.anonymous_id AND c.email = pe.email;;
   }
+
 
   dimension: user_id {
     type: string
