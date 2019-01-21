@@ -77,6 +77,11 @@ view: http_api_purchase_event {
     sql:  DATEDIFF('day', ${created_date}::timestamp, ${current_date}::timestamp);;
   }
 
+  dimension: months_since_created {
+    type: number
+    sql:  DATEDIFF('month', ${created_date}::timestamp, ${sent_date}::timestamp);;
+  }
+
   dimension: email {
     type: string
     tags: ["email"]

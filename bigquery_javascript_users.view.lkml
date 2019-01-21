@@ -1,5 +1,5 @@
-view: biqquery_javascript_pages {
-  sql_table_name: javascript.pages ;;
+view: bigquery_javascript_users {
+  sql_table_name: javascript.users ;;
 
   dimension: id {
     primary_key: yes
@@ -7,19 +7,9 @@ view: biqquery_javascript_pages {
     sql: ${TABLE}.id ;;
   }
 
-  dimension: anonymous_id {
-    type: string
-    sql: ${TABLE}.anonymous_id ;;
-  }
-
   dimension: context_campaign_content {
     type: string
     sql: ${TABLE}.context_campaign_content ;;
-  }
-
-  dimension: context_campaign_expid {
-    type: string
-    sql: ${TABLE}.context_campaign_expid ;;
   }
 
   dimension: context_campaign_medium {
@@ -30,11 +20,6 @@ view: biqquery_javascript_pages {
   dimension: context_campaign_name {
     type: string
     sql: ${TABLE}.context_campaign_name ;;
-  }
-
-  dimension: context_campaign_referrer {
-    type: string
-    sql: ${TABLE}.context_campaign_referrer ;;
   }
 
   dimension: context_campaign_source {
@@ -102,6 +87,22 @@ view: biqquery_javascript_pages {
     sql: ${TABLE}.context_user_agent ;;
   }
 
+  dimension: country {
+    type: string
+    map_layer_name: countries
+    sql: ${TABLE}.country ;;
+  }
+
+  dimension: cross_domain_id {
+    type: string
+    sql: ${TABLE}.cross_domain_id ;;
+  }
+
+  dimension: email {
+    type: string
+    sql: ${TABLE}.email ;;
+  }
+
   dimension_group: loaded {
     type: time
     timeframes: [
@@ -121,25 +122,6 @@ view: biqquery_javascript_pages {
     sql: ${TABLE}.name ;;
   }
 
-  dimension_group: original_timestamp {
-    type: time
-    timeframes: [
-      raw,
-      time,
-      date,
-      week,
-      month,
-      quarter,
-      year
-    ]
-    sql: ${TABLE}.original_timestamp ;;
-  }
-
-  dimension: path {
-    type: string
-    sql: ${TABLE}.path ;;
-  }
-
   dimension_group: received {
     type: time
     timeframes: [
@@ -154,57 +136,9 @@ view: biqquery_javascript_pages {
     sql: ${TABLE}.received_at ;;
   }
 
-  dimension: referrer {
+  dimension: state {
     type: string
-    sql: ${TABLE}.referrer ;;
-  }
-
-  dimension: search {
-    type: string
-    sql: ${TABLE}.search ;;
-  }
-
-  dimension_group: sent {
-    type: time
-    timeframes: [
-      raw,
-      time,
-      date,
-      week,
-      month,
-      quarter,
-      year
-    ]
-    sql: ${TABLE}.sent_at ;;
-  }
-
-  dimension_group: timestamp {
-    type: time
-    timeframes: [
-      raw,
-      time,
-      date,
-      week,
-      month,
-      quarter,
-      year
-    ]
-    sql: ${TABLE}.timestamp ;;
-  }
-
-  dimension: title {
-    type: string
-    sql: ${TABLE}.title ;;
-  }
-
-  dimension: url {
-    type: string
-    sql: ${TABLE}.url ;;
-  }
-
-  dimension: user_id {
-    type: string
-    sql: ${TABLE}.user_id ;;
+    sql: ${TABLE}.state ;;
   }
 
   dimension_group: uuid_ts {
