@@ -197,7 +197,7 @@ from t8 inner join t9 on t8.timestamp=t9.timestamp
 
           measure: LTV_CPA_Ratio_Target {
             type: number
-            sql: 1.1 ;;
+            sql: 1.4 ;;
             value_format_name: percent_0
           }
 
@@ -214,7 +214,7 @@ from t8 inner join t9 on t8.timestamp=t9.timestamp
 
           dimension: CPA_Goal{
             type: number
-            sql: (${LTV}/1.4-${CPA} ;;
+            sql: (${LTV}/1.4)-${CPA} ;;
             value_format_name: usd
           }
           }
