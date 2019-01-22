@@ -61,13 +61,30 @@ union all
     android.timeupdate as a inner join a3 on a.video_id=a3.id
   WHERE
     user_id IS NOT NULL and safe_cast(user_id as string)!='0'
-  GROUP BY 1,2,3,4))
+  GROUP BY 1,2,3,4)),
 
-  select a4.*,
+z as
+  (select a4.*,
          collection,
          case when series is null and upper(collection)=upper(a3.title) then 'movie'
                      when series is not null then 'series' else 'other' end as type
-  from a4 inner join a3 on a4.title=a3.title and a3.duration>0;;
+  from a4 inner join a3 on a4.title=a3.title and a3.duration>0)
+
+  select *,
+       case when date(a.timestamp) between DATE_SUB(date(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), QUARTER)), INTERVAL 0 QUARTER) and
+            DATE_SUB(date(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY)), INTERVAL 0 QUARTER) then "Current Quarter"
+            when date(a.timestamp) between DATE_SUB(date(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), QUARTER)), INTERVAL 1 QUARTER) and
+            DATE_SUB(date(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY)), INTERVAL 1 QUARTER) then "Prior Quarter"
+            when date(a.timestamp) between DATE_SUB(date(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), QUARTER)), INTERVAL 4 QUARTER) and
+            DATE_SUB(date(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY)), INTERVAL 4 QUARTER) then "YAGO Quarter"
+            else "NA"
+            end as Quarter
+from z as a;;
+  }
+
+  dimension: Quarter {
+    type: string
+    sql: ${TABLE}.quarter ;;
   }
 
   dimension: current_date {
