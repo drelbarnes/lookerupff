@@ -70,7 +70,7 @@ t6 as (select t5.timestamp,
 spend_30_days, conversions_30_days,cast(spend_30_days as decimal)/cast(conversions_30_days as decimal) as CPA
 from t4 inner join t5 on t4.row=t5.row),
 
-t7 as (select a.*,prior_31_days_subs, 3.40/(cast(churn_30_days as decimal)/cast(prior_31_days_subs as decimal)) as LTV
+t7 as (select a.*,prior_31_days_subs, 3.37/(cast(churn_30_days as decimal)/cast(prior_31_days_subs as decimal)) as LTV
 from
 (select a1.timestamp, a1.paying_churn+sum(coalesce(a2.paying_churn,0)) as churn_30_days
 from customers_analytics as a1
@@ -85,7 +85,7 @@ inner join
 on a.row=b.row) as b
 on a.timestamp=b.timestamp),
 
-t8 as (select t6.timestamp, CPA, LTV, cast(LTV as decimal)/cast(CPA as decimal) as LTV_CPA_Ratio, 1.1 as LTV_CPA_Ratio_Target,  ROW_NUMBER() OVER(ORDER BY t6.timestamp desc) AS Row
+t8 as (select t6.timestamp, CPA, LTV, cast(LTV as decimal)/cast(CPA as decimal) as LTV_CPA_Ratio, 1.4 as LTV_CPA_Ratio_Target,  ROW_NUMBER() OVER(ORDER BY t6.timestamp desc) AS Row
 from t6 inner join t7 on t6.timestamp=t7.timestamp),
 
 t9 as (select a1.timestamp,
@@ -104,7 +104,7 @@ from t8 inner join t9 on t8.timestamp=t9.timestamp
 
   measure: target_ratio {
   type: sum
-  sql: 1.1 ;;
+  sql: 1.4 ;;
   value_format_name: percent_0
 }
 
@@ -208,13 +208,13 @@ from t8 inner join t9 on t8.timestamp=t9.timestamp
 
           dimension: LTV_Goal {
             type: number
-            sql: (${CPA}*1.1)-${LTV};;
+            sql: (${CPA}*1.4)-${LTV};;
             value_format_name: usd
           }
 
           dimension: CPA_Goal{
             type: number
-            sql: (${LTV}/1.1)-${CPA} ;;
+            sql: (${LTV}/1.4-${CPA} ;;
             value_format_name: usd
           }
           }

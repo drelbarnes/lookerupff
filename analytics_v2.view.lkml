@@ -36,11 +36,13 @@ group by a1.timestamp,a1.paying_churn)),
                  rows between unbounded preceding and current row) as Running_Free_Trial_Target
          from (select *, SUM(free_trial_created) OVER (PARTITION by cast(datepart(month,date(timestamp)) as varchar) order by timestamp asc rows between unbounded preceding and current row) AS Running_Free_Trials
          from (select distinct * from (select a.*,
-                795+((49000-795)*(cast(datepart(dayofyear,date(a.timestamp)) as integer)-1)/365) as target,
-                795+((49000-795)*(cast(datepart(dayofyear,date(a.timestamp)) as integer)+14)/365) as target_14_days_future,
+                case when extract(YEAR from a.timestamp)='2018' then 795+((49000-795)*(cast(datepart(dayofyear,date(a.timestamp)) as integer)-1)/365)
+                     when extract(YEAR from a.timestamp)='2019' then 16680+((55000-16680)*(cast(datepart(dayofyear,date(a.timestamp)) as integer)-1)/365) end as target,
+                16680+((55000-16680)*(cast(datepart(dayofyear,date(a.timestamp)) as integer)+14)/365) as target_14_days_future,
                 cast(datepart(dayofyear,date(a.timestamp)) as integer)-1 as day_of_year,
                 cast(datepart(dayofyear,date(a.timestamp)) as integer)+14 as day_of_year_14_days,
-                49000 as annual_target,
+                case when extract(YEAR from a.timestamp)='2018' then 49000
+                     when extract(YEAR from a.timestamp)='2019' then 55000 end  as annual_target,
                 case when rownum=max(rownum) over(partition by Week) then existing_paying end as PriorWeekExistingSubs,
                 case when rownum=max(rownum) over(partition by Month) then existing_paying end as PriorMonthExistingSubs,
                 wait_content,
