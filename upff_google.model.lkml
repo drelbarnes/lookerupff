@@ -56,6 +56,10 @@ include: "bigquery_facebook_insights.view.lkml"
 include: "bigquery_javascript_firstplay.view.lkml"
 include: "bigquery_users.view.lkml"
 include: "monthly_platform_user_count.view.lkml"
+include: "bigquery_javascript_conversion.view.lkml"
+include: "bigquery_javascript_pages.view.lkml"
+include: "bigquery_javascript_users.view.lkml"
+include: "bigquery_free_to_paid.view.lkml"
 
 explore: monthly_platform_user_count {}
 
@@ -71,6 +75,7 @@ explore: bigquery_clickthroughs {
     sql_on: ${bigquery_clickthroughs.anonymous_id}=${bigquery_conversions.anonymous_id} ;;
     relationship: one_to_one
   }
+
 }
 explore: bigquery_android_branch_install {}
 explore: bigquery_android_branch_reinstall {}
@@ -390,11 +395,35 @@ explore: bigquery_javascript_firstplay {
   join: bigquery_users {
     type: inner
     sql_on: ${bigquery_javascript_firstplay.user_id} = ${bigquery_users.id};;
-    #Attribution window of 15 Days
     relationship: one_to_many
   }
 
 }
+
+explore: bigquery_javascript_conversion {}
+explore: bigquery_javascript_pages {
+
+  join: bigquery_javascript_conversion {
+    type: inner
+    sql_on: ${bigquery_javascript_conversion.anonymous_id} = ${bigquery_javascript_pages.anonymous_id};;
+    relationship: one_to_one
+  }
+
+  join: bigquery_javascript_users {
+    type: inner
+    sql_on: ${bigquery_javascript_users.context_traits_cross_domain_id} = ${bigquery_javascript_conversion.context_traits_cross_domain_id};;
+    relationship: one_to_one
+  }
+
+  join: bigquery_http_api_purchase_event {
+    type: inner
+    sql_on: ${bigquery_http_api_purchase_event.email} = ${bigquery_javascript_users.email};;
+    relationship: one_to_one
+  }
+
+}
+
+explore: bigquery_free_to_paid {}
 
 # include all views in this project
 # include: "my_dashboard.dashboard.lookml"   # include a LookML dashboard called my_dashboard
