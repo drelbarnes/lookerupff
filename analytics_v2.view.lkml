@@ -70,9 +70,19 @@ dimension: paying_30_days_prior {
   sql: ${TABLE}.paying_30_days_prior ;;
 }
 
+measure: paying_30_days_prior_ {
+  type: sum
+  sql: ${paying_30_days_prior} ;;
+}
+
 dimension: churn_30_days {
   type: number
   sql: churn_30_days ;;
+}
+
+measure: churn_30_days_ {
+  type: sum
+  sql: ${churn_30_days} ;;
 }
 
 dimension: running_free_trials {

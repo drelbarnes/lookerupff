@@ -153,7 +153,7 @@ from a );;
 
   measure: plays_count {
     type: count_distinct
-    sql: ${user_id}||cast(${timestamp_date} as varchar)||${title} ;;
+    sql: ${user_id}||cast(${timestamp_date} as varchar)||${video_id} ;;
   }
 
   measure: views_per_user {

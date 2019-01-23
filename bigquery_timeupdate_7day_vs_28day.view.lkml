@@ -2,73 +2,91 @@ view: bigquery_timeupdate_7day_vs_28day {
   derived_table: {
     sql: with timeupdate as
       (with a1 as
-      (select sent_at,
-              user_id,
-              (split(title," - ")) as title,
-              a.current_time as _current_time
-      from javascript.timeupdate as a),
+(select sent_at,
+        user_id,
+        (split(title," - ")) as title,
+        a.current_time as _current_time
+from javascript.timeupdate as a),
 
-      a2 as
-      (select sent_at,
-              user_id,
-              title[safe_ordinal(1)] as title,
-              _current_time
-       from a1),
+a2 as
+(select sent_at,
+        user_id,
+        title[safe_ordinal(1)] as title,
+        concat(title[safe_ordinal(2)]," - ",title[safe_ordinal(3)]) as collection,
+        _current_time
+ from a1),
 
-       a3 as
-      (select *
-       from svod_titles.titles_id_mapping
-       where (series is null and upper(collection)=upper(title)) or series is not null),
+ a3 as
+(select *
+ from svod_titles.titles_id_mapping
+ where (series is null and upper(collection)=upper(title)) or series is not null),
 
-      a4 as
-      ((SELECT
-          a2.title,
-          user_id,
-          safe_cast(date(sent_at) as timestamp) as timestamp,
-          a3.duration*60 as duration,
-          max(_current_time) as timecode,
-         'web' AS source
-        FROM
-          a2 inner join a3 on trim(upper(a2.title))=trim(upper(a3.title))
-        WHERE
-          user_id IS NOT NULL and safe_cast(user_id as string)!='0'
-        GROUP BY 1,2,3,4)
+a4 as
+((SELECT
+    a2.title,
+    user_id,
+    id as video_id,
+    a3.collection,
+    safe_cast(date(sent_at) as timestamp) as timestamp,
+    a3.duration*60 as duration,
+    max(_current_time) as timecode,
+   'web' AS source
+  FROM
+    a2 inner join a3 on trim(upper(a2.title))=trim(upper(a3.title)) and a2.collection=a3.collection
+  WHERE
+    user_id IS NOT NULL and safe_cast(user_id as string)!='0'
+  GROUP BY 1,2,3,4,5,6)
 
-      union all
+union all
 
-      (SELECT
-          title,
-          user_id,
-          safe_cast(date(sent_at) as timestamp) as timestamp,
-          a3.duration*60 as duration,
-          max(timecode) as timecode,
-         'iOS' AS source
-        FROM
-          ios.timeupdate as a inner join a3 on safe_cast(a.video_id as int64)=a3.id
-        WHERE
-          user_id IS NOT NULL and safe_cast(user_id as string)!='0'
-        GROUP BY 1,2,3,4)
+(SELECT
+    title,
+    user_id,
+    cast(video_id as int64) as video_id,
+    collection,
+    safe_cast(date(sent_at) as timestamp) as timestamp,
+    a3.duration*60 as duration,
+    max(timecode) as timecode,
+   'iOS' AS source
+  FROM
+    ios.timeupdate as a inner join a3 on safe_cast(a.video_id as int64)=a3.id
+  WHERE
+    user_id IS NOT NULL and safe_cast(user_id as string)!='0'
+  GROUP BY 1,2,3,4,5,6)
 
-        union all
+  union all
 
-      (SELECT
-          title,
-          user_id,
-          safe_cast(date(sent_at) as timestamp) as timestamp,
-          a3.duration*60 as duration,
-          max(timecode) as timecode,
-         'Android' AS source
-        FROM
-          android.timeupdate as a inner join a3 on a.video_id=a3.id
-        WHERE
-          user_id IS NOT NULL and safe_cast(user_id as string)!='0'
-        GROUP BY 1,2,3,4))
+(SELECT
+    title,
+    user_id,
+    video_id,
+    collection,
+    safe_cast(date(sent_at) as timestamp) as timestamp,
+    a3.duration*60 as duration,
+    max(timecode) as timecode,
+   'Android' AS source
+  FROM
+    android.timeupdate as a inner join a3 on a.video_id=a3.id
+  WHERE
+    user_id IS NOT NULL and safe_cast(user_id as string)!='0'
+  GROUP BY 1,2,3,4,5,6)),
 
-        select a4.*,
-               collection,
-               case when series is null and upper(collection)=upper(a3.title) then 'movie'
-                           when series is not null then 'series' else 'other' end as type
-        from a4 inner join a3 on a4.title=a3.title),
+z as
+  (select a4.*,
+         case when series is null and upper(a3.collection)=upper(a3.title) then 'movie'
+                     when series is not null then 'series' else 'other' end as type
+  from a4 inner join a3 on a4.title=a3.title and a3.duration>0)
+
+  select *,
+       case when date(a.timestamp) between DATE_SUB(date(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), QUARTER)), INTERVAL 0 QUARTER) and
+            DATE_SUB(date(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY)), INTERVAL 0 QUARTER) then "Current Quarter"
+            when date(a.timestamp) between DATE_SUB(date(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), QUARTER)), INTERVAL 1 QUARTER) and
+            DATE_SUB(date(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY)), INTERVAL 1 QUARTER) then "Prior Quarter"
+            when date(a.timestamp) between DATE_SUB(date(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), QUARTER)), INTERVAL 4 QUARTER) and
+            DATE_SUB(date(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY)), INTERVAL 4 QUARTER) then "YAGO Quarter"
+            else "NA"
+            end as Quarter
+from z as a),
 
         currentday as
         (select title,

@@ -52,7 +52,7 @@ view: bigquery_topmovies {
                       user_id,
                       c.platform,
                       'Web' as source
-               from a2 as a left join svod_titles.titles_id_mapping as b on trim(upper(b.title)) = a.title
+               from a2 as a left join svod_titles.titles_id_mapping as b on trim(upper(b.title)) = trim(upper(a.title))
                left join customers.customers as c
                on safe_cast(a.user_id as int64) = c.customer_id)
 
@@ -64,7 +64,7 @@ view: bigquery_topmovies {
       (SELECT
         bigquery_allfirstplay.title1 AS bigquery_allfirstplay_title,
         1 as status_2,
-        COUNT(*) AS bigquery_allfirstplay_count
+        COUNT(DISTINCT concat(safe_cast(video_id as string),user_id,cast((CAST(timestamp  AS DATE)) as string)) ) AS bigquery_allfirstplay_count
       FROM bigquery_allfirstplay
 
       WHERE (bigquery_allfirstplay.type = 'movie') AND (((bigquery_allfirstplay.timestamp ) >= ((TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY), INTERVAL -13 DAY))) AND (bigquery_allfirstplay.timestamp ) < ((TIMESTAMP_ADD(TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY), INTERVAL -13 DAY), INTERVAL 14 DAY)))))
@@ -129,6 +129,11 @@ view: bigquery_topmovies {
   dimension: source {
     type: string
     sql: ${TABLE}.source ;;
+  }
+
+  measure: play_count {
+    type: count_distinct
+    sql: concat(safe_cast(${video_id} as string),${user_id},cast(${timestamp_date} as string)) ;;
   }
 
   set: detail {

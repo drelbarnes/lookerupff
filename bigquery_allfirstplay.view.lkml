@@ -9,7 +9,8 @@ from javascript.firstplay),
 a2 as
 (select timestamp,
         user_id,
-        title[safe_ordinal(1)] as title
+        title[safe_ordinal(1)] as title,
+        concat(title[safe_ordinal(2)]," - ",title[safe_ordinal(3)]) as collection
  from a1 order by 1),
 
 a as
@@ -21,10 +22,8 @@ a as
                 safe_cast(a.video_id as int64) as video_id,
                 trim((title)) as title,
                 user_id,
-                c.platform,
                 'Android' as source
-         from android.firstplay as a left join svod_titles.titles_id_mapping as b on a.video_id = b.id left join customers.customers as c
-         on safe_cast(a.user_id as int64) = c.customer_id
+         from android.firstplay as a left join svod_titles.titles_id_mapping as b on a.video_id = b.id
          union all
          select sent_at as timestamp,
                 b.date as release_date,
@@ -34,24 +33,19 @@ a as
                 safe_cast(a.video_id as int64) as video_id,
                 trim((title)) as title,
                 user_id,
-                c.platform,
                 'iOS' as source
-         from ios.firstplay as a left join svod_titles.titles_id_mapping as b on a.video_id = safe_cast(b.id as string) left join customers.customers as c
-         on safe_cast(a.user_id as int64) = c.customer_id
+         from ios.firstplay as a left join svod_titles.titles_id_mapping as b on a.video_id = safe_cast(b.id as string)
          union all
          select timestamp,
                 b.date as release_date,
-                collection,
-                case when series is null and upper(collection)=upper(b.title) then 'movie'
+                b.collection,
+                case when series is null and upper(b.collection)=upper(b.title) then 'movie'
                      when series is not null then 'series' else 'other' end as type,
                 safe_cast(b.id as int64) as video_id,
                 trim(b.title) as title,
                 user_id,
-                c.platform,
                 'Web' as source
-         from a2 as a left join svod_titles.titles_id_mapping as b on trim(upper(b.title)) = trim(upper(a.title))
-         left join customers.customers as c
-         on safe_cast(a.user_id as int64) = c.customer_id)
+         from a2 as a left join svod_titles.titles_id_mapping as b on trim(upper(b.title)) = trim(upper(a.title)))
 
 
 select *,
@@ -161,7 +155,7 @@ from a
 
   measure: play_count {
     type: count_distinct
-    sql: concat(${title},${user_id},cast(${timestamp_date} as string)) ;;
+    sql: concat(safe_cast(${video_id} as string),${user_id},cast(${timestamp_date} as string)) ;;
   }
 
   measure: number_of_platforms_by_user {
