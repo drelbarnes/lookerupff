@@ -178,6 +178,12 @@ include: "mailchimp_email_campaigns.view"
 include: "delighted_survey_question_answered.view"
 explore: all_firstplay {
 
+  join: http_api_purchase_event {
+    type: left_outer
+    sql_on: ${all_firstplay.user_id} = ${http_api_purchase_event.user_id};;
+    relationship: one_to_one
+  }
+
 
   join: customers_v2 {
     type:  inner

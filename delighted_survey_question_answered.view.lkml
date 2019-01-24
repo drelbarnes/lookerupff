@@ -176,10 +176,7 @@ view: delighted_survey_question_answered {
     sql: ${TABLE}.survey_type ;;
   }
 
-  dimension: day_on {
-    type: number
-    sql:  DATEDIFF('day', ${customers_v2.customer_created_at}::timestamp, ${timestamp_date}::timestamp) ;;
-  }
+
 
   dimension_group: timestamp {
     type: time
@@ -247,8 +244,8 @@ view: delighted_survey_question_answered {
     type: count_distinct
     sql: ${TABLE}.user_id ;;
     filters: {
-      field: customers_v2.status
-      value: "enabled"
+      field: http_api_purchase_event.topic
+      value: "customer.product.renewed,customer.product.created"
     }
     filters: {
       field: promoters # Reference fields from other joined views with view_name.field_name syntax
@@ -260,8 +257,8 @@ view: delighted_survey_question_answered {
     type: count_distinct
     sql: ${TABLE}.user_id ;;
     filters: {
-      field: customers_v2.status
-      value: "enabled"
+      field: http_api_purchase_event.topic
+      value: "customer.product.renewed,customer.product.created"
     }
     filters: {
       field: promoters # Reference fields from other joined views with view_name.field_name syntax
@@ -273,8 +270,8 @@ view: delighted_survey_question_answered {
     type: count_distinct
     sql: ${TABLE}.user_id ;;
     filters: {
-      field: customers_v2.status
-      value: "enabled"
+      field: http_api_purchase_event.topic
+      value: "customer.product.renewed,customer.product.created"
     }
     filters: {
       field: promoters # Reference fields from other joined views with view_name.field_name syntax

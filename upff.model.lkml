@@ -190,6 +190,11 @@ explore: customers{
     relationship: one_to_one
   }
 
+  join: http_api_purchase_event {
+    type: left_outer
+    sql_on: ${customers.customer_id} = ${http_api_purchase_event.user_id};;
+    relationship: one_to_one
+  }
 
   join: all_firstplay {
     type: left_outer
@@ -209,7 +214,6 @@ explore: customers{
     relationship: one_to_one
   }
 
-
   join: customers_v2 {
     type: inner
     sql_on: ${delighted_survey_question_answered.user_id} = ${customers_v2.customer_id};;
@@ -227,19 +231,19 @@ explore: http_api_purchase_event
           label: "Subscribers"
 
             join: android_users {
-              type: inner
+              type: left_outer
               sql_on: ${http_api_purchase_event.user_id} = ${android_users.id};;
               relationship: one_to_one
             }
 
           join: android_conversion {
-            type: inner
+            type: left_outer
             sql_on: ${android_users.context_traits_anonymous_id} = ${android_conversion.anonymous_id};;
             relationship: one_to_one
           }
 
           join: redshift_php_get_mobile_app_installs {
-            type: inner
+            type: left_outer
             sql_on: ${redshift_php_get_mobile_app_installs.anonymous_id} = ${android_conversion.anonymous_id};;
             relationship: one_to_one
           }
@@ -252,22 +256,16 @@ include: "analytics_v2.view"
 explore: delighted_survey_question_answered {
   label: "Delighted Feedback"
 
-  join: customers_v2 {
+  join: http_api_purchase_event {
     type: left_outer
-    sql_on: ${delighted_survey_question_answered.user_id} = ${customers_v2.customer_id};;
+    sql_on: ${delighted_survey_question_answered.user_id} = ${http_api_purchase_event.user_id};;
     relationship: one_to_one
   }
 
   join: analytics_v2 {
-    type:  inner
-    sql_on: ${customers_v2.event_created_at} = ${analytics_v2.timestamp_date};;
+    type:  left_outer
+    sql_on: ${http_api_purchase_event.created_date} = ${analytics_v2.timestamp_date};;
     relationship: many_to_one
-  }
-
-  join: all_firstplay {
-    type:  inner
-    sql_on: ${all_firstplay.timestamp_date} = ${analytics_v2.timestamp_date};;
-    relationship: one_to_one
   }
 
   join: mailchimp_email_campaigns {
