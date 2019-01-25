@@ -1,6 +1,8 @@
 explore: titles_id_mapping {}
 view: titles_id_mapping {
-  sql_table_name: svod_titles.titles_id_mapping ;;
+  derived_table: {
+    sql:select a.*
+from svod_titles.titles_id_mapping as a inner join svod_titles.content as b on a.id=b.id;;}
 
   dimension: id {
     primary_key: yes

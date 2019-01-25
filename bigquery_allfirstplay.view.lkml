@@ -13,6 +13,41 @@ a2 as
         concat(title[safe_ordinal(2)]," - ",title[safe_ordinal(3)]) as collection
  from a1 order by 1),
 
+titles_id_mapping as
+(select *
+from svod_titles.titles_id_mapping
+where collection not in ('Romance - OLD',
+'Dramas',
+'Comedies',
+'Kids - OLD',
+'Christmas',
+'Just Added',
+'Music',
+'Faith Movies',
+'Docs & Specials',
+'Trending',
+'Adventure',
+'All Movies',
+'All Series',
+'Bonus Content',
+'Drama Movies',
+'Drama Series',
+'Faith Favorites',
+'Family Addition',
+'Family Comedies',
+'Fan Favorite Series',
+'Fantasy',
+'Kids',
+'New',
+'New Series',
+'Romance',
+'Sports',
+'The Must-Watch List',
+'UPlifting Reality',
+'UP Original Movies and Series',
+'UP Original Series'
+)),
+
 a as
         (select sent_at as timestamp,
                 b.date as release_date,
@@ -23,7 +58,7 @@ a as
                 trim((title)) as title,
                 user_id,
                 'Android' as source
-         from android.firstplay as a left join svod_titles.titles_id_mapping as b on a.video_id = b.id
+         from android.firstplay as a left join titles_id_mapping as b on a.video_id = b.id
          union all
          select sent_at as timestamp,
                 b.date as release_date,
@@ -34,7 +69,7 @@ a as
                 trim((title)) as title,
                 user_id,
                 'iOS' as source
-         from ios.firstplay as a left join svod_titles.titles_id_mapping as b on a.video_id = safe_cast(b.id as string)
+         from ios.firstplay as a left join titles_id_mapping as b on a.video_id = safe_cast(b.id as string)
          union all
          select timestamp,
                 b.date as release_date,
@@ -45,7 +80,7 @@ a as
                 trim(b.title) as title,
                 user_id,
                 'Web' as source
-         from a2 as a left join svod_titles.titles_id_mapping as b on trim(upper(b.title)) = trim(upper(a.title)))
+         from a2 as a left join titles_id_mapping as b on trim(upper(b.title)) = trim(upper(a.title)))
 
 
 select *,
