@@ -60,6 +60,7 @@ include: "bigquery_javascript_conversion.view.lkml"
 include: "bigquery_javascript_pages.view.lkml"
 include: "bigquery_javascript_users.view.lkml"
 include: "bigquery_free_to_paid.view.lkml"
+include: "bigquery_subscribers_v3.view.lkml"
 
 explore: monthly_platform_user_count {}
 
@@ -87,13 +88,7 @@ explore: bigquery_derived_addwatchlist {}
 explore: bigquery_derived_timeupdate {}
 explore: bigquery_subscribers_timeupdate {}
 explore: bigquery_derived_views {}
-explore: bigquery_allfirstplay {
-  join: bigquery_analytics {
-    type: left_outer
-    sql_on: ${bigquery_allfirstplay.timestamp_date}=${bigquery_analytics.timestamp_date} ;;
-    relationship: one_to_one
-  }
-}
+
 explore: bigquery_timeupdate {}
 explore: bigquery_topmovies {}
 explore: bigquery_topseries {}
@@ -208,6 +203,19 @@ explore: bigquery_subscribers_v2 {
     relationship: one_to_many
   }
 
+}
+
+explore: bigquery_allfirstplay {
+  join: bigquery_analytics {
+    type: left_outer
+    sql_on: ${bigquery_allfirstplay.timestamp_date}=${bigquery_analytics.timestamp_date} ;;
+    relationship: one_to_one
+  }
+  join: bigquery_http_api_purchase_event {
+    type: left_outer
+    sql_on: ${bigquery_allfirstplay.user_id}=${bigquery_http_api_purchase_event.user_id} ;;
+    relationship: one_to_one
+  }
 }
 explore: bigquery_derived_all_firstplay {
   join: bigquery_views{
