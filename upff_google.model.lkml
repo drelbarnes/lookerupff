@@ -89,7 +89,13 @@ explore: bigquery_derived_timeupdate {}
 explore: bigquery_subscribers_timeupdate {}
 explore: bigquery_derived_views {}
 
-explore: bigquery_timeupdate {}
+explore: bigquery_timeupdate {
+  join: bigquery_http_api_purchase_event {
+    type: left_outer
+    sql_on: ${bigquery_timeupdate.user_id}=${bigquery_http_api_purchase_event.user_id} ;;
+    relationship: one_to_one
+  }
+}
 explore: bigquery_topmovies {}
 explore: bigquery_topseries {}
 explore: bigquery_prior_days_title_performance {}
