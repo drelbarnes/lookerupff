@@ -24,7 +24,7 @@ where date(sent_at)=current_date),
 
      d as ((select a1.timestamp, a1.paying_churn+sum(coalesce(a2.paying_churn,0)) as churn_30_days
 from customers_analytics as a1
-left join customers_analytics as a2 on datediff(day,a2.timestamp,a1.timestamp)<=30 and datediff(day,a2.timestamp,a1.timestamp)>0
+left join customers_analytics as a2 on datediff(day,a2.timestamp,a1.timestamp)<=29 and datediff(day,a2.timestamp,a1.timestamp)>0
 group by a1.timestamp,a1.paying_churn)),
 
      e as (select c.timestamp, cast(paying_30_days_prior as decimal) as paying_30_days_prior,
