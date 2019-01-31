@@ -230,6 +230,13 @@ explore: http_api_purchase_event
         {
           label: "Subscribers"
 
+            join: delighted_survey_question_answered {
+              type: left_outer
+              view_label: "Delighted: No Surveyed"
+              sql_on: ${delighted_survey_question_answered.user_id} != ${http_api_purchase_event.user_id};;
+              relationship: one_to_one
+            }
+
             join: android_users {
               type: left_outer
               sql_on: ${http_api_purchase_event.user_id} = ${android_users.id};;
