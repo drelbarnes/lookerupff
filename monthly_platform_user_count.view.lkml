@@ -29,6 +29,11 @@ view: monthly_platform_user_count {
     sql: ${TABLE}.sent_at ;;
   }
 
+  measure: user_count {
+    type: count_distinct
+    sql: ${user_id} ;;
+  }
+
   set: detail {
     fields: [user_id, platform, sent_at_time]
   }
