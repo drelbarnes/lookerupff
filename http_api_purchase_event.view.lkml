@@ -194,9 +194,28 @@ view: http_api_purchase_event {
     sql: ${TABLE}.status_date ;;
   }
 
+  dimension_group: latest_status {
+    type: time
+    timeframes: [
+      raw,
+      time,
+      date,
+      week,
+      month,
+      quarter,
+      year
+    ]
+    sql: ${TABLE}.status_date;;
+  }
+
   dimension: days_since_created {
     type: number
     sql:  DATEDIFF('day', ${created_date}::timestamp, ${status_date}::timestamp);;
+  }
+
+  dimension: days_after_status {
+    type:  number
+    sql:  DATEDIFF('day', ${latest_status_date}::timestamp, ${current_date}::timestamp);;
   }
 
   dimension: team {

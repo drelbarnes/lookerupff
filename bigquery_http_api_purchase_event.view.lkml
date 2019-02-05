@@ -234,6 +234,20 @@ view: bigquery_http_api_purchase_event {
     sql: ${TABLE}.updated_at ;;
   }
 
+  dimension_group: max_status {
+    type: time
+    timeframes: [
+      raw,
+      time,
+      date,
+      week,
+      month,
+      quarter,
+      year
+    ]
+    sql: Max(${status_date}) ;;
+  }
+
   dimension: upff {
     type: string
     sql: ${TABLE}.upff ;;
@@ -243,6 +257,17 @@ view: bigquery_http_api_purchase_event {
     type: string
     sql: ${TABLE}.user_id ;;
   }
+
+  dimension: current_date{
+    type: date
+    sql: current_date;;
+  }
+
+  dimension: max_status_days {
+    type: number
+    sql: DATE_DIFF(${current_date}, ${status_date}, DAY);;
+  }
+
 
   dimension_group: uuid_ts {
     type: time
@@ -267,5 +292,11 @@ view: bigquery_http_api_purchase_event {
   measure: count_by_email {
     type: count_distinct
     sql: ${email} ;;
+  }
+
+  measure: last_status_date {
+    type: date
+    sql: MAX(${status_date}) ;;
+    convert_tz: no
   }
 }
