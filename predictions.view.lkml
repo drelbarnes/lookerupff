@@ -11,17 +11,15 @@ view: training_input {
       column: day_of_week {}
       column: customer_created_at_day {}
       column: days_played {field: bigquery_conversion_model_firstplay.days_played}
-      column: customer_id {}
-      column: frequency {}
+      column: user_id {}
       column: state {}
       column: get_status {}
       column: addwatchlist_count { field: bigquery_conversion_model_addwatchlist.addwatchlist_count }
       column: removewatchlist_count { field: bigquery_conversion_model_removewatchlist.removewatchlist_count }
       column: error_count { field: bigquery_conversion_model_error.error_count }
       column: view_count { field: bigquery_conversion_model_view.view_count }
-      column: promoters { field: bigquery_delighted_survey_question_answered.promoters }
+#       column: promoters { field: bigquery_delighted_survey_question_answered.promoters }
        column: platform {}
-      column: marketing_opt_in {}
       column: number_of_platforms {}
 #       column: bates_play { field: bigquery_conversion_model_firstplay.bates_play}
 #       column: heartland_play { field: bigquery_conversion_model_firstplay.heartland_play}
@@ -71,10 +69,6 @@ view: training_input {
 
 
       expression_custom_filter: ${bigquery_subscribers_v2.subscription_length}>28 AND ${bigquery_subscribers_v2.subscription_length}<=84;;
-      filters: {
-        field: bigquery_subscribers_v2.get_status
-        value: "NOT NULL"
-      }
     }
   }
 
@@ -89,17 +83,14 @@ view: testing_input {
       column: day_of_week {}
       column: customer_created_at_day {}
       column: days_played {field: bigquery_conversion_model_firstplay.days_played}
-      column: customer_id {}
-      column: frequency {}
+      column: user_id {}
       column: state {}
       column: get_status {}
       column: addwatchlist_count { field: bigquery_conversion_model_addwatchlist.addwatchlist_count }
       column: removewatchlist_count { field: bigquery_conversion_model_removewatchlist.removewatchlist_count }
       column: error_count { field: bigquery_conversion_model_error.error_count }
       column: view_count { field: bigquery_conversion_model_view.view_count }
-      column: promoters { field: bigquery_delighted_survey_question_answered.promoters }
       column: platform {}
-      column: marketing_opt_in {}
       column: number_of_platforms {}
 #       column: bates_play { field: bigquery_conversion_model_firstplay.bates_play}
 #       column: heartland_play { field: bigquery_conversion_model_firstplay.heartland_play}
@@ -147,11 +138,7 @@ view: testing_input {
 #       derived_column: other_day_3 {sql: other_play_day_3*other_duration_day_3;;}
 #       derived_column: other_day_4 {sql: other_play_day_4*other_duration_day_4;;}
 
-      expression_custom_filter: ${bigquery_subscribers_v2.subscription_length}>14 AND ${bigquery_subscribers_v2.subscription_length}<=28 AND ${bigquery_subscribers_v2.days_since_created}<15;;
-      filters: {
-        field: bigquery_subscribers_v2.get_status
-        value: "NOT NULL"
-      }
+      expression_custom_filter: ${bigquery_subscribers_v2.subscription_length}>14 AND ${bigquery_subscribers_v2.subscription_length}<=28;;
     }
   }
 
@@ -169,7 +156,7 @@ view: future_purchase_model {
         , max_iterations = 10
         ) AS
       SELECT
-         * EXCEPT(customer_id)
+         * EXCEPT(user_id)
       FROM ${training_input.SQL_TABLE_NAME};;
   }
 }
@@ -312,18 +299,14 @@ view: future_input {
     column: day_of_week {}
     column: customer_created_at_day {}
     column: days_played {field: bigquery_conversion_model_firstplay.days_played}
-    column: customer_id {}
-    column: frequency {}
+    column: user_id {}
     column: state {}
-    column: email {}
     column: get_status {}
     column: addwatchlist_count { field: bigquery_conversion_model_addwatchlist.addwatchlist_count }
     column: removewatchlist_count { field: bigquery_conversion_model_removewatchlist.removewatchlist_count }
     column: error_count { field: bigquery_conversion_model_error.error_count }
     column: view_count { field: bigquery_conversion_model_view.view_count }
-    column: promoters { field: bigquery_delighted_survey_question_answered.promoters }
     column: platform {}
-    column: marketing_opt_in {}
     column: number_of_platforms {}
 #       column: bates_play { field: bigquery_conversion_model_firstplay.bates_play}
 #       column: heartland_play { field: bigquery_conversion_model_firstplay.heartland_play}
@@ -372,10 +355,6 @@ view: future_input {
 #       derived_column: other_day_4 {sql: other_play_day_4*other_duration_day_4;;}
 
     expression_custom_filter: ${bigquery_subscribers_v2.subscription_length}>8 AND ${bigquery_subscribers_v2.subscription_length}<=14;;
-    filters: {
-      field: bigquery_subscribers_v2.get_status
-      value: "NULL"
-    }
   }
   }
 
@@ -411,7 +390,7 @@ view: future_purchase_prediction {
   }
   dimension: day_of_week {}
   dimension: days_played {}
-  dimension: customer_id {
+  dimension: user_id {
     tags: ["user_id"]
     type: number
   }

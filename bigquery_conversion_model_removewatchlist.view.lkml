@@ -9,44 +9,47 @@ WITH
   UNION ALL
   SELECT user_id,timestamp FROM ios.removewatchlist where user_id is not null),
 
+purchase_event as
+(with
+b as
+(select user_id, min(received_at) as received_at
+from http_api.purchase_event
+where topic in ('customer.product.free_trial_created','customer.product.created','customer.created') and date(created_at)=date(received_at) and date(created_at)>'2018-10-31'
+group by 1)
+
+select a.user_id, a.platform, created_at
+from b inner join http_api.purchase_event as a on a.user_id=b.user_id and a.received_at=b.received_at
+where topic in ('customer.product.free_trial_created','customer.product.created','customer.created') and date(created_at)=date(a.received_at) and date(created_at)>'2018-10-31'),
+
 c as
 (SELECT
-  user_id,
+  a.user_id,
   platform,
-  frequency,
-  case when campaign is not null then campaign else 'unavailable' end as campaign,
-  customer_created_at,
+  created_at,
 --   date_diff(date(timestamp),date(customer_created_at),day) as daydiff,
   count(*) as removewatchlist_count
 FROM
-  customers.subscribers left JOIN b ON SAFE_CAST(user_id AS int64)=SAFE_CAST(customer_id AS int64)
-where date(timestamp)>=date(customer_created_at) and date(timestamp)<=date_add(date(customer_created_at), interval 14 day)
-group by 1,2,3,4,5
-order by user_id),
+  purchase_event as a left JOIN b ON SAFE_CAST(b.user_id AS int64)=SAFE_CAST(a.user_id AS int64)
+where date(b.timestamp)>=date(created_at) and date(b.timestamp)<=date_add(date(created_at), interval 14 day)
+group by 1,2,3),
 
 d as
-(select customer_id as user_id,
+(select a.user_id,
        a.platform,
-       a.frequency,
-       case when a.campaign is not null then a.campaign else 'unavailable' end as campaign,
-       a.customer_created_at,
+       a.created_at,
        case when removewatchlist_count is null then 0 else removewatchlist_count end as removewatchlist_count
-from customers.subscribers as a left join c on customer_id=safe_cast(user_id as int64)
-where customer_id<>0),
+from purchase_event as a left join c on a.user_id=c.user_id
+where a.user_id<>'0'),
 
 e as
-(select max(removewatchlist_count) as r_max, min(removewatchlist_count) as r_min
+(select max(removewatchlist_count) as rwl_max, min(removewatchlist_count) as rwl_min
 from d)
 
 select user_id,
 platform,
-frequency,
-campaign,
-customer_created_at,
-(removewatchlist_count-r_min)/(r_max-r_min) as removewatchlist_count
+created_at as customer_created_at,
+(removewatchlist_count-rwl_min)/(rwl_max-rwl_min) as removewatchlist_count
 from d,e
-order by removewatchlist_count desc
-
 
  ;;
 }
@@ -75,16 +78,6 @@ order by removewatchlist_count desc
   dimension: platform {
     type: string
     sql: ${TABLE}.platform ;;
-  }
-
-  dimension: frequency {
-    type: string
-    sql: ${TABLE}.frequency ;;
-  }
-
-  dimension: campaign {
-    type: string
-    sql: ${TABLE}.campaign ;;
   }
 
   dimension: removewatchlist_count {

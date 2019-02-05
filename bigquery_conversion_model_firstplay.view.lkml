@@ -61,41 +61,48 @@ view: bigquery_conversion_model_firstplay {
       UNION ALL
       SELECT * FROM apple),
 
+purchase_event as
+(with
+b as
+(select user_id, min(received_at) as received_at
+from http_api.purchase_event
+where topic in ('customer.product.free_trial_created','customer.product.created','customer.created') and date(created_at)=date(received_at) and date(created_at)>'2018-10-31'
+group by 1)
+
+select a.user_id, a.platform, created_at
+from b inner join http_api.purchase_event as a on a.user_id=b.user_id and a.received_at=b.received_at
+where topic in ('customer.product.free_trial_created','customer.product.created','customer.created') and date(created_at)=date(a.received_at) and date(created_at)>'2018-10-31'),
+
     c as
     (SELECT
-      user_id,
+      a.user_id,
       platform,
-      frequency,
-      case when campaign is not null then campaign else 'unavailable' end as campaign,
-      customer_created_at,
+      created_at,
     --   date_diff(date(timestamp),date(customer_created_at),day) as daydiff,
       sum(case when content = 'Heartland' then 1 else 0 end) as watched_heartland,
       sum(case when content = 'Bringing Up Bates'  then 1 else 0 end) as watched_bates,
       sum(case when content = 'Other' then 1 else 0 end) as watched_other,
-      sum(case when content = 'Heartland' and date_diff(date(timestamp), date(customer_created_at), day)<4 then 1 else 0 end) as watched_heartland_day_1,
-      sum(case when content = 'Heartland' and date_diff(date(timestamp), date(customer_created_at), day)>=4 and date_diff(date(timestamp), date(customer_created_at), day)<8 then 1 else 0 end) as watched_heartland_day_2,
-      sum(case when content = 'Heartland' and date_diff(date(timestamp), date(customer_created_at), day)>=8 and date_diff(date(timestamp), date(customer_created_at), day)<12 then 1 else 0 end) as watched_heartland_day_3,
-      sum(case when content = 'Heartland' and date_diff(date(timestamp), date(customer_created_at), day)>=12 and date_diff(date(timestamp), date(customer_created_at), day)<16 then 1 else 0 end) as watched_heartland_day_4,
-      sum(case when content = 'Bringing Up Bates' and date_diff(date(timestamp), date(customer_created_at), day)<4 then 1 else 0 end) as watched_bates_day_1,
-      sum(case when content = 'Bringing Up Bates' and date_diff(date(timestamp), date(customer_created_at), day)>=4 and date_diff(date(timestamp), date(customer_created_at), day)<8 then 1 else 0 end) as watched_bates_day_2,
-      sum(case when content = 'Bringing Up Bates' and date_diff(date(timestamp), date(customer_created_at), day)>=8 and date_diff(date(timestamp), date(customer_created_at), day)<12 then 1 else 0 end) as watched_bates_day_3,
-      sum(case when content = 'Bringing Up Bates' and date_diff(date(timestamp), date(customer_created_at), day)>=12 and date_diff(date(timestamp), date(customer_created_at), day)<16 then 1 else 0 end) as watched_bates_day_4,
-      sum(case when content = 'Other' and date_diff(date(timestamp), date(customer_created_at), day)<4 then 1 else 0 end) as watched_other_day_1,
-      sum(case when content = 'Other' and date_diff(date(timestamp), date(customer_created_at), day)>=4 and date_diff(date(timestamp), date(customer_created_at), day)<8 then 1 else 0 end) as watched_other_day_2,
-      sum(case when content = 'Other' and date_diff(date(timestamp), date(customer_created_at), day)>=8 and date_diff(date(timestamp), date(customer_created_at), day)<12 then 1 else 0 end) as watched_other_day_3,
-      sum(case when content = 'Other' and date_diff(date(timestamp), date(customer_created_at), day)>=12 and date_diff(date(timestamp), date(customer_created_at), day)<16 then 1 else 0 end) as watched_other_day_4
+      sum(case when content = 'Heartland' and date_diff(date(b.timestamp), date(created_at), day)<4 then 1 else 0 end) as watched_heartland_day_1,
+      sum(case when content = 'Heartland' and date_diff(date(b.timestamp), date(created_at), day)>=4 and date_diff(date(b.timestamp), date(created_at), day)<8 then 1 else 0 end) as watched_heartland_day_2,
+      sum(case when content = 'Heartland' and date_diff(date(b.timestamp), date(created_at), day)>=8 and date_diff(date(b.timestamp), date(created_at), day)<12 then 1 else 0 end) as watched_heartland_day_3,
+      sum(case when content = 'Heartland' and date_diff(date(b.timestamp), date(created_at), day)>=12 and date_diff(date(b.timestamp), date(created_at), day)<16 then 1 else 0 end) as watched_heartland_day_4,
+      sum(case when content = 'Bringing Up Bates' and date_diff(date(b.timestamp), date(created_at), day)<4 then 1 else 0 end) as watched_bates_day_1,
+      sum(case when content = 'Bringing Up Bates' and date_diff(date(b.timestamp), date(created_at), day)>=4 and date_diff(date(b.timestamp), date(created_at), day)<8 then 1 else 0 end) as watched_bates_day_2,
+      sum(case when content = 'Bringing Up Bates' and date_diff(date(b.timestamp), date(created_at), day)>=8 and date_diff(date(b.timestamp), date(created_at), day)<12 then 1 else 0 end) as watched_bates_day_3,
+      sum(case when content = 'Bringing Up Bates' and date_diff(date(b.timestamp), date(created_at), day)>=12 and date_diff(date(b.timestamp), date(created_at), day)<16 then 1 else 0 end) as watched_bates_day_4,
+      sum(case when content = 'Other' and date_diff(date(b.timestamp), date(created_at), day)<4 then 1 else 0 end) as watched_other_day_1,
+      sum(case when content = 'Other' and date_diff(date(b.timestamp), date(created_at), day)>=4 and date_diff(date(b.timestamp), date(created_at), day)<8 then 1 else 0 end) as watched_other_day_2,
+      sum(case when content = 'Other' and date_diff(date(b.timestamp), date(created_at), day)>=8 and date_diff(date(b.timestamp), date(created_at), day)<12 then 1 else 0 end) as watched_other_day_3,
+      sum(case when content = 'Other' and date_diff(date(b.timestamp), date(created_at), day)>=12 and date_diff(date(b.timestamp), date(created_at), day)<16 then 1 else 0 end) as watched_other_day_4
     FROM
-      b LEFT JOIN customers.subscribers ON SAFE_CAST(user_id AS int64)=SAFE_CAST(customer_id AS int64)
-    where date(timestamp)>=date(customer_created_at) and date(timestamp)<=date_add(date(customer_created_at), interval 14 day)
-    group by 1,2,3,4,5
-    order by user_id),
+       purchase_event as a left join b ON a.user_id=b.user_id
+    where date(b.timestamp)>=date(created_at) and date(b.timestamp)<=date_add(date(created_at), interval 14 day)
+    group by 1,2,3),
 
     d as
-    (select customer_id as user_id,
+    (select a.user_id,
            a.platform,
-           a.frequency,
-           case when a.campaign is not null then a.campaign else 'unavailable' end as campaign,
-           a.customer_created_at,
+           a.created_at,
            case when watched_heartland is null then 0 else watched_heartland end as watched_heartland,
            case when watched_heartland_day_1 is null then 0 else watched_heartland_day_1 end as watched_heartland_day_1,
            case when watched_heartland_day_2 is null then 0 else watched_heartland_day_2 end as watched_heartland_day_2,
@@ -111,25 +118,25 @@ view: bigquery_conversion_model_firstplay {
            case when watched_other_day_2 is null then 0 else watched_other_day_2 end as watched_other_day_2,
            case when watched_other_day_3 is null then 0 else watched_other_day_3 end as watched_other_day_3,
            case when watched_other_day_4 is null then 0 else watched_other_day_4 end as watched_other_day_4
-    from customers.subscribers as a left join c on customer_id=safe_cast(user_id as int64)),
+    from purchase_event as a left join c on a.user_id=c.user_id),
 
     web_days as
-    (select distinct user_id,
-                    date(timestamp) as timestamp
-    from javascript.firstplay right join customers.subscribers on safe_cast(user_id as int64)=customer_id
-    where date(timestamp)>=date(customer_created_at) and date(timestamp)<=date_add(date(customer_created_at), interval 14 day)),
+    (select distinct a.user_id,
+                    date(a.timestamp) as timestamp
+    from javascript.firstplay as a right join purchase_event as b on a.user_id=b.user_id
+    where date(a.timestamp)>=date(created_at) and date(a.timestamp)<=date_add(date(created_at), interval 14 day)),
 
     android_days as
-    (select distinct user_id,
-                    date(timestamp) as timestamp
-    from android.firstplay right join customers.subscribers on safe_cast(user_id as int64)=customer_id
-    where date(timestamp)>=date(customer_created_at) and date(timestamp)<=date_add(date(customer_created_at), interval 14 day)),
+    (select distinct a.user_id,
+                    date(a.timestamp) as timestamp
+    from android.firstplay as a right join purchase_event as b on a.user_id=b.user_id
+    where date(a.timestamp)>=date(created_at) and date(a.timestamp)<=date_add(date(created_at), interval 14 day)),
 
     ios_days as
-    (select distinct user_id,
-                    date(timestamp) as timestamp
-    from ios.firstplay right join customers.subscribers on safe_cast(user_id as int64)=customer_id
-    where date(timestamp)>=date(customer_created_at) and date(timestamp)<=date_add(date(customer_created_at), interval 14 day)),
+    (select distinct a.user_id,
+                    date(a.timestamp) as timestamp
+    from ios.firstplay as a right join purchase_event as b on a.user_id=b.user_id
+    where date(a.timestamp)>=date(created_at) and date(a.timestamp)<=date_add(date(created_at), interval 14 day)),
 
     all_days as
     (select * from web_days
@@ -152,8 +159,8 @@ view: bigquery_conversion_model_firstplay {
     g as
     (select d.*,
            coalesce(days_played,0) as days_played
-    from d left join f on d.user_id=safe_cast(f.user_id as int64)
-    where d.user_id<>0),
+    from d left join f on d.user_id=f.user_id
+    where d.user_id<>'0'),
 
     h as
     (select max(watched_heartland) hl_max, min(watched_heartland) as hl_min,
@@ -177,8 +184,6 @@ view: bigquery_conversion_model_firstplay {
 
      select user_id,
             platform,
-            frequency,
-            campaign,
             (watched_heartland - hl_min)/(hl_max - hl_min) as watched_heartland,
             (watched_bates - b_min)/(b_max - b_min) as watched_bates,
             (watched_other - o_min)/(o_max-o_min) as watched_other,
@@ -196,6 +201,8 @@ view: bigquery_conversion_model_firstplay {
             (watched_other_day_4 - o4_min)/(o4_max-o4_min) as watched_other_day_4,
             (days_played - dp_min)/(dp_max-dp_min) as days_played
      from g, h
+
+
 
      ;;}
 
@@ -230,15 +237,6 @@ view: bigquery_conversion_model_firstplay {
         sql: ${TABLE}.platform ;;
       }
 
-      dimension: frequency {
-        type: string
-        sql: ${TABLE}.frequency ;;
-      }
-
-      dimension: campaign {
-        type: string
-        sql: ${TABLE}.campaign ;;
-      }
 
       dimension: heartland_play{
         type: number
