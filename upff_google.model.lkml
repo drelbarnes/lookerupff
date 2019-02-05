@@ -127,46 +127,39 @@ explore: bigquery_subscribers_v2 {
 
   join: bigquery_conversion_model_addwatchlist {
     type: left_outer
-    sql_on:  ${bigquery_subscribers_v2.customer_id} = ${bigquery_conversion_model_addwatchlist.user_id};;
+    sql_on:  ${bigquery_subscribers_v2.user_id} = ${bigquery_conversion_model_addwatchlist.user_id};;
     relationship: one_to_one
   }
 
   join: bigquery_conversion_model_error {
     type: left_outer
-    sql_on:  ${bigquery_subscribers_v2.customer_id} = ${bigquery_conversion_model_error.user_id};;
+    sql_on:  ${bigquery_subscribers_v2.user_id} = ${bigquery_conversion_model_error.user_id};;
     relationship: one_to_one
   }
 
   join: bigquery_conversion_model_firstplay {
     type: left_outer
-    sql_on:  ${bigquery_subscribers_v2.customer_id} = ${bigquery_conversion_model_firstplay.user_id};;
+    sql_on:  ${bigquery_subscribers_v2.user_id} = ${bigquery_conversion_model_firstplay.user_id};;
     relationship: one_to_one
   }
 
   join: bigquery_conversion_model_removewatchlist {
     type: left_outer
-    sql_on:  ${bigquery_subscribers_v2.customer_id} = ${bigquery_conversion_model_removewatchlist.user_id};;
+    sql_on:  ${bigquery_subscribers_v2.user_id} = ${bigquery_conversion_model_removewatchlist.user_id};;
     relationship: one_to_one
   }
 
   join: bigquery_conversion_model_timeupdate {
     type: left_outer
-    sql_on:  ${bigquery_subscribers_v2.customer_id} = ${bigquery_conversion_model_timeupdate.user_id};;
+    sql_on:  ${bigquery_subscribers_v2.user_id} = ${bigquery_conversion_model_timeupdate.user_id};;
     relationship: one_to_one
   }
 
   join: bigquery_conversion_model_view {
     type: left_outer
-    sql_on:  ${bigquery_subscribers_v2.customer_id} = ${bigquery_conversion_model_view.user_id};;
+    sql_on:  ${bigquery_subscribers_v2.user_id} = ${bigquery_conversion_model_view.user_id};;
     relationship: one_to_one
   }
-
-  join: bigquery_delighted_survey_question_answered {
-    type: left_outer
-    sql_on:  ${bigquery_subscribers_v2.customer_id} = safe_cast(${bigquery_delighted_survey_question_answered.user_id} as int64);;
-    relationship: one_to_one
-  }
-
 }
 
   explore: bigquery_subscribers {
@@ -267,7 +260,7 @@ explore: bigquery_derived_all_firstplay {
   }
   join: future_purchase_prediction {
     relationship: one_to_one
-    sql_on: ${bigquery_derived_all_firstplay.user_id} = ${future_purchase_prediction.customer_id} ;;
+    sql_on: ${bigquery_derived_all_firstplay.user_id} = ${future_purchase_prediction.user_id} ;;
   }
 }
 explore: bigquery_android_firstplay {

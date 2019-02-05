@@ -10,31 +10,34 @@ union all
 select distinct id as user_id, 'ios' as source from ios.users),
 
 b as
-(select user_id, count(1) as number_of_platforms from a group by 1 order by 2 desc)
+(select user_id, count(1) as number_of_platforms from a group by 1 order by 2 desc),
+
+purchase_event as
+(with
+b as
+(select user_id, min(received_at) as received_at
+from http_api.purchase_event
+where topic in ('customer.product.free_trial_created','customer.product.created','customer.created') and date(created_at)=date(received_at) and date(created_at)>'2018-10-31'
+group by 1)
+
+select a.user_id, a.platform, created_at, region
+from b inner join http_api.purchase_event as a on a.user_id=b.user_id and a.received_at=b.received_at
+where topic in ('customer.product.free_trial_created','customer.product.created','customer.created') and date(created_at)=date(a.received_at) and date(created_at)>'2018-10-31'),
+
+renewed as
+(select distinct user_id, 1 as get_status
+from http_api.purchase_event
+where topic='customer.product.renewed')
 
 select s.*,
-       number_of_platforms
-from customers.subscribers as s inner join b on s.customer_id=safe_cast(user_id as int64) ;;
+       case when number_of_platforms is null then 1 else number_of_platforms end as number_of_platforms,
+       case when get_status is null then 0 else get_status end as get_status
+from purchase_event as s left join b on s.user_id=b.user_id left join renewed as c on s.user_id=c.user_id ;;
     }
 
     dimension: number_of_platforms {
       type: number
       sql: ${TABLE}.number_of_platforms/3 ;;
-    }
-
-    dimension: action {
-      type: string
-      sql: ${TABLE}.action ;;
-    }
-
-    dimension: action_type {
-      type: string
-      sql: ${TABLE}.action_type ;;
-    }
-
-    dimension: campaign {
-      type: string
-      sql: ${TABLE}.campaign ;;
     }
 
     dimension: city {
@@ -63,7 +66,7 @@ from customers.subscribers as s inner join b on s.customer_id=safe_cast(user_id 
       sql: current_date;;
     }
 
-    dimension_group: customer_created {
+    dimension_group: customer_created{
       type: time
       timeframes: [
         raw,
@@ -75,21 +78,21 @@ from customers.subscribers as s inner join b on s.customer_id=safe_cast(user_id 
         quarter,
         year
       ]
-      sql: ${TABLE}.customer_created_at ;;
+      sql: ${TABLE}.created_at ;;
     }
 
     dimension: customer_created_at_day {
       type: string
-      sql: case when extract(DAY from ${TABLE}.customer_created_at) between 1 and 10 then "Beginning"
-                when extract(DAY from ${TABLE}.customer_created_at) between 11 and 20 then "Middle"
-                when extract(DAY from ${TABLE}.customer_created_at)>20 then "End" end;;
+      sql: case when extract(DAY from ${TABLE}.created_at) between 1 and 10 then "Beginning"
+                when extract(DAY from ${TABLE}.created_at) between 11 and 20 then "Middle"
+                when extract(DAY from ${TABLE}.created_at)>20 then "End" end;;
     }
 
-    dimension: customer_id {
+    dimension: user_id {
       type: number
       primary_key: yes
       tags: ["user_id"]
-      sql: ${TABLE}.customer_id ;;
+      sql: ${TABLE}.user_id ;;
     }
 
     dimension: email {
@@ -126,11 +129,6 @@ from customers.subscribers as s inner join b on s.customer_id=safe_cast(user_id 
       sql: ${TABLE}.last_name ;;
     }
 
-    dimension: marketing_opt_in {
-      type: number
-      sql: ${TABLE}.marketing_opt_in ;;
-    }
-
     dimension: platform {
       type: string
       sql: ${TABLE}.platform ;;
@@ -163,7 +161,7 @@ from customers.subscribers as s inner join b on s.customer_id=safe_cast(user_id 
 
     dimension: state {
       type: string
-      sql: ${TABLE}.state ;;
+      sql: ${TABLE}.region ;;
     }
 
     dimension: status {
@@ -179,11 +177,7 @@ from customers.subscribers as s inner join b on s.customer_id=safe_cast(user_id 
 #Get Status by case
     dimension: get_status {
       type:  number
-      sql:
-      case
-        when ${status}='enabled' then 1
-        when ${status} in ('cancelled', 'disabled','expired','refunded') AND ${days_since_created} < 28 then 0
-      else null end
+      sql:${TABLE}.get_status
     ;;
     }
 
@@ -195,7 +189,7 @@ from customers.subscribers as s inner join b on s.customer_id=safe_cast(user_id 
 
     dimension: day_of_week {
       type: date_day_of_week
-      sql: ${TABLE}.customer_created_at ;;
+      sql: ${TABLE}.created_at ;;
     }
 
     measure: count {

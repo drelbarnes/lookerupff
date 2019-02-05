@@ -80,40 +80,49 @@ b as
 (select *
 from a5),
 
+purchase_event as
+(with
+b as
+(select user_id, min(received_at) as received_at
+from http_api.purchase_event
+where topic in ('customer.product.free_trial_created','customer.product.created','customer.created') and date(created_at)=date(received_at) and date(created_at)>'2018-10-31'
+group by 1)
+
+select a.user_id, a.platform, created_at
+from b inner join http_api.purchase_event as a on a.user_id=b.user_id and a.received_at=b.received_at
+where topic in ('customer.product.free_trial_created','customer.product.created','customer.created') and date(created_at)=date(a.received_at) and date(created_at)>'2018-10-31') ,
+
+
  c as
 (SELECT
-  user_id,
+  a.user_id,
   platform,
-  frequency,
-  case when campaign is not null then campaign else 'unavailable' end as campaign,
-  customer_created_at,
+  created_at,
 --   date_diff(date(timestamp),date(customer_created_at),day) as daydiff,
   sum(case when content = 'Heartland' then timecode else 0 end) as heartland_duration,
   sum(case when content = 'Bringing Up Bates' then timecode else 0 end) as bates_duration,
   sum(case when content = 'Other' then timecode else 0 end) as other_duration,
-  sum(case when content = 'Heartland' and date_diff((timestamp), date(customer_created_at), day)<4 then timecode else 0 end) as heartland_duration_day_1,
-  sum(case when content = 'Heartland' and date_diff((timestamp), date(customer_created_at), day)>=4 and date_diff((timestamp), date(customer_created_at), day)<8 then timecode else 0 end) as heartland_duration_day_2,
-  sum(case when content = 'Heartland' and date_diff((timestamp), date(customer_created_at), day)>=8 and date_diff((timestamp), date(customer_created_at), day)<12 then timecode else 0 end) as heartland_duration_day_3,
-  sum(case when content = 'Heartland' and date_diff((timestamp), date(customer_created_at), day)>=12 and date_diff((timestamp), date(customer_created_at), day)<16 then timecode else 0 end) as heartland_duration_day_4,
-  sum(case when content = 'Bringing Up Bates' and date_diff((timestamp), date(customer_created_at), day)<4 then timecode else 0 end) as bates_duration_day_1,
-  sum(case when content = 'Bringing Up Bates' and date_diff((timestamp), date(customer_created_at), day)>=4 and date_diff((timestamp), date(customer_created_at), day)<8 then timecode else 0 end) as bates_duration_day_2,
-  sum(case when content = 'Bringing Up Bates' and date_diff((timestamp), date(customer_created_at), day)>=8 and date_diff((timestamp), date(customer_created_at), day)<12 then timecode else 0 end) as bates_duration_day_3,
-  sum(case when content = 'Bringing Up Bates' and date_diff((timestamp), date(customer_created_at), day)>=12 and date_diff((timestamp), date(customer_created_at), day)<16 then timecode else 0 end) as bates_duration_day_4,
-  sum(case when content = 'Other' and date_diff((timestamp), date(customer_created_at), day)<4 then timecode else 0 end) as other_duration_day_1,
-  sum(case when content = 'Other' and date_diff((timestamp), date(customer_created_at), day)>=4 and date_diff((timestamp), date(customer_created_at), day)<8 then timecode else 0 end) as other_duration_day_2,
-  sum(case when content = 'Other' and date_diff((timestamp), date(customer_created_at), day)>=8 and date_diff((timestamp), date(customer_created_at), day)<12 then timecode else 0 end) as other_duration_day_3,
-  sum(case when content = 'Other' and date_diff((timestamp), date(customer_created_at), day)>=12 and date_diff((timestamp), date(customer_created_at), day)<16 then timecode else 0 end) as other_duration_day_4
+  sum(case when content = 'Heartland' and date_diff((b.timestamp), date(created_at), day)<4 then timecode else 0 end) as heartland_duration_day_1,
+  sum(case when content = 'Heartland' and date_diff((b.timestamp), date(created_at), day)>=4 and date_diff((b.timestamp), date(created_at), day)<8 then timecode else 0 end) as heartland_duration_day_2,
+  sum(case when content = 'Heartland' and date_diff((b.timestamp), date(created_at), day)>=8 and date_diff((b.timestamp), date(created_at), day)<12 then timecode else 0 end) as heartland_duration_day_3,
+  sum(case when content = 'Heartland' and date_diff((b.timestamp), date(created_at), day)>=12 and date_diff((b.timestamp), date(created_at), day)<16 then timecode else 0 end) as heartland_duration_day_4,
+  sum(case when content = 'Bringing Up Bates' and date_diff((b.timestamp), date(created_at), day)<4 then timecode else 0 end) as bates_duration_day_1,
+  sum(case when content = 'Bringing Up Bates' and date_diff((b.timestamp), date(created_at), day)>=4 and date_diff((b.timestamp), date(created_at), day)<8 then timecode else 0 end) as bates_duration_day_2,
+  sum(case when content = 'Bringing Up Bates' and date_diff((b.timestamp), date(created_at), day)>=8 and date_diff((b.timestamp), date(created_at), day)<12 then timecode else 0 end) as bates_duration_day_3,
+  sum(case when content = 'Bringing Up Bates' and date_diff((b.timestamp), date(created_at), day)>=12 and date_diff((b.timestamp), date(created_at), day)<16 then timecode else 0 end) as bates_duration_day_4,
+  sum(case when content = 'Other' and date_diff((b.timestamp), date(created_at), day)<4 then timecode else 0 end) as other_duration_day_1,
+  sum(case when content = 'Other' and date_diff((b.timestamp), date(created_at), day)>=4 and date_diff((b.timestamp), date(created_at), day)<8 then timecode else 0 end) as other_duration_day_2,
+  sum(case when content = 'Other' and date_diff((b.timestamp), date(created_at), day)>=8 and date_diff((b.timestamp), date(created_at), day)<12 then timecode else 0 end) as other_duration_day_3,
+  sum(case when content = 'Other' and date_diff((b.timestamp), date(created_at), day)>=12 and date_diff((b.timestamp), date(created_at), day)<16 then timecode else 0 end) as other_duration_day_4
 FROM
-  b LEFT JOIN customers.subscribers ON SAFE_CAST(user_id AS int64)=SAFE_CAST(customer_id AS int64)
-where (timestamp)>=date(customer_created_at) and (timestamp)<=date_add(date(customer_created_at), interval 14 day)
-group by 1,2,3,4,5),
+  b right JOIN purchase_event as a ON a.user_id=b.user_id
+where (b.timestamp)>=date(created_at) and (b.timestamp)<=date_add(date(created_at), interval 14 day)
+group by 1,2,3),
 
 d as
-(select customer_id as user_id,
+(select a.user_id,
        a.platform,
-       a.frequency,
-       case when a.campaign is not null then a.campaign else 'unavailable' end as campaign,
-       a.customer_created_at,
+       a.created_at,
        case when heartland_duration is null then 0 else heartland_duration end as heartland_duration,
        case when bates_duration is null then 0 else bates_duration end as bates_duration,
        case when other_duration is null then 0 else other_duration end as other_duration,
@@ -129,8 +138,8 @@ d as
        case when other_duration_day_2 is null then 0 else other_duration_day_2 end as other_duration_day_2,
        case when other_duration_day_3 is null then 0 else other_duration_day_3 end as other_duration_day_3,
        case when other_duration_day_4 is null then 0 else other_duration_day_4 end as other_duration_day_4
-from customers.subscribers as a left join c on customer_id=safe_cast(user_id as int64)
-where customer_id<>0),
+from purchase_event as a left join c on a.user_id=c.user_id
+where a.user_id<>'0'),
 
 e as
 (select
@@ -154,9 +163,7 @@ e as
 
 select user_id,
         platform,
-        frequency,
-        campaign,
-        customer_created_at,
+        created_at as customer_created_at,
         (heartland_duration - hl_min)/(hl_max-hl_min) as heartland_duration,
         (bates_duration - b_min)/(b_max-b_min) as bates_duration,
         (other_duration - o_min)/(o_max-o_min) as other_duration,
@@ -173,7 +180,6 @@ select user_id,
         (other_duration_day_3 - o3_min)/(o3_max-o3_min) as other_duration_day_3,
         (other_duration_day_4 - o4_min)/(o4_max-o4_min) as other_duration_day_4
  from d, e
- order by heartland_duration desc
  ;;
   }
   dimension: user_id {
@@ -197,15 +203,6 @@ select user_id,
     sql: ${TABLE}.customer_created_at ;;
   }
 
-  dimension: platform {
-    type: string
-    sql: ${TABLE}.platform ;;
-  }
-
-  dimension: campaign {
-    type: string
-    sql: ${TABLE}.campaign ;;
-  }
 
   dimension: heartland_duration {
     type: number
