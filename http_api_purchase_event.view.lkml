@@ -306,8 +306,9 @@ view: http_api_purchase_event {
   measure: last_updated_date {
     type: date
     sql: MAX(${status_date}) ;;
-    convert_tz: no
   }
+
+
 
   # ----- Sets of fields for drilling ------
   set: detail {

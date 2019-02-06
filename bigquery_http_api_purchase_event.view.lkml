@@ -220,6 +220,11 @@ view: bigquery_http_api_purchase_event {
     sql: ${TABLE}.topic ;;
   }
 
+  dimension: recent_topic {
+    type:  string
+    sql:  MAX(${topic}) ;;
+  }
+
   dimension_group: updated {
     type: time
     timeframes: [
@@ -268,6 +273,10 @@ view: bigquery_http_api_purchase_event {
     sql: DATE_DIFF(${current_date}, ${status_date}, DAY);;
   }
 
+  dimension: cancelled_days_14 {
+    type: number
+    sql: DATE_DIFF(${current_date}, ${status_date}, DAY) = 14;;
+  }
 
   dimension_group: uuid_ts {
     type: time
@@ -297,6 +306,14 @@ view: bigquery_http_api_purchase_event {
   measure: last_status_date {
     type: date
     sql: MAX(${status_date}) ;;
-    convert_tz: no
+ }
+
+  measure: recent_status {
+    type: string
+    sql: MAX(${topic} = 'customer.product.cancelled' OR ${topic} = 'customer.product.expired') ;;
+
   }
+
+
+
 }
