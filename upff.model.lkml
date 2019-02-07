@@ -19,6 +19,7 @@ include: "android_welcomebrowse.view"
 include: "ios_conversion.view"
 include: "android_conversion.view"
 include: "redshift_php_get_analytics.view"
+include: "redshift_android_firstplay.view"
 
 datagroup: upff_default_datagroup {
   # sql_trigger: SELECT MAX(id) FROM etl_log;;
@@ -436,3 +437,6 @@ explore: redshift_php_get_mobile_app_installs {
   }
 
 }
+
+
+explore: redshift_android_firstplay {}

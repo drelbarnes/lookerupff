@@ -198,6 +198,11 @@ view: bigquery_php_get_user_on_email_list {
     sql: ${TABLE}.zip_code ;;
   }
 
+  measure: count_distinct_by_email {
+    type: count_distinct
+    sql: ${email} ;;
+  }
+
   measure: count {
     type: count
     drill_fields: [id, lname, fname, context_library_name]

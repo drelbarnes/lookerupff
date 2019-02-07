@@ -220,6 +220,11 @@ view: bigquery_http_api_purchase_event {
     sql: ${TABLE}.topic ;;
   }
 
+  dimension: recent_topic {
+    type:  string
+    sql:  MAX(${topic}) ;;
+  }
+
   dimension_group: updated {
     type: time
     timeframes: [
@@ -234,6 +239,20 @@ view: bigquery_http_api_purchase_event {
     sql: ${TABLE}.updated_at ;;
   }
 
+  dimension_group: max_status {
+    type: time
+    timeframes: [
+      raw,
+      time,
+      date,
+      week,
+      month,
+      quarter,
+      year
+    ]
+    sql: Max(${status_date}) ;;
+  }
+
   dimension: upff {
     type: string
     sql: ${TABLE}.upff ;;
@@ -242,6 +261,21 @@ view: bigquery_http_api_purchase_event {
   dimension: user_id {
     type: string
     sql: ${TABLE}.user_id ;;
+  }
+
+  dimension: current_date{
+    type: date
+    sql: current_date;;
+  }
+
+  dimension: max_status_days {
+    type: number
+    sql: DATE_DIFF(${current_date}, ${status_date}, DAY);;
+  }
+
+  dimension: cancelled_days_14 {
+    type: number
+    sql: DATE_DIFF(${current_date}, ${status_date}, DAY) = 14;;
   }
 
   dimension_group: uuid_ts {
@@ -268,4 +302,18 @@ view: bigquery_http_api_purchase_event {
     type: count_distinct
     sql: ${email} ;;
   }
+
+  measure: last_status_date {
+    type: date
+    sql: MAX(${status_date}) ;;
+ }
+
+  measure: recent_status {
+    type: string
+    sql: MAX(${topic} = 'customer.product.cancelled' OR ${topic} = 'customer.product.expired') ;;
+
+  }
+
+
+
 }

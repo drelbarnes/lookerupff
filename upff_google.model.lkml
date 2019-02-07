@@ -61,6 +61,7 @@ include: "bigquery_javascript_pages.view.lkml"
 include: "bigquery_javascript_users.view.lkml"
 include: "bigquery_free_to_paid.view.lkml"
 include: "bigquery_subscribers_v3.view.lkml"
+include: "bigquery_php_get_roku_firstplay.view.lkml"
 
 explore: monthly_platform_user_count {}
 
@@ -330,7 +331,6 @@ explore: bigquery_php_get_user_on_email_list {
   join: bigquery_http_api_purchase_event {
     type: inner
     sql_on: ${bigquery_php_get_user_on_email_list.email} = ${bigquery_http_api_purchase_event.email};;
-    #Attribution window of 15 Days
     relationship: one_to_many
   }
 
@@ -413,6 +413,7 @@ explore: bigquery_javascript_pages {
 }
 
 explore: bigquery_free_to_paid {}
+explore: bigquery_php_get_roku_firstplay {}
 
 # include all views in this project
 # include: "my_dashboard.dashboard.lookml"   # include a LookML dashboard called my_dashboard
