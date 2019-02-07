@@ -9,6 +9,7 @@ view: churn_training_input {
   derived_table: {
     explore_source: bigquery_churn_model {
       column: customer_id {}
+      column: marketing_optin {}
       column: num {}
       column: state {}
       column: addwatchlist {}
@@ -23,56 +24,35 @@ view: churn_training_input {
       column: platform {}
       column: removewatchlist {}
       column: view {}
-#       derived_column: bates_plays_num {sql:bates_plays*(num+1);;}
-#       derived_column: bates_duration_num {sql:bates_duration*(num+1);;}
-#       derived_column: heartland_plays_num {sql:heartland_plays*(num+1);;}
-#       derived_column: other_plays_num {sql:other_plays*(num+1);;}
-#       derived_column: heartland_duration_num {sql:heartland_duration*(num+1);;}
-#       derived_column: other_duration_num {sql:other_duration*(num+1);;}
-      expression_custom_filter: ${bigquery_churn_model.end_date_date} <= add_days(-60,now()) AND ${bigquery_churn_model.end_date_date} > add_days(-180,now()) ;;
+      derived_column: bates_plays_num {sql:bates_plays*(num+1);;}
+      derived_column: bates_duration_num {sql:bates_duration*(num+1);;}
+      derived_column: heartland_plays_num {sql:heartland_plays*(num+1);;}
+      derived_column: other_plays_num {sql:other_plays*(num+1);;}
+      derived_column: heartland_duration_num {sql:heartland_duration*(num+1);;}
+      derived_column: other_duration_num {sql:other_duration*(num+1);;}
+      expression_custom_filter: ${bigquery_churn_model.event_created_at_date} <= add_days(-42,now()) AND ${bigquery_churn_model.event_created_at_date} > add_days(-55,now()) ;;
     }
   }
   dimension: customer_id {
-    type: number
+    type: string
   }
-  dimension: num {
-    type: number
-  }
-  dimension: state {}
-  dimension: addwatchlist {
-    type: number
-  }
-  dimension: bates_duration {
-    type: number
-  }
-  dimension: bates_plays {
-    type: number
-  }
-  dimension: churn_status {
-    type: number
-  }
-  dimension: error {
-    type: number
-  }
-  dimension: heartland_duration {
-    type: number
-  }
-  dimension: heartland_plays {
-    type: number
-  }
-  dimension: other_duration {
-    type: number
-  }
-  dimension: other_plays {
-    type: number
-  }
-  dimension: platform {}
-  dimension: removewatchlist {
-    type: number
-  }
-  dimension: view {
-    type: number
-  }
+  dimension: marketing_optin {type:number}
+  dimension: num {type:number}
+  dimension: state {type:string}
+  dimension: addwatchlist {type:number}
+  dimension: bates_duration {type:number}
+  dimension: bates_plays {type:number}
+  dimension: churn_status {type:number}
+  dimension: error {type:number}
+  dimension: heartland_duration {type:number}
+  dimension: heartland_plays {type:number}
+  dimension: other_duration {type:number}
+  dimension: other_plays {type:number}
+  dimension: platform {type:string}
+  dimension: removewatchlist {type:number}
+  dimension: view {type:number}
+
+
 }
 
 
@@ -84,6 +64,7 @@ view: churn_testing_input {
   derived_table: {
     explore_source: bigquery_churn_model {
       column: customer_id {}
+      column: marketing_optin {}
       column: num {}
       column: state {}
       column: addwatchlist {}
@@ -98,54 +79,34 @@ view: churn_testing_input {
       column: platform {}
       column: removewatchlist {}
       column: view {}
-#       derived_column: bates_plays_num {sql:bates_plays*(num+1);;}
-#       derived_column: bates_duration_num {sql:bates_duration*(num+1);;}
-#       derived_column: heartland_plays_num {sql:heartland_plays*(num+1);;}
-#       derived_column: other_plays_num {sql:other_plays*(num+1);;}
-#       derived_column: heartland_duration_num {sql:heartland_duration*(num+1);;}
-#       derived_column: other_duration_num {sql:other_duration*(num+1);;}
-      expression_custom_filter: ${bigquery_churn_model.end_date_date} <= add_days(-31,now()) AND ${bigquery_churn_model.end_date_date} >= add_days(-59,now()) ;;
+      derived_column: bates_plays_num {sql:bates_plays*(num+1);;}
+      derived_column: bates_duration_num {sql:bates_duration*(num+1);;}
+      derived_column: heartland_plays_num {sql:heartland_plays*(num+1);;}
+      derived_column: other_plays_num {sql:other_plays*(num+1);;}
+      derived_column: heartland_duration_num {sql:heartland_duration*(num+1);;}
+      derived_column: other_duration_num {sql:other_duration*(num+1);;}
+      expression_custom_filter: ${bigquery_churn_model.event_created_at_date} <= add_days(-31,now()) AND ${bigquery_churn_model.event_created_at_date} >= add_days(-41,now()) ;;
     }
   }
-  dimension: customer_id {type: number}
-  dimension: num {
-    type: number
+  dimension: customer_id {
+    type: string
   }
-  dimension: state {}
-  dimension: addwatchlist {
-    type: number
-  }
-  dimension: bates_duration {
-    type: number
-  }
-  dimension: bates_plays {
-    type: number
-  }
-  dimension: churn_status {
-    type: number
-  }
-  dimension: error {
-    type: number
-  }
-  dimension: heartland_duration {
-    type: number
-  }
-  dimension: heartland_plays {
-    type: number
-  }
-  dimension: other_duration {
-    type: number
-  }
-  dimension: other_plays {
-    type: number
-  }
-  dimension: platform {}
-  dimension: removewatchlist {
-    type: number
-  }
-  dimension: view {
-    type: number
-  }
+  dimension: marketing_optin {type:number}
+  dimension: num {type:number}
+  dimension: state {type:string}
+  dimension: addwatchlist {type:number}
+  dimension: bates_duration {type:number}
+  dimension: bates_plays {type:number}
+  dimension: churn_status {type:number}
+  dimension: error {type:number}
+  dimension: heartland_duration {type:number}
+  dimension: heartland_plays {type:number}
+  dimension: other_duration {type:number}
+  dimension: other_plays {type:number}
+  dimension: platform {type:string}
+  dimension: removewatchlist {type:number}
+  dimension: view {type:number}
+
 }
 
 ######################## MODEL #############################
@@ -157,7 +118,7 @@ view: churn_model {
       OPTIONS(model_type='logistic_reg'
         , labels=['churn_status']
         , min_rel_progress = 0.00000005
-        , max_iterations = 99
+        , max_iterations = 10
         ) AS
       SELECT
          * EXCEPT(customer_id)
@@ -174,7 +135,7 @@ view: churn_model_evaluation {
   derived_table: {
     sql: SELECT * FROM ml.EVALUATE(
           MODEL ${churn_model.SQL_TABLE_NAME},
-          (SELECT * FROM ${churn_testing_input.SQL_TABLE_NAME}), struct(0.25 as threshold));;
+          (SELECT * FROM ${churn_testing_input.SQL_TABLE_NAME}), struct(0.2 as threshold));;
   }
   dimension: recall {
     type: number
@@ -191,7 +152,7 @@ view: churn_confusion_matrix {
   derived_table: {
     sql: SELECT * FROM ml.confusion_matrix(
         MODEL ${churn_model.SQL_TABLE_NAME},
-        (SELECT * FROM ${churn_testing_input.SQL_TABLE_NAME}),struct(0.25 as threshold));;
+        (SELECT * FROM ${churn_testing_input.SQL_TABLE_NAME}),struct(0.2 as threshold));;
   }
 
   dimension: expected_label {}
@@ -297,157 +258,135 @@ view: churn_weights {
 
 # ########################################## PREDICT FUTURE ############################
 explore: churn_prediction {}
-  view: churn_future_input {
-    derived_table: {
-      explore_source: bigquery_churn_model {
-        column: customer_id {}
-        column: num {}
-        column: state {}
-        column: addwatchlist {}
-        column: bates_duration {}
-        column: bates_plays {}
-        column: churn_status {}
-        column: error {}
-        column: heartland_duration {}
-        column: heartland_plays {}
-        column: other_duration {}
-        column: other_plays {}
-        column: platform {}
-        column: removewatchlist {}
-        column: view {}
-#       derived_column: bates_plays_num {sql:bates_plays*(num+1);;}
-#       derived_column: bates_duration_num {sql:bates_duration*(num+1);;}
-#       derived_column: heartland_plays_num {sql:heartland_plays*(num+1);;}
-#       derived_column: other_plays_num {sql:other_plays*(num+1);;}
-#       derived_column: heartland_duration_num {sql:heartland_duration*(num+1);;}
-#       derived_column: other_duration_num {sql:other_duration*(num+1);;}
-        filters: {
-          field: bigquery_churn_model.status
-          value: "enabled"
-        }
-        expression_custom_filter: ${bigquery_churn_model.end_date_date} >= add_days(-29,now()) ;;
-      }
-    }
-    dimension: customer_id {type: number}
-    dimension: num {
-      type: number
-    }
-    dimension: state {}
-    dimension: addwatchlist {
-      type: number
-    }
-    dimension: bates_duration {
-      type: number
-    }
-    dimension: bates_plays {
-      type: number
-    }
-    dimension: churn_status {
-      type: number
-    }
-    dimension: error {
-      type: number
-    }
-    dimension: heartland_duration {
-      type: number
-    }
-    dimension: heartland_plays {
-      type: number
-    }
-    dimension: other_duration {
-      type: number
-    }
-    dimension: other_plays {
-      type: number
-    }
-    dimension: platform {}
-    dimension: removewatchlist {
-      type: number
-    }
-    dimension: view {
-      type: number
+view: churn_future_input {
+  derived_table: {
+    explore_source: bigquery_churn_model {
+      column: customer_id {}
+      column: marketing_optin {}
+      column: num {}
+      column: state {}
+      column: addwatchlist {}
+      column: bates_duration {}
+      column: bates_plays {}
+      column: churn_status {}
+      column: error {}
+      column: heartland_duration {}
+      column: heartland_plays {}
+      column: other_duration {}
+      column: other_plays {}
+      column: platform {}
+      column: removewatchlist {}
+      column: view {}
+      derived_column: bates_plays_num {sql:bates_plays*(num+1);;}
+      derived_column: bates_duration_num {sql:bates_duration*(num+1);;}
+      derived_column: heartland_plays_num {sql:heartland_plays*(num+1);;}
+      derived_column: other_plays_num {sql:other_plays*(num+1);;}
+      derived_column: heartland_duration_num {sql:heartland_duration*(num+1);;}
+      derived_column: other_duration_num {sql:other_duration*(num+1);;}
+
+      expression_custom_filter: ${bigquery_churn_model.end_date_date} >= now() ;;
     }
   }
+  dimension: customer_id {
+    type: string
+  }
+  dimension: marketing_optin {type:number}
+  dimension: num {type:number}
+  dimension: state {type:string}
+  dimension: addwatchlist {type:number}
+  dimension: bates_duration {type:number}
+  dimension: bates_plays {type:number}
+  dimension: churn_status {type:number}
+  dimension: error {type:number}
+  dimension: heartland_duration {type:number}
+  dimension: heartland_plays {type:number}
+  dimension: other_duration {type:number}
+  dimension: other_plays {type:number}
+  dimension: platform {type:string}
+  dimension: removewatchlist {type:number}
+  dimension: view {type:number}
 
-  view: churn_prediction {
-    derived_table: {
-      sql: SELECT * FROM ml.PREDICT(
+}
+
+view: churn_prediction {
+  derived_table: {
+    sql: SELECT * FROM ml.PREDICT(
           MODEL ${churn_model.SQL_TABLE_NAME},
-          (SELECT * FROM ${churn_future_input.SQL_TABLE_NAME}),struct(0.25 as threshold));;
-    }
+          (SELECT * FROM ${churn_future_input.SQL_TABLE_NAME}),struct(0.5 as threshold));;
+  }
 
-    dimension: customer_id {type: number}
-    dimension: num {
-      type: number
-    }
-    dimension: state {}
-    dimension: addwatchlist {
-      type: number
-    }
-    dimension: bates_duration {
-      type: number
-    }
-    dimension: bates_plays {
-      type: number
-    }
-    dimension: churn_status {
-      type: number
-    }
-    dimension: error {
-      type: number
-    }
-    dimension: heartland_duration {
-      type: number
-    }
-    dimension: heartland_plays {
-      type: number
-    }
-    dimension: other_duration {
-      type: number
-    }
-    dimension: other_plays {
-      type: number
-    }
-    dimension: platform {}
-    dimension: removewatchlist {
-      type: number
-    }
-    dimension: view {
-      type: number
-    }
+  dimension: customer_id {type: number}
+  dimension: num {
+    type: number
+  }
+  dimension: state {}
+  dimension: addwatchlist {
+    type: number
+  }
+  dimension: bates_duration {
+    type: number
+  }
+  dimension: bates_plays {
+    type: number
+  }
+  dimension: churn_status {
+    type: number
+  }
+  dimension: error {
+    type: number
+  }
+  dimension: heartland_duration {
+    type: number
+  }
+  dimension: heartland_plays {
+    type: number
+  }
+  dimension: other_duration {
+    type: number
+  }
+  dimension: other_plays {
+    type: number
+  }
+  dimension: platform {}
+  dimension: removewatchlist {
+    type: number
+  }
+  dimension: view {
+    type: number
+  }
 
-    dimension: predicted_churn_status {
-      type: number
-      description: "Binary classification based on max predicted value"
-    }
-    dimension: predicted_churn_status_probability {
-      value_format_name: percent_2
-      type: number
-      sql:  ${TABLE}.predicted_churn_status_probs[ORDINAL(1)].prob;;
-    }
-    measure: max_predicted_score {
-      type: max
-      value_format_name: percent_2
-      sql: ${predicted_churn_status_probability} ;;
-    }
-    measure: min_predicted_score {
-      type: min
-      value_format_name: percent_2
-      sql: ${predicted_churn_status_probability} ;;
-    }
-    measure: average_predicted_score {
-      type: average
-      value_format_name: percent_2
-      sql: ${predicted_churn_status_probability} ;;
-    }
-    measure: median_predicted_score {
-      type: median
-      value_format_name: percent_2
-      sql: ${predicted_churn_status_probability} ;;
-    }
+  dimension: predicted_churn_status {
+    type: number
+    description: "Binary classification based on max predicted value"
+  }
+  dimension: predicted_churn_status_probability {
+    value_format_name: percent_2
+    type: number
+    sql:  ${TABLE}.predicted_churn_status_probs[ORDINAL(1)].prob;;
+  }
+  measure: max_predicted_score {
+    type: max
+    value_format_name: percent_2
+    sql: ${predicted_churn_status_probability} ;;
+  }
+  measure: min_predicted_score {
+    type: min
+    value_format_name: percent_2
+    sql: ${predicted_churn_status_probability} ;;
+  }
+  measure: average_predicted_score {
+    type: average
+    value_format_name: percent_2
+    sql: ${predicted_churn_status_probability} ;;
+  }
+  measure: median_predicted_score {
+    type: median
+    value_format_name: percent_2
+    sql: ${predicted_churn_status_probability} ;;
+  }
 
-    measure: count {
-      type: count
-    }
+  measure: count {
+    type: count
+  }
 
-    }
+}

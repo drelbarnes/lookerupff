@@ -1,46 +1,30 @@
 view: bigquery_churn_model {
   derived_table: {
-    sql:with a as
-      (SELECT -1+ROW_NUMBER() OVER() AS num
-      FROM UNNEST((SELECT SPLIT(FORMAT("%600s", ""),'') AS h FROM (SELECT NULL))) AS pos
-      ORDER BY num),
+    sql:
+(with a as
+(select user_id,
+        min(date(status_date)) as conversion_date
+ from http_api.purchase_event
+ where (topic='customer.product.renewed' or status='renewed') and date(created_at)>'2018-10-31' and date(status_date)>'2018-11-13'
+ group by 1),
 
-      b as
-      (select *,
-             case when status in ("enabled") then (date_diff(current_date, date_add(date(customer_created_at), interval 14 day), month))
-                  when status in ("cancelled","disabled","refunded","expired") and (date_diff(date(event_created_at), date_add(date(customer_created_at), interval 14 day), month))>=0
-                       then (date_diff(date(event_created_at), date_add(date(customer_created_at), interval 14 day), month))
-                  when status in ("cancelled","disabled","refunded","expired") and (date_diff(date(event_created_at), date_add(date(customer_created_at), interval 14 day), month))<0 then 0
-             end as months_since_conversion,
-             case when status in ("enabled") then date_diff(current_date, date_add(date(customer_created_at), interval 14 day), day)
-                  when status in ("cancelled","disabled","refunded","expired") then date_diff(date(event_created_at), date_add(date(customer_created_at), interval 14 day), day)
-             end as days_since_conversion
-      from customers.subscribers
-      where status is not null or status not in ("free_trial","paused")
-      order by months_since_conversion desc),
+e as
+(select b.user_id,
+       created_at,
+       conversion_date,
+       status_date,
+       topic,
+       region,
+       platform,
+       date(status_date) as start_date,
+       date_sub(date_add(date(status_date), interval 1 month),interval 1 day) as end_date,
+       date_diff(date(status_date),(conversion_date),month) as num,
+       case when moptin=true then 1 else 0 end as marketing_optin,
+       case when topic in ('customer.product.expired','customer.product.disabled','customer.product.cancelled') then 1 else 0 end as churn_status
+from http_api.purchase_event as b inner join a on a.user_id=b.user_id
+where conversion_date is not null and topic in ('customer.product.expired','customer.product.disabled','customer.product.cancelled','customer.product.renewed') and (country='United States' or country is null)
+order by user_id, status_date),
 
-      c as
-      (select customer_id,
-             max(num) as max_num
-      from b, a
-      where months_since_conversion>=num
-      group by customer_id),
-
-      d as
-      (select b.*,
-              num
-      from b, a
-      where months_since_conversion>=num),
-
-      e as (
-      select d.*,
-             case when num=0 then date(customer_created_at) else
-             date_add(date_add(date(customer_created_at), interval 14 day),interval num*30 day) end as start_date,
-             case when status="enabled" or num<max_num then date_add(date_add(date(customer_created_at), interval 14 day),interval (num+1)*30 day)
-                  when status<>"enabled" and num=max_num then date(event_created_at) end as end_date,
-             case when status="enabled" or num<max_num then 0
-                  when status<>"enabled" and num=max_num then 1 end as churn_status
-      from d inner join c on d.customer_id=c.customer_id),
 
       awl as
       (SELECT user_id,timestamp, 1 as addwatchlist FROM javascript.addwatchlist where user_id is not null
@@ -50,13 +34,13 @@ view: bigquery_churn_model {
         SELECT user_id,timestamp, 1 as addwatchlist FROM ios.addwatchlist where user_id is not null),
 
       f as
-      (select customer_id,
+      (select e.user_id,
               num,
              case when addwatchlist is null then 0 else 1 end as addwatchlist
-      from e left join awl on customer_id=safe_cast(user_id as int64) and date(timestamp) between start_date and end_date),
+      from e left join awl on e.user_id=awl.user_id and date(timestamp) between start_date and end_date),
 
       awl1 as
-      (select customer_id,
+      (select user_id,
              num,
              sum(addwatchlist) as addwatchlist
       from f
@@ -70,13 +54,13 @@ view: bigquery_churn_model {
         SELECT user_id,timestamp, 1 as error FROM ios.error where user_id is not null),
 
       g as
-      (select customer_id,
+      (select e.user_id,
               num,
              case when error is null then 0 else 1 end as error
-      from e left join error on customer_id=safe_cast(user_id as int64) and date(timestamp) between start_date and end_date),
+      from e left join error on e.user_id=error.user_id and date(timestamp) between start_date and end_date),
 
       error1 as
-      (select customer_id,
+      (select user_id,
              num,
              sum(error)-1 as error
       from g
@@ -90,13 +74,13 @@ view: bigquery_churn_model {
         SELECT user_id,timestamp, 1 as removewatchlist FROM ios.removewatchlist where user_id is not null),
 
       i as
-      (select customer_id,
+      (select e.user_id,
               num,
               case when removewatchlist is null then 0 else 1 end as removewatchlist
-      from e left join rwl on customer_id=safe_cast(user_id as int64) and date(timestamp) between start_date and end_date),
+      from e left join rwl on e.user_id=rwl.user_id and date(timestamp) between start_date and end_date),
 
       rwl1 as
-      (select customer_id,
+      (select user_id,
              num,
              sum(removewatchlist) as removewatchlist
       from i
@@ -110,13 +94,13 @@ view: bigquery_churn_model {
         SELECT user_id,timestamp, 1 as view FROM ios.view where user_id is not null),
 
       j as
-      (select customer_id,
+      (select e.user_id,
               num,
               case when view is null then 0 else 1 end as view
-      from e left join view on customer_id=safe_cast(user_id as int64) and date(timestamp) between start_date and end_date),
+      from e left join view on e.user_id=cast(view.user_id as string) and date(timestamp) between start_date and end_date),
 
       view1 as
-      (select customer_id,
+      (select user_id,
              num,
              sum(view)-1 as view
       from j
@@ -199,15 +183,15 @@ view: bigquery_churn_model {
             FROM apple),
 
       k as
-      (select customer_id,
+      (select e.user_id,
               num,
               case when bates_plays is null then 0 else bates_plays end as bates_plays,
               case when heartland_plays is null then 0 else heartland_plays end as heartland_plays,
               case when other_plays is null then 0 else other_plays end as other_plays
-      from e left join fp on customer_id=safe_cast(user_id as int64) and date(timestamp) between start_date and end_date),
+      from e left join fp on e.user_id=fp.user_id and date(timestamp) between start_date and end_date),
 
       fp1 as
-      (select customer_id,
+      (select user_id,
              num,
              sum(bates_plays) as bates_plays,
              sum(heartland_plays) as heartland_plays,
@@ -298,15 +282,15 @@ view: bigquery_churn_model {
          FROM ios),
 
       l as
-      (select customer_id,
+      (select e.user_id,
               num,
               case when bates_duration is null then 0 else bates_duration end as bates_duration,
               case when heartland_duration is null then 0 else heartland_duration end as heartland_duration,
               case when other_duration is null then 0 else other_duration end as other_duration
-      from e left join duration on customer_id=safe_cast(user_id as int64) and date(timestamp) between start_date and end_date),
+      from e left join duration on e.user_id=duration.user_id and date(timestamp) between start_date and end_date),
 
       duration1 as
-      (select customer_id,
+      (select user_id,
              num,
              sum(bates_duration) as bates_duration,
              sum(heartland_duration) as heartland_duration,
@@ -326,13 +310,13 @@ m as
              heartland_duration,
              other_plays,
              other_duration
-      from e left join awl1 on e.customer_id=awl1.customer_id and e.num=awl1.num
-             left join error1 on e.customer_id=error1.customer_id and e.num=error1.num
-             left join rwl1 on e.customer_id=rwl1.customer_id and e.num=rwl1.num
-             left join view1 on e.customer_id=view1.customer_id and e.num=view1.num
-             left join fp1 on e.customer_id=fp1.customer_id and e.num=fp1.num
-             left join duration1 on e.customer_id=duration1.customer_id and e.num=duration1.num
-      where e.customer_id <>0),
+      from e left join awl1 on e.user_id=awl1.user_id and e.num=awl1.num
+             left join error1 on e.user_id=error1.user_id and e.num=error1.num
+             left join rwl1 on e.user_id=rwl1.user_id and e.num=rwl1.num
+             left join view1 on e.user_id=view1.user_id and e.num=view1.num
+             left join fp1 on e.user_id=fp1.user_id and e.num=fp1.num
+             left join duration1 on e.user_id=duration1.user_id and e.num=duration1.num
+      where e.user_id <>'0'),
 
 n as
 (select num,
@@ -357,18 +341,19 @@ n as
        max(other_plays) as op_max,
        max(other_duration) as od_max
 from m
-where num<12
+where num<12 and num>=0
 group by num)
 
-select m.customer_id,
-       event_created_at,
+select m.user_id,
+       status_date,
        m.num,
-       max_num,
-       state,
+       region as state,
        churn_status,
        end_date,
        platform,
-       status,
+       created_at,
+       topic as status,
+       marketing_optin,
        (addwatchlist-awl_min)/(awl_max-awl_min) as addwatchlist,
        (error-error_min)/(error_max-error_min) as error,
        (removewatchlist-rwl_min)/(rwl_max-rwl_min) as removewatchlist,
@@ -380,7 +365,19 @@ select m.customer_id,
        (other_plays-op_min)/(op_max-op_min) as other_plays,
        (other_duration-od_min)/(od_max-od_min) as other_duration
 from m left join n on m.num=n.num
-       left join c on m.customer_id=c.customer_id
+where
+awl_min<>awl_max and
+error_min<>error_max and
+rwl_min<>rwl_max and
+view_min<>view_max and
+bp_min<>bp_max and
+bd_min<>bd_max and
+hlp_min<>hlp_max and
+hld_min<>hld_max and
+op_min<>op_max and
+od_min<>od_max
+order by end_date)
+
 
        ;;
   }
@@ -392,7 +389,12 @@ from m left join n on m.num=n.num
 
   dimension: customer_id {
     type: number
-    sql: ${TABLE}.customer_id ;;
+    sql: ${TABLE}.user_id ;;
+  }
+
+  dimension: marketing_optin {
+    type: number
+    sql: ${TABLE}.marketing_optin ;;
   }
 
   dimension: email {
@@ -410,39 +412,9 @@ from m left join n on m.num=n.num
     sql: ${TABLE}.last_name ;;
   }
 
-  dimension: city {
-    type: string
-    sql: ${TABLE}.city ;;
-  }
-
   dimension: state {
     type: string
     sql: ${TABLE}.state ;;
-  }
-
-  dimension: country {
-    type: string
-    sql: ${TABLE}.country ;;
-  }
-
-  dimension: product_id {
-    type: number
-    sql: ${TABLE}.product_id ;;
-  }
-
-  dimension: product_name {
-    type: string
-    sql: ${TABLE}.product_name ;;
-  }
-
-  dimension: action {
-    type: string
-    sql: ${TABLE}.action ;;
-  }
-
-  dimension: action_type {
-    type: string
-    sql: ${TABLE}.action_type ;;
   }
 
   dimension: status {
@@ -450,59 +422,19 @@ from m left join n on m.num=n.num
     sql: ${TABLE}.status ;;
   }
 
-  dimension: frequency {
-    type: string
-    sql: ${TABLE}.frequency ;;
-  }
-
   dimension: platform {
     type: string
     sql: ${TABLE}.platform ;;
   }
 
-  dimension: coupon_code {
-    type: string
-    sql: ${TABLE}.coupon_code ;;
-  }
-
-  dimension: coupon_code_id {
-    type: string
-    sql: ${TABLE}.coupon_code_id ;;
-  }
-
-  dimension: promotion_id {
-    type: number
-    sql: ${TABLE}.promotion_id ;;
-  }
-
-  dimension: promotion_code {
-    type: string
-    sql: ${TABLE}.promotion_code ;;
-  }
-
-  dimension: campaign {
-    type: string
-    sql: ${TABLE}.campaign ;;
-  }
-
-  dimension: referrer {
-    type: string
-    sql: ${TABLE}.referrer ;;
-  }
-
   dimension_group: event_created_at {
     type: time
-    sql: ${TABLE}.event_created_at ;;
+    sql: ${TABLE}.status_date ;;
   }
 
   dimension_group: customer_created_at {
     type: time
-    sql: ${TABLE}.customer_created_at ;;
-  }
-
-  dimension: marketing_opt_in {
-    type: string
-    sql: ${TABLE}.marketing_opt_in ;;
+    sql: ${TABLE}.created_at ;;
   }
 
   dimension: months_since_conversion {
@@ -605,25 +537,11 @@ from m left join n on m.num=n.num
       email,
       first_name,
       last_name,
-      city,
       state,
-      country,
-      product_id,
-      product_name,
-      action,
-      action_type,
       status,
-      frequency,
       platform,
-      coupon_code,
-      coupon_code_id,
-      promotion_id,
-      promotion_code,
-      campaign,
-      referrer,
       event_created_at_time,
       customer_created_at_time,
-      marketing_opt_in,
       months_since_conversion,
       days_since_conversion,
       num,

@@ -50,7 +50,6 @@ platform,
 created_at as customer_created_at,
 (addwatchlist_count-awl_min)/(awl_max-awl_min) as addwatchlist_count
 from d,e
-order by 1
 
  ;;
   }
