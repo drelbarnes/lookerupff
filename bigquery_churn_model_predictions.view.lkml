@@ -30,7 +30,7 @@ view: churn_training_input {
       derived_column: other_plays_num {sql:other_plays*(num+1);;}
       derived_column: heartland_duration_num {sql:heartland_duration*(num+1);;}
       derived_column: other_duration_num {sql:other_duration*(num+1);;}
-      expression_custom_filter: ${bigquery_churn_model.event_created_at_date} <= add_days(-42,now()) AND ${bigquery_churn_model.event_created_at_date} > add_days(-55,now()) ;;
+      expression_custom_filter: ${bigquery_churn_model.event_created_at_date} <= add_days(-9,now()) AND ${bigquery_churn_model.event_created_at_date} >= add_days(-42,now()) ;;
     }
   }
   dimension: customer_id {
@@ -85,7 +85,7 @@ view: churn_testing_input {
       derived_column: other_plays_num {sql:other_plays*(num+1);;}
       derived_column: heartland_duration_num {sql:heartland_duration*(num+1);;}
       derived_column: other_duration_num {sql:other_duration*(num+1);;}
-      expression_custom_filter: ${bigquery_churn_model.event_created_at_date} <= add_days(-31,now()) AND ${bigquery_churn_model.event_created_at_date} >= add_days(-41,now()) ;;
+      expression_custom_filter: ${bigquery_churn_model.event_created_at_date} < now() AND ${bigquery_churn_model.event_created_at_date} >= add_days(-8,now()) ;;
     }
   }
   dimension: customer_id {
@@ -135,7 +135,7 @@ view: churn_model_evaluation {
   derived_table: {
     sql: SELECT * FROM ml.EVALUATE(
           MODEL ${churn_model.SQL_TABLE_NAME},
-          (SELECT * FROM ${churn_testing_input.SQL_TABLE_NAME}), struct(0.2 as threshold));;
+          (SELECT * FROM ${churn_testing_input.SQL_TABLE_NAME}), struct(0.15 as threshold));;
   }
   dimension: recall {
     type: number
@@ -152,7 +152,7 @@ view: churn_confusion_matrix {
   derived_table: {
     sql: SELECT * FROM ml.confusion_matrix(
         MODEL ${churn_model.SQL_TABLE_NAME},
-        (SELECT * FROM ${churn_testing_input.SQL_TABLE_NAME}),struct(0.2 as threshold));;
+        (SELECT * FROM ${churn_testing_input.SQL_TABLE_NAME}),struct(0.15 as threshold));;
   }
 
   dimension: expected_label {}
@@ -312,7 +312,7 @@ view: churn_prediction {
   derived_table: {
     sql: SELECT * FROM ml.PREDICT(
           MODEL ${churn_model.SQL_TABLE_NAME},
-          (SELECT * FROM ${churn_future_input.SQL_TABLE_NAME}),struct(0.5 as threshold));;
+          (SELECT * FROM ${churn_future_input.SQL_TABLE_NAME}),struct(0.15 as threshold));;
   }
 
   dimension: customer_id {type: number}

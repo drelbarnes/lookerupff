@@ -5,7 +5,7 @@ view: bigquery_churn_model {
 (select user_id,
         min(date(status_date)) as conversion_date
  from http_api.purchase_event
- where (topic='customer.product.renewed' or status='renewed') and date(created_at)>'2018-10-31' and date(status_date)>'2018-11-13'
+ where ((topic='customer.product.renewed' or status='renewed') and date(created_at)>'2018-10-31') or (topic='customer.product.created' and date_diff(date(status_date),date(created_at),day)>14 and date(created_at)>'2018-10-31')
  group by 1),
 
 e as
@@ -17,13 +17,12 @@ e as
        region,
        platform,
        date(status_date) as start_date,
-       date_sub(date_add(date(status_date), interval 1 month),interval 1 day) as end_date,
+       date_add(date(status_date), interval 30 day) as end_date,
        date_diff(date(status_date),(conversion_date),month) as num,
        case when moptin=true then 1 else 0 end as marketing_optin,
        case when topic in ('customer.product.expired','customer.product.disabled','customer.product.cancelled') then 1 else 0 end as churn_status
 from http_api.purchase_event as b inner join a on a.user_id=b.user_id
-where conversion_date is not null and topic in ('customer.product.expired','customer.product.disabled','customer.product.cancelled','customer.product.renewed') and (country='United States' or country is null)
-order by user_id, status_date),
+where conversion_date is not null and topic in ('customer.product.expired','customer.product.disabled','customer.product.cancelled','customer.product.renewed') and (country='United States' or country is null)),
 
 
       awl as
@@ -375,11 +374,7 @@ bd_min<>bd_max and
 hlp_min<>hlp_max and
 hld_min<>hld_max and
 op_min<>op_max and
-od_min<>od_max
-order by end_date)
-
-
-       ;;
+od_min<>od_max);;
   }
 
   measure: count {
