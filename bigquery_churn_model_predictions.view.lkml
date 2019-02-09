@@ -85,7 +85,7 @@ view: churn_testing_input {
       derived_column: other_plays_num {sql:other_plays*(num+1);;}
       derived_column: heartland_duration_num {sql:heartland_duration*(num+1);;}
       derived_column: other_duration_num {sql:other_duration*(num+1);;}
-      expression_custom_filter: ${bigquery_churn_model.event_created_at_date} < now() AND ${bigquery_churn_model.event_created_at_date} >= add_days(-8,now()) ;;
+      expression_custom_filter: ${bigquery_churn_model.event_created_at_date} < now() AND ${bigquery_churn_model.event_created_at_date} > add_days(-9,now()) ;;
     }
   }
   dimension: customer_id {
