@@ -443,6 +443,13 @@ view: future_purchase_prediction {
     sql:  ${TABLE}.predicted_get_status_probs[ORDINAL(1)].prob;;
   }
 
+  dimension: predicted_get_probability_score{
+    #value_format_name: id
+    value_format: "0"
+    type: number
+    sql:  ${TABLE}.predicted_get_status_probs[ORDINAL(1)].prob * 100;;
+  }
+
   dimension: predicted_probability {
     type: number
     sql:  ${predicted_get_status_probability};;

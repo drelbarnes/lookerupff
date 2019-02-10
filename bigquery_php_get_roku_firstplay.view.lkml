@@ -189,4 +189,9 @@ view: bigquery_php_get_roku_firstplay {
     type: count
     drill_fields: [id, context_library_name, collection_name]
   }
+
+  measure: distinct_count {
+    type: count_distinct
+    sql: ${email};;
+  }
 }
