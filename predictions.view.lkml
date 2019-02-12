@@ -68,7 +68,7 @@ view: training_input {
 #       derived_column: other_day_4 {sql: other_play_day_4*other_duration_day_4;;}
 
 
-      expression_custom_filter: ${bigquery_subscribers_v2.customer_created_date}<=add_days(-16,now()) AND ${bigquery_subscribers_v2.customer_created_date}>=date(2018,12,14);;
+      expression_custom_filter: ${bigquery_subscribers_v2.customer_created_date}<=add_days(-18,now()) AND ${bigquery_subscribers_v2.customer_created_date}>=date(2018,12,14);;
     }
   }
 
@@ -138,7 +138,7 @@ view: testing_input {
 #       derived_column: other_day_3 {sql: other_play_day_3*other_duration_day_3;;}
 #       derived_column: other_day_4 {sql: other_play_day_4*other_duration_day_4;;}
 
-      expression_custom_filter: ${bigquery_subscribers_v2.customer_created_date}<add_days(-14,now()) AND ${bigquery_subscribers_v2.customer_created_date}>add_days(-16,now());;
+      expression_custom_filter: ${bigquery_subscribers_v2.customer_created_date}<add_days(-15,now()) AND ${bigquery_subscribers_v2.customer_created_date}>add_days(-18,now());;
     }
   }
 
