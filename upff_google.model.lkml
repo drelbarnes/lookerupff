@@ -188,14 +188,14 @@ explore: bigquery_subscribers_v2 {
 }
 
 explore: bigquery_allfirstplay {
-  join: bigquery_analytics {
-    type: left_outer
-    sql_on: ${bigquery_allfirstplay.timestamp_date}=${bigquery_analytics.timestamp_date} ;;
-    relationship: one_to_one
-  }
   join: bigquery_http_api_purchase_event {
     type: left_outer
     sql_on: ${bigquery_allfirstplay.user_id}=${bigquery_http_api_purchase_event.user_id} ;;
+    relationship: one_to_one
+  }
+  join: bigquery_analytics {
+    type: left_outer
+    sql_on: ${bigquery_allfirstplay.timestamp_date}=${bigquery_analytics.timestamp_date} ;;
     relationship: one_to_one
   }
 }

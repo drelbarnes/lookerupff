@@ -5,7 +5,7 @@ view: bigquery_churn_model {
 (select user_id,
         min(date(status_date)) as conversion_date
  from http_api.purchase_event
- where ((topic='customer.product.renewed' or status='renewed') and date(created_at)>'2018-10-31') or (topic='customer.product.created' and date_diff(date(status_date),date(created_at),day)>14 and date(created_at)>'2018-10-31')
+ where ((topic='customer.product.renewed' or status='renewed') and date(created_at)>'2018-10-31') or (topic='customer.product.created' and date_diff(date(status_date),date(created_at),day)>15 and date(created_at)>'2018-10-31')
  group by 1),
 
 e as
@@ -22,7 +22,9 @@ e as
        case when moptin=true then 1 else 0 end as marketing_optin,
        case when topic in ('customer.product.expired','customer.product.disabled','customer.product.cancelled') then 1 else 0 end as churn_status
 from http_api.purchase_event as b inner join a on a.user_id=b.user_id
-where conversion_date is not null and topic in ('customer.product.expired','customer.product.disabled','customer.product.cancelled','customer.product.renewed') and (country='United States' or country is null)),
+where conversion_date is not null and topic in ('customer.product.expired','customer.product.disabled','customer.product.cancelled','customer.product.renewed')
+and (country='United States' or country is null)
+and (conversion_date)<=date(status_date)),
 
 
       awl as
@@ -61,7 +63,7 @@ where conversion_date is not null and topic in ('customer.product.expired','cust
       error1 as
       (select user_id,
              num,
-             sum(error)-1 as error
+             sum(error) as error
       from g
       group by 1,2),
 
@@ -101,7 +103,7 @@ where conversion_date is not null and topic in ('customer.product.expired','cust
       view1 as
       (select user_id,
              num,
-             sum(view)-1 as view
+             sum(view) as view
       from j
       group by 1,2),
 
