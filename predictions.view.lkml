@@ -300,7 +300,7 @@ view: future_input {
     column: customer_created_at_day {}
     column: days_played {field: bigquery_conversion_model_firstplay.days_played}
     column: user_id {}
-    column: email {}
+    #column: email {}
     column: state {}
     column: get_status {}
     column: addwatchlist_count { field: bigquery_conversion_model_addwatchlist.addwatchlist_count }
@@ -369,10 +369,6 @@ view: future_input {
     tags: ["user_id"]
     type: number
   }
-  dimension: email {
-    tags: ["email"]
-    type: string
-  }
   dimension: platform {}
   dimension: source {}
   dimension: frequency {}
@@ -399,10 +395,6 @@ view: future_purchase_prediction {
   dimension: frequency {}
   dimension: state {}
   dimension: get_status {}
-  dimension: email {
-    tags: ["email"]
-    type: string
-  }
   dimension: addwatchlist_count {}
   dimension: removewatchlist_count {}
   dimension: error_count {}
@@ -448,9 +440,9 @@ view: future_purchase_prediction {
 
   dimension: predicted_get_probability_score{
     #value_format_name: id
-    value_format: "0"
+    #value_format: "0"
     type: number
-    sql:  CAST(${TABLE}.predicted_get_status_probs[ORDINAL(1)].prob AS INT64);;
+    sql:  CAST(${TABLE}.predicted_get_status_probs[ORDINAL(1)].prob * 100 AS INT64);;
   }
 
   dimension: predicted_probability {
