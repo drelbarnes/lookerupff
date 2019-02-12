@@ -450,7 +450,7 @@ view: future_purchase_prediction {
     #value_format_name: id
     value_format: "0"
     type: number
-    sql:  ROUND(${TABLE}.predicted_get_status_probs[ORDINAL(1)].prob * 100);;
+    sql:  CAST(${TABLE}.predicted_get_status_probs[ORDINAL(1)].prob AS INT64);;
   }
 
   dimension: predicted_probability {
