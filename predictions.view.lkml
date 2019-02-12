@@ -300,6 +300,7 @@ view: future_input {
     column: customer_created_at_day {}
     column: days_played {field: bigquery_conversion_model_firstplay.days_played}
     column: user_id {}
+    column: email {}
     column: state {}
     column: get_status {}
     column: addwatchlist_count { field: bigquery_conversion_model_addwatchlist.addwatchlist_count }
@@ -370,6 +371,7 @@ view: future_input {
   }
   dimension: email {
     tags: ["email"]
+    type: string
   }
   dimension: platform {}
   dimension: source {}
@@ -399,6 +401,7 @@ view: future_purchase_prediction {
   dimension: get_status {}
   dimension: email {
     tags: ["email"]
+    type: string
   }
   dimension: addwatchlist_count {}
   dimension: removewatchlist_count {}
@@ -441,6 +444,13 @@ view: future_purchase_prediction {
     value_format_name: percent_2
     type: number
     sql:  ${TABLE}.predicted_get_status_probs[ORDINAL(1)].prob;;
+  }
+
+  dimension: predicted_get_probability_score{
+    #value_format_name: id
+    value_format: "0"
+    type: number
+    sql:  ROUND(${TABLE}.predicted_get_status_probs[ORDINAL(1)].prob * 100);;
   }
 
   dimension: predicted_probability {
