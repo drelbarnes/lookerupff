@@ -15,7 +15,10 @@ include: "app_installers.view.lkml"
 include: "timeupdate.view.lkml"
 include: "daily_cpa.view.lkml"
 include: "mtd_free_trials.view.lkml"
+include: "daily_spend_v2.view.lkml"
 
+
+explore: daily_spend_v2 {}
 
 explore: mtd_free_trials{}
 

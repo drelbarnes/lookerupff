@@ -355,7 +355,7 @@ view: future_input {
 #       derived_column: other_day_3 {sql: other_play_day_3*other_duration_day_3;;}
 #       derived_column: other_day_4 {sql: other_play_day_4*other_duration_day_4;;}
 
-    expression_custom_filter: ${bigquery_subscribers_v2.subscription_length}>8 AND ${bigquery_subscribers_v2.subscription_length}<=14;;
+    expression_custom_filter: ${bigquery_subscribers_v2.customer_created_date}<add_days(-8,now()) AND ${bigquery_subscribers_v2.customer_created_date}>=add_days(-15,now());;
   }
   }
 

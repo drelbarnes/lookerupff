@@ -27,7 +27,7 @@ where topic in ('customer.product.free_trial_created','customer.product.created'
 renewed as
 (select distinct user_id, 1 as get_status
 from http_api.purchase_event
-where topic='customer.product.renewed')
+where ((topic='customer.product.renewed' or status='renewed') and date(created_at)>'2018-10-31') or (topic='customer.product.created' and date_diff(date(status_date),date(created_at),day)>14)and date(created_at)>'2018-10-31')
 
 select s.*,
        case when number_of_platforms is null then 1 else number_of_platforms end as number_of_platforms,

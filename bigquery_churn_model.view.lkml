@@ -5,7 +5,7 @@ view: bigquery_churn_model {
 (select user_id,
         min(date(status_date)) as conversion_date
  from http_api.purchase_event
- where ((topic='customer.product.renewed' or status='renewed') and date(created_at)>'2018-10-31') or (topic='customer.product.created' and date_diff(date(status_date),date(created_at),day)>15 and date(created_at)>'2018-10-31')
+ where ((topic='customer.product.renewed' or status='renewed') and date(created_at)>'2018-10-31') or (topic='customer.product.created' and date_diff(date(status_date),date(created_at),day)>14 and date(created_at)>'2018-10-31')
  group by 1),
 
 e as
@@ -20,9 +20,9 @@ e as
        date_add(date(status_date), interval 30 day) as end_date,
        date_diff(date(status_date),(conversion_date),month) as num,
        case when moptin=true then 1 else 0 end as marketing_optin,
-       case when topic in ('customer.product.expired','customer.product.disabled','customer.product.cancelled') then 1 else 0 end as churn_status
+       case when topic = "customer.product.renewed" or status="renewed" then 0 else 1 end as churn_status
 from http_api.purchase_event as b inner join a on a.user_id=b.user_id
-where conversion_date is not null and topic in ('customer.product.expired','customer.product.disabled','customer.product.cancelled','customer.product.renewed')
+where conversion_date is not null and (topic in ('customer.product.expired','customer.product.disabled','customer.product.cancelled','customer.product.renewed') or status in ("disabled","cancelled","customer.product.expired","renewed") or charge_status="expired")
 and (country='United States' or country is null)
 and (conversion_date)<=date(status_date)),
 
@@ -486,6 +486,11 @@ od_min<>od_max);;
   dimension: error {
     type: number
     sql: ${TABLE}.error ;;
+  }
+
+  measure: error_ {
+    type: sum
+    sql: ${error} ;;
   }
 
   dimension: removewatchlist {

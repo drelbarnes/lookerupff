@@ -38,6 +38,8 @@ group by a1.timestamp,a1.paying_churn)),
          from (select distinct * from (select a.*,
                 case when extract(YEAR from a.timestamp)='2018' then 795+((49000-795)*(cast(datepart(dayofyear,date(a.timestamp)) as integer)-1)/365)
                      when extract(YEAR from a.timestamp)='2019' then 16680+((55000-16680)*(cast(datepart(dayofyear,date(a.timestamp)) as integer)-1)/365) end as target,
+                case when extract(YEAR from a.timestamp)='2018' then 3246+((49000-3246)*(cast(datepart(dayofyear,date(a.timestamp)) as integer)-1)/365)
+                     when extract(YEAR from a.timestamp)='2019' then 24268+((55000-24268)*(cast(datepart(dayofyear,date(a.timestamp)) as integer)-1)/365) end as total_target,
                 16680+((55000-16680)*(cast(datepart(dayofyear,date(a.timestamp)) as integer)+14)/365) as target_14_days_future,
                 cast(datepart(dayofyear,date(a.timestamp)) as integer)-1 as day_of_year,
                 cast(datepart(dayofyear,date(a.timestamp)) as integer)+14 as day_of_year_14_days,
@@ -114,6 +116,16 @@ measure: targets {
   type: sum
   sql: ${target} ;;
 }
+
+  dimension: total_target {
+    type: number
+    sql: ${TABLE}.total_target ;;
+  }
+
+  measure: total_target_ {
+    type: sum
+    sql: ${total_target} ;;
+  }
 
   dimension: target_14_days_future {
     type: number
