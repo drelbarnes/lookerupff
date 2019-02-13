@@ -20,7 +20,7 @@ from http_api.purchase_event
 where topic in ('customer.product.free_trial_created','customer.product.created','customer.created') and date(created_at)=date(received_at) and date(created_at)>'2018-10-31'
 group by 1)
 
-select a.user_id, a.platform, a.email, created_at, region
+select a.user_id, a.platform, a.email, a.moptin, created_at, region
 from b inner join http_api.purchase_event as a on a.user_id=b.user_id and a.received_at=b.received_at
 where topic in ('customer.product.free_trial_created','customer.product.created','customer.created') and date(created_at)=date(a.received_at) and date(created_at)>'2018-10-31'),
 
@@ -45,6 +45,10 @@ from purchase_event as s left join b on s.user_id=b.user_id left join renewed as
       sql: ${TABLE}.city ;;
     }
 
+    dimension: moptin {
+      type: yesno
+      sql: ${TABLE}.moptin ;;
+    }
 
     dimension: country {
       type: string
