@@ -300,7 +300,7 @@ view: future_input {
     column: customer_created_at_day {}
     column: days_played {field: bigquery_conversion_model_firstplay.days_played}
     column: user_id {}
-    #column: email {}
+    column: email {}
     column: state {}
     column: get_status {}
     column: addwatchlist_count { field: bigquery_conversion_model_addwatchlist.addwatchlist_count }
@@ -369,6 +369,10 @@ view: future_input {
     tags: ["user_id"]
     type: number
   }
+  dimension: email {
+    tags: ["email"]
+    type:string
+  }
   dimension: platform {}
   dimension: source {}
   dimension: frequency {}
@@ -391,6 +395,10 @@ view: future_purchase_prediction {
   dimension: user_id {
     tags: ["user_id"]
     type: number
+  }
+  dimension: email {
+    tags: ["email"]
+    type: string
   }
   dimension: frequency {}
   dimension: state {}

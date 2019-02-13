@@ -3,11 +3,11 @@
       sql:
 with a as
 
-(select distinct id as user_id, 'web' as source from javascript.users
+(select distinct id as user_id, email, 'web' as source from javascript.users
 union all
-select distinct id as user_id, 'android' as source from android.users
+select distinct id as user_id, email, 'android' as source from android.users
 union all
-select distinct id as user_id, 'ios' as source from ios.users),
+select distinct id as user_id, email, 'ios' as source from ios.users),
 
 b as
 (select user_id, count(1) as number_of_platforms from a group by 1 order by 2 desc),
@@ -20,7 +20,7 @@ from http_api.purchase_event
 where topic in ('customer.product.free_trial_created','customer.product.created','customer.created') and date(created_at)=date(received_at) and date(created_at)>'2018-10-31'
 group by 1)
 
-select a.user_id, a.platform, created_at, region
+select a.user_id, a.platform, a.email, created_at, region
 from b inner join http_api.purchase_event as a on a.user_id=b.user_id and a.received_at=b.received_at
 where topic in ('customer.product.free_trial_created','customer.product.created','customer.created') and date(created_at)=date(a.received_at) and date(created_at)>'2018-10-31'),
 
@@ -44,6 +44,7 @@ from purchase_event as s left join b on s.user_id=b.user_id left join renewed as
       type: string
       sql: ${TABLE}.city ;;
     }
+
 
     dimension: country {
       type: string
