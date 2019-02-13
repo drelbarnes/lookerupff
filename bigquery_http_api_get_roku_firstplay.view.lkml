@@ -1,5 +1,5 @@
-view: bigquery_php_get_roku_firstplay {
-  sql_table_name: php.get_roku_firstplay ;;
+view: bigquery_http_api_get_roku_firstplay {
+  sql_table_name: http_api.get_roku_firstplay ;;
 
   dimension: id {
     primary_key: yes
@@ -10,11 +10,6 @@ view: bigquery_php_get_roku_firstplay {
   dimension: collection_id {
     type: string
     sql: ${TABLE}.collection_id ;;
-  }
-
-  dimension: collection_name {
-    type: string
-    sql: ${TABLE}.collection_name ;;
   }
 
   dimension: context_library_consumer {
@@ -127,11 +122,6 @@ view: bigquery_php_get_roku_firstplay {
     sql: ${TABLE}.sent_at ;;
   }
 
-  dimension: series {
-    type: string
-    sql: ${TABLE}.series ;;
-  }
-
   dimension_group: timestamp {
     type: time
     timeframes: [
@@ -144,11 +134,6 @@ view: bigquery_php_get_roku_firstplay {
       year
     ]
     sql: ${TABLE}.timestamp ;;
-  }
-
-  dimension: title {
-    type: string
-    sql: ${TABLE}.title ;;
   }
 
   dimension: total_minutes_watched {
@@ -187,11 +172,6 @@ view: bigquery_php_get_roku_firstplay {
 
   measure: count {
     type: count
-    drill_fields: [id, context_library_name, collection_name]
-  }
-
-  measure: distinct_count {
-    type: count_distinct
-    sql: ${email};;
+    drill_fields: [id, context_library_name]
   }
 }
