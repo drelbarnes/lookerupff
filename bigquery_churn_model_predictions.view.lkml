@@ -31,11 +31,11 @@ view: churn_training_input {
       derived_column: heartland_duration_num {sql:heartland_duration*(num+1);;}
       derived_column: other_duration_num {sql:other_duration*(num+1);;}
 
-      derived_column: addwatchlist_num {sql:addwatchlist*(num+1);;}
-      derived_column: error_num {sql:error*(num+1);;}
-      derived_column: removewatchlist_num {sql:removewatchlist*(num+1);;}
-      derived_column: view_num {sql:view*(num+1);;}
-      expression_custom_filter: ${bigquery_churn_model.event_created_at_date} <= add_days(-2,now()) AND ${bigquery_churn_model.event_created_at_date}>=date(2018,12,28);;
+#       derived_column: addwatchlist_num {sql:addwatchlist*(num+1);;}
+#       derived_column: error_num {sql:error*(num+1);;}
+#       derived_column: removewatchlist_num {sql:removewatchlist*(num+1);;}
+#       derived_column: view_num {sql:view*(num+1);;}
+      expression_custom_filter: ${bigquery_churn_model.event_created_at_date} <= add_days(-1,now()) AND ${bigquery_churn_model.event_created_at_date}>=date(2018,12,28);;
     }
   }
   dimension: customer_id {
@@ -90,11 +90,11 @@ view: churn_testing_input {
       derived_column: other_plays_num {sql:other_plays*(num+1);;}
       derived_column: heartland_duration_num {sql:heartland_duration*(num+1);;}
       derived_column: other_duration_num {sql:other_duration*(num+1);;}
-      derived_column: addwatchlist_num {sql:addwatchlist*(num+1);;}
-      derived_column: error_num {sql:error*(num+1);;}
-      derived_column: removewatchlist_num {sql:removewatchlist*(num+1);;}
-      derived_column: view_num {sql:view*(num+1);;}
-      expression_custom_filter: ${bigquery_churn_model.event_created_at_date} < now() AND ${bigquery_churn_model.event_created_at_date} > add_days(-2,now()) ;;
+#       derived_column: addwatchlist_num {sql:addwatchlist*(num+1);;}
+#       derived_column: error_num {sql:error*(num+1);;}
+#       derived_column: removewatchlist_num {sql:removewatchlist*(num+1);;}
+#       derived_column: view_num {sql:view*(num+1);;}
+      expression_custom_filter: ${bigquery_churn_model.event_created_at_date} < now() AND ${bigquery_churn_model.event_created_at_date} > add_days(-1,now()) ;;
     }
   }
   dimension: customer_id {
@@ -127,7 +127,7 @@ view: churn_model {
       OPTIONS(model_type='logistic_reg'
         , labels=['churn_status']
         , min_rel_progress = 0.00000005
-        , max_iterations = 10
+        , max_iterations = 20
         ) AS
       SELECT
          * EXCEPT(customer_id)
@@ -292,10 +292,10 @@ view: churn_future_input {
       derived_column: other_plays_num {sql:other_plays*(num+1);;}
       derived_column: heartland_duration_num {sql:heartland_duration*(num+1);;}
       derived_column: other_duration_num {sql:other_duration*(num+1);;}
-      derived_column: addwatchlist_num {sql:addwatchlist*(num+1);;}
-      derived_column: error_num {sql:error*(num+1);;}
-      derived_column: removewatchlist_num {sql:removewatchlist*(num+1);;}
-      derived_column: view_num {sql:view*(num+1);;}
+#       derived_column: addwatchlist_num {sql:addwatchlist*(num+1);;}
+#       derived_column: error_num {sql:error*(num+1);;}
+#       derived_column: removewatchlist_num {sql:removewatchlist*(num+1);;}
+#       derived_column: view_num {sql:view*(num+1);;}
 
       expression_custom_filter: ${bigquery_churn_model.end_date_date} >= now() ;;
     }

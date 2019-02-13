@@ -18,7 +18,7 @@ where date(sent_at)=current_date),
            from customers_analytics as a),
 
      b as (select a.timestamp,total_paying,ROW_NUMBER() OVER(ORDER BY a.timestamp desc) AS Row
-           from customers_analytics as a where a.timestamp < (DATEADD(day,-31, DATE_TRUNC('day',GETDATE()) ))),
+           from customers_analytics as a where a.timestamp < (DATEADD(day,-30, DATE_TRUNC('day',GETDATE()) ))),
 
      c as (select a.timestamp,total_paying as paying_30_days_prior from a inner join b on a.row=b.row),
 
