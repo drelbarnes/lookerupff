@@ -61,17 +61,9 @@ include: "bigquery_javascript_pages.view.lkml"
 include: "bigquery_javascript_users.view.lkml"
 include: "bigquery_free_to_paid.view.lkml"
 include: "bigquery_subscribers_v3.view.lkml"
-include: "daily_spend_v2.view"
 
-explore: bigquery_analytics {
-  join: daily_spend_v2 {
-    type: inner
-    sql_on: ${bigquery_analytics.timestamp_date}=${daily_spend_v2.timestamp_date} ;;
-    relationship: one_to_one
-  }
-}
 
-include: "bigquery_php_get_roku_firstplay.view.lkml"
+# include: "bigquery_php_get_roku_firstplay.view.lkml"
 
 
 include: "bigquery_http_api_get_roku_firstplay.view.lkml"
@@ -102,6 +94,15 @@ explore: bigquery_derived_addwatchlist {}
 explore: bigquery_derived_timeupdate {}
 explore: bigquery_subscribers_timeupdate {}
 explore: bigquery_derived_views {}
+
+explore: bigquery_churn_model_error {
+  join: bigquery_http_api_purchase_event {
+    type: inner
+    sql_on: cast(${bigquery_churn_model_error.user_id} as string)=${bigquery_http_api_purchase_event.user_id} ;;
+    relationship: one_to_one
+  }
+
+}
 
 explore: bigquery_timeupdate {
   join: bigquery_http_api_purchase_event {

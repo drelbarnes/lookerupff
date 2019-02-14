@@ -66,7 +66,7 @@ case when TO_CHAR(DATE_TRUNC('month', date_start), 'YYYY-MM') = '2018-07' then s
 
   dimension: spend_ {
     type: number
-    sql: ${TABLE}.spend_ ;;
+    sql: ${TABLE}.spend ;;
     value_format_name: usd
   }
 

@@ -1,4 +1,4 @@
-explore: bigquery_churn_model_error {}
+
 view: bigquery_churn_model_error {
   derived_table: {
     sql: SELECT user_id,timestamp, 1 as error FROM javascript.error where user_id is not null

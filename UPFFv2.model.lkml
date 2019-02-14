@@ -15,7 +15,8 @@ include: "app_installers.view.lkml"
 include: "timeupdate.view.lkml"
 include: "daily_cpa.view.lkml"
 include: "mtd_free_trials.view.lkml"
-include: "daily_spend_v2.view.lkml"
+include: "daily_spend_v2.view"
+
 
 
 explore: daily_spend_v2 {}
@@ -68,6 +69,11 @@ explore: analytics_v2 {
     sql_on: ${mailchimp_email_campaigns.campaign_date} = ${analytics_v2.timestamp_date};;
     relationship: one_to_one
   }
+
+  join: daily_spend_v2 {
+    type: inner
+    sql_on: ${analytics_v2.timestamp_date}=${daily_spend_v2.timestamp_date} ;;
+    relationship: one_to_one}
 
 }
 

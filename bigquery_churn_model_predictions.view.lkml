@@ -35,7 +35,7 @@ view: churn_training_input {
 #       derived_column: error_num {sql:error*(num+1);;}
 #       derived_column: removewatchlist_num {sql:removewatchlist*(num+1);;}
 #       derived_column: view_num {sql:view*(num+1);;}
-      expression_custom_filter: ${bigquery_churn_model.event_created_at_date} < add_days(-4,now()) AND ${bigquery_churn_model.event_created_at_date}>=date(2018,12,28);;
+      expression_custom_filter: ${bigquery_churn_model.event_created_at_date} < add_days(-1,now()) AND ${bigquery_churn_model.event_created_at_date}>=date(2018,01,25);;
     }
   }
   dimension: customer_id {
@@ -94,7 +94,7 @@ view: churn_testing_input {
 #       derived_column: error_num {sql:error*(num+1);;}
 #       derived_column: removewatchlist_num {sql:removewatchlist*(num+1);;}
 #       derived_column: view_num {sql:view*(num+1);;}
-      expression_custom_filter: ${bigquery_churn_model.event_created_at_date} < now() AND ${bigquery_churn_model.event_created_at_date} >= add_days(-4,now()) ;;
+      expression_custom_filter: ${bigquery_churn_model.event_created_at_date} < now() AND ${bigquery_churn_model.event_created_at_date} >= add_days(-1,now()) ;;
     }
   }
   dimension: customer_id {
