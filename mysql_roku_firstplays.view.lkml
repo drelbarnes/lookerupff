@@ -22,8 +22,18 @@ view: mysql_roku_firstplays {
     sql: ${TABLE}.finishes ;;
   }
 
-  dimension: firstplay_date {
-    type: string
+  dimension_group: firstplay_date {
+    type: time
+    timeframes: [
+      raw,
+      date,
+      week,
+      month,
+      quarter,
+      year
+    ]
+    convert_tz: no
+    datatype: date
     sql: ${TABLE}.firstplay_date ;;
   }
 
