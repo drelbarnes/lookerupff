@@ -34,6 +34,7 @@ view: mysql_roku_firstplays {
     ]
     convert_tz: no
     datatype: date
+    group_label: "Firstplay Date"
     sql: ${TABLE}.firstplay_date ;;
   }
 
@@ -81,5 +82,10 @@ view: mysql_roku_firstplays {
   measure: count {
     type: count
     drill_fields: [id]
+  }
+
+  measure: count_distinct {
+    type: count_distinct
+    sql: ${user_id} ;;
   }
 }
