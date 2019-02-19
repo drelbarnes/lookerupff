@@ -34,7 +34,6 @@ view: mysql_roku_firstplays {
     ]
     convert_tz: no
     datatype: date
-    group_label: "Firstplay Date"
     sql: ${TABLE}.firstplay_date ;;
   }
 
