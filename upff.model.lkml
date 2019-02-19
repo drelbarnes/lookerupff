@@ -441,4 +441,6 @@ explore: redshift_php_get_mobile_app_installs {
 
 
 explore: redshift_android_firstplay {}
-explore: mysql_roku_firstplays {}
+explore: mysql_roku_firstplays {
+    label: "Roku Firstplays"
+}
