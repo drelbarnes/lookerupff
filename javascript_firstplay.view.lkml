@@ -155,6 +155,7 @@ view: javascript_firstplay {
 
   dimension: user_id {
     type: string
+    tags: ["user_id"]
     sql: ${TABLE}.user_id ;;
   }
 
