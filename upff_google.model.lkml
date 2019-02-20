@@ -61,6 +61,9 @@ include: "bigquery_javascript_pages.view.lkml"
 include: "bigquery_javascript_users.view.lkml"
 include: "bigquery_free_to_paid.view.lkml"
 include: "bigquery_subscribers_v3.view.lkml"
+include: "bigquery_churn_cohorts.view.lkml"
+
+explore: bigquery_churn_cohorts {}
 
 
 # include: "bigquery_php_get_roku_firstplay.view.lkml"

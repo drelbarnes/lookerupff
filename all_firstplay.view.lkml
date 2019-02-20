@@ -51,7 +51,8 @@ view: all_firstplay {
         )
 
 select a.*
-from a );;
+from a
+where user_id<>'0');;
   }
 
   dimension: current_date {

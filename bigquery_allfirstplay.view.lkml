@@ -93,7 +93,7 @@ select *,
             else "NA"
             end as Quarter
 from a
-         ;;
+where user_id<>'0'         ;;
   }
 
   dimension: quarter {
