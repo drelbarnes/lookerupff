@@ -1,6 +1,6 @@
 view: bigquery_churn_cohorts {
   derived_table: {
-    sql: with a as
+    sql:with a as
       (select date(created_at) as created_at,
               count(distinct user_id) as created_count
       from http_api.purchase_event
@@ -31,16 +31,40 @@ or status in ('customer.product.expired','cancelled','disabled')) then "Churn"
            when ((topic='customer.product.renewed' or status='renewed'))
 or (topic='customer.product.created') then "Renewed" end as status,
             rank() over (partition by user_id order by status_date) as billing_period
-      from b)
+      from b),
 
-      select c.created_at,
+d0 as
+(select user_id,
+        created_at,
+       status,
+       min(billing_period) as billing_period
+from c
+where status='Churn'
+group by 1,2,3),
+
+d as
+(select c.*
+from c inner join d0 on c.user_id=d0.user_id and c.status=d0.status and c.billing_period=d0.billing_period),
+
+e as
+(select *
+from c
+where status='Renewed'),
+
+f as
+((select * from d)
+union all
+(select * from e))
+
+      select f.created_at,
              billing_period,
              created_count,
              sum(case when status="Renewed" then 1 else 0 end) as Renewed,
              sum(case when status="Churn" then 1 else 0 end) as Churn
-      from c inner join a on a.created_at=c.created_at
+      from f inner join a on a.created_at=f.created_at
       group by 1,2,3
       order by 1,2,3
+
        ;;
   }
 
