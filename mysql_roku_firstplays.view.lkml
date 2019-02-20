@@ -78,13 +78,19 @@ view: mysql_roku_firstplays {
     sql: ${TABLE}.videoId ;;
   }
 
-  measure: count {
+  measure: count_firstplays {
     type: count
     drill_fields: [id]
   }
 
-  measure: count_distinct {
+  measure: count_subscribers {
     type: count_distinct
     sql: ${user_id} ;;
   }
+
+  measure: count_plays {
+    type: sum
+    sql: ${firstplays};;
+  }
+
 }
