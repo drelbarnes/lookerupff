@@ -12,10 +12,6 @@ view: mysql_roku_firstplays {
     sql: ${TABLE}.collectionId ;;
   }
 
-  dimension: email {
-    type: string
-    sql: ${TABLE}.email ;;
-  }
 
   dimension: finishes {
     type: number
