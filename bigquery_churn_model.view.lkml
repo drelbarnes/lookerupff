@@ -22,7 +22,7 @@ e as
        case when moptin=true then 1 else 0 end as marketing_optin,
        case when topic = "customer.product.renewed" or status="renewed" then 0 else 1 end as churn_status
 from http_api.purchase_event as b inner join a on a.user_id=b.user_id
-where conversion_date is not null and (topic in ('customer.product.expired','customer.product.disabled','customer.product.cancelled','customer.product.renewed') or status in ("disabled","cancelled","customer.product.expired","renewed") or charge_status="expired")
+where (topic in ('customer.product.expired','customer.product.disabled','customer.product.cancelled','customer.product.renewed'))
 and (country='United States' or country is null)
 and (conversion_date)<=date(status_date)),
 
@@ -347,7 +347,7 @@ group by num)
 
 select m.user_id,
        status_date,
-       m.num,
+       m.num+1 as num,
        region as state,
        churn_status,
        end_date,

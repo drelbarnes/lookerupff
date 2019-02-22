@@ -65,6 +65,14 @@ include: "bigquery_churn_cohorts.view.lkml"
 
 explore: bigquery_churn_cohorts {}
 
+explore: bigquery_analytics {
+  join: bigquery_allfirstplay {
+    type: inner
+    sql_on: ${bigquery_allfirstplay.timestamp_date}=${bigquery_analytics.timestamp_date} ;;
+    relationship: one_to_one
+  }
+}
+
 
 # include: "bigquery_php_get_roku_firstplay.view.lkml"
 
@@ -104,6 +112,7 @@ explore: bigquery_churn_model_error {
     sql_on: cast(${bigquery_churn_model_error.user_id} as string)=${bigquery_http_api_purchase_event.user_id} ;;
     relationship: one_to_one
   }
+
 
 }
 
