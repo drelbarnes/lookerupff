@@ -395,7 +395,6 @@ view: future_purchase_prediction {
   dimension: user_id {
     tags: ["user_id"]
     type: number
-    sql:  CAST(user_id AS INT64);;
   }
   dimension: email {
     tags: ["email"]
@@ -457,7 +456,6 @@ view: future_purchase_prediction {
     sql:  CAST(${TABLE}.predicted_get_status_probs[ORDINAL(1)].prob * 100 AS INT64);;
   }
 
-
   dimension: predicted_probability {
     type: number
     sql:  ${predicted_get_status_probability};;
@@ -468,9 +466,17 @@ view: future_purchase_prediction {
     value_format_name: percent_2
     sql: ${predicted_get_status_probability} ;;
   }
+
   measure: average_predicted_score {
     type: average
     value_format_name: percent_2
     sql: ${predicted_get_status_probability} ;;
   }
+
+
+  measure: count_userId {
+    type: count_distinct
+    sql:  ${user_id} ;;
   }
+
+}

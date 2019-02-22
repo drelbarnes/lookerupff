@@ -43,6 +43,7 @@ view: bigquery_propensity_score {
   }
 
   dimension: future_purchase_prediction_predicted_get_probability_score {
+    label: "Probability Score"
     type: number
     sql: ${TABLE}.future_purchase_prediction_predicted_get_probability_score ;;
   }
@@ -141,8 +142,14 @@ view: bigquery_propensity_score {
     drill_fields: [id, context_library_name, context_app_name]
   }
 
+  measure: probability_score {
+    type: sum
+    sql: ${future_purchase_prediction_predicted_get_probability_score};;
+  }
+
   measure: average_probability_score {
     type: average
-    sql:  ${future_purchase_prediction_predicted_get_probability_score};;
+    #value_format: ".0#\%"
+    sql: ${future_purchase_prediction.predicted_get_probability_score};;
   }
 }
