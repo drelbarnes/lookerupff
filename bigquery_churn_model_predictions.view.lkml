@@ -377,6 +377,14 @@ view: churn_prediction {
     type: number
     sql:  ${TABLE}.predicted_churn_status_probs[ORDINAL(1)].prob;;
   }
+
+  dimension: predicted_get_churn_probability_score{
+    #value_format_name: id
+    #value_format: "0"
+    type: number
+    sql:  CAST(${TABLE}.predicted_churn_status_probs[ORDINAL(1)].prob * 100 AS INT64);;
+  }
+
   measure: max_predicted_score {
     type: max
     value_format_name: percent_2
