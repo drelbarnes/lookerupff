@@ -395,6 +395,7 @@ view: future_purchase_prediction {
   dimension: user_id {
     tags: ["user_id"]
     type: number
+    sql:  CAST(user_id AS INT64);;
   }
   dimension: email {
     tags: ["email"]
@@ -456,12 +457,6 @@ view: future_purchase_prediction {
     sql:  CAST(${TABLE}.predicted_get_status_probs[ORDINAL(1)].prob * 100 AS INT64);;
   }
 
-  measure: predicted_get_probability_score_average{
-    #value_format_name: id
-    #value_format: "0"
-    type: average
-    sql:  CAST(${TABLE}.predicted_get_status_probs[ORDINAL(1)].prob * 100 AS INT64);;
-  }
 
   dimension: predicted_probability {
     type: number

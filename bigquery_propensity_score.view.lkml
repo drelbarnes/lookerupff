@@ -1,4 +1,4 @@
-view: biquery_propensity_score {
+view: bigquery_propensity_score {
   sql_table_name: looker.propensity_score ;;
 
   dimension: id {
@@ -139,5 +139,10 @@ view: biquery_propensity_score {
   measure: count {
     type: count
     drill_fields: [id, context_library_name, context_app_name]
+  }
+
+  measure: average_probability_score {
+    type: average
+    sql:  ${future_purchase_prediction_predicted_get_probability_score};;
   }
 }
