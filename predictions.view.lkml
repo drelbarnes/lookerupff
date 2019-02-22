@@ -466,9 +466,17 @@ view: future_purchase_prediction {
     value_format_name: percent_2
     sql: ${predicted_get_status_probability} ;;
   }
+
   measure: average_predicted_score {
     type: average
     value_format_name: percent_2
     sql: ${predicted_get_status_probability} ;;
   }
+
+
+  measure: count_userId {
+    type: count_distinct
+    sql:  ${user_id} ;;
   }
+
+}

@@ -62,6 +62,7 @@ include: "bigquery_javascript_users.view.lkml"
 include: "bigquery_free_to_paid.view.lkml"
 include: "bigquery_subscribers_v3.view.lkml"
 include: "bigquery_churn_cohorts.view.lkml"
+include: "bigquery_propensity_score.view.lkml"
 
 explore: bigquery_churn_cohorts {}
 
@@ -440,6 +441,15 @@ explore: bigquery_javascript_pages {
 
 explore: bigquery_free_to_paid {}
 explore: bigquery_http_api_get_roku_firstplay {}
+explore: bigquery_propensity_score {
+
+  join: future_purchase_prediction {
+    type: left_outer
+    sql_on: ${future_purchase_prediction.user_id} = ${bigquery_propensity_score.user_id};;
+    relationship: one_to_many
+  }
+
+}
 
 # include all views in this project
 # include: "my_dashboard.dashboard.lookml"   # include a LookML dashboard called my_dashboard
