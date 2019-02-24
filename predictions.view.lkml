@@ -473,6 +473,12 @@ view: future_purchase_prediction {
     sql: ${predicted_get_status_probability} ;;
   }
 
+  measure: average_predicted_score_of_trialist {
+    type: average
+    value_format_name: decimal_2
+    sql: ${predicted_get_status_probability} * 100 ;;
+  }
+
 
   measure: count_userId {
     type: count_distinct
