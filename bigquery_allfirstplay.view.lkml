@@ -57,7 +57,8 @@ a as
                 safe_cast(a.video_id as int64) as video_id,
                 trim((title)) as title,
                 user_id,
-                'Android' as source
+                'Android' as source,
+                episode
          from android.firstplay as a left join titles_id_mapping as b on a.video_id = b.id
          union all
          select sent_at as timestamp,
@@ -68,7 +69,8 @@ a as
                 safe_cast(a.video_id as int64) as video_id,
                 trim((title)) as title,
                 user_id,
-                'iOS' as source
+                'iOS' as source,
+                episode
          from ios.firstplay as a left join titles_id_mapping as b on a.video_id = safe_cast(b.id as string)
          union all
          select timestamp,
@@ -79,7 +81,8 @@ a as
                 safe_cast(b.id as int64) as video_id,
                 trim(b.title) as title,
                 user_id,
-                'Web' as source
+                'Web' as source,
+                episode
          from a2 as a left join titles_id_mapping as b on trim(upper(b.title)) = trim(upper(a.title)))
 
 
@@ -128,6 +131,11 @@ where user_id<>'0'         ;;
 
   dimension: episode {
     type: string
+    sql: ${TABLE}.episode ;;
+  }
+
+  measure: episode_count {
+    type: max
     sql: ${TABLE}.episode ;;
   }
 
