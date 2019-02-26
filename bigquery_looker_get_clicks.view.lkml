@@ -127,6 +127,7 @@ view: bigquery_looker_get_clicks {
     sql: ${TABLE}.geo_lon ;;
   }
 
+
   dimension: geo_region_code {
     type: string
     sql: ${TABLE}.geo_region_code ;;

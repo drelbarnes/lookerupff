@@ -137,6 +137,12 @@ view: bigquery_looker_get_app_installs {
     sql: ${TABLE}.geo_lon ;;
   }
 
+  dimension: location {
+    type: location
+    sql_latitude: ROUND(${geo_lat},1);;
+    sql_longitude: ROUND(${geo_lon},1);;
+  }
+
   dimension: geo_region_code {
     type: string
     sql: ${TABLE}.geo_region_code ;;
