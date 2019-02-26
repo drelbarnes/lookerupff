@@ -63,6 +63,9 @@ include: "bigquery_free_to_paid.view.lkml"
 include: "bigquery_subscribers_v3.view.lkml"
 include: "bigquery_churn_cohorts.view.lkml"
 include: "bigquery_propensity_score.view.lkml"
+include: "bigquery_looker_get_app_installs.view.lkml"
+include: "bigquery_looker_get_app_reinstalls.view.lkml"
+include: "bigquery_looker_get_clicks.view.lkml"
 
 explore: bigquery_churn_cohorts {}
 
@@ -448,6 +451,23 @@ explore: bigquery_propensity_score {
     sql_on: ${future_purchase_prediction.user_id} = ${bigquery_propensity_score.user_id};;
     relationship: one_to_many
   }
+
+}
+
+explore: bigquery_looker_get_clicks {
+
+  join: bigquery_looker_get_app_installs {
+    type: left_outer
+    sql_on: ${bigquery_looker_get_clicks.received_date} = ${bigquery_looker_get_app_installs.received_date};;
+    relationship: one_to_one
+  }
+
+  join: bigquery_looker_get_app_reinstalls {
+    type: left_outer
+    sql_on: ${bigquery_looker_get_clicks.received_date} = ${bigquery_looker_get_app_reinstalls.received_date};;
+    relationship: one_to_one
+  }
+
 
 }
 
