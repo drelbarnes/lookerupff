@@ -16,9 +16,9 @@ include: "timeupdate.view.lkml"
 include: "daily_cpa.view.lkml"
 include: "mtd_free_trials.view.lkml"
 include: "daily_spend_v2.view"
+include: "mvpds.view.lkml"
 
-
-
+explore: mvpds {}
 explore: daily_spend_v2 {}
 
 explore: mtd_free_trials{}
