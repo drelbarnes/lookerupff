@@ -66,6 +66,7 @@ include: "bigquery_propensity_score.view.lkml"
 include: "bigquery_looker_get_app_installs.view.lkml"
 include: "bigquery_looker_get_app_reinstalls.view.lkml"
 include: "bigquery_looker_get_clicks.view.lkml"
+include: "bigquery_firebase_events_20190225.view.lkml"
 
 explore: bigquery_churn_cohorts {}
 
@@ -468,7 +469,10 @@ explore: bigquery_looker_get_clicks {
     relationship: one_to_one
   }
 
+}
 
+explore: bigquery_firebase_events_20190225 {
+  label: "Push Notifications"
 }
 
 # include all views in this project
