@@ -139,6 +139,12 @@ view: redshift_pixel_api_email_opened {
     drill_fields: [id, context_library_name, email_name]
   }
 
+  measure: conversion_rate {
+    type: number
+    value_format: ".0#\%"
+    sql: 100.0*${count_ids}/${http_api_purchase_event.distinct_count};;
+  }
+
   measure: count_ids {
     type: count_distinct
     sql: ${user_id} ;;
