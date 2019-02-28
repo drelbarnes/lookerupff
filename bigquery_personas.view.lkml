@@ -8,13 +8,13 @@ with a as
 
       b as
       (select *,
-             case when status in ("enabled") then (date_diff(current_date, date_add(date(customer_created_at), interval 14 day), month))
-                  when status in ("cancelled","disabled","refunded","expired") and (date_diff(date(event_created_at), date_add(date(customer_created_at), interval 14 day), month))>=0
-                       then (date_diff(date(event_created_at), date_add(date(customer_created_at), interval 14 day), month))
-                  when status in ("cancelled","disabled","refunded","expired") and (date_diff(date(event_created_at), date_add(date(customer_created_at), interval 14 day), month))<0 then 0
+             case when status in ("enabled") then (date_diff(current_date, date_add((customer_created_at), interval 14 day), month))
+                  when status in ("cancelled","disabled","refunded","expired") and (date_diff((event_created_at), date_add((customer_created_at), interval 14 day), month))>=0
+                       then (date_diff((event_created_at), date_add((customer_created_at), interval 14 day), month))
+                  when status in ("cancelled","disabled","refunded","expired") and (date_diff((event_created_at), date_add((customer_created_at), interval 14 day), month))<0 then 0
              end as months_since_conversion,
-             case when status in ("enabled") then date_diff(current_date, date_add(date(customer_created_at), interval 14 day), day)
-                  when status in ("cancelled","disabled","refunded","expired") then date_diff(date(event_created_at), date_add(date(customer_created_at), interval 14 day), day)
+             case when status in ("enabled") then date_diff(current_date, date_add((customer_created_at), interval 14 day), day)
+                  when status in ("cancelled","disabled","refunded","expired") then date_diff((event_created_at), date_add((customer_created_at), interval 14 day), day)
              end as days_since_conversion
       from customers.subscribers
       where status is not null or status not in ("free_trial","paused") and platform<>'roku'
@@ -35,10 +35,10 @@ with a as
 
       e as (
       select d.*,
-             case when num=0 then date(customer_created_at) else
-             date_add(date_add(date(customer_created_at), interval 14 day),interval num*30 day) end as start_date,
-             case when status="enabled" or num<max_num then date_add(date_add(date(customer_created_at), interval 14 day),interval (num+1)*30 day)
-                  when status<>"enabled" and num=max_num then date(event_created_at) end as end_date,
+             case when num=0 then (customer_created_at) else
+             date_add(date_add((customer_created_at), interval 14 day),interval num*30 day) end as start_date,
+             case when status="enabled" or num<max_num then date_add(date_add((customer_created_at), interval 14 day),interval (num+1)*30 day)
+                  when status<>"enabled" and num=max_num then (event_created_at) end as end_date,
              case when status="enabled" or num<max_num then 0
                   when status<>"enabled" and num=max_num then 1 end as churn_status
       from d inner join c on d.customer_id=c.customer_id
