@@ -88,7 +88,7 @@ explore: monthly_platform_user_count {}
 
 datagroup: upff_google_datagroup {
   # sql_trigger: SELECT MAX(id) FROM etl_log;;
-  max_cache_age: "1 hour"
+  max_cache_age: "24 hour"
   sql_trigger: SELECT CURRENT_DATE() ;;
 }
 persist_with: upff_google_datagroup
