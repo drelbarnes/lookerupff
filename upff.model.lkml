@@ -20,10 +20,11 @@ include: "ios_conversion.view"
 include: "android_conversion.view"
 include: "redshift_php_get_analytics.view"
 include: "redshift_android_firstplay.view"
+include: "redshift_pixel_api_email_opened.view"
 
 datagroup: upff_default_datagroup {
   # sql_trigger: SELECT MAX(id) FROM etl_log;;
-  max_cache_age: "1 hour"
+  max_cache_age: "24 hour"
 }
 
 persist_with: upff_default_datagroup
@@ -230,6 +231,12 @@ explore: subscribed {}
 explore: http_api_purchase_event
         {
           label: "Subscribers"
+
+            join: redshift_pixel_api_email_opened{
+              type: left_outer
+              sql_on: ${http_api_purchase_event.user_id} = ${redshift_pixel_api_email_opened.user_id};;
+              relationship: many_to_many
+            }
 
             join: delighted_survey_question_answered {
               type: left_outer

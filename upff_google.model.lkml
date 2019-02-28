@@ -73,6 +73,9 @@ explore: bigquery_active_users {}
 
 explore: churn_cohorts {}
 
+include: "bigquery_firebase_events_20190225.view.lkml"
+
+
 explore: bigquery_churn_cohorts {}
 
 explore: bigquery_analytics {
@@ -93,7 +96,7 @@ explore: monthly_platform_user_count {}
 
 datagroup: upff_google_datagroup {
   # sql_trigger: SELECT MAX(id) FROM etl_log;;
-  max_cache_age: "1 hour"
+  max_cache_age: "24 hour"
   sql_trigger: SELECT CURRENT_DATE() ;;
 }
 persist_with: upff_google_datagroup
@@ -365,9 +368,15 @@ explore: bigquery_php_get_user_on_email_list {
   label: "Quick Sign-ups Subscribers"
 
   join: bigquery_http_api_purchase_event {
-    type: inner
+    type: left_outer
     sql_on: ${bigquery_php_get_user_on_email_list.email} = ${bigquery_http_api_purchase_event.email};;
     relationship: one_to_many
+  }
+
+  join: bigquery_pixel_api_email_opened{
+    type: left_outer
+    sql_on: ${bigquery_http_api_purchase_event.user_id} = ${bigquery_pixel_api_email_opened.user_id};;
+    relationship: many_to_many
   }
 
 }
@@ -474,7 +483,10 @@ explore: bigquery_looker_get_clicks {
     relationship: one_to_one
   }
 
+}
 
+explore: bigquery_firebase_events_20190225 {
+  label: "Push Notifications"
 }
 
 # include all views in this project
