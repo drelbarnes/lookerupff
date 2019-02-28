@@ -360,9 +360,15 @@ explore: bigquery_php_get_user_on_email_list {
   label: "Quick Sign-ups Subscribers"
 
   join: bigquery_http_api_purchase_event {
-    type: inner
+    type: left_outer
     sql_on: ${bigquery_php_get_user_on_email_list.email} = ${bigquery_http_api_purchase_event.email};;
     relationship: one_to_many
+  }
+
+  join: bigquery_pixel_api_email_opened{
+    type: left_outer
+    sql_on: ${bigquery_http_api_purchase_event.user_id} = ${bigquery_pixel_api_email_opened.user_id};;
+    relationship: many_to_many
   }
 
 }
