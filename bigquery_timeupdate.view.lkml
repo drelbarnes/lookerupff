@@ -26,6 +26,9 @@ a4 as
     user_id,
     id as video_id,
     a3.collection,
+    series,
+    season,
+    episode,
     case when series is null and upper(a3.collection)=upper(a3.title) then 'movie'
                      when series is not null then 'series' else 'other' end as type,
     safe_cast(date(sent_at) as timestamp) as timestamp,
@@ -36,7 +39,7 @@ a4 as
     a2 inner join a3 on trim(upper(a2.title))=trim(upper(a3.title)) and a2.collection=a3.collection
   WHERE
     user_id IS NOT NULL and safe_cast(user_id as string)!='0' and a3.duration>0
-  GROUP BY 1,2,3,4,5,6,7)
+  GROUP BY 1,2,3,4,5,6,7,8,9,10)
 
 union all
 
@@ -45,6 +48,9 @@ union all
     user_id,
     cast(video_id as int64) as video_id,
     collection,
+    series,
+    season,
+    episode,
     case when series is null and upper(collection)=upper(title) then 'movie'
                      when series is not null then 'series' else 'other' end as type,
     safe_cast(date(sent_at) as timestamp) as timestamp,
@@ -55,7 +61,7 @@ union all
     ios.timeupdate as a inner join a3 on safe_cast(a.video_id as int64)=a3.id
   WHERE
     user_id IS NOT NULL and safe_cast(user_id as string)!='0' and a3.duration>0
-  GROUP BY 1,2,3,4,5,6,7)
+  GROUP BY 1,2,3,4,5,6,7,8,9,10)
 
   union all
 
@@ -64,6 +70,9 @@ union all
     user_id,
     video_id,
     collection,
+    series,
+    season,
+    episode,
     case when series is null and upper(collection)=upper(title) then 'movie'
                      when series is not null then 'series' else 'other' end as type,
     safe_cast(date(sent_at) as timestamp) as timestamp,
@@ -74,7 +83,7 @@ union all
     android.timeupdate as a inner join a3 on a.video_id=a3.id
   WHERE
     user_id IS NOT NULL and safe_cast(user_id as string)!='0' and a3.duration>0
-  GROUP BY 1,2,3,4,5,6,7))
+  GROUP BY 1,2,3,4,5,6,7,8,9,10))
 
   select *,
        case when date(a.timestamp) between DATE_SUB(date(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), QUARTER)), INTERVAL 0 QUARTER) and
