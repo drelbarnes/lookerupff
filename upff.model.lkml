@@ -24,7 +24,7 @@ include: "redshift_pixel_api_email_opened.view"
 
 datagroup: upff_default_datagroup {
   # sql_trigger: SELECT MAX(id) FROM etl_log;;
-  max_cache_age: "24 hour"
+  max_cache_age: "6 hour"
 }
 
 persist_with: upff_default_datagroup
