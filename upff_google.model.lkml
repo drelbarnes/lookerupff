@@ -66,7 +66,15 @@ include: "bigquery_propensity_score.view.lkml"
 include: "bigquery_looker_get_app_installs.view.lkml"
 include: "bigquery_looker_get_app_reinstalls.view.lkml"
 include: "bigquery_looker_get_clicks.view.lkml"
+include: "churn_cohorts.view.lkml"
+include: "bigquery_active_users.view.lkml"
+
+explore: bigquery_active_users {}
+
+explore: churn_cohorts {}
+
 include: "bigquery_firebase_events_20190225.view.lkml"
+
 
 explore: bigquery_churn_cohorts {}
 
