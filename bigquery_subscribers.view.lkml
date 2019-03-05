@@ -253,7 +253,7 @@ view: bigquery_subscribers {
 
   measure: average_tenure{
     type:  average
-    sql:  ${subscription_length};;
+    sql:  ${months_since_created};;
   }
 
   #------------------------ End New Dimensions
