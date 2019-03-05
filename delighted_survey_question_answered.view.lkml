@@ -268,7 +268,7 @@ view: delighted_survey_question_answered {
 
   measure: promoterz {
     type: count_distinct
-    sql: ${TABLE}.user_id ;;
+    sql: ${TABLE}.user_id;;
     filters: {
       field: http_api_purchase_event.topic
       value: "customer.product.renewed,customer.product.created"

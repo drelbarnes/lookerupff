@@ -303,6 +303,24 @@ view: http_api_purchase_event {
     sql: ${email} ;;
   }
 
+  measure: moptin_yes {
+    type: count_distinct
+    sql: ${TABLE}.user_id ;;
+    filters: {
+      field: http_api_purchase_event.moptin
+      value: "yes"
+    }
+  }
+
+  measure: moptin_no {
+    type: count_distinct
+    sql: ${TABLE}.user_id ;;
+    filters: {
+      field: http_api_purchase_event.moptin
+      value: "no"
+    }
+  }
+
   measure: last_updated_date {
     type: date
     sql: MAX(${status_date}) ;;

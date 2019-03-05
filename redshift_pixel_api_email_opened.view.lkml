@@ -145,6 +145,14 @@ view: redshift_pixel_api_email_opened {
     sql: 100.0*${count_ids}/${http_api_purchase_event.distinct_count};;
   }
 
+
+  measure: moption_yes_conversion_rate {
+    type: number
+    value_format: ".0#\%"
+    sql: 100.0*${count_ids}/${http_api_purchase_event.moptin_yes};;
+  }
+
+
   measure: count_ids {
     type: count_distinct
     sql: ${user_id} ;;
