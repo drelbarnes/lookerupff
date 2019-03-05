@@ -17,6 +17,7 @@ include: "daily_cpa.view.lkml"
 include: "mtd_free_trials.view.lkml"
 include: "daily_spend_v2.view"
 include: "mvpds.view.lkml"
+include: "redshift_pixel_api_email_opened.view.lkml"
 
 explore: mvpds {}
 explore: daily_spend_v2 {}
@@ -193,6 +194,11 @@ explore: all_firstplay {
     relationship: one_to_one
   }
 
+  join: redshift_pixel_api_email_opened {
+    type: left_outer
+    sql_on: ${all_firstplay.user_id} = ${redshift_pixel_api_email_opened.user_id};;
+    relationship: one_to_one
+  }
 
   join: customers_v2 {
     type:  inner
