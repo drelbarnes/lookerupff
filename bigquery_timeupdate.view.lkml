@@ -83,7 +83,28 @@ union all
     android.timeupdate as a inner join a3 on a.video_id=a3.id
   WHERE
     user_id IS NOT NULL and safe_cast(user_id as string)!='0' and a3.duration>0
-  GROUP BY 1,2,3,4,5,6,7,8,9,10))
+  GROUP BY 1,2,3,4,5,6,7,8,9,10)
+
+  union all
+
+  (SELECT
+    a3.title,
+    a.user_id,
+     mysql_roku_firstplays_video_id as video_id,
+    collection,
+    series,
+    season,
+    episode,
+    case when series is null and upper(collection)=upper(title) then 'movie'
+                     when series is not null then 'series' else 'other' end as type,
+    mysql_roku_firstplays_firstplay_date_date  as timestamp,
+    a3.duration*60 as duration,
+    mysql_roku_firstplays_total_minutes_watched*60 as timecode,
+   'Roku' AS source
+  FROM
+    looker.roku_firstplays as a inner join a3 on  mysql_roku_firstplays_video_id=a3.id
+  WHERE
+    user_id IS NOT NULL and user_id<>'0' and a3.duration>0))
 
   select *,
        case when date(a.timestamp) between DATE_SUB(date(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), QUARTER)), INTERVAL 0 QUARTER) and

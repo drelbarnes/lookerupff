@@ -60,7 +60,24 @@ a as
                 'Android' as source,
                 episode
          from android.firstplay as a left join titles_id_mapping as b on a.video_id = b.id
+
          union all
+
+        select mysql_roku_firstplays_firstplay_date_date as timestamp,
+       b.date,
+       b.collection,
+       case when b.series is null and upper(b.collection)=upper(b.title) then 'movie'
+                     when b.series is not null then 'series' else 'other' end as type,
+       mysql_roku_firstplays_video_id as video_id,
+       trim(b.title) as title,
+       user_id,
+       'Roku' as source,
+       b.episode
+from looker.roku_firstplays as a left join titles_id_mapping as b on mysql_roku_firstplays_video_id=b.id
+
+
+         union all
+
          select sent_at as timestamp,
                 b.date as release_date,
                 collection,

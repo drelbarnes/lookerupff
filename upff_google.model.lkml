@@ -68,6 +68,9 @@ include: "bigquery_looker_get_app_reinstalls.view.lkml"
 include: "bigquery_looker_get_clicks.view.lkml"
 include: "churn_cohorts.view.lkml"
 include: "bigquery_active_users.view.lkml"
+include: "bigquery_churn_cohorts_v2.view.lkml"
+
+explore: bigquery_churn_cohorts_v2 {}
 
 explore: bigquery_active_users {}
 

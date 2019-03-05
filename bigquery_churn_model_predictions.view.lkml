@@ -144,7 +144,7 @@ view: churn_model_evaluation {
   derived_table: {
     sql: SELECT * FROM ml.EVALUATE(
           MODEL ${churn_model.SQL_TABLE_NAME},
-          (SELECT * FROM ${churn_testing_input.SQL_TABLE_NAME}), struct(0.12 as threshold));;
+          (SELECT * FROM ${churn_testing_input.SQL_TABLE_NAME}), struct(0.16 as threshold));;
   }
   dimension: recall {
     type: number
@@ -161,7 +161,7 @@ view: churn_confusion_matrix {
   derived_table: {
     sql: SELECT * FROM ml.confusion_matrix(
         MODEL ${churn_model.SQL_TABLE_NAME},
-        (SELECT * FROM ${churn_testing_input.SQL_TABLE_NAME}),struct(0.12 as threshold));;
+        (SELECT * FROM ${churn_testing_input.SQL_TABLE_NAME}),struct(0.16 as threshold));;
   }
 
   dimension: expected_label {}
@@ -325,7 +325,7 @@ view: churn_prediction {
   derived_table: {
     sql: SELECT * FROM ml.PREDICT(
           MODEL ${churn_model.SQL_TABLE_NAME},
-          (SELECT * FROM ${churn_future_input.SQL_TABLE_NAME}),struct(0.12 as threshold));;
+          (SELECT * FROM ${churn_future_input.SQL_TABLE_NAME}),struct(0.16 as threshold));;
   }
 
   dimension: customer_id {type: number}

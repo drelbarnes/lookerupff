@@ -1,6 +1,7 @@
 view: bigquery_active_users {
   derived_table: {
-    sql: with a0 as
+    sql: with plays as
+(with a0 as
 (select date(analytics_timestamp) as timestamp,
        date_sub(date(analytics_timestamp),interval 7 day) week_ago,
        existing_free_trials+existing_paying as total_subs
@@ -117,7 +118,19 @@ select cast(week_ago as timestamp) as timestamp,
        audience_size,
        total_subs
 from audience inner join a0 on week=cast(week_ago as string)
-order by 1 desc
+order by 1 desc),
+
+roku_plays as
+(select FORMAT_TIMESTAMP('%F', TIMESTAMP_TRUNC(TIMESTAMP_ADD(TIMESTAMP_TRUNC(CAST(mysql_roku_firstplays_firstplay_date_date  AS TIMESTAMP), DAY), INTERVAL (0 - CAST((CASE WHEN (EXTRACT(DAYOFWEEK FROM mysql_roku_firstplays_firstplay_date_date ) - 1) - 1 + 7 < 0 THEN -1 * (ABS((EXTRACT(DAYOFWEEK FROM mysql_roku_firstplays_firstplay_date_date ) - 1) - 1 + 7) - (ABS(7) * CAST(FLOOR(ABS(((EXTRACT(DAYOFWEEK FROM mysql_roku_firstplays_firstplay_date_date ) - 1) - 1 + 7) / (7))) AS INT64))) ELSE ABS((EXTRACT(DAYOFWEEK FROM mysql_roku_firstplays_firstplay_date_date ) - 1) - 1 + 7) - (ABS(7) * CAST(FLOOR(ABS(((EXTRACT(DAYOFWEEK FROM mysql_roku_firstplays_firstplay_date_date ) - 1) - 1 + 7) / (7))) AS INT64)) END) AS INT64)) DAY), DAY)) as timestamp,
+       count(distinct user_id) as audience_size
+from looker.roku_firstplays
+where date(mysql_roku_firstplays_firstplay_date_date)>='2019-03-04'
+group by 1)
+
+select a.timestamp,
+       a.audience_size+ifnull(b.audience_size,0) as audience_size,
+       total_subs
+from plays as a left join roku_plays as b on a.timestamp=cast(b.timestamp as timestamp)
        ;;
   }
 
