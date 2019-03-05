@@ -251,5 +251,10 @@ view: bigquery_subscribers {
     sql: ${email};;
   }
 
+  measure: average_tenure{
+    type:  average
+    sql:  ${months_since_created};;
+  }
+
   #------------------------ End New Dimensions
 }

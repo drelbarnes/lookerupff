@@ -303,6 +303,36 @@ view: http_api_purchase_event {
     sql: ${email} ;;
   }
 
+  measure: average_months_since_created {
+    type: average
+    sql: ${months_since_created};;
+  }
+
+  measure: moptin_yes {
+    type: count_distinct
+    sql: ${TABLE}.user_id ;;
+    filters: {
+      field: http_api_purchase_event.moptin
+      value: "yes"
+    }
+  }
+
+  measure: moptin_no {
+    type: count_distinct
+    sql: ${TABLE}.user_id ;;
+    filters: {
+      field: http_api_purchase_event.moptin
+      value: "no"
+    }
+  }
+
+  measure: moption_conversion_rate {
+    type: number
+    value_format: ".0#\%"
+    sql: 100.0*${moptin_yes}/${distinct_count};;
+  }
+
+
   measure: last_updated_date {
     type: date
     sql: MAX(${status_date}) ;;

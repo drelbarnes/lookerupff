@@ -198,6 +198,12 @@ explore: customers{
     relationship: one_to_one
   }
 
+  join: redshift_pixel_api_email_opened {
+    type: left_outer
+    sql_on: ${customers.customer_id} = ${redshift_pixel_api_email_opened.user_id};;
+    relationship: one_to_one
+  }
+
   join: all_firstplay {
     type: left_outer
     sql_on:  ${customers.customer_id} = ${all_firstplay.user_id} ;;
@@ -276,6 +282,13 @@ explore: delighted_survey_question_answered {
     sql_on: ${delighted_survey_question_answered.user_id} = ${http_api_purchase_event.user_id};;
     relationship: one_to_one
   }
+
+  join: redshift_pixel_api_email_opened {
+    type: left_outer
+    sql_on: ${delighted_survey_question_answered.user_id} = ${redshift_pixel_api_email_opened.user_id};;
+    relationship: one_to_one
+  }
+
 
   join: analytics_v2 {
     type:  left_outer

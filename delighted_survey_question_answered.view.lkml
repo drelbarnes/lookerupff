@@ -268,7 +268,7 @@ view: delighted_survey_question_answered {
 
   measure: promoterz {
     type: count_distinct
-    sql: ${TABLE}.user_id ;;
+    sql: ${TABLE}.user_id;;
     filters: {
       field: http_api_purchase_event.topic
       value: "customer.product.renewed,customer.product.created"
@@ -277,6 +277,11 @@ view: delighted_survey_question_answered {
       field: promoters # Reference fields from other joined views with view_name.field_name syntax
       value: "Promoters" # Minus sign means "not" in this case, but check notation docs for details
     }
+  }
+
+  measure: average_mo_since_created {
+    type: average
+    sql: ${http_api_purchase_event.months_since_created};;
   }
 
 

@@ -150,4 +150,16 @@ view: redshift_pixel_api_email_opened {
     sql: ${user_id} ;;
   }
 
+  measure: moption_yes_conversion_rate {
+    type: number
+    value_format: ".0#\%"
+    sql: 100.0*${count_ids}/${http_api_purchase_event.moptin_yes};;
+  }
+
+  measure: email_opened_conversion_rate {
+    type: number
+    value_format: ".0#\%"
+    sql: 100.0*${count_ids}/${http_api_purchase_event.distinct_count};;
+  }
+
 }
