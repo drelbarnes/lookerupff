@@ -303,6 +303,11 @@ view: http_api_purchase_event {
     sql: ${email} ;;
   }
 
+  measure: average_months_since_created {
+    type: average
+    sql: ${months_since_created};;
+  }
+
   measure: moptin_yes {
     type: count_distinct
     sql: ${TABLE}.user_id ;;

@@ -279,6 +279,11 @@ view: delighted_survey_question_answered {
     }
   }
 
+  measure: average_mo_since_created {
+    type: average
+    sql: ${http_api_purchase_event.months_since_created};;
+  }
+
 
   measure: count {
     type: count
