@@ -302,6 +302,7 @@ view: churn_future_input {
   }
   dimension: customer_id {
     type: string
+    tags: ["user_id"]
   }
   dimension: marketing_optin {type:number}
   dimension: num {type:number}
@@ -328,7 +329,10 @@ view: churn_prediction {
           (SELECT * FROM ${churn_future_input.SQL_TABLE_NAME}),struct(0.16 as threshold));;
   }
 
-  dimension: customer_id {type: number}
+  dimension: customer_id {
+    type: number
+    tags: ["user_id"]
+  }
   dimension: num {
     type: number
   }
