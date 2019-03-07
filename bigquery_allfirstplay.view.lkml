@@ -184,7 +184,7 @@ where user_id<>'0' and source<>'Roku'    ;;
   }
 
   dimension: video_id {
-    type: string
+    type: number
     sql: ${TABLE}.video_id ;;
   }
 
