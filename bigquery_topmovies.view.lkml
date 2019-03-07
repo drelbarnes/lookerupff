@@ -81,7 +81,7 @@ view: bigquery_topmovies {
       ORDER BY 3 DESC
       LIMIT 14)
 
-      select a.*, case when status_1+status_2=2 then a.title1 else "All Other Movies" end as title  from bigquery_allfirstplay as a left join t on a.title1=bigquery_allfirstplay_title  ;;
+      select a.*, case when status_1+status_2=2 then a.title1 else "All Other Movies" end as title  from bigquery_allfirstplay as a left join t on a.title1=bigquery_allfirstplay_title where source<>'Roku'  ;;
   }
 
   dimension: current_date {

@@ -113,7 +113,7 @@ select *,
             else "NA"
             end as Quarter
 from a
-where user_id<>'0'         ;;
+where user_id<>'0' and source<>'Roku'    ;;
   }
 
   dimension: quarter {
