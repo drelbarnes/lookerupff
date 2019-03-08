@@ -62,6 +62,7 @@ view: bigquery_pixel_api_email_opened {
     timeframes: [
       raw,
       time,
+      hour,
       date,
       week,
       month,
@@ -114,13 +115,14 @@ view: bigquery_pixel_api_email_opened {
     timeframes: [
       raw,
       time,
+      hour,
       date,
       week,
       month,
       quarter,
       year
     ]
-    sql: ${TABLE}.timestamp ;;
+    sql: timestamp_sub(${TABLE}.timestamp,interval 5 hour) ;;
   }
 
   dimension: user_id {
