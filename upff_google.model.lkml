@@ -69,6 +69,9 @@ include: "bigquery_looker_get_clicks.view.lkml"
 include: "churn_cohorts.view.lkml"
 include: "bigquery_active_users.view.lkml"
 include: "bigquery_churn_cohorts_v2.view.lkml"
+include: "mysql_roku_firstplays.view.lkml"
+
+explore: mysql_roku_firstplays {}
 
 explore: bigquery_churn_cohorts_v2 {}
 
