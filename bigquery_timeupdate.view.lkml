@@ -91,8 +91,8 @@ union all
     a3.title,
     a.user_id,
      mysql_roku_firstplays_video_id as video_id,
-    ,
-    series,case when collection in ('Season 1','Season 2','Season 3') then concat(series,' ',collection) else collection end as collection
+    case when collection in ('Season 1','Season 2','Season 3') then concat(series,' ',collection) else collection end as collection,
+    series,
     season,
     episode,
     case when series is null and upper(collection)=upper(title) then 'movie'
@@ -104,7 +104,7 @@ union all
   FROM
     looker.roku_firstplays as a inner join a3 on  mysql_roku_firstplays_video_id=a3.id
   WHERE
-    user_id IS NOT NULL and user_id<>'0' and a3.duration>0))
+    user_id IS NOT NULL and user_id<>'0' and a3.duration>0 and date(sent_at)=current_date()))
 
   select *,
        case when date(a.timestamp) between DATE_SUB(date(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), QUARTER)), INTERVAL 0 QUARTER) and
@@ -115,8 +115,7 @@ union all
             DATE_SUB(date(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY)), INTERVAL 4 QUARTER) then "YAGO Quarter"
             else "NA"
             end as Quarter
-from a4 as a
-where source<>'Roku');;
+from a4 as a);;
   }
 
   dimension: Quarter {

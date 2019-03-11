@@ -39,6 +39,7 @@ view: bigquery_topmovies {
                       user_id,
                       'Roku' as source
                from looker.roku_firstplays as a left join svod_titles.titles_id_mapping as b on mysql_roku_firstplays_video_id = b.id
+               where date(sent_at)=current_date()
 
                union all
                select sent_at as timestamp,
@@ -81,7 +82,7 @@ view: bigquery_topmovies {
       ORDER BY 3 DESC
       LIMIT 14)
 
-      select a.*, case when status_1+status_2=2 then a.title1 else "All Other Movies" end as title  from bigquery_allfirstplay as a left join t on a.title1=bigquery_allfirstplay_title where source<>'Roku'  ;;
+      select a.*, case when status_1+status_2=2 then a.title1 else "All Other Movies" end as title  from bigquery_allfirstplay as a left join t on a.title1=bigquery_allfirstplay_title   ;;
   }
 
   dimension: current_date {

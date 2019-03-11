@@ -74,6 +74,7 @@ a as
        'Roku' as source,
        b.episode
 from looker.roku_firstplays as a left join titles_id_mapping as b on mysql_roku_firstplays_video_id=b.id
+where date(sent_at)=current_date()
 
 
          union all
@@ -113,7 +114,7 @@ select *,
             else "NA"
             end as Quarter
 from a
-where user_id<>'0' and source<>'Roku'     ;;
+where user_id<>'0'      ;;
   }
 
   dimension: quarter {
