@@ -48,6 +48,9 @@ where collection not in ('Romance - OLD',
 'UP Original Series'
 )),
 
+a32 as
+(select max(sent_at) as maxsentat from looker.roku_firstplays),
+
 a as
         (select sent_at as timestamp,
                 b.date as release_date,
@@ -73,8 +76,8 @@ a as
        user_id,
        'Roku' as source,
        b.episode
-from looker.roku_firstplays as a left join titles_id_mapping as b on mysql_roku_firstplays_video_id=b.id
-where date(sent_at)=current_date()
+from looker.roku_firstplays as a left join titles_id_mapping as b on mysql_roku_firstplays_video_id=b.id,a32
+where date(sent_at)=date(maxsentat)
 
 
          union all

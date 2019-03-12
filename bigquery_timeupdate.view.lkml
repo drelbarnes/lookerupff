@@ -20,6 +20,9 @@ a2 as
  from svod_titles.titles_id_mapping
  where (series is null and upper(collection)=upper(title)) or series is not null),
 
+a32 as
+(select max(sent_at) as maxsentat from looker.roku_firstplays),
+
 a4 as
 ((SELECT
     a2.title,
@@ -102,9 +105,9 @@ union all
     mysql_roku_firstplays_total_minutes_watched*60 as timecode,
    'Roku' AS source
   FROM
-    looker.roku_firstplays as a inner join a3 on  mysql_roku_firstplays_video_id=a3.id
+    looker.roku_firstplays as a inner join a3 on  mysql_roku_firstplays_video_id=a3.id, a32
   WHERE
-    user_id IS NOT NULL and user_id<>'0' and a3.duration>0 and date(sent_at)=current_date()))
+    user_id IS NOT NULL and user_id<>'0' and a3.duration>0 and date(sent_at)=date(maxsentat)))
 
   select *,
        case when date(a.timestamp) between DATE_SUB(date(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), QUARTER)), INTERVAL 0 QUARTER) and

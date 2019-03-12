@@ -12,6 +12,9 @@ view: bigquery_topmovies {
               title[safe_ordinal(1)] as title
        from a1 order by 1),
 
+      a32 as
+(select max(sent_at) as maxsentat from looker.roku_firstplays),
+
       a as
               (select sent_at as timestamp,
                       b.date as release_date,
@@ -38,8 +41,8 @@ view: bigquery_topmovies {
                       trim((title)) as title1,
                       user_id,
                       'Roku' as source
-               from looker.roku_firstplays as a left join svod_titles.titles_id_mapping as b on mysql_roku_firstplays_video_id = b.id
-               where date(sent_at)=current_date()
+               from looker.roku_firstplays as a left join svod_titles.titles_id_mapping as b on mysql_roku_firstplays_video_id = b.id,a32
+               where date(sent_at)=date(maxsentat)
 
                union all
                select sent_at as timestamp,
