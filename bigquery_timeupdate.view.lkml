@@ -235,7 +235,7 @@ from a4 as a);;
   measure: percent_completed {
     type: number
     value_format: "0\%"
-    sql: 100.00*${timecode_count}/${duration_count} ;;
+    sql: case when ${timecode_count}>${duration_count} then 100.00 else 100.00*${timecode_count}/${duration_count} end ;;
   }
 
   measure: timecode_count {
