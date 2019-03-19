@@ -288,6 +288,12 @@ view: bigquery_looker_get_app_installs {
     drill_fields: [detail*]
   }
 
+  measure: count_anonymous_id {
+    type: count_distinct
+    sql: ${anonymous_id} ;;
+    drill_fields: [detail*]
+  }
+
   # ----- Sets of fields for drilling ------
   set: detail {
     fields: [

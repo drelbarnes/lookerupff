@@ -21,6 +21,8 @@ include: "android_conversion.view"
 include: "redshift_php_get_analytics.view"
 include: "redshift_android_firstplay.view"
 include: "redshift_pixel_api_email_opened.view"
+include: "redshift_android_application_installed.view"
+include: "redshift_ios_application_installed.view"
 
 datagroup: upff_default_datagroup {
   # sql_trigger: SELECT MAX(id) FROM etl_log;;
@@ -413,21 +415,19 @@ explore: customers_social_ads {
       sql_on: ${customers_social_ads.user_data_idfa} = ${ios_signupstarted.context_device_advertising_id};;
       relationship: one_to_one
     }
-
-
   }
 
 explore: redshift_php_get_mobile_app_installs {
 
   label: "Mobile Attribution"
   join: ios_conversion {
-    type: inner
+    type: left_outer
     sql_on: ${redshift_php_get_mobile_app_installs.anonymous_id} = ${ios_conversion.anonymous_id};;
     relationship: one_to_one
   }
 
   join: android_conversion {
-    type: inner
+    type: left_outer
     sql_on: ${redshift_php_get_mobile_app_installs.anonymous_id} = ${android_conversion.anonymous_id};;
     relationship: one_to_one
   }
