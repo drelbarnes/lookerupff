@@ -21,7 +21,7 @@ a2 as
  where (series is null and upper(collection)=upper(title)) or series is not null),
 
 a32 as
-(select max(sent_at) as maxsentat from looker.roku_firstplays),
+(select max(loaded_at) as maxsentat from looker.roku_firstplays),
 
 a4 as
 ((SELECT
@@ -107,7 +107,7 @@ union all
   FROM
     looker.roku_firstplays as a inner join a3 on  mysql_roku_firstplays_video_id=a3.id, a32
   WHERE
-    user_id IS NOT NULL and user_id<>'0' and a3.duration>0 and date(sent_at)=date(maxsentat)))
+    user_id IS NOT NULL and user_id<>'0' and a3.duration>0 and (loaded_at)=(maxsentat)))
 
   select *,
        case when date(a.timestamp) between DATE_SUB(date(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), QUARTER)), INTERVAL 0 QUARTER) and
