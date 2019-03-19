@@ -70,9 +70,9 @@ include: "churn_cohorts.view.lkml"
 include: "bigquery_active_users.view.lkml"
 include: "bigquery_churn_cohorts_v2.view.lkml"
 include: "mysql_roku_firstplays.view.lkml"
-
 include: "bigquery_purchase_event.view.lkml"
 include: "bigquery_app_installs_by_platform.view.lkml"
+include: "bigquery_http_api_roku_firstplay.view.lkml"
 
 explore: bigquery_app_installs_by_platform {}
 
@@ -498,11 +498,8 @@ explore: bigquery_looker_get_clicks {
 
 }
 
-explore: bigquery_firebase_events_20190225 {
-  label: "Push Notifications"
-}
-
 explore: redshift_php_get_weekly_comments {}
+explore: bigquery_http_api_roku_firstplay{}
 
 # include all views in this project
 # include: "my_dashboard.dashboard.lookml"   # include a LookML dashboard called my_dashboard
