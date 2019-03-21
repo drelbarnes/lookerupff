@@ -32,6 +32,7 @@ a32 as
 (select a31.timestamp,
        a31.mysql_roku_firstplays_video_id,
        a31.user_id,
+       count(*) as numcount,
        sum(mysql_roku_firstplays_total_minutes_watched) as mysql_roku_firstplays_total_minutes_watched
 from looker.roku_firstplays as a inner join a31 on a.loaded_at=maxloaded and mysql_roku_firstplays_firstplay_date_date=a31.timestamp and a31.mysql_roku_firstplays_video_id=a.mysql_roku_firstplays_video_id and a.user_id=a31.user_id
 group by 1,2,3),
@@ -114,7 +115,7 @@ union all
     case when series is null and upper(collection)=upper(title) then 'movie'
                      when series is not null then 'series' else 'other' end as type,
     timestamp,
-    a3.duration*60 as duration,
+    a3.duration*60*numcount as duration,
     mysql_roku_firstplays_total_minutes_watched*60 as timecode,
    'Roku' AS source
   FROM
