@@ -13,7 +13,10 @@ view: bigquery_topmovies {
        from a1 order by 1),
 
       a32 as
-(select max(sent_at) as maxsentat from looker.roku_firstplays),
+(select distinct mysql_roku_firstplays_firstplay_date_date as timestamp,
+                mysql_roku_firstplays_video_id,
+                user_id
+from looker.roku_firstplays),
 
       a as
               (select sent_at as timestamp,
@@ -31,18 +34,17 @@ view: bigquery_topmovies {
 
                union all
 
-               select mysql_roku_firstplays_firstplay_date_date  as timestamp,
-                      b.date as release_date,
-                      1 as status_1,
-                      collection,
-                      case when series is null and upper(collection)=upper(title) then 'movie'
-                           when series is not null then 'series' else 'other' end as type,
-                      mysql_roku_firstplays_video_id as video_id,
-                      trim((title)) as title1,
-                      user_id,
-                      'Roku' as source
-               from looker.roku_firstplays as a left join svod_titles.titles_id_mapping as b on mysql_roku_firstplays_video_id = b.id,a32
-               where date(sent_at)=date(maxsentat)
+       select timestamp,
+       b.date as release_date,
+       1 as status_1,
+       case when b.collection in ('Season 1','Season 2','Season 3') then concat(b.series,' ',b.collection) else collection end as collection,
+       case when b.series is null and upper(b.collection)=upper(b.title) then 'movie'
+                     when b.series is not null then 'series' else 'other' end as type,
+      cast(mysql_roku_firstplays_video_id as int64) as video_id,
+       trim(b.title) as title1,
+       user_id,
+       'Roku' as source
+from a32 as a left join svod_titles.titles_id_mapping as b on mysql_roku_firstplays_video_id=b.id
 
                union all
                select sent_at as timestamp,

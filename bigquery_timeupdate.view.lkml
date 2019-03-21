@@ -20,8 +20,21 @@ a2 as
  from svod_titles.titles_id_mapping
  where (series is null and upper(collection)=upper(title)) or series is not null),
 
+a31 as
+(select mysql_roku_firstplays_firstplay_date_date as timestamp,
+                mysql_roku_firstplays_video_id,
+                user_id,
+                max(loaded_at) as maxloaded
+from looker.roku_firstplays
+group by 1,2,3),
+
 a32 as
-(select max(loaded_at) as maxsentat from looker.roku_firstplays),
+(select a31.timestamp,
+       a31.mysql_roku_firstplays_video_id,
+       a31.user_id,
+       sum(mysql_roku_firstplays_total_minutes_watched) as mysql_roku_firstplays_total_minutes_watched
+from looker.roku_firstplays as a inner join a31 on a.loaded_at=maxloaded and mysql_roku_firstplays_firstplay_date_date=a31.timestamp and a31.mysql_roku_firstplays_video_id=a.mysql_roku_firstplays_video_id and a.user_id=a31.user_id
+group by 1,2,3),
 
 a4 as
 ((SELECT
@@ -100,14 +113,14 @@ union all
     episode,
     case when series is null and upper(collection)=upper(title) then 'movie'
                      when series is not null then 'series' else 'other' end as type,
-    mysql_roku_firstplays_firstplay_date_date  as timestamp,
+    timestamp,
     a3.duration*60 as duration,
     mysql_roku_firstplays_total_minutes_watched*60 as timecode,
    'Roku' AS source
   FROM
-    looker.roku_firstplays as a inner join a3 on  mysql_roku_firstplays_video_id=a3.id, a32
+    a32 as a inner join a3 on  mysql_roku_firstplays_video_id=a3.id
   WHERE
-    user_id IS NOT NULL and user_id<>'0' and a3.duration>0 and (loaded_at)=(maxsentat)))
+    user_id IS NOT NULL and user_id<>'0' and a3.duration>0))
 
   select *,
        case when date(a.timestamp) between DATE_SUB(date(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), QUARTER)), INTERVAL 0 QUARTER) and

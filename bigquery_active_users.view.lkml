@@ -120,11 +120,17 @@ select cast(week_ago as timestamp) as timestamp,
 from audience inner join a0 on week=cast(week_ago as string)
 order by 1 desc),
 
+a32 as
+(select distinct mysql_roku_firstplays_firstplay_date_date,
+                mysql_roku_firstplays_video_id,
+                user_id
+from looker.roku_firstplays),
+
 roku_plays as
 (select FORMAT_TIMESTAMP('%F', TIMESTAMP_TRUNC(TIMESTAMP_ADD(TIMESTAMP_TRUNC(CAST(mysql_roku_firstplays_firstplay_date_date  AS TIMESTAMP), DAY), INTERVAL (0 - CAST((CASE WHEN (EXTRACT(DAYOFWEEK FROM mysql_roku_firstplays_firstplay_date_date ) - 1) - 1 + 7 < 0 THEN -1 * (ABS((EXTRACT(DAYOFWEEK FROM mysql_roku_firstplays_firstplay_date_date ) - 1) - 1 + 7) - (ABS(7) * CAST(FLOOR(ABS(((EXTRACT(DAYOFWEEK FROM mysql_roku_firstplays_firstplay_date_date ) - 1) - 1 + 7) / (7))) AS INT64))) ELSE ABS((EXTRACT(DAYOFWEEK FROM mysql_roku_firstplays_firstplay_date_date ) - 1) - 1 + 7) - (ABS(7) * CAST(FLOOR(ABS(((EXTRACT(DAYOFWEEK FROM mysql_roku_firstplays_firstplay_date_date ) - 1) - 1 + 7) / (7))) AS INT64)) END) AS INT64)) DAY), DAY)) as timestamp,
        count(distinct user_id) as audience_size
-from looker.roku_firstplays
-where date(mysql_roku_firstplays_firstplay_date_date)>='2019-03-04' and date(sent_at)=current_date()
+from a32
+where date(mysql_roku_firstplays_firstplay_date_date)>='2019-03-04'
 group by 1)
 
 select a.timestamp,

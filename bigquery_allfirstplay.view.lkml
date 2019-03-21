@@ -49,7 +49,10 @@ where collection not in ('Romance - OLD',
 )),
 
 a32 as
-(select max(sent_at) as maxsentat from looker.roku_firstplays),
+(select distinct mysql_roku_firstplays_firstplay_date_date as timestamp,
+                mysql_roku_firstplays_video_id,
+                user_id
+from looker.roku_firstplays),
 
 a as
         (select sent_at as timestamp,
@@ -66,7 +69,7 @@ a as
 
          union all
 
-        select mysql_roku_firstplays_firstplay_date_date as timestamp,
+        select timestamp,
        b.date,
        case when b.collection in ('Season 1','Season 2','Season 3') then concat(b.series,' ',b.collection) else collection end as collection,
        case when b.series is null and upper(b.collection)=upper(b.title) then 'movie'
@@ -76,8 +79,7 @@ a as
        user_id,
        'Roku' as source,
        b.episode
-from looker.roku_firstplays as a left join titles_id_mapping as b on mysql_roku_firstplays_video_id=b.id,a32
-where date(sent_at)=date(maxsentat)
+from a32 as a left join titles_id_mapping as b on mysql_roku_firstplays_video_id=b.id
 
 
          union all
