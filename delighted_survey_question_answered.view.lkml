@@ -242,6 +242,7 @@ view: delighted_survey_question_answered {
 
   measure: detractors {
     type: count_distinct
+    label: "Paid Subscribers"
     sql: ${TABLE}.user_id ;;
     filters: {
       field: http_api_purchase_event.topic
