@@ -240,13 +240,18 @@ view: delighted_survey_question_answered {
       }
   }
 
+  dimension: current_date{
+    type: date
+    sql: current_date;;
+  }
+
   measure: detractors {
     type: count_distinct
     label: "Paid Detractors Subs"
     sql: ${TABLE}.user_id ;;
     filters: {
       field: http_api_purchase_event.topic
-      value: "customer.product.renewed,customer.product.created"
+      value: "customer.product.renewed"
     }
     filters: {
       field: promoters # Reference fields from other joined views with view_name.field_name syntax
@@ -257,9 +262,10 @@ view: delighted_survey_question_answered {
   measure: passives {
     type: count_distinct
     sql: ${TABLE}.user_id ;;
+    label: "Paid Passives Subs"
     filters: {
       field: http_api_purchase_event.topic
-      value: "customer.product.renewed,customer.product.created"
+      value: "customer.product.renewed"
     }
     filters: {
       field: promoters # Reference fields from other joined views with view_name.field_name syntax
@@ -270,9 +276,10 @@ view: delighted_survey_question_answered {
   measure: promoterz {
     type: count_distinct
     sql: ${TABLE}.user_id;;
+    label: "Paid Promoters Subs"
     filters: {
       field: http_api_purchase_event.topic
-      value: "customer.product.renewed,customer.product.created"
+      value: "customer.product.renewed"
     }
     filters: {
       field: promoters # Reference fields from other joined views with view_name.field_name syntax
