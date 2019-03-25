@@ -23,6 +23,7 @@ include: "redshift_android_firstplay.view"
 include: "redshift_pixel_api_email_opened.view"
 include: "redshift_android_application_installed.view"
 include: "redshift_ios_application_installed.view"
+include: "redshift_php_get_trialist_survey.view"
 
 datagroup: upff_default_datagroup {
   # sql_trigger: SELECT MAX(id) FROM etl_log;;
@@ -239,6 +240,12 @@ explore: subscribed {}
 explore: http_api_purchase_event
         {
           label: "Subscribers"
+
+          join: redshift_php_get_trialist_survey{
+            type: left_outer
+            sql_on: ${http_api_purchase_event.user_id} = ${redshift_php_get_trialist_survey.user_id};;
+            relationship: one_to_one
+          }
 
             join: redshift_pixel_api_email_opened{
               type: left_outer
