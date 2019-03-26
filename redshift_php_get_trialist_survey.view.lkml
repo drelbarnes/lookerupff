@@ -82,6 +82,11 @@ view: redshift_php_get_trialist_survey {
     sql:  CAST(${TABLE}.rating AS INT) ;;
   }
 
+  dimension: total_nps {
+    type: number
+    sql:  SUM(CAST(${TABLE}.rating AS INT)) ;;
+  }
+
   dimension: reason {
     type: string
     sql: ${TABLE}.reason ;;
@@ -155,10 +160,10 @@ view: redshift_php_get_trialist_survey {
   }
 
 #Get Promoters by case
-  dimension: promoters {
+  dimension: nps_cat {
     case: {
       when: {
-        sql: CAST(${rating} AS INT) =  9 OR
+        sql: CAST(${rating} AS INT) = 9 OR
           CAST(${rating} AS INT) = 10 ;;
         label: "Promoters"
       }
@@ -175,21 +180,53 @@ view: redshift_php_get_trialist_survey {
     }
   }
 
+  measure: promoters {
+    type:  count_distinct
+    sql: ${user_id} ;;
+    filters: {
+      field: rating
+      value: "10,9"
+    }
+  }
+
+  measure: passives {
+    type:  count_distinct
+    sql: ${user_id} ;;
+    filters: {
+      field: rating
+      value: "8,7"
+    }
+  }
+
+  measure: detractors {
+    type:  count_distinct
+    sql: ${user_id} ;;
+    filters: {
+      field: rating
+      value: "6,5,4,3,2,1,0"
+    }
+  }
+
+
   measure: count {
     type: count
     drill_fields: [id, context_library_name]
   }
 
-
-  measure: average_rating {
-    type: average
-    value_format: "0"
-    sql: CAST(${rating} * 10 AS INT) ;;
+  measure: nps_total {
+    type:  sum
+    sql:  CAST(${rating} AS INT) ;;
   }
+
 
   measure: count_distinct {
     type: count_distinct
     sql: ${user_id} ;;
     drill_fields: [id, context_library_name]
+  }
+
+  measure: avg {
+    type:  number
+    sql: ${promoters} - ${detractors}/${count_distinct} * 100 ;;
   }
 }
