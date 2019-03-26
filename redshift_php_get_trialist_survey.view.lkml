@@ -71,8 +71,15 @@ view: redshift_php_get_trialist_survey {
   }
 
   dimension: rating {
-    type: string
+    type:string
     sql: ${TABLE}.rating ;;
+  }
+
+  dimension: total_rating {
+    type: number
+    label: "Rating Number"
+    value_format: "0"
+    sql:  CAST(${TABLE}.rating AS INT) ;;
   }
 
   dimension: reason {
@@ -172,7 +179,6 @@ view: redshift_php_get_trialist_survey {
     type: count
     drill_fields: [id, context_library_name]
   }
-
 
 
   measure: average_rating {
