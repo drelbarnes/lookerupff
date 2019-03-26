@@ -188,7 +188,6 @@ view: redshift_php_get_trialist_survey {
       value: "10,9"
     }
   }
-
   measure: passives {
     type:  count_distinct
     sql: ${user_id} ;;
@@ -226,7 +225,7 @@ view: redshift_php_get_trialist_survey {
   }
 
   measure: avg {
-    type:  number
-    sql: ${promoters} - ${detractors}/${count_distinct} * 100 ;;
+    type: number
+    sql: (${promoters} - ${detractors}) / ${count_distinct} * 100 ;;
   }
 }
