@@ -4,8 +4,8 @@ view: redshift_derived_personalize {
 
     sql:
        (select
-       user_id as USER_ID,
-       video_id as ITEM_ID,
+       CAST(user_id AS bigint) as USER_ID,
+       CAST(video_id AS bigint) as ITEM_ID,
        event as EVENT_TYPE,
        date_part(epoch,timestamp) as TIMESTAMP
      from ios.timeupdate WHERE date(timestamp)>='2019-02-01')
@@ -13,8 +13,8 @@ view: redshift_derived_personalize {
      UNION ALL
 
        (select
-          user_id as USER_ID,
-          video_id as ITEM_ID,
+          CAST(user_id AS bigint) as USER_ID,
+       CAST(video_id AS bigint) as ITEM_ID,
           event as EVENT_TYPE,
           date_part(epoch, timestamp) as TIMESTAMP
         from ios.firstplay WHERE date(timestamp)>='2019-02-01')
