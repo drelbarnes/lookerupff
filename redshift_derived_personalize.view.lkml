@@ -44,12 +44,13 @@ view: redshift_derived_personalize {
   }
 
   dimension: event_type {
-    type: number
+    type: string
     sql: ${TABLE}.event_type;;
   }
 
   dimension: timestamp {
     type: number
+    value_format: "0"
     sql: ${TABLE}.timestamp ;;
   }
 
