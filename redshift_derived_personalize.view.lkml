@@ -48,17 +48,8 @@ view: redshift_derived_personalize {
     sql: ${TABLE}.event_type;;
   }
 
-  dimension_group: timestamp {
-    type: time
-    timeframes: [
-      raw,
-      time,
-      date,
-      week,
-      month,
-      quarter,
-      year
-    ]
+  dimension: timestamp {
+    type: number
     sql: ${TABLE}.timestamp ;;
   }
 
