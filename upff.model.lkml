@@ -24,6 +24,7 @@ include: "redshift_pixel_api_email_opened.view"
 include: "redshift_android_application_installed.view"
 include: "redshift_ios_application_installed.view"
 include: "redshift_php_get_trialist_survey.view"
+include: "redshift_derived_personalize.view"
 
 datagroup: upff_default_datagroup {
   # sql_trigger: SELECT MAX(id) FROM etl_log;;
@@ -467,3 +468,6 @@ explore: redshift_php_get_mobile_app_installs {
 
 
 explore: redshift_android_firstplay {}
+explore: redshift_derived_personalize {
+  label: "Amazon Personalize Dataset"
+}
