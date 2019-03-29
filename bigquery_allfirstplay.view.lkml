@@ -122,6 +122,8 @@ from a
 where user_id<>'0'      ;;
   }
 
+
+
   dimension: quarter {
     type: string
     sql: ${TABLE}.quarter ;;
@@ -132,9 +134,30 @@ where user_id<>'0'      ;;
     sql: current_date() ;;
   }
 
+  dimension_group: current_date_ {
+    type: time
+    timeframes: [
+      raw,
+      time,
+      hour_of_day,
+      date,
+      day_of_week_index,
+      week,
+      month,
+      quarter,
+      year
+    ]
+    sql: current_date() ;;
+    }
+
   dimension: title {
     type: string
     sql: ${TABLE}.title;;
+  }
+
+  measure: title_count {
+    type: count_distinct
+    sql: ${video_id} ;;
   }
 
   dimension: type {
@@ -201,6 +224,7 @@ where user_id<>'0'      ;;
       time,
       hour_of_day,
       date,
+      day_of_week_index,
       week,
       month,
       quarter,
@@ -351,6 +375,34 @@ where user_id<>'0'      ;;
     allowed_value: { value: "Month" }
     allowed_value: { value: "Quarter" }
     allowed_value: { value: "Year" }
+  }
+
+  filter:  promotional_id{
+    type: number
+  }
+
+  dimension: promotional {
+    hidden: no
+    type: yesno
+    sql: {%condition promotional_id%} ${video_id} {%endcondition%};;
+  }
+
+  measure: promotional_plays {
+    type: count_distinct
+    filters: {
+      field: promotional
+      value: "yes"
+    }
+    sql: concat(safe_cast(${video_id} as string),${user_id},cast(${timestamp_date} as string))  ;;
+  }
+
+  measure: promotional_title_count {
+    type: count_distinct
+    filters: {
+      field: promotional
+      value: "yes"
+    }
+    sql: ${video_id} ;;
   }
 
   dimension: date {
