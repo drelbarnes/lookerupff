@@ -34,7 +34,7 @@ view: redshift_derived_personalize {
   }
 
   dimension: anonymousId {
-    tags: ["anonymousId"]
+    tags: ["anonymous_id"]
     type: string
     sql: ${TABLE}.anonymousId;;
   }
