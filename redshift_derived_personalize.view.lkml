@@ -6,7 +6,7 @@ view: redshift_derived_personalize {
 
        (select
           CAST(user_id AS bigint) as USER_ID,
-          anonymous_id,
+          anonymous_id AS anonymousId,
        CAST(video_id AS bigint) as ITEM_ID,
           event as EVENT_TYPE,
           received_at,
@@ -17,7 +17,7 @@ view: redshift_derived_personalize {
 
        (select
          user_id as USER_ID,
-          anonymous_id,
+          anonymous_id AS anonymousId,
          video_id as ITEM_ID,
          event as EVENT_TYPE,
          received_at,
@@ -35,7 +35,7 @@ view: redshift_derived_personalize {
 
   dimension: anonymousId {
     type: string
-    sql: ${TABLE}.anonymous_id;;
+    sql: ${TABLE}.anonymousId;;
   }
 
   dimension: itemId {
