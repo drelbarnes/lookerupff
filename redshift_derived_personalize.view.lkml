@@ -8,6 +8,7 @@ view: redshift_derived_personalize {
           CAST(user_id AS bigint) as USER_ID,
        CAST(video_id AS bigint) as ITEM_ID,
           event as EVENT_TYPE,
+          received_at,
           date_part(epoch, timestamp) as TIMESTAMP
         from ios.firstplay WHERE date(timestamp)>='2019-02-01')
 
@@ -17,25 +18,46 @@ view: redshift_derived_personalize {
          user_id as USER_ID,
          video_id as ITEM_ID,
          event as EVENT_TYPE,
+         received_at,
          date_part(epoch,timestamp) as TIMESTAMP
        from ios.view WHERE date(timestamp)>='2019-02-01')
-    ;;
+
+      UNION ALL
+
+      (select
+          CAST(user_id AS bigint) as USER_ID,
+          CAST(video_id AS bigint) as ITEM_ID,
+          event as EVENT_TYPE,
+          received_at,
+          date_part(epoch, timestamp) as TIMESTAMP
+        from android.firstplay WHERE date(timestamp)>='2019-02-01')
+
+     UNION ALL
+
+       (select
+          CAST(user_id AS bigint) as USER_ID,
+          video_id as ITEM_ID,
+         event as EVENT_TYPE,
+          received_at,
+         date_part(epoch,timestamp) as TIMESTAMP
+       from android.view WHERE date(timestamp)>='2019-02-01');;
 
   }
 
-  dimension: user_id {
+  dimension: userId {
     primary_key: yes
     tags: ["user_id"]
     type: number
     sql: ${TABLE}.user_id ;;
   }
 
-  dimension: item_id {
+  dimension: itemId {
+    value_format: "0"
     type: number
     sql: ${TABLE}.item_id ;;
   }
 
-  dimension: event_type {
+  dimension: event {
     type: string
     sql: ${TABLE}.event_type;;
   }
@@ -44,6 +66,20 @@ view: redshift_derived_personalize {
     type: number
     value_format: "0"
     sql: ${TABLE}.timestamp ;;
+  }
+
+  dimension_group: received {
+    type: time
+    timeframes: [
+      raw,
+      time,
+      date,
+      week,
+      month,
+      quarter,
+      year
+    ]
+    sql: ${TABLE}.received_at ;;
   }
 
   measure: count {
