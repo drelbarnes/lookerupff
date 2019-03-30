@@ -20,27 +20,7 @@ view: redshift_derived_personalize {
          event as EVENT_TYPE,
          received_at,
          date_part(epoch,timestamp) as TIMESTAMP
-       from ios.view WHERE date(timestamp)>='2019-02-01')
-
-      UNION ALL
-
-      (select
-          CAST(user_id AS bigint) as USER_ID,
-          CAST(video_id AS bigint) as ITEM_ID,
-          event as EVENT_TYPE,
-          received_at,
-          date_part(epoch, timestamp) as TIMESTAMP
-        from android.firstplay WHERE date(timestamp)>='2019-02-01')
-
-     UNION ALL
-
-       (select
-          CAST(user_id AS bigint) as USER_ID,
-          video_id as ITEM_ID,
-         event as EVENT_TYPE,
-          received_at,
-         date_part(epoch,timestamp) as TIMESTAMP
-       from android.view WHERE date(timestamp)>='2019-02-01');;
+       from ios.view WHERE date(timestamp)>='2019-02-01');;
 
   }
 
