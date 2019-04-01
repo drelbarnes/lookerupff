@@ -30,7 +30,7 @@ view: redshift_derived_personalize {
 
       (select
           CAST(user_id AS bigint) as USER_ID,
-       CAST(video_id AS bigint) as ITEM_ID,
+          video_id as ITEM_ID,
           anonymous_id as anonymousId,
           event as EVENT_TYPE,
           received_at,
@@ -41,7 +41,7 @@ view: redshift_derived_personalize {
      UNION ALL
 
        (select
-         user_id as USER_ID,
+         CAST(user_id AS bigint) as USER_ID,
          video_id as ITEM_ID,
          anonymous_id as anonymousId,
          event as EVENT_TYPE,
