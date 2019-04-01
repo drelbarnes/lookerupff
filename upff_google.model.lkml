@@ -73,6 +73,9 @@ include: "mysql_roku_firstplays.view.lkml"
 include: "bigquery_purchase_event.view.lkml"
 include: "bigquery_app_installs_by_platform.view.lkml"
 include: "bigquery_http_api_roku_firstplay.view.lkml"
+include: "roku_churn_segments.view.lkml"
+
+explore: roku_churn_segments {}
 
 explore: bigquery_app_installs_by_platform {}
 
