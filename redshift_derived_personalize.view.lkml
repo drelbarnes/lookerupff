@@ -71,8 +71,8 @@ view: redshift_derived_personalize {
   }
 
   dimension: itemId {
-    value_format: "0"
     type: number
+    value_format: "0"
     sql: ${TABLE}.item_id ;;
   }
 
