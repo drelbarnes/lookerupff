@@ -10,7 +10,7 @@ view: redshift_derived_personalize {
           anonymous_id as anonymousId,
           event as EVENT_TYPE,
           received_at,
-          'iOS' as platform
+          'iOS' as platform,
           date_part(epoch, timestamp) as TIMESTAMP
         from ios.firstplay WHERE date(timestamp)>='2019-02-01')
 
@@ -22,7 +22,7 @@ view: redshift_derived_personalize {
          anonymous_id as anonymousId,
          event as EVENT_TYPE,
          received_at,
-        'iOS' as platform
+        'iOS' as platform,
          date_part(epoch,timestamp) as TIMESTAMP
        from ios.view WHERE date(timestamp)>='2019-02-01')
 
@@ -34,7 +34,7 @@ view: redshift_derived_personalize {
           anonymous_id as anonymousId,
           event as EVENT_TYPE,
           received_at,
-          'android' as platform
+          'android' as platform,
           date_part(epoch, timestamp) as TIMESTAMP
         from android.firstplay WHERE date(timestamp)>='2019-02-01')
 
@@ -46,12 +46,9 @@ view: redshift_derived_personalize {
          anonymous_id as anonymousId,
          event as EVENT_TYPE,
          received_at,
-        'android' as platform
+        'android' as platform,
          date_part(epoch,timestamp) as TIMESTAMP
-       from android.view WHERE date(timestamp)>='2019-02-01')
-
-
-      ;;
+       from android.view WHERE date(timestamp)>='2019-02-01');;
 
   }
 
