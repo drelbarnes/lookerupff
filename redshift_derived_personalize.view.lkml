@@ -68,6 +68,11 @@ view: redshift_derived_personalize {
   }
 
 
+  dimension: platform {
+    type: string
+    sql: ${TABLE}.platform ;;
+  }
+
   dimension: itemId {
     value_format: "0"
     type: number
