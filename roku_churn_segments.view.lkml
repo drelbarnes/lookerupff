@@ -46,6 +46,11 @@ view: roku_churn_segments {
     sql: ${TABLE}.contact_key ;;
   }
 
+  dimension: userId {
+    type: string
+    sql: ${TABLE}.contact_key ;;
+  }
+
   dimension: email {
     type: string
     sql: ${TABLE}.email ;;
