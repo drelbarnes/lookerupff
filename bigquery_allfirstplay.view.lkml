@@ -1,6 +1,21 @@
 view: bigquery_allfirstplay {
   derived_table: {
-    sql:  with a1 as
+    sql:  with aa as
+(select user_id,status_date as churn_date
+from http_api.purchase_event
+where topic in ('customer.product.cancelled','customer.product.disabled','customer.product.expired')),
+
+bb as
+(select user_id, max(status_date) as status_date
+from http_api.purchase_event
+where topic in ('customer.product.created','customer.product.renewed','customer.created','customer.product.free_trial_created')
+group by 1),
+
+cc as
+(select distinct bb.user_id
+from aa inner join bb on aa.user_id=bb.user_id and status_date>churn_date),
+
+a1 as
 (select sent_at as timestamp,
         user_id,
         (split(title," - ")) as title
@@ -106,7 +121,7 @@ from a32 as a left join titles_id_mapping as b on mysql_roku_firstplays_video_id
                 user_id,
                 'Web' as source,
                 episode
-         from javascript.loadeddata as a left join titles_id_mapping as b on safe_cast(a.video_id as string)= safe_cast(b.id as string)
+         from javascript.loadedmetadata as a left join titles_id_mapping as b on safe_cast(a.video_id as string)= safe_cast(b.id as string)
          union all
          select timestamp,
                 b.date as release_date,
@@ -121,7 +136,16 @@ from a32 as a left join titles_id_mapping as b on mysql_roku_firstplays_video_id
          from a2 as a left join titles_id_mapping as b on trim(upper(b.title)) = trim(upper(a.title)))
 
 
-select *,
+select a.user_id,
+       a.timestamp,
+       a.release_date,
+       a.collection,
+       a.type,
+       a.video_id,
+       a.title,
+       a.source,
+       a.episode,
+       case when cc.user_id is null then 'first-time customers' else 'reacquisitions' end as winback,
        case when date(a.timestamp) between DATE_SUB(date(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), QUARTER)), INTERVAL 0 QUARTER) and
             DATE_SUB(date(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY)), INTERVAL 0 QUARTER) then "Current Quarter"
             when date(a.timestamp) between DATE_SUB(date(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), QUARTER)), INTERVAL 1 QUARTER) and
@@ -130,11 +154,14 @@ select *,
             DATE_SUB(date(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY)), INTERVAL 4 QUARTER) then "YAGO Quarter"
             else "NA"
             end as Quarter
-from a
-where user_id<>'0'    ;;
+from a left join cc on a.user_id=cc.user_id
+where a.user_id<>'0'    ;;
   }
 
-
+dimension: winback {
+  type: string
+  sql: ${TABLE}.winback ;;
+}
 
   dimension: quarter {
     type: string
