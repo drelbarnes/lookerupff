@@ -60,8 +60,8 @@ view: redshift_derived_personalize {
   }
 
   dimension: anonymousId {
+    tags: ["segment_anonymous_id"]
     type: string
-    tags: ["segment_anonymous_id "]
     sql: ${TABLE}.anonymousId ;;
   }
 
