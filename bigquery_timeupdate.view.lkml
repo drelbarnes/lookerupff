@@ -51,9 +51,31 @@ a4 as
     safe_cast(date(sent_at) as timestamp) as timestamp,
     a3.duration*60 as duration,
     max(_current_time) as timecode,
-   'web' AS source
+   'Web' AS source
   FROM
     a2 inner join a3 on trim(upper(a2.title))=trim(upper(a3.title)) and a2.collection=a3.collection
+  WHERE
+    user_id IS NOT NULL and safe_cast(user_id as string)!='0' and a3.duration>0
+  GROUP BY 1,2,3,4,5,6,7,8,9,10)
+
+union all
+
+(SELECT
+    title,
+    user_id,
+    cast(video_id as int64) as video_id,
+    case when collection in ('Season 1','Season 2','Season 3') then concat(series,' ',collection) else collection end as collection,
+    series,
+    season,
+    episode,
+    case when series is null and upper(collection)=upper(title) then 'movie'
+                     when series is not null then 'series' else 'other' end as type,
+    safe_cast(date(sent_at) as timestamp) as timestamp,
+    a3.duration*60 as duration,
+    max(timecode) as timecode,
+   'Web' AS source
+  FROM
+    javascript.durationchange as a inner join a3 on safe_cast(a.video_id as int64)=a3.id
   WHERE
     user_id IS NOT NULL and safe_cast(user_id as string)!='0' and a3.duration>0
   GROUP BY 1,2,3,4,5,6,7,8,9,10)
