@@ -73,6 +73,7 @@ view: http_api_purchase_event {
 
   dimension: days_in_trial{
     description: "Number of days a user is in free trial"
+    value_format: "0"
     type: number
     sql:  DATEDIFF('day', ${created_date}::timestamp, ${current_date}::timestamp);;
   }
@@ -208,10 +209,12 @@ view: http_api_purchase_event {
     sql: ${TABLE}.status_date;;
   }
 
+
   dimension: days_since_created {
     type: number
     sql:  DATEDIFF('day', ${created_date}::timestamp, ${status_date}::timestamp);;
   }
+
 
   dimension: days_after_status {
     type:  number
