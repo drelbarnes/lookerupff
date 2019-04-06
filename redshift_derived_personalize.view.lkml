@@ -6,12 +6,12 @@ view: redshift_derived_personalize {
 
        (select
           CAST(user_id AS bigint) as USER_ID,
-       CAST(video_id AS bigint) as ITEM_ID,
+          CAST(video_id AS bigint) as ITEM_ID,
           anonymous_id as anonymousId,
           event as EVENT_TYPE,
           received_at,
           'iOS' as platform,
-          date_part(epoch, timestamp) as TIMESTAMP
+          CAST(date_part(epoch,timestamp) AS bigint) as TIMESTAMP
         from ios.firstplay WHERE date(timestamp)>='2019-02-01')
 
      UNION ALL
