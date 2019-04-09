@@ -70,6 +70,18 @@ view: redshift_php_get_trialist_survey {
     sql: ${TABLE}.programming ;;
   }
 
+
+  dimension: programming_element_1 {
+    type: string
+    sql: SPLIT_PART(${programming}, ',' , 2);;
+  }
+
+  dimension: programming_array {
+    type: string
+    sql: replace(${programming_element_1}, ']', '');;
+  }
+
+
   dimension: rating {
     type:string
     sql: ${TABLE}.rating ;;
