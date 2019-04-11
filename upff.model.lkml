@@ -26,6 +26,7 @@ include: "redshift_ios_application_installed.view"
 include: "redshift_php_get_trialist_survey.view"
 include: "redshift_derived_personalize.view"
 include: "redshift_php_send_trialist_survey.view"
+include: "redshift_php_get_churn_survey.view"
 
 datagroup: upff_default_datagroup {
   # sql_trigger: SELECT MAX(id) FROM etl_log;;
@@ -253,6 +254,12 @@ explore: http_api_purchase_event
           join: redshift_php_get_trialist_survey{
             type: left_outer
             sql_on: ${http_api_purchase_event.user_id} = ${redshift_php_get_trialist_survey.user_id};;
+            relationship: one_to_one
+          }
+
+          join: redshift_php_get_churn_survey {
+            type: left_outer
+            sql_on: ${http_api_purchase_event.user_id} = ${redshift_php_get_churn_survey.user_id};;
             relationship: one_to_one
           }
 
