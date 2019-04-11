@@ -342,6 +342,11 @@ view: http_api_purchase_event {
   }
 
 
+  measure: last_updated_date_v2 {
+    type:  number
+    sql:  DATEDIFF('day', MAX(${status_date})::timestamp, ${current_date}::timestamp) ;;
+  }
+
 
   # ----- Sets of fields for drilling ------
   set: detail {
