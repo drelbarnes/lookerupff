@@ -274,13 +274,13 @@ dimension: winback {
     sql: ${TABLE}.user_id ;;
   }
 
-  dimension: anonymous_id {
+  dimension: anonymousId {
     type: string
     tags: ["segment_anonymous_id"]
     sql: ${TABLE}.anonymous_id ;;
   }
 
-  dimension: event_type {
+  dimension: event {
     type: string
     sql: ${TABLE}.event_type ;;
   }
@@ -294,6 +294,12 @@ dimension: winback {
   dimension: video_id {
     type: number
     sql: ${TABLE}.video_id ;;
+  }
+
+  dimension: itemId {
+    type: number
+    value_format: "0"
+    sql: ${video_id} ;;
   }
 
   dimension_group: timestamp {
