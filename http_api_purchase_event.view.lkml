@@ -344,7 +344,7 @@ view: http_api_purchase_event {
 
   measure: last_updated_date_v2 {
     type:  number
-    sql:  DATEDIFF('day', MAX(${status_date})::timestamp, ${current_date}::timestamp) ;;
+    sql:  DATEDIFF('day', MAX(${status_date})::timestamp, ${current_date}::timestamp);;
   }
 
 

@@ -66,7 +66,10 @@ where collection not in ('Romance - OLD',
 a32 as
 (select distinct mysql_roku_firstplays_firstplay_date_date as timestamp,
                 mysql_roku_firstplays_video_id,
-                user_id
+                user_id,
+                '' as anonymousId,
+                'firstplay' as event_type,
+                UNIX_SECONDS(mysql_roku_firstplays_firstplay_date_date) as EPOCH_TIMESTAMP
 from looker.roku_firstplays),
 
 a as
@@ -78,7 +81,10 @@ a as
                 safe_cast(a.video_id as int64) as video_id,
                 trim((title)) as title,
                 user_id,
+                anonymous_id,
+                event as event_type,
                 'Android' as source,
+                UNIX_SECONDS(sent_at) as EPOCH_TIMESTAMP,
                 episode
          from android.firstplay as a left join titles_id_mapping as b on a.video_id = b.id
 
@@ -92,7 +98,10 @@ a as
        mysql_roku_firstplays_video_id as video_id,
        trim(b.title) as title,
        user_id,
-       'Roku' as source,
+      'anonymous_id' as anonymous_id,
+       'firstplay' as event_type,
+      'Roku' as source,
+      UNIX_SECONDS(timestamp) as EPOCH_TIMESTAMP,
        b.episode
 from a32 as a left join titles_id_mapping as b on mysql_roku_firstplays_video_id=b.id
 
@@ -107,7 +116,10 @@ from a32 as a left join titles_id_mapping as b on mysql_roku_firstplays_video_id
                 safe_cast(a.video_id as int64) as video_id,
                 trim((title)) as title,
                 user_id,
+                anonymous_id,
+                event as event_type,
                 'iOS' as source,
+                UNIX_SECONDS(sent_at) as EPOCH_TIMESTAMP,
                 episode
          from ios.firstplay as a left join titles_id_mapping as b on a.video_id = safe_cast(b.id as string)
          union all
@@ -119,11 +131,16 @@ from a32 as a left join titles_id_mapping as b on mysql_roku_firstplays_video_id
                 safe_cast(a.video_id as int64) as video_id,
                 trim((title)) as title,
                 user_id,
+                anonymous_id,
+                event as event_type,
                 'Web' as source,
+                UNIX_SECONDS(sent_at) as EPOCH_TIMESTAMP,
                 episode
          from javascript.loadedmetadata as a left join titles_id_mapping as b on safe_cast(a.video_id as string)= safe_cast(b.id as string)
-         union all
-         select timestamp,
+
+        union all
+
+        select timestamp,
                 b.date as release_date,
                 case when b.collection in ('Season 1','Season 2','Season 3') then concat(series,' ',b.collection) else b.collection end as collection,
                 case when series is null and upper(b.collection)=upper(b.title) then 'movie'
@@ -131,13 +148,19 @@ from a32 as a left join titles_id_mapping as b on mysql_roku_firstplays_video_id
                 safe_cast(b.id as int64) as video_id,
                 trim(b.title) as title,
                 user_id,
+                '' as anonymous_id,
+                'firstplay' as event_type,
                 'Web' as source,
+                UNIX_SECONDS(timestamp) as EPOCH_TIMESTAMP,
                 episode
          from a2 as a left join titles_id_mapping as b on trim(upper(b.title)) = trim(upper(a.title)))
 
 
 select a.user_id,
+       a.anonymous_id,
+       a.event_type,
        a.timestamp,
+       a.EPOCH_TIMESTAMP,
        a.release_date,
        a.collection,
        a.type,
@@ -249,6 +272,23 @@ dimension: winback {
     tags: ["user_id"]
     type: string
     sql: ${TABLE}.user_id ;;
+  }
+
+  dimension: anonymous_id {
+    type: string
+    tags: ["segment_anonymous_id"]
+    sql: ${TABLE}.anonymous_id ;;
+  }
+
+  dimension: event_type {
+    type: string
+    sql: ${TABLE}.event_type ;;
+  }
+
+  dimension: epoch_timestamp {
+    type: number
+    value_format: "0"
+    sql: ${TABLE}.epoch_timestamp ;;
   }
 
   dimension: video_id {
