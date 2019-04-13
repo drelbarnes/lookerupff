@@ -132,7 +132,7 @@ from a32 as a left join titles_id_mapping as b on mysql_roku_firstplays_video_id
                 trim((title)) as title,
                 user_id,
                 anonymous_id,
-                event as event_type,
+                'firstplay' as event_type,
                 'Web' as source,
                 UNIX_SECONDS(sent_at) as EPOCH_TIMESTAMP,
                 episode
