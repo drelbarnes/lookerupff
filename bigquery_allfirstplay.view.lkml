@@ -69,7 +69,8 @@ a32 as
                 user_id,
                 '' as anonymousId,
                 'firstplay' as event_type,
-                UNIX_SECONDS(mysql_roku_firstplays_firstplay_date_date) as EPOCH_TIMESTAMP
+                UNIX_SECONDS(mysql_roku_firstplays_firstplay_date_date) as EPOCH_TIMESTAMP,
+                'platform_id' as platform_id
 from looker.roku_firstplays),
 
 a as
@@ -85,6 +86,7 @@ a as
                 event as event_type,
                 'Android' as source,
                 UNIX_SECONDS(sent_at) as EPOCH_TIMESTAMP,
+                platform_id,
                 episode
          from android.firstplay as a left join titles_id_mapping as b on a.video_id = b.id
 
@@ -102,6 +104,7 @@ a as
        'firstplay' as event_type,
       'Roku' as source,
       UNIX_SECONDS(timestamp) as EPOCH_TIMESTAMP,
+      platform_id,
        b.episode
 from a32 as a left join titles_id_mapping as b on mysql_roku_firstplays_video_id=b.id
 
@@ -120,6 +123,7 @@ from a32 as a left join titles_id_mapping as b on mysql_roku_firstplays_video_id
                 event as event_type,
                 'iOS' as source,
                 UNIX_SECONDS(sent_at) as EPOCH_TIMESTAMP,
+                platform_id,
                 episode
          from ios.firstplay as a left join titles_id_mapping as b on a.video_id = safe_cast(b.id as string)
          union all
@@ -135,6 +139,7 @@ from a32 as a left join titles_id_mapping as b on mysql_roku_firstplays_video_id
                 'firstplay' as event_type,
                 'Web' as source,
                 UNIX_SECONDS(sent_at) as EPOCH_TIMESTAMP,
+                platform_id,
                 episode
          from javascript.loadedmetadata as a left join titles_id_mapping as b on safe_cast(a.video_id as string)= safe_cast(b.id as string)
 
@@ -152,6 +157,7 @@ from a32 as a left join titles_id_mapping as b on mysql_roku_firstplays_video_id
                 'firstplay' as event_type,
                 'Web' as source,
                 UNIX_SECONDS(timestamp) as EPOCH_TIMESTAMP,
+                platform_id,
                 episode
          from a2 as a left join titles_id_mapping as b on trim(upper(b.title)) = trim(upper(a.title)))
 
@@ -161,6 +167,7 @@ select a.user_id,
        a.event_type,
        a.timestamp,
        a.EPOCH_TIMESTAMP,
+       a.platform_id,
        a.release_date,
        a.collection,
        a.type,
@@ -260,6 +267,11 @@ dimension: winback {
   dimension: platform {
     type: string
     sql: ${TABLE}.platform ;;
+  }
+
+  dimension: platform_id {
+    type: number
+    sql: ${TABLE}.platform_id ;;
   }
 
   dimension: source {
