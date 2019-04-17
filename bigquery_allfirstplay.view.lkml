@@ -157,7 +157,7 @@ from a32 as a left join titles_id_mapping as b on mysql_roku_firstplays_video_id
                 'firstplay' as event_type,
                 'Web' as source,
                 UNIX_SECONDS(timestamp) as EPOCH_TIMESTAMP,
-                platform_id,
+                'platform_id' as platform_id,
                 episode
          from a2 as a left join titles_id_mapping as b on trim(upper(b.title)) = trim(upper(a.title)))
 
