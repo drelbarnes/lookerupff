@@ -27,6 +27,7 @@ include: "redshift_php_get_trialist_survey.view"
 include: "redshift_derived_personalize.view"
 include: "redshift_php_send_trialist_survey.view"
 include: "redshift_php_get_churn_survey.view"
+include: "redshift_python_users.view"
 
 datagroup: upff_default_datagroup {
   # sql_trigger: SELECT MAX(id) FROM etl_log;;
@@ -485,4 +486,10 @@ explore: redshift_php_get_mobile_app_installs {
 explore: redshift_android_firstplay {}
 explore: redshift_derived_personalize {
   label: "Amazon Personalize Dataset"
+
+  join: redshift_python_users {
+    type: left_outer
+    sql_on:  ${redshift_derived_personalize.anonymousId} = ${redshift_python_users.id} ;;
+    relationship: one_to_one
+  }
 }

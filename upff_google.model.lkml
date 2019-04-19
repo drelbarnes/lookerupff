@@ -74,6 +74,7 @@ include: "bigquery_purchase_event.view.lkml"
 include: "bigquery_app_installs_by_platform.view.lkml"
 include: "bigquery_http_api_roku_firstplay.view.lkml"
 include: "roku_churn_segments.view.lkml"
+include: "bigquery_python_users.view.lkml"
 
 explore: roku_churn_segments {}
 
@@ -243,6 +244,13 @@ explore: bigquery_subscribers_v2 {
 }
 
 explore: bigquery_allfirstplay {
+
+  join: bigquery_python_users {
+    type:  left_outer
+    sql_on:  ${bigquery_allfirstplay.anonymousId} = ${bigquery_python_users.id};;
+    relationship: one_to_one
+  }
+
   join: bigquery_http_api_purchase_event {
     type: left_outer
     sql_on: ${bigquery_allfirstplay.user_id}=${bigquery_http_api_purchase_event.user_id} ;;

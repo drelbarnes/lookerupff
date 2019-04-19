@@ -5,7 +5,7 @@ view: redshift_derived_personalize {
     sql:
 
        (select
-          CAST(user_id AS bigint) as USER_ID,
+          user_id as USER_ID,
           CAST(video_id AS bigint) as ITEM_ID,
           anonymous_id as anonymousId,
           event as EVENT_TYPE,
@@ -16,20 +16,9 @@ view: redshift_derived_personalize {
 
      UNION ALL
 
-       (select
-         user_id as USER_ID,
-         video_id as ITEM_ID,
-         anonymous_id as anonymousId,
-         event as EVENT_TYPE,
-         received_at,
-        'iOS' as platform,
-         CAST(date_part(epoch,timestamp) AS bigint) as TIMESTAMP
-       from ios.view WHERE date(timestamp)>='2019-02-01')
-
-      UNION ALL
 
       (select
-          CAST(user_id AS bigint) as USER_ID,
+          user_id as USER_ID,
           video_id as ITEM_ID,
           anonymous_id as anonymousId,
           event as EVENT_TYPE,
@@ -38,24 +27,25 @@ view: redshift_derived_personalize {
           CAST(date_part(epoch,timestamp) AS bigint) as TIMESTAMP
         from android.firstplay WHERE date(timestamp)>='2019-02-01')
 
-     UNION ALL
+
+      UNION ALL
 
        (select
-         CAST(user_id AS bigint) as USER_ID,
+         user_id as USER_ID,
          video_id as ITEM_ID,
          anonymous_id as anonymousId,
          event as EVENT_TYPE,
          received_at,
         'android' as platform,
         CAST(date_part(epoch,timestamp) AS bigint) as TIMESTAMP
-       from android.view WHERE date(timestamp)>='2019-02-01');;
+       from javascript.firstplay WHERE date(timestamp)>='2019-02-01');;
 
   }
 
   dimension: userId {
     primary_key: yes
     tags: ["user_id"]
-    type: number
+    type: string
     sql: ${TABLE}.user_id ;;
   }
 
