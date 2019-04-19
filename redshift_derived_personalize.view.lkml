@@ -36,7 +36,7 @@ view: redshift_derived_personalize {
          anonymous_id as anonymousId,
          event as EVENT_TYPE,
          received_at,
-        'android' as platform,
+        'web' as platform,
         CAST(date_part(epoch,timestamp) AS bigint) as TIMESTAMP
        from javascript.firstplay WHERE date(timestamp)>='2019-02-01');;
 
