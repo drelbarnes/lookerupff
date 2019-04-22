@@ -1,6 +1,6 @@
 view: bigquery_timeupdate {
   derived_table: {
-    sql:(with a1 as
+    sql:((with a1 as
 (select sent_at,
         user_id,
         (split(title," - ")) as title,
@@ -61,14 +61,14 @@ a4 as
 union all
 
 (SELECT
-    title,
+    a3.title,
     user_id,
     cast(video_id as int64) as video_id,
     case when collection in ('Season 1','Season 2','Season 3') then concat(series,' ',collection) else collection end as collection,
     series,
     season,
     episode,
-    case when series is null and upper(collection)=upper(title) then 'movie'
+    case when series is null and upper(collection)=upper(a3.title) then 'movie'
                      when series is not null then 'series' else 'other' end as type,
     safe_cast(date(sent_at) as timestamp) as timestamp,
     a3.duration*60 as duration,
@@ -154,7 +154,7 @@ union all
             DATE_SUB(date(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY)), INTERVAL 4 QUARTER) then "YAGO Quarter"
             else "NA"
             end as Quarter
-from a4 as a);;
+from a4 as a));;
   }
 
   dimension: Quarter {
