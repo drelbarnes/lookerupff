@@ -148,7 +148,7 @@ explore: bigquery_churn_model_error {
 
 explore: bigquery_timeupdate {
   join: bigquery_http_api_purchase_event {
-    type: left_outer
+    type: inner
     sql_on: ${bigquery_timeupdate.user_id}=${bigquery_http_api_purchase_event.user_id} ;;
     relationship: one_to_one
   }

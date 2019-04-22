@@ -39,30 +39,9 @@ group by 1,2,3),
 
 a4 as
 ((SELECT
-    a2.title,
-    user_id,
-    id as video_id,
-    case when a3.collection in ('Season 1','Season 2','Season 3') then concat(series,' ',a3.collection) else a3.collection end as collection,
-    series,
-    season,
-    episode,
-    case when series is null and upper(a3.collection)=upper(a3.title) then 'movie'
-                     when series is not null then 'series' else 'other' end as type,
-    safe_cast(date(sent_at) as timestamp) as timestamp,
-    a3.duration*60 as duration,
-    max(_current_time) as timecode,
-   'Web' AS source
-  FROM
-    a2 inner join a3 on trim(upper(a2.title))=trim(upper(a3.title)) and a2.collection=a3.collection
-  WHERE
-    user_id IS NOT NULL and safe_cast(user_id as string)!='0' and a3.duration>0
-  GROUP BY 1,2,3,4,5,6,7,8,9,10)
-
-union all
-
-(SELECT
     a3.title,
-    user_id,
+    a.user_id,
+    email,
     cast(video_id as int64) as video_id,
     case when collection in ('Season 1','Season 2','Season 3') then concat(series,' ',collection) else collection end as collection,
     series,
@@ -70,21 +49,22 @@ union all
     episode,
     case when series is null and upper(collection)=upper(a3.title) then 'movie'
                      when series is not null then 'series' else 'other' end as type,
-    safe_cast(date(sent_at) as timestamp) as timestamp,
+    safe_cast(date(a.sent_at) as timestamp) as timestamp,
     a3.duration*60 as duration,
     max(timecode) as timecode,
    'Web' AS source
   FROM
-    javascript.durationchange as a inner join a3 on safe_cast(a.video_id as int64)=a3.id
+    javascript.durationchange as a inner join a3 on safe_cast(a.video_id as int64)=a3.id inner join http_api.purchase_event as p on a.user_id=p.user_id
   WHERE
-    user_id IS NOT NULL and safe_cast(user_id as string)!='0' and a3.duration>0
-  GROUP BY 1,2,3,4,5,6,7,8,9,10)
+    a.user_id IS NOT NULL and safe_cast(a.user_id as string)!='0' and a3.duration>0
+  GROUP BY 1,2,3,4,5,6,7,8,9,10,11)
 
 union all
 
 (SELECT
     title,
-    user_id,
+    a.user_id,
+    email,
     cast(video_id as int64) as video_id,
     case when collection in ('Season 1','Season 2','Season 3') then concat(series,' ',collection) else collection end as collection,
     series,
@@ -92,21 +72,22 @@ union all
     episode,
     case when series is null and upper(collection)=upper(title) then 'movie'
                      when series is not null then 'series' else 'other' end as type,
-    safe_cast(date(sent_at) as timestamp) as timestamp,
+    safe_cast(date(a.sent_at) as timestamp) as timestamp,
     a3.duration*60 as duration,
     max(timecode) as timecode,
    'iOS' AS source
   FROM
-    ios.timeupdate as a inner join a3 on safe_cast(a.video_id as int64)=a3.id
+    ios.timeupdate as a inner join a3 on safe_cast(a.video_id as int64)=a3.id inner join http_api.purchase_event as p on a.user_id=p.user_id
   WHERE
-    user_id IS NOT NULL and safe_cast(user_id as string)!='0' and a3.duration>0
-  GROUP BY 1,2,3,4,5,6,7,8,9,10)
+    a.user_id IS NOT NULL and safe_cast(a.user_id as string)!='0' and a3.duration>0
+  GROUP BY 1,2,3,4,5,6,7,8,9,10,11)
 
   union all
 
 (SELECT
     title,
-    user_id,
+    a.user_id,
+    email,
     video_id,
     case when collection in ('Season 1','Season 2','Season 3') then concat(series,' ',collection) else collection end as collection,
     series,
@@ -114,21 +95,22 @@ union all
     episode,
     case when series is null and upper(collection)=upper(title) then 'movie'
                      when series is not null then 'series' else 'other' end as type,
-    safe_cast(date(sent_at) as timestamp) as timestamp,
+    safe_cast(date(a.sent_at) as timestamp) as timestamp,
     a3.duration*60 as duration,
     max(timecode) as timecode,
    'Android' AS source
   FROM
-    android.timeupdate as a inner join a3 on a.video_id=a3.id
+    android.timeupdate as a inner join a3 on a.video_id=a3.id inner join http_api.purchase_event as p on a.user_id=p.user_id
   WHERE
-    user_id IS NOT NULL and safe_cast(user_id as string)!='0' and a3.duration>0
-  GROUP BY 1,2,3,4,5,6,7,8,9,10)
+    a.user_id IS NOT NULL and safe_cast(a.user_id as string)!='0' and a3.duration>0
+  GROUP BY 1,2,3,4,5,6,7,8,9,10,11)
 
   union all
 
   (SELECT
     a3.title,
     a.user_id,
+    email,
      mysql_roku_firstplays_video_id as video_id,
     case when collection in ('Season 1','Season 2','Season 3') then concat(series,' ',collection) else collection end as collection,
     series,
@@ -136,14 +118,14 @@ union all
     episode,
     case when series is null and upper(collection)=upper(title) then 'movie'
                      when series is not null then 'series' else 'other' end as type,
-    timestamp,
+    a.timestamp,
     a3.duration*60*numcount as duration,
     mysql_roku_firstplays_total_minutes_watched*60 as timecode,
    'Roku' AS source
   FROM
-    a32 as a inner join a3 on  mysql_roku_firstplays_video_id=a3.id
+    a32 as a inner join a3 on  mysql_roku_firstplays_video_id=a3.id inner join http_api.purchase_event as p on a.user_id=p.user_id
   WHERE
-    user_id IS NOT NULL and user_id<>'0' and a3.duration>0))
+    a.user_id IS NOT NULL and a.user_id<>'0' and a3.duration>0))
 
   select *,
        case when date(a.timestamp) between DATE_SUB(date(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), QUARTER)), INTERVAL 0 QUARTER) and
@@ -155,6 +137,11 @@ union all
             else "NA"
             end as Quarter
 from a4 as a));;
+  }
+
+  dimension: email {
+    type: string
+    sql: ${TABLE}.email ;;
   }
 
   dimension: Quarter {
