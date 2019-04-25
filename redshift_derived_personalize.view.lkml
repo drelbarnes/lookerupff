@@ -50,7 +50,7 @@ view: redshift_derived_personalize {
   }
 
   dimension: anonymousId {
-    tags: ["segment_anonymous_id"]
+    #tags: ["segment_anonymous_id"]
     type: string
     sql: ${TABLE}.anonymousId ;;
   }
