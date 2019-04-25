@@ -108,6 +108,7 @@ union all
   union all
 
   (SELECT
+    distinct
     a3.title,
     a.user_id,
     email,
