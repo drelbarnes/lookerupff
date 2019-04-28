@@ -3,6 +3,7 @@ view: redshift_python_users {
 
   dimension: id {
     primary_key: yes
+    tags: ["user_id"]
     type: string
     sql: ${TABLE}.id ;;
   }
@@ -31,25 +32,59 @@ view: redshift_python_users {
     sql: ${TABLE}.received_at ;;
   }
 
+  dimension: recommended_title_five {
+    type: string
+    sql: ${TABLE}.recommended_title_five ;;
+  }
+
+  dimension: recommended_title_five_item_id {
+    type: string
+    sql: ${TABLE}.recommended_title_five_item_id ;;
+  }
+
+  dimension: recommended_title_four {
+    type: string
+    sql: ${TABLE}.recommended_title_four ;;
+  }
+
+  dimension: recommended_title_four_item_id {
+    type: string
+    sql: ${TABLE}.recommended_title_four_item_id ;;
+  }
+
+  dimension: recommended_title_one {
+    type: string
+    sql: ${TABLE}.recommended_title_one ;;
+  }
+
+  dimension: recommended_title_one_item_id {
+    type: string
+    sql: ${TABLE}.recommended_title_one_item_id ;;
+  }
+
+  dimension: recommended_title_three {
+    type: string
+    sql: ${TABLE}.recommended_title_three ;;
+  }
+
+  dimension: recommended_title_three_item_id {
+    type: string
+    sql: ${TABLE}.recommended_title_three_item_id ;;
+  }
+
+  dimension: recommended_title_two {
+    type: string
+    sql: ${TABLE}.recommended_title_two ;;
+  }
+
+  dimension: recommended_title_two_item_id {
+    type: string
+    sql: ${TABLE}.recommended_title_two_item_id ;;
+  }
+
   dimension: recommended_titles {
     type: string
     sql: ${TABLE}.recommended_titles ;;
-  }
-
-  dimension: recommended_content {
-    type: string
-    sql: SPLIT_PART(${recommended_titles}, ',', 10);;
-  }
-
-  dimension: recommended_title {
-    type: string
-    sql: replace(${recommended_content}, ']', '');;
-  }
-
-  dimension: titles_ids {
-    type: number
-    value_format: "0"
-    sql: CAST(replace(${recommended_title}, '"', '') as INT);;
   }
 
   dimension: uuid {

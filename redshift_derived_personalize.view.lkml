@@ -96,4 +96,9 @@ view: redshift_derived_personalize {
     type: count
   }
 
+  measure: count_distinct {
+    type: count_distinct
+    sql: ${userId} ;;
+  }
+
 }
