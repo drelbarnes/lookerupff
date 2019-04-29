@@ -54,7 +54,13 @@ view: redshift_python_users {
 
   dimension: recommended_title_one {
     type: string
-    sql: ${TABLE}.recommended_title_one ;;
+    sql: CAST(${TABLE}.recommended_title_one as INT) ;;
+  }
+
+  dimension: titleOne {
+    type: number
+    value_format: "0"
+    sql: ${recommended_title_one} ;;
   }
 
   dimension: recommended_title_one_item_id {

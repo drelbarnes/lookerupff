@@ -485,7 +485,7 @@ explore: redshift_php_get_mobile_app_installs {
 explore: redshift_python_users {
 
   join: http_api_purchase_event {
-    type: inner
+    type: left_outer
     sql_on:  ${http_api_purchase_event.user_id} = ${redshift_python_users.id} ;;
     relationship: one_to_one
   }
