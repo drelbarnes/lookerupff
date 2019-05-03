@@ -28,6 +28,7 @@ include: "redshift_derived_personalize.view"
 include: "redshift_php_send_trialist_survey.view"
 include: "redshift_php_get_churn_survey.view"
 include: "redshift_python_users.view"
+include: "redshift_derived_amazon_personalize_titles.view"
 
 datagroup: upff_default_datagroup {
   # sql_trigger: SELECT MAX(id) FROM etl_log;;
@@ -482,14 +483,23 @@ explore: redshift_php_get_mobile_app_installs {
 
 }
 
+explore: redshift_python_users {
+
+  join: http_api_purchase_event {
+    type: left_outer
+    sql_on:  ${http_api_purchase_event.user_id} = ${redshift_python_users.id} ;;
+    relationship: one_to_one
+  }
+
+  join: redshift_derived_amazon_personalize_titles {
+    type:  left_outer
+    sql_on:  ${redshift_python_users.id} = ${redshift_derived_amazon_personalize_titles.id};;
+    relationship: one_to_one
+  }
+
+}
 
 explore: redshift_android_firstplay {}
 explore: redshift_derived_personalize {
   label: "Amazon Personalize Dataset"
-
-  join: redshift_python_users {
-    type: left_outer
-    sql_on:  ${redshift_derived_personalize.anonymousId} = ${redshift_python_users.id} ;;
-    relationship: one_to_one
-  }
 }
