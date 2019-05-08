@@ -89,6 +89,13 @@ view: http_api_purchase_event {
     sql: ${TABLE}.email ;;
   }
 
+  dimension: getfname {
+    type: string
+    hidden: yes
+    sql: SPLIT_PART(${email}, '@' , 1);;
+  }
+
+
   dimension: event {
     type: string
     sql: ${TABLE}.event ;;
@@ -112,6 +119,16 @@ view: http_api_purchase_event {
   dimension: fname {
     type: string
     sql: ${TABLE}.fname ;;
+  }
+
+  dimension: findfname {
+    case: {
+      when: {
+        sql: ${getfname} = ${fname};;
+        label: "Has Username in First Name"
+      }
+      else: "Nevers"
+    }
   }
 
   dimension: lname {
@@ -345,6 +362,15 @@ view: http_api_purchase_event {
   measure: last_updated_date_v2 {
     type:  number
     sql:  DATEDIFF('day', MAX(${status_date})::timestamp, ${current_date}::timestamp);;
+  }
+
+  measure: getFindFname {
+    type:  count_distinct
+    sql: ${user_id} ;;
+    filters: {
+      field: findfname
+      value: "${fname}"
+    }
   }
 
 
