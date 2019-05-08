@@ -75,6 +75,9 @@ include: "bigquery_app_installs_by_platform.view.lkml"
 include: "bigquery_http_api_roku_firstplay.view.lkml"
 include: "roku_churn_segments.view.lkml"
 include: "bigquery_python_users.view.lkml"
+include: "bigquery_attribution.view.lkml"
+
+explore: bigquery_attribution {}
 
 explore: roku_churn_segments {}
 
