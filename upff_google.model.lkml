@@ -76,6 +76,28 @@ include: "bigquery_http_api_roku_firstplay.view.lkml"
 include: "roku_churn_segments.view.lkml"
 include: "bigquery_python_users.view.lkml"
 include: "bigquery_attribution.view.lkml"
+include: "bigquery_get_titles.view.lkml"
+include: "bigquery_get_title_category_items.view.lkml"
+include: "bigquery_get_title_categories.view.lkml"
+
+explore: bigquery_get_title_category_items {
+  join: bigquery_get_title_categories {
+    type: inner
+    sql_on: ${bigquery_get_title_categories.cat_id}=${bigquery_get_title_category_items.cat_id} ;;
+    relationship: one_to_one
+  }
+  join: bigquery_get_titles {
+    type: inner
+    sql_on: ${bigquery_get_titles.collection}=${bigquery_get_title_category_items.name};;
+    relationship: one_to_one
+  }
+  join: bigquery_allfirstplay {
+    type: inner
+    sql_on: ${bigquery_allfirstplay.video_id}=${bigquery_get_titles.video_id} ;;
+    relationship: one_to_one
+  }
+}
+
 
 explore: bigquery_attribution {}
 
