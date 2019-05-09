@@ -39,6 +39,7 @@ view: redshift_python_users {
 
   dimension: recommended_title_five_item_id {
     type: string
+    hidden: yes
     sql: ${TABLE}.recommended_title_five_item_id ;;
   }
 
@@ -49,6 +50,7 @@ view: redshift_python_users {
 
   dimension: recommended_title_four_item_id {
     type: string
+    hidden: yes
     sql: ${TABLE}.recommended_title_four_item_id ;;
   }
 
@@ -65,6 +67,7 @@ view: redshift_python_users {
 
   dimension: recommended_title_one_item_id {
     type: string
+    hidden: yes
     sql: ${TABLE}.recommended_title_one_item_id ;;
   }
 
@@ -75,6 +78,7 @@ view: redshift_python_users {
 
   dimension: recommended_title_three_item_id {
     type: string
+    hidden: yes
     sql: ${TABLE}.recommended_title_three_item_id ;;
   }
 
@@ -85,11 +89,13 @@ view: redshift_python_users {
 
   dimension: recommended_title_two_item_id {
     type: string
+    hidden: yes
     sql: ${TABLE}.recommended_title_two_item_id ;;
   }
 
   dimension: recommended_titles {
     type: string
+    hidden: yes
     sql: ${TABLE}.recommended_titles ;;
   }
 
