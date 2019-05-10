@@ -28,6 +28,7 @@ include: "redshift_derived_personalize.view"
 include: "redshift_php_send_trialist_survey.view"
 include: "redshift_php_get_churn_survey.view"
 include: "redshift_python_users.view"
+include: "javascript_conversion.view"
 
 datagroup: upff_default_datagroup {
   # sql_trigger: SELECT MAX(id) FROM etl_log;;
@@ -133,6 +134,12 @@ explore: javascript_users {
   join: javascript_firstplay {
     type:  inner
     sql_on: ${javascript_users.id} = ${javascript_firstplay.user_id} ;;
+    relationship: one_to_one
+  }
+
+  join: javascript_conversion {
+    type:  inner
+    sql_on: ${javascript_users.id} = ${javascript_conversion.user_id};;
     relationship: one_to_one
   }
 
