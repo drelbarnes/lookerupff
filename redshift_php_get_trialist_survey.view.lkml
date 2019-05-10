@@ -93,8 +93,7 @@ view: redshift_php_get_trialist_survey {
   dimension: total_rating {
     type: number
     label: "Rating Number"
-    value_format: "0.00"
-    sql:  ${rating} ;;
+    sql:  cast(${TABLE}.rating as INT) ;;
   }
 
   measure: avg_rating {

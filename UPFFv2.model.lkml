@@ -21,7 +21,12 @@ include: "redshift_pixel_api_email_opened.view.lkml"
 include: "redshift_php_get_churn_survey.view.lkml"
 include: "redshift_php_get_trialist_survey.view.lkml"
 
-explore: redshift_php_get_churn_survey {}
+explore: redshift_php_get_churn_survey {
+  join: http_api_purchase_event {
+    type: left_outer
+    sql_on: ${http_api_purchase_event.user_id}=${redshift_php_get_churn_survey.user_id} ;;
+    relationship: one_to_many
+}}
 explore: redshift_php_get_trialist_survey {
   join: http_api_purchase_event {
     type: left_outer

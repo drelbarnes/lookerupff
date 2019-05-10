@@ -89,6 +89,7 @@ view: redshift_php_get_churn_survey {
   dimension: rating {
     type: string
     sql: ${TABLE}.rating ;;
+    value_format: "0.0"
   }
 
   dimension: total_score {
@@ -127,6 +128,11 @@ view: redshift_php_get_churn_survey {
     label: "Restart Score"
     value_format: "0"
     sql:  CAST(${TABLE}.restart AS INT) ;;
+  }
+
+  measure: avg_restart {
+    type: average
+    sql: cast(${TABLE}.restart as INT) ;;
   }
 
   dimension_group: sent {
@@ -195,6 +201,6 @@ view: redshift_php_get_churn_survey {
 
   measure: avg {
     type: average
-    sql:  ${rating};;
+    sql:  CAST(${TABLE}.rating AS INT) ;;
   }
 }
