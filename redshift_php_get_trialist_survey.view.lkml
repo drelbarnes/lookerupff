@@ -83,15 +83,23 @@ view: redshift_php_get_trialist_survey {
 
 
   dimension: rating {
-    type:string
+    type:number
     sql: ${TABLE}.rating ;;
+    value_format: "0.00"
   }
+
+
 
   dimension: total_rating {
     type: number
     label: "Rating Number"
-    value_format: "0"
-    sql:  CAST(${TABLE}.rating AS INT) ;;
+    value_format: "0.00"
+    sql:  ${rating} ;;
+  }
+
+  measure: avg_rating {
+    type: average
+    sql: ${total_rating} ;;
   }
 
   dimension: total_nps {
@@ -239,5 +247,6 @@ view: redshift_php_get_trialist_survey {
   measure: avg {
     type: number
     sql: (${promoters} - ${detractors}) / ${count_distinct} * 100 ;;
+    value_format_name: decimal_1
   }
 }

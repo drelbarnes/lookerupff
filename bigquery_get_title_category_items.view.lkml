@@ -202,6 +202,7 @@ view: bigquery_get_title_category_items {
   dimension: thumbnail {
     type: string
     sql: ${TABLE}.thumbnail ;;
+    html: <img src="{{value}}"/> ;;
   }
 
   set: detail {

@@ -137,6 +137,7 @@ view: bigquery_get_title_categories {
   dimension: thumbnail {
     type: string
     sql: ${TABLE}.thumbnail ;;
+    html: <img src="{{value}}"/> ;;
   }
 
   set: detail {
