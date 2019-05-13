@@ -29,6 +29,7 @@ include: "redshift_php_send_trialist_survey.view"
 include: "redshift_php_get_churn_survey.view"
 include: "redshift_python_users.view"
 include: "javascript_conversion.view"
+include: "redshift_get_titles.view"
 
 datagroup: upff_default_datagroup {
   # sql_trigger: SELECT MAX(id) FROM etl_log;;
@@ -494,6 +495,12 @@ explore: redshift_python_users {
   join: http_api_purchase_event {
     type: left_outer
     sql_on:  ${http_api_purchase_event.user_id} = ${redshift_python_users.id} ;;
+    relationship: one_to_one
+  }
+
+  join: redshift_get_titles {
+    type: left_outer
+    sql_on:  ${redshift_python_users.recommended_title_one} = ${redshift_get_titles.video_id};;
     relationship: one_to_one
   }
 
