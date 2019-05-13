@@ -177,6 +177,12 @@ view: redshift_get_titles {
     sql: ${TABLE}.thumbnail ;;
   }
 
+  dimension: title_image {
+    type: string
+    sql: ${thumbnail};;
+    html: <img src="{{thumbnail}}" width="150" /> ;;
+  }
+
   dimension_group: time_available {
     type: time
     timeframes: [

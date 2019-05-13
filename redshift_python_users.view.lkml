@@ -125,8 +125,8 @@ view: redshift_python_users {
   }
 
   measure: recommendation_one_count {
-    type: count
-    sql_distinct_key: ${recommended_title_one} ;;
+    type: count_distinct
+    sql: ${id};;
   }
 
   measure: recommendation_two_count {
