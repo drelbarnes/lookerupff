@@ -29,9 +29,7 @@ from looker.roku_firstplays),
                       trim((title)) as title1,
                       user_id,
                       'Android' as source
-               from android.firstplay as a left join svod_titles.titles_id_mapping as b on a.video_id = b.id left join customers.customers as c
-               on safe_cast(a.user_id as int64) = c.customer_id
-
+               from android.firstplay as a left join svod_titles.titles_id_mapping as b on a.video_id = b.id
                union all
 
        select timestamp,
