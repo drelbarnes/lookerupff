@@ -261,4 +261,9 @@ view: javascript_conversion {
     type: count
     drill_fields: [id, context_campaign_name, context_library_name, context_app_name, context_os_name]
   }
+
+  measure: distinct_count {
+    type:  count_distinct
+    sql: ${anonymous_id} ;;
+  }
 }
