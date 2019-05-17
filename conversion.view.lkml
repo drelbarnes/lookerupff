@@ -1,4 +1,4 @@
-view: bigquery_javascript_conversion {
+view: javascript_conversion {
   sql_table_name: javascript.conversion ;;
 
   dimension: id {
@@ -10,6 +10,16 @@ view: bigquery_javascript_conversion {
   dimension: anonymous_id {
     type: string
     sql: ${TABLE}.anonymous_id ;;
+  }
+
+  dimension: context_app_name {
+    type: string
+    sql: ${TABLE}.context_app_name ;;
+  }
+
+  dimension: context_app_version {
+    type: string
+    sql: ${TABLE}.context_app_version ;;
   }
 
   dimension: context_campaign_content {
@@ -37,6 +47,21 @@ view: bigquery_javascript_conversion {
     sql: ${TABLE}.context_campaign_term ;;
   }
 
+  dimension: context_device_id {
+    type: string
+    sql: ${TABLE}.context_device_id ;;
+  }
+
+  dimension: context_device_manufacturer {
+    type: string
+    sql: ${TABLE}.context_device_manufacturer ;;
+  }
+
+  dimension: context_device_type {
+    type: string
+    sql: ${TABLE}.context_device_type ;;
+  }
+
   dimension: context_ip {
     type: string
     sql: ${TABLE}.context_ip ;;
@@ -50,6 +75,21 @@ view: bigquery_javascript_conversion {
   dimension: context_library_version {
     type: string
     sql: ${TABLE}.context_library_version ;;
+  }
+
+  dimension: context_locale {
+    type: string
+    sql: ${TABLE}.context_locale ;;
+  }
+
+  dimension: context_os_name {
+    type: string
+    sql: ${TABLE}.context_os_name ;;
+  }
+
+  dimension: context_os_version {
+    type: string
+    sql: ${TABLE}.context_os_version ;;
   }
 
   dimension: context_page_path {
@@ -77,9 +117,19 @@ view: bigquery_javascript_conversion {
     sql: ${TABLE}.context_page_url ;;
   }
 
+  dimension: context_timezone {
+    type: string
+    sql: ${TABLE}.context_timezone ;;
+  }
+
   dimension: context_traits_cross_domain_id {
     type: string
     sql: ${TABLE}.context_traits_cross_domain_id ;;
+  }
+
+  dimension: context_type {
+    type: string
+    sql: ${TABLE}.context_type ;;
   }
 
   dimension: context_user_agent {
@@ -109,20 +159,6 @@ view: bigquery_javascript_conversion {
   dimension: event_text {
     type: string
     sql: ${TABLE}.event_text ;;
-  }
-
-  dimension_group: loaded {
-    type: time
-    timeframes: [
-      raw,
-      time,
-      date,
-      week,
-      month,
-      quarter,
-      year
-    ]
-    sql: ${TABLE}.loaded_at ;;
   }
 
   dimension_group: original_timestamp {
@@ -201,6 +237,12 @@ view: bigquery_javascript_conversion {
     sql: ${TABLE}.user_id ;;
   }
 
+  dimension: uuid {
+    type: number
+    value_format_name: id
+    sql: ${TABLE}.uuid ;;
+  }
+
   dimension_group: uuid_ts {
     type: time
     timeframes: [
@@ -217,11 +259,6 @@ view: bigquery_javascript_conversion {
 
   measure: count {
     type: count
-    drill_fields: [id, context_campaign_name, context_library_name]
-  }
-
-  measure: count_id {
-    type: count_distinct
-    sql: ${id} ;;
+    drill_fields: [id, context_campaign_name, context_library_name, context_app_name, context_os_name]
   }
 }

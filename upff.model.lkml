@@ -30,6 +30,7 @@ include: "redshift_php_get_churn_survey.view"
 include: "redshift_python_users.view"
 include: "javascript_conversion.view"
 include: "redshift_get_titles.view"
+include: "javascript_conversion.view"
 
 datagroup: upff_default_datagroup {
   # sql_trigger: SELECT MAX(id) FROM etl_log;;
@@ -504,8 +505,10 @@ explore: redshift_python_users {
     relationship: one_to_one
   }
 
-
 }
+
+
+explore: javascript_conversion {}
 
 explore: redshift_android_firstplay {}
 explore: redshift_derived_personalize {
