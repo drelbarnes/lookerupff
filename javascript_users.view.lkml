@@ -183,6 +183,12 @@ view: javascript_users {
     drill_fields: [detail*]
   }
 
+
+  measure: count_id {
+    type: count_distinct
+    sql: ${id} ;;
+  }
+
   # ----- Sets of fields for drilling ------
   set: detail {
     fields: [

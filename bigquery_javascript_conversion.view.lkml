@@ -219,4 +219,9 @@ view: bigquery_javascript_conversion {
     type: count
     drill_fields: [id, context_campaign_name, context_library_name]
   }
+
+  measure: count_id {
+    type: count_distinct
+    sql: ${id} ;;
+  }
 }

@@ -130,22 +130,22 @@ view: redshift_python_users {
   }
 
   measure: recommendation_two_count {
-    type: count
-    sql_distinct_key: ${recommended_title_two} ;;
+    type: count_distinct
+    sql: ${id};;
   }
 
   measure: recommendation_three_count {
-    type: count
-    sql_distinct_key: ${recommended_title_three} ;;
+    type: count_distinct
+    sql: ${id};;
   }
 
   measure: recommendation_four_count {
-    type: count
-    sql_distinct_key:${recommended_title_four} ;;
+    type: count_distinct
+    sql: ${id};;
   }
 
   measure: recommendation_five_count {
-    type: count
-    sql_distinct_key: ${recommended_title_five} ;;
+    type: count_distinct
+    sql: ${id};;
   }
 }
