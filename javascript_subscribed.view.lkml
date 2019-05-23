@@ -215,8 +215,8 @@ view: subscribed {
   }
 
   measure: web_subscribers {
-    type: count
-    sql_distinct_key: ${javascript_users.id};;
+    type: count_distinct
+    sql: ${anonymous_id};;
   }
 
   measure: count {
