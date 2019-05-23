@@ -288,7 +288,7 @@ dimension: winback {
 
   dimension: anonymousId {
     type: string
-    tags: ["segment_anonymous_id"]
+    #tags: ["segment_anonymous_id"]
     sql: ${TABLE}.anonymous_id ;;
   }
 
