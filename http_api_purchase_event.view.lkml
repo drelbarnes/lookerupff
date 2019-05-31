@@ -346,6 +346,24 @@ view: http_api_purchase_event {
     }
   }
 
+  measure: cancelled_subs {
+    type: count_distinct
+    sql: ${TABLE}.user_id ;;
+    filters: {
+      field: http_api_purchase_event.topic
+      value: "customer.product.cancelled,customer.product.expired"
+    }
+  }
+
+  measure: paid_subs {
+    type: count_distinct
+    sql: ${TABLE}.user_id ;;
+    filters: {
+      field: http_api_purchase_event.topic
+      value: "customer.product.created, customer.product.renewed"
+    }
+  }
+
   measure: moption_conversion_rate {
     type: number
     value_format: ".0#\%"
