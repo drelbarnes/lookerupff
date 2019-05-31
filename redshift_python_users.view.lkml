@@ -46,7 +46,7 @@ view: redshift_python_users {
 
   dimension: recommended_title_seven {
     type: string
-    sql: ${TABLE}.recommended_title_sevent ;;
+    sql: ${TABLE}.recommended_title_seven ;;
   }
 
 
