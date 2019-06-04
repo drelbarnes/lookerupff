@@ -37,6 +37,41 @@ view: redshift_python_users {
     sql: ${TABLE}.recommended_title_five ;;
   }
 
+
+  dimension: recommended_title_six {
+    type: string
+    sql: ${TABLE}.recommended_title_six ;;
+  }
+
+
+  dimension: recommended_title_seven {
+    type: string
+    sql: ${TABLE}.recommended_title_seven ;;
+  }
+
+
+  dimension: recommended_title_eight {
+    type: string
+    sql: ${TABLE}.recommended_title_eight ;;
+  }
+
+  dimension: recommended_title_nine {
+    type: string
+    sql: ${TABLE}.recommended_title_nine ;;
+  }
+
+
+  dimension: recommended_title_ten {
+    type: string
+    sql: ${TABLE}.recommended_title_ten ;;
+  }
+
+  dimension: recommended_title_eleven {
+    type: string
+    sql: ${TABLE}.recommended_title_eleven ;;
+  }
+
+
   dimension: recommended_title_five_item_id {
     type: string
     hidden: yes
