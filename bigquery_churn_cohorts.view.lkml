@@ -2,14 +2,16 @@ view: bigquery_churn_cohorts {
   derived_table: {
     sql:with a as
       (select date(created_at) as created_at,
+              platform,
               count(distinct user_id) as created_count
       from http_api.purchase_event
       where date(created_at)>'2018-10-31' and topic<>'customer.created'
-      group by 1),
+      group by 1,2),
 
       b as
       (select date(status_date) as status_date,
       created_at,
+      platform,
               user_id,
               status,
               charge_status,
@@ -24,6 +26,7 @@ view: bigquery_churn_cohorts {
       c as
       (select user_id,
             date(created_at) as created_at,
+            platform,
             status_date,
             case when (topic in ('customer.product.expired','customer.product.disabled','customer.product.cancelled')
 or charge_status='expired'
@@ -37,10 +40,11 @@ d0 as
 (select user_id,
         created_at,
        status,
+       platform,
        min(billing_period) as billing_period
 from c
 where status='Churn'
-group by 1,2,3),
+group by 1,2,3,4),
 
 d as
 (select c.*
@@ -59,13 +63,12 @@ union all
       select f.created_at,
              billing_period,
              created_count,
+             f.platform,
              sum(case when status="Renewed" then 1 else 0 end) as Renewed,
              sum(case when status="Churn" then 1 else 0 end) as Churn
       from f inner join a on a.created_at=f.created_at
-      group by 1,2,3
-      order by 1,2,3
-
-       ;;
+      group by 1,2,3,4
+      order by 1,2,3,4;;
   }
 
   measure: count {
@@ -89,6 +92,11 @@ union all
   dimension: billing_period {
     type: number
     sql: ${TABLE}.billing_period ;;
+  }
+
+  dimension: platform {
+    type: string
+    sql: ${TABLE}.platform ;;
   }
 
   dimension: created_count {

@@ -80,6 +80,7 @@ include: "bigquery_get_titles.view.lkml"
 include: "bigquery_get_title_category_items.view.lkml"
 include: "bigquery_get_title_categories.view.lkml"
 
+#f
 explore: bigquery_get_title_category_items {
   join: bigquery_get_title_categories {
     type: inner
@@ -176,6 +177,10 @@ explore: bigquery_timeupdate {
     type: inner
     sql_on: ${bigquery_timeupdate.user_id}=${bigquery_http_api_purchase_event.user_id} ;;
     relationship: one_to_one
+  }
+  join: bigquery_allfirstplay {
+    type: inner
+    sql_on: ${bigquery_allfirstplay.user_id}=${bigquery_timeupdate.user_id} and ${bigquery_allfirstplay.timestamp_date}=${bigquery_timeupdate.timestamp_date} and ${bigquery_allfirstplay.video_id}=${bigquery_timeupdate.video_id} ;;
   }
 }
 explore: bigquery_topmovies {}

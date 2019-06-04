@@ -140,6 +140,11 @@ union all
 from a4 as a));;
   }
 
+  dimension: video_id {
+    type: number
+    sql: ${TABLE}.video_id ;;
+  }
+
   dimension: email {
     type: string
     sql: ${TABLE}.email ;;
