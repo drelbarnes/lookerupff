@@ -635,11 +635,21 @@ measure: end_of_prior_week_subs {
     }
   }
 
+  measure: churn_30_day_percent_a {
+    type: sum
+    sql: ${churn_30_days}/${paying_30_days_prior};;
+    value_format_name: percent_1
+    filters: {
+      field: group_a
+      value: "yes"
+    }
+  }
+
 
   measure: churn_30_day_percent_b {
     type: sum
     sql: ${churn_30_days}/${paying_30_days_prior};;
-    value_format_name: percent_0
+    value_format_name: percent_1
     filters: {
       field: group_b
       value: "yes"

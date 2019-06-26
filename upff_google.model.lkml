@@ -79,6 +79,40 @@ include: "bigquery_attribution.view.lkml"
 include: "bigquery_get_titles.view.lkml"
 include: "bigquery_get_title_category_items.view.lkml"
 include: "bigquery_get_title_categories.view.lkml"
+include: "survey_file.view.lkml"
+include: "get_churn_survey.view.lkml"
+include: "gender.view.lkml"
+
+explore: bigquery_http_api_purchase_event {
+  join: gender {
+    type: left_outer
+    sql_on: ${gender.name}=${bigquery_http_api_purchase_event.fname} ;;
+    relationship: one_to_one
+  }
+}
+
+explore: survey_file{
+  join: bigquery_http_api_purchase_event {
+    type: inner
+    sql_on: cast(${survey_file.customer_id} as string)=cast(${bigquery_http_api_purchase_event.user_id} as string) ;;
+    relationship: one_to_one
+  }
+  join: churn_prediction {
+    type: inner
+    sql_on: cast(${churn_prediction.customer_id} as string)=cast(${survey_file.customer_id} as string) ;;
+    relationship: one_to_one
+  }
+  join: get_churn_survey {
+    type: inner
+    sql_on: cast(${survey_file.customer_id} as string)=cast(${get_churn_survey.user_id} as string) ;;
+    relationship: one_to_one
+  }
+  join: bigquery_allfirstplay {
+    type: inner
+    sql_on: cast(${survey_file.customer_id} as string)=cast(${bigquery_allfirstplay.user_id} as string);;
+    relationship: one_to_many
+  }
+}
 
 #f
 explore: bigquery_get_title_category_items {
@@ -181,7 +215,7 @@ explore: bigquery_timeupdate {
   join: bigquery_allfirstplay {
     type: inner
     sql_on: ${bigquery_allfirstplay.user_id}=${bigquery_timeupdate.user_id} and ${bigquery_allfirstplay.timestamp_date}=${bigquery_timeupdate.timestamp_date} and ${bigquery_allfirstplay.video_id}=${bigquery_timeupdate.video_id} ;;
-  }
+    relationship:one_to_one}
 }
 explore: bigquery_topmovies {}
 explore: bigquery_topseries {}

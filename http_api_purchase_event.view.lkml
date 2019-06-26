@@ -351,7 +351,7 @@ view: http_api_purchase_event {
     sql: ${TABLE}.user_id ;;
     filters: {
       field: http_api_purchase_event.topic
-      value: "customer.product.cancelled,customer.product.expired"
+      value: "customer.product.cancelled,customer.product.expired,customer.product.disabled"
     }
   }
 
@@ -390,6 +390,8 @@ view: http_api_purchase_event {
       value: "${fname}"
     }
   }
+
+
 
 
   # ----- Sets of fields for drilling ------
