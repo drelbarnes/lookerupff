@@ -312,8 +312,7 @@ dimension: winback {
   }
 
   dimension: itemId {
-    type: number
-    value_format: "0"
+    type: string
     sql: ${video_id} ;;
   }
 
