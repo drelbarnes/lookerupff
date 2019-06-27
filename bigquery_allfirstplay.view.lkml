@@ -312,7 +312,7 @@ dimension: winback {
   }
 
   dimension: itemId {
-    type: string
+    type: number
     sql: CAST(${video_id} AS STRING) ;;
   }
 
