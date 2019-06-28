@@ -57,7 +57,6 @@ view: churn_training_input {
   dimension: removewatchlist {type:number}
   dimension: view {type:number}
 
-
 }
 
 

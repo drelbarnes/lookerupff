@@ -283,6 +283,12 @@ view: http_api_purchase_event {
     sql: ${TABLE}.user_id ;;
   }
 
+  dimension: customer_id {
+    type: number
+    # hidden: yes
+    sql: SAFE_CAST(${user_id} as int64) ;;
+  }
+
   dimension: uuid {
     type: number
     value_format_name: id

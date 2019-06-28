@@ -312,9 +312,8 @@ dimension: winback {
   }
 
   dimension: itemId {
-    type: number
-    value_format: "0"
-    sql: ${video_id} ;;
+    type: string
+    sql: SAFE_CAST(${video_id} AS STRING) ;;
   }
 
   dimension_group: timestamp {
