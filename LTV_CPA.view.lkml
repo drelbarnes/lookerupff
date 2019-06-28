@@ -71,7 +71,7 @@ t6 as (select t5.timestamp,
 spend_30_days, conversions_30_days,cast(spend_30_days as decimal)/cast(conversions_30_days as decimal) as CPA
 from t4 inner join t5 on t4.row=t5.row),
 
-t7 as (select a.*,prior_31_days_subs, 3.37/(cast(churn_30_days as decimal)/cast(prior_31_days_subs as decimal)) as LTV
+t7 as (select a.*,prior_31_days_subs, case when date(a.timestamp)>'2018-12-31' then 3.69/(cast(churn_30_days as decimal)/cast(prior_31_days_subs as decimal)) else 3.69/(cast(churn_30_days as decimal)/cast(prior_31_days_subs as decimal)) end as LTV
 from
 (select a1.timestamp, a1.paying_churn+sum(coalesce(a2.paying_churn,0)) as churn_30_days
 from customers_analytics as a1
