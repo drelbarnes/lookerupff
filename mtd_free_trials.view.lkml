@@ -17,10 +17,20 @@ where date(sent_at)=current_date),
 a as
 (select a.timestamp,
        free_trial_created,
-       SUM(free_trial_created) OVER (PARTITION by cast(datepart(month,date(timestamp)) as varchar) order by timestamp asc rows between unbounded preceding and current row) AS Running_Free_Trials
+       total_paying,
+       total_free_trials,
+       SUM(free_trial_created) OVER (PARTITION by cast(datepart(month,date(timestamp)) as varchar) order by timestamp asc rows between unbounded preceding and current row) AS Running_Free_Trials,
+       SUM(free_trial_converted) OVER (PARTITION by cast(datepart(month,date(timestamp)) as varchar) order by timestamp asc rows between unbounded preceding and current row) AS Running_Paid_Conversions,
+       SUM(paying_created) OVER (PARTITION by cast(datepart(month,date(timestamp)) as varchar) order by timestamp asc rows between unbounded preceding and current row) AS Running_reacquisitions
+
 from customers_analytics as a
 where extract(year from timestamp)=2019
-group by 1,free_trial_Created
+group by 1,
+         free_trial_created,
+         free_trial_converted,
+         total_paying,
+         total_free_trials,
+         paying_created
 order by timestamp desc),
 
 b as
@@ -44,6 +54,7 @@ order by 1 desc)
 select a.*,
        mtd_running_trials_target
 from a inner join b on a.timestamp=b.timestamp
+order by timestamp desc
  ;;
   }
 
@@ -86,6 +97,31 @@ from a inner join b on a.timestamp=b.timestamp
   measure: running_free_trials_ {
     type: sum
     sql: ${running_free_trials};;
+  }
+
+  dimension: running_paid_conversions {
+    type: number
+    sql: ${TABLE}.running_paid_conversions ;;
+  }
+
+  measure: running_paid_conversions_ {
+    type: sum
+    sql: ${running_paid_conversions};;
+  }
+
+  dimension: running_reacquisitions {
+    type: number
+    sql: ${TABLE}.running_reacquisitions ;;
+  }
+
+  measure: running_reacquisitions_ {
+    type: sum
+    sql: ${running_reacquisitions};;
+  }
+
+  dimension: total_paid {
+    type: number
+    sql: ${TABLE}.total_paying ;;
   }
 
   dimension: mtd_running_target_{
