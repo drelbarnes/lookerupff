@@ -82,6 +82,9 @@ include: "bigquery_get_title_categories.view.lkml"
 include: "survey_file.view.lkml"
 include: "get_churn_survey.view.lkml"
 include: "gender.view.lkml"
+include: "appletv.view.lkml"
+
+explore: appletv {}
 
 explore: bigquery_http_api_purchase_event {
   join: gender {
