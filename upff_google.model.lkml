@@ -83,6 +83,9 @@ include: "survey_file.view.lkml"
 include: "get_churn_survey.view.lkml"
 include: "gender.view.lkml"
 include: "appletv.view.lkml"
+include: "facebook.view.lkml"
+
+explore: facebook {}
 
 explore: appletv {}
 
