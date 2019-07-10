@@ -202,6 +202,7 @@ view: http_api_purchase_event {
     type: time
     timeframes: [
       raw,
+      day_of_week,
       time,
       date,
       week,

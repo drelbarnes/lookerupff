@@ -1,6 +1,6 @@
 view: bigquery_allfirstplay {
   derived_table: {
-    sql:  with aa as
+    sql: with aa as
 (select user_id,email,status_date as churn_date
 from http_api.purchase_event
 where topic in ('customer.product.cancelled','customer.product.disabled','customer.product.expired')),
@@ -88,7 +88,8 @@ a as
                 'Android' as source,
                 UNIX_SECONDS(sent_at) as EPOCH_TIMESTAMP,
                 CAST(platform_id AS int64) as platform_id,
-                episode
+                episode,
+                cast(is_chromecast as int64) as tv_cast
          from android.firstplay as a left join titles_id_mapping as b on a.video_id = b.id
 
          union all
@@ -106,7 +107,8 @@ a as
       'Roku' as source,
       UNIX_SECONDS(timestamp) as EPOCH_TIMESTAMP,
       CAST('1111' AS int64) as platform_id,
-       b.episode
+       b.episode,
+       null as tv_cast
 from a32 as a left join titles_id_mapping as b on mysql_roku_firstplays_video_id=b.id
 
 
@@ -125,7 +127,8 @@ from a32 as a left join titles_id_mapping as b on mysql_roku_firstplays_video_id
                 'iOS' as source,
                 UNIX_SECONDS(sent_at) as EPOCH_TIMESTAMP,
                 CAST(platform_id AS int64) as platform_id,
-                episode
+                episode,
+                cast(is_chromecast as int64)+cast(is_airplay as int64) as tv_cast
          from ios.firstplay as a left join titles_id_mapping as b on a.video_id = safe_cast(b.id as string)
          union all
          select sent_at as timestamp,
@@ -141,7 +144,8 @@ from a32 as a left join titles_id_mapping as b on mysql_roku_firstplays_video_id
                 'Web' as source,
                 UNIX_SECONDS(sent_at) as EPOCH_TIMESTAMP,
                 CAST(platform_id AS int64) as platform_id,
-                episode
+                episode,
+                null as tv_cast
          from javascript.loadedmetadata as a left join titles_id_mapping as b on safe_cast(a.video_id as string)= safe_cast(b.id as string)
 
         union all
@@ -159,7 +163,8 @@ from a32 as a left join titles_id_mapping as b on mysql_roku_firstplays_video_id
                 'Web' as source,
                 UNIX_SECONDS(timestamp) as EPOCH_TIMESTAMP,
                 CAST('33064' AS int64) as platform_id,
-                episode
+                episode,
+                null as tv_cast
          from a2 as a left join titles_id_mapping as b on trim(upper(b.title)) = trim(upper(a.title)))
 
 
@@ -177,6 +182,7 @@ select a.user_id,
        a.source,
        a.episode,
       email,
+      tv_cast,
        case when cc.user_id is null then 'first-time customers' else 'reacquisitions' end as winback,
        case when date(a.timestamp) between DATE_SUB(date(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), QUARTER)), INTERVAL 0 QUARTER) and
             DATE_SUB(date(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY)), INTERVAL 0 QUARTER) then "Current Quarter"
@@ -187,7 +193,7 @@ select a.user_id,
             else "NA"
             end as Quarter
 from a left join cc on a.user_id=cc.user_id
-where a.user_id<>'0'    ;;
+where a.user_id<>'0'      ;;
   }
 
 dimension: winback {
@@ -195,6 +201,10 @@ dimension: winback {
   sql: ${TABLE}.winback ;;
 }
 
+dimension: tv_cast {
+  type: number
+  sql: ${TABLE}.tv_cast ;;
+}
 
   dimension: quarter {
     type: string
@@ -324,6 +334,7 @@ dimension: winback {
       hour_of_day,
       date,
       day_of_week_index,
+      day_of_week,
       week,
       month,
       quarter,
