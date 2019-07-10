@@ -725,6 +725,11 @@ view: survey_file {
     sql: ${TABLE}.Q13r4 ;;
   }
 
+  dimension: kids {
+    type: number
+    sql: ${q13r3}+${q13r4} ;;
+  }
+
   dimension: q14r1 {
     type: number
     sql: ${TABLE}.Q14r1 ;;

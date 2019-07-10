@@ -47,6 +47,8 @@ group by a1.timestamp,a1.paying_churn)),
                      when extract(YEAR from a.timestamp)='2019' then 55000 end  as annual_target,
                 case when rownum=max(rownum) over(partition by Week) then existing_paying end as PriorWeekExistingSubs,
                 case when rownum=max(rownum) over(partition by Month) then existing_paying end as PriorMonthExistingSubs,
+                case when rownum=min(rownum) over(partition by Week||year) then total_paying end as CurrentWeekExistingSubs,
+                case when rownum=min(rownum) over(partition by Month||year) then total_paying end as CurrentMonthExistingSubs,
                 wait_content,
                 save_money,
                 vacation,
@@ -458,6 +460,16 @@ measure: end_of_prior_week_subs {
   measure: end_of_prior_month_subs {
     type: sum
     sql: ${TABLE}.PriorMonthExistingSubs ;;
+  }
+
+  measure: end_of_week_subs {
+    type: sum
+    sql: ${TABLE}.CurrentWeekExistingSubs ;;
+  }
+
+  measure: end_of_month_subs {
+    type: sum
+    sql: ${TABLE}.CurrentMonthExistingSubs ;;
   }
 
   measure: weekly_churn {

@@ -43,7 +43,8 @@ case when TO_CHAR(DATE_TRUNC('month', date_start), 'YYYY-MM') = '2018-07' then s
      when TO_CHAR(DATE_TRUNC('month', date_start ), 'YYYY-MM') = '2018-02' then spend+(21565/28)
      when TO_CHAR(DATE_TRUNC('month', date_start ), 'YYYY-MM') = '2018-01' then spend+(21570/31)
      when date(date_start) between timestamp '2018-08-11' and timestamp '2018-09-08' then spend+((288.37+87.27)/28)
-     when date(date_start)>'2018-10-10' then spend+(total_paying/30)
+     when date(date_start)between timestamp'2018-10-10' and timestamp '2019-04-30' then spend+(total_paying/30)
+     when date(date_start)>'2019-04-30' then spend + 657.03 + (1.5*(free_trial_converted+paying_created))
      else spend end as spend
                 from google_perf inner join customers_analytics on date(date_start)=date(timestamp)
       union all
@@ -71,7 +72,7 @@ t6 as (select t5.timestamp,
 spend_30_days, conversions_30_days,cast(spend_30_days as decimal)/cast(conversions_30_days as decimal) as CPA
 from t4 inner join t5 on t4.row=t5.row),
 
-t7 as (select a.*,prior_31_days_subs, 3.37/(cast(churn_30_days as decimal)/cast(prior_31_days_subs as decimal)) as LTV
+t7 as (select a.*,prior_31_days_subs, case when date(a.timestamp)>'2018-12-31' then 3.69/(cast(churn_30_days as decimal)/cast(prior_31_days_subs as decimal)) else 3.69/(cast(churn_30_days as decimal)/cast(prior_31_days_subs as decimal)) end as LTV
 from
 (select a1.timestamp, a1.paying_churn+sum(coalesce(a2.paying_churn,0)) as churn_30_days
 from customers_analytics as a1

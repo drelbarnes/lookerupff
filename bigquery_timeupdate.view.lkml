@@ -228,6 +228,11 @@ from a4 as a));;
     value_format: "#,##0"
   }
 
+  measure: title_count {
+    type: count_distinct
+    sql: ${video_id} ;;
+  }
+
   dimension: user_id {
     primary_key: yes
     tags: ["user_id"]
