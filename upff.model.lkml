@@ -31,6 +31,7 @@ include: "redshift_python_users.view"
 include: "javascript_conversion.view"
 include: "redshift_get_titles.view"
 include: "javascript_conversion.view"
+include: "redshift_php_get_user_on_email_list.view"
 
 datagroup: upff_default_datagroup {
   # sql_trigger: SELECT MAX(id) FROM etl_log;;
@@ -301,6 +302,12 @@ explore: http_api_purchase_event
           join: redshift_php_get_mobile_app_installs {
             type: left_outer
             sql_on: ${redshift_php_get_mobile_app_installs.anonymous_id} = ${android_conversion.anonymous_id};;
+            relationship: one_to_one
+          }
+
+          join: redshift_php_get_user_on_email_list {
+            type: left_outer
+            sql_on: ${http_api_purchase_event.email} = ${redshift_php_get_user_on_email_list.email};;
             relationship: one_to_one
           }
 
