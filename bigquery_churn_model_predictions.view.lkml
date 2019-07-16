@@ -272,6 +272,7 @@ view: churn_future_input {
       column: customer_id {}
       column: marketing_optin {}
       column: num {}
+      column: email {}
       column: state {}
       column: addwatchlist {}
       column: bates_duration {}
@@ -303,6 +304,10 @@ view: churn_future_input {
     type: string
     tags: ["user_id"]
   }
+  dimension: email {
+    tags: ["email"]
+    type:string
+  }
   dimension: marketing_optin {type:number}
   dimension: num {type:number}
   dimension: state {type:string}
@@ -331,6 +336,11 @@ view: churn_prediction {
   dimension: customer_id {
     type: number
     tags: ["user_id"]
+  }
+
+  dimension: email {
+    tags: ["email"]
+    type: string
   }
   dimension: num {
     type: number
