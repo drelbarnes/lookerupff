@@ -84,6 +84,22 @@ include: "get_churn_survey.view.lkml"
 include: "gender.view.lkml"
 include: "appletv.view.lkml"
 include: "facebook.view.lkml"
+include: "marketing_site_pages.view.lkml"
+include: "bigquery_marketing_installs.view.lkml"
+include: "bigquery_all_conversions.view.lkml"
+
+
+explore: bigquery_marketing_installs{
+  join: bigquery_all_conversions {
+    type: left_outer
+    sql_on: ${bigquery_all_conversions.anonymous_id}=${bigquery_marketing_installs.anonymous_id} ;;
+    relationship: one_to_one
+  }
+}
+
+explore: bigquery_all_conversions {}
+
+explore: marketing_site_pages {}
 
 explore: facebook {}
 

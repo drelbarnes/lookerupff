@@ -284,6 +284,16 @@ view: ios_conversion {
     sql: ${TABLE}.view ;;
   }
 
+  dimension: visit_type {
+    type: string
+    sql: case when ${TABLE}.context_page_referrer like '%sign-up-plan%' or ${TABLE}.context_page_referrer like  '%signup-plan%' then 'paid' else 'organic' end ;;
+  }
+
+  measure: user_count {
+    type: count_distinct
+    sql: ${anonymous_id} ;;
+  }
+
   measure: count {
     type: count
     drill_fields: [detail*]

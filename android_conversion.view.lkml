@@ -288,9 +288,19 @@ view: android_conversion {
     sql: ${TABLE}.view ;;
   }
 
+  dimension: visit_type {
+    type: string
+    sql: case when ${TABLE}.context_page_referrer like '%sign-up-plan%' or ${TABLE}.context_page_referrer like  '%signup-plan%' then 'paid' else 'organic' end ;;
+  }
+
   measure: count {
     type: count
     drill_fields: [detail*]
+  }
+
+  measure: user_count {
+    type: count_distinct
+    sql: ${TABLE}.anonymous_id ;;
   }
 
   # ----- Sets of fields for drilling ------
