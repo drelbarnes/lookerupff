@@ -87,7 +87,15 @@ include: "facebook.view.lkml"
 include: "marketing_site_pages.view.lkml"
 include: "bigquery_marketing_installs.view.lkml"
 include: "bigquery_all_conversions.view.lkml"
+include: "bigquery_javascript_all_page_views.view.lkml"
 
+explore: bigquery_javascript_all_page_views {
+  join: bigquery_javascript_conversion {
+    type: left_outer
+    sql_on: ${bigquery_javascript_all_page_views.anonymous_id}=${bigquery_javascript_conversion.anonymous_id} ;;
+    relationship: one_to_one
+  }
+}
 
 explore: bigquery_marketing_installs{
   join: bigquery_all_conversions {

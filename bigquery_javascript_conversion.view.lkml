@@ -220,6 +220,11 @@ view: bigquery_javascript_conversion {
     drill_fields: [id, context_campaign_name, context_library_name]
   }
 
+  measure: conversion_count {
+    type: count_distinct
+    sql: ${anonymous_id} ;;
+  }
+
   measure: count_id {
     type: count_distinct
     sql: ${id} ;;

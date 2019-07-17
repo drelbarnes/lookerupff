@@ -257,10 +257,7 @@ view: javascript_conversion {
     sql: ${TABLE}.uuid_ts ;;
   }
 
-  dimension: visit_type {
-    type: string
-    sql: case when ${TABLE}.context_page_referrer like '%sign-up-plan%' or ${TABLE}.context_page_referrer like  '%signup-plan%' then 'paid' else 'organic' end ;;
-  }
+
 
 
   measure: count {
