@@ -75,7 +75,7 @@ view: bigquery_marketing_installs {
 
   dimension: type {
     type: string
-    sql: case when ${medium} like '%paid%' then 'paid' else 'organic' end ;;
+    sql: case when lower(${medium}) like '%paid%' then 'paid' else 'organic' end ;;
   }
 
   dimension: platform {

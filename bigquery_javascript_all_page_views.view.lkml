@@ -1,12 +1,13 @@
 view: bigquery_javascript_all_page_views {
   derived_table: {
-    sql: select anonymous_id,
+    sql:
+select anonymous_id,
        context_page_referrer,
        timestamp
 from javascript.view
 union all
 select anonymous_id,
-       context_campaign_referrer,
+       context_page_referrer,
        timestamp
 from javascript_upff_home.pages
  ;;

@@ -80,6 +80,11 @@ order by timestamp desc
     sql: ${TABLE}.timestamp ;;
   }
 
+  dimension: total_free_trials {
+    type: number
+    sql: ${TABLE}.total_free_trials ;;
+  }
+
   dimension: free_trial_created {
     type: number
     sql: ${TABLE}.free_trial_created ;;
