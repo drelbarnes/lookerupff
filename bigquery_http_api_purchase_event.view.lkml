@@ -68,6 +68,7 @@ view: bigquery_http_api_purchase_event {
 
   dimension: email {
     type: string
+    tags:["email"]
     sql: ${TABLE}.email ;;
   }
 
