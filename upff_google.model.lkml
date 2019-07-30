@@ -95,6 +95,12 @@ explore: bigquery_javascript_all_page_views {
     sql_on: ${bigquery_javascript_all_page_views.anonymous_id}=${bigquery_javascript_conversion.anonymous_id} ;;
     relationship: one_to_one
   }
+
+  join: bigquery_http_api_purchase_event {
+    type: left_outer
+    sql_on: ${bigquery_javascript_conversion.user_id}=${bigquery_http_api_purchase_event.user_id} ;;
+    relationship: one_to_one
+  }
 }
 
 explore: bigquery_marketing_installs{
