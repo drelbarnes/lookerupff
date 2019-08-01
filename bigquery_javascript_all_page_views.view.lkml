@@ -70,20 +70,8 @@ from javascript_upff_home.pages
 
   dimension: visit_type {
     type: string
-    sql: case when lower(${context_page_referrer}) like '%heartland%'
-           or lower(${context_page_referrer}) like '%somebodychild%'
-           or lower(${context_page_referrer}) like '%potential%'
-           or lower(${context_page_referrer}) like '%wayhomewicketmvp%'
-           or lower(${context_page_referrer}) like '%heartforgives%'
-           or lower(${context_page_referrer}) like '%23blast%'
-           or lower(${context_page_referrer}) like '%lfyivwicketmvp%'
-           or lower(${context_page_referrer}) like '%scarlett%'
-           or lower(${context_page_referrer}) like '%loveslastresort%'
-           or lower(${context_page_referrer}) like '%touchedbygracewicketmvp%'
-           or lower(${context_page_referrer}) like '%amancalledjon%'
-           or lower(${context_page_referrer}) like '%remembergoal%'
-           or lower(${context_page_referrer}) like '%wayhomewicketmvp%'
-           or lower(${context_page_referrer}) like '%dancer%' then 'paid' else 'organic' end ;;
+    sql: case when lower(${context_campaign_source})='facebook'
+                or lower(${context_campaign_source})='google' then 'paid' else 'organic' end ;;
   }
 
   dimension: campaign {

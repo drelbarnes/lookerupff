@@ -32,6 +32,9 @@ include: "javascript_conversion.view"
 include: "redshift_get_titles.view"
 include: "javascript_conversion.view"
 include: "redshift_php_get_user_on_email_list.view"
+include: "redshift_marketing_performance.view.lkml"
+
+explore: redshift_marketing_performance {}
 
 datagroup: upff_default_datagroup {
   # sql_trigger: SELECT MAX(id) FROM etl_log;;
