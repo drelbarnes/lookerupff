@@ -20,6 +20,53 @@ include: "mvpds.view.lkml"
 include: "redshift_pixel_api_email_opened.view.lkml"
 include: "redshift_php_get_churn_survey.view.lkml"
 include: "redshift_php_get_trialist_survey.view.lkml"
+include: "redshift_facebook_ads.view.lkml"
+include: "redshift_facebook_campaigns.view.lkml"
+include: "redshift_facebook_insights.view.lkml"
+include: "redshift_google_campaign_performance_reports.view.lkml"
+include: "redshift_google_campaigns.view.lkml"
+include: "redshift_google_ad_performance_reports.view.lkml"
+include: "redshift_google_ads.view.lkml"
+include: "redshift_google_ad_groups.view.lkml"
+
+explore: redshift_facebook_insights {
+  join: redshift_facebook_ads {
+    type: inner
+    sql_on: ${redshift_facebook_insights.ad_id}=${redshift_facebook_ads.id} ;;
+    relationship: many_to_one
+  }
+  join: redshift_facebook_campaigns {
+    type: inner
+    sql_on: ${redshift_facebook_ads.campaign_id}=${redshift_facebook_campaigns.id} ;;
+    relationship: many_to_one
+  }
+}
+
+explore: redshift_google_campaign_performance_reports {
+  join: redshift_google_campaigns {
+    type: inner
+    sql_on: ${redshift_google_campaign_performance_reports.campaign_id}=${redshift_google_campaigns.id} ;;
+    relationship: many_to_one
+  }
+}
+
+explore: redshift_google_ad_performance_reports {
+  join: redshift_google_ads {
+    type: inner
+    sql_on: ${redshift_google_ad_performance_reports.ad_id}=${redshift_google_ads.id} ;;
+    relationship: many_to_one
+  }
+  join: redshift_google_ad_groups {
+    type: inner
+    sql_on: ${redshift_google_ad_groups.id}=${redshift_google_ads.ad_group_id} ;;
+    relationship: one_to_one
+  }
+  join: redshift_google_campaigns {
+    type: inner
+    sql_on: ${redshift_google_ad_groups.campaign_id}=${redshift_google_campaigns.id} ;;
+    relationship: one_to_one
+  }
+}
 
 explore: redshift_php_get_churn_survey {
   join: http_api_purchase_event {

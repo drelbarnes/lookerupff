@@ -22,14 +22,15 @@ where date(sent_at)=current_date),
 
      c as (select a.timestamp,total_paying as paying_30_days_prior from a inner join b on a.row=b.row),
 
-     d as ((select a1.timestamp, a1.paying_churn+sum(coalesce(a2.paying_churn,0)) as churn_30_days
+     d as ((select a1.timestamp, a1.paying_churn+sum(coalesce(a2.paying_churn,0)) as churn_30_days, a1.paying_churn+sum(coalesce(a2.paying_created,0)) as winback_30_days
 from customers_analytics as a1
 left join customers_analytics as a2 on datediff(day,a2.timestamp,a1.timestamp)<=29 and datediff(day,a2.timestamp,a1.timestamp)>0
 group by a1.timestamp,a1.paying_churn)),
 
      e as (select c.timestamp, cast(paying_30_days_prior as decimal) as paying_30_days_prior,
                                cast(churn_30_days as decimal) as churn_30_days,
-                               cast(paying_30_days_prior as decimal)/cast(churn_30_days as decimal) as churn_30_day_percent
+                               cast(paying_30_days_prior as decimal)/cast(churn_30_days as decimal) as churn_30_day_percent,
+                               cast(winback_30_days as decimal) as winback_30_days
            from c inner join d on c.timestamp=d.timestamp),
 
      f as (select *, sum((49000-(total_paying))/(365-day_of_year)) OVER (PARTITION by cast(datepart(month,date(timestamp)) as varchar) order by timestamp asc
@@ -67,7 +68,12 @@ group by a1.timestamp,a1.paying_churn)),
                       (select dateadd(day,-14,timestamp) as timestamp from customers_analytics )) as b on a.rownum=b.rownum)) as a
       left join customers.churn_reasons_aggregated as b on a.timestamp=b.timestamp)) as a))
 
-      select f.*,paying_30_days_prior,churn_30_days,churn_30_day_percent from e inner join f on e.timestamp=f.timestamp ;;}
+      select f.*,paying_30_days_prior,churn_30_days,churn_30_day_percent,winback_30_days from e inner join f on e.timestamp=f.timestamp ;;}
+
+measure: winback_30_days {
+  type: sum
+  sql: ${TABLE}.winback_30_days ;;
+}
 
 dimension: paying_30_days_prior {
   type: number

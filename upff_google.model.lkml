@@ -52,7 +52,6 @@ include: "bigquery_http_api_purchase_event.view.lkml"
 include: "bigquery_quick_signup_subs.view.lkml"
 include: "bigquery_php_get_user_on_email_list.view.lkml"
 include: "bigquery_manual_subscribers_with_phone_numbers.view.lkml"
-include: "bigquery_facebook_insights.view.lkml"
 include: "bigquery_javascript_firstplay.view.lkml"
 include: "bigquery_users.view.lkml"
 include: "monthly_platform_user_count.view.lkml"
@@ -88,6 +87,7 @@ include: "marketing_site_pages.view.lkml"
 include: "bigquery_marketing_installs.view.lkml"
 include: "bigquery_all_conversions.view.lkml"
 include: "bigquery_javascript_all_page_views.view.lkml"
+
 
 explore: bigquery_javascript_all_page_views {
   join: bigquery_javascript_conversion {
@@ -541,7 +541,6 @@ explore: bigquery_manual_subscribers_with_phone_numbers {
 
 }
 
-explore: bigquery_facebook_insights {}
 explore: bigquery_javascript_firstplay {
 
   join: bigquery_users {

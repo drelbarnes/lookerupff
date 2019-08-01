@@ -120,7 +120,7 @@ union all
     case when series is null and upper(collection)=upper(title) then 'movie'
                      when series is not null then 'series' else 'other' end as type,
     a.timestamp,
-    a3.duration*60*numcount as duration,
+    a3.duration*60 as duration,
     mysql_roku_firstplays_total_minutes_watched*60 as timecode,
    'Roku' AS source
   FROM
@@ -224,7 +224,7 @@ from a4 as a));;
 
   dimension: minutes_watched {
     type: number
-    sql: ${timecode}/60 ;;
+    sql: case when ${duration}< ${timecode} then round(${duration}/60) else round(${timecode}/60) end ;;
     value_format: "#,##0"
   }
 

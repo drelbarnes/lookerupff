@@ -1,4 +1,4 @@
-view: bigquery_facebook_insights {
+view: redshift_facebook_insights {
   sql_table_name: facebook_ads.insights ;;
 
   dimension: id {
@@ -20,6 +20,16 @@ view: bigquery_facebook_insights {
   dimension: clicks {
     type: number
     sql: ${TABLE}.clicks ;;
+  }
+
+  measure: clicks_ {
+    type: sum
+    sql: ${TABLE}.clicks ;;
+  }
+
+  dimension: channel {
+    type: string
+    sql: 'facebook' ;;
   }
 
   dimension_group: date_start {
@@ -75,6 +85,31 @@ view: bigquery_facebook_insights {
     sql: ${TABLE}.link_clicks ;;
   }
 
+  measure: deeplink_clicks_ {
+    type: sum
+    sql: ${TABLE}.deeplink_clicks ;;
+  }
+
+  measure: frequency_ {
+    type: sum
+    sql: ${TABLE}.frequency ;;
+  }
+
+  measure: impressions_ {
+    type: sum
+    sql: ${TABLE}.impressions ;;
+  }
+
+  measure: inline_post_engagements_ {
+    type: sum
+    sql: ${TABLE}.inline_post_engagements ;;
+  }
+
+  measure: link_clicks_ {
+    type: sum
+    sql: ${TABLE}.link_clicks ;;
+  }
+
   dimension_group: loaded {
     type: time
     timeframes: [
@@ -91,6 +126,11 @@ view: bigquery_facebook_insights {
 
   dimension: reach {
     type: number
+    sql: ${TABLE}.reach ;;
+  }
+
+  measure: reach_ {
+    type: sum
     sql: ${TABLE}.reach ;;
   }
 
@@ -143,6 +183,41 @@ view: bigquery_facebook_insights {
     sql: ${TABLE}.unique_social_clicks ;;
   }
 
+  measure: social_clicks_ {
+    type: sum
+    sql: ${TABLE}.social_clicks ;;
+  }
+
+  measure: social_impressions_ {
+    type: sum
+    sql: ${TABLE}.social_impressions ;;
+  }
+
+  measure: social_spend_ {
+    type: sum
+    sql: ${TABLE}.social_spend ;;
+  }
+
+  measure: spend_ {
+    type: sum
+    sql: ${TABLE}.spend ;;
+  }
+
+  measure: unique_clicks_ {
+    type: sum
+    sql: ${TABLE}.unique_clicks ;;
+  }
+
+  measure: unique_impressions_ {
+    type: sum
+    sql: ${TABLE}.unique_impressions ;;
+  }
+
+  measure: unique_social_clicks_ {
+    type: sum
+    sql: ${TABLE}.unique_social_clicks ;;
+  }
+
   dimension_group: uuid_ts {
     type: time
     timeframes: [
@@ -159,6 +234,11 @@ view: bigquery_facebook_insights {
 
   dimension: website_clicks {
     type: number
+    sql: ${TABLE}.website_clicks ;;
+  }
+
+  measure: website_clicks_ {
+    type: sum
     sql: ${TABLE}.website_clicks ;;
   }
 
