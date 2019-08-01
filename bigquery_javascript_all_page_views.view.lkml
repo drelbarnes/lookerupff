@@ -2,11 +2,21 @@ view: bigquery_javascript_all_page_views {
   derived_table: {
     sql:
 select anonymous_id,
+       context_campaign_source,
+       context_campaign_medium,
+       context_campaign_name,
+       context_campaign_content,
+       context_campaign_term,
        context_page_referrer,
        timestamp
 from javascript.view
 union all
 select anonymous_id,
+       context_campaign_source,
+       context_campaign_medium,
+       context_campaign_name,
+       context_campaign_content,
+       context_campaign_term,
        context_page_referrer,
        timestamp
 from javascript_upff_home.pages
@@ -28,6 +38,30 @@ from javascript_upff_home.pages
     sql: ${TABLE}.context_page_referrer ;;
   }
 
+  dimension: context_campaign_source {
+    type: string
+    sql:  ${TABLE}.context_campaign_source;;
+  }
+
+  dimension: context_campaign_medium {
+    type: string
+    sql:  ${TABLE}.context_campaign_medium;;
+  }
+
+  dimension: context_campaign_name {
+    type: string
+    sql:  ${TABLE}.context_campaign_name;;
+  }
+
+  dimension: context_campaign_term {
+    type: string
+    sql:  ${TABLE}.context_campaign_term;;
+  }
+
+  dimension: context_campaign_content {
+    type: string
+    sql:  ${TABLE}.context_campaign_content;;
+  }
 
   dimension_group: timestamp {
     type: time

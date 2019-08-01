@@ -159,6 +159,21 @@ view: javascript_firstplay {
     sql: ${TABLE}.user_id ;;
   }
 
+  dimension: video_id {
+    type: number
+    sql: ${TABLE}.video_id ;;
+  }
+
+  dimension: session_id {
+    type: string
+    sql: ${TABLE}.session_id ;;
+  }
+
+  dimension: platfrom {
+    type: string
+    sql: ${TABLE}.platfrom ;;
+  }
+
   dimension: uuid {
     type: number
     value_format_name: id
