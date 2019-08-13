@@ -521,6 +521,63 @@ dimension: tv_cast {
     sql: ${video_id} ;;
   }
 
+  filter:  promotional_collection_a{
+    type: string
+  }
+
+  dimension: promotional_collection_a_{
+    hidden: no
+    type: yesno
+    sql: {%condition promotional_collection_a%} ${collection} {%endcondition%};;
+  }
+
+  measure: promotional_collection_plays_a {
+    type: count_distinct
+    filters: {
+      field: promotional_collection_a_
+      value: "yes"
+    }
+    sql: concat(safe_cast(${video_id} as string),${user_id},cast(${timestamp_date} as string))  ;;
+  }
+
+  measure: promotional_collection_title_count_a {
+    type: count_distinct
+    filters: {
+      field: promotional_collection_a_
+      value: "yes"
+    }
+    sql: ${video_id} ;;
+  }
+
+  filter:  promotional_collection_b{
+    type: string
+  }
+
+  dimension: promotional_collection_b_{
+    hidden: no
+    type: yesno
+    sql: {%condition promotional_collection_b%} ${collection} {%endcondition%};;
+  }
+
+  measure: promotional_collection_plays_b {
+    type: count_distinct
+    filters: {
+      field: promotional_collection_b_
+      value: "yes"
+    }
+    sql: concat(safe_cast(${video_id} as string),${user_id},cast(${timestamp_date} as string))  ;;
+  }
+
+  measure: promotional_collection_title_count_b {
+    type: count_distinct
+    filters: {
+      field: promotional_collection_b_
+      value: "yes"
+    }
+    sql: ${video_id} ;;
+  }
+
+
   dimension: date {
     label_from_parameter: date_granularity
     sql:

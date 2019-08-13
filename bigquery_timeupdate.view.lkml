@@ -181,7 +181,7 @@ from a4 as a));;
   }
 
   dimension: episode {
-    type: string
+    type: number
     sql: ${TABLE}.episode ;;
   }
 
