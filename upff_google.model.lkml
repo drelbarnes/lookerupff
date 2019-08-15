@@ -87,6 +87,7 @@ include: "marketing_site_pages.view.lkml"
 include: "bigquery_marketing_installs.view.lkml"
 include: "bigquery_all_conversions.view.lkml"
 include: "bigquery_javascript_all_page_views.view.lkml"
+include: "bigquery_get_user_on_email_list.view.lkml"
 
 
 explore: bigquery_javascript_all_page_views {
@@ -120,6 +121,13 @@ explore: facebook {}
 explore: appletv {}
 
 explore: bigquery_http_api_purchase_event {
+
+  join: bigquery_get_user_on_email_list {
+    type: left_outer
+    sql_on: ${bigquery_http_api_purchase_event.email} = ${bigquery_get_user_on_email_list.email} ;;
+    relationship: one_to_one
+  }
+
   join: gender {
     type: left_outer
     sql_on: ${gender.name}=${bigquery_http_api_purchase_event.fname} ;;
