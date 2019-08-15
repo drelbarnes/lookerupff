@@ -261,6 +261,7 @@ view: bigquery_http_api_purchase_event {
 
   dimension: user_id {
     type: string
+    tags: ["user_id"]
     sql: ${TABLE}.user_id ;;
   }
 

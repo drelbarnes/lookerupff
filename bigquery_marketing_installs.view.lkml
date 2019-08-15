@@ -19,15 +19,7 @@ view: bigquery_marketing_installs {
              context_campaign_medium as medium,
              'android' as platform,
              'google' as channel
-      from android.branch_install
-      union all
-      select anonymous_id,
-             timestamp,
-             context_aaid as ad_id,
-             context_campaign_medium as medium,
-             'android' as platform,
-             'google' as channel
-      from android.branch_reinstall),
+      from android.branch_install),
 
       google_ios_installs as
       (select anonymous_id,
@@ -36,15 +28,7 @@ view: bigquery_marketing_installs {
              context_campaign_medium as medium,
              'ios' as platform,
              'google' as channel
-      from ios.branch_install
-      union all
-      select anonymous_id,
-             timestamp,
-             context_idfa,
-             context_campaign_medium as medium,
-             'ios' as platform,
-             'google' as channel
-      from ios.branch_reinstall)
+      from ios.branch_install)
 
       select * from google_android_installs
       union all
