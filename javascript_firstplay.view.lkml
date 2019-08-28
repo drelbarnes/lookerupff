@@ -169,9 +169,9 @@ view: javascript_firstplay {
     sql: ${TABLE}.session_id ;;
   }
 
-  dimension: platfrom {
+  dimension: platform {
     type: string
-    sql: ${TABLE}.platfrom ;;
+    sql: ${TABLE}.platform ;;
   }
 
   dimension: uuid {
