@@ -224,11 +224,12 @@ and (conversion_date)<=date(status_date)),
             WHEN upper(title) LIKE '%BRINGING UP BATES%' THEN 'Bringing Up Bates'
             ELSE 'Other'
           END AS content,
-          current_time as timecode
+          max(current_time) as timecode
         FROM
           javascript.timeupdate
         WHERE
-          user_id IS NOT NULL),
+          user_id IS NOT NULL
+        group by 1,2,3,4),
 
         android AS (
         SELECT
@@ -236,13 +237,14 @@ and (conversion_date)<=date(status_date)),
           'android' AS source,
           timestamp,
           content,
-          timecode
+          max(timecode) as timecode
         FROM
           android.timeupdate
         INNER JOIN
           a
         ON
-          timeupdate.video_id=a.video_id),
+          timeupdate.video_id=a.video_id
+        group by 1,2,3,4),
 
         ios AS (
         SELECT
@@ -250,13 +252,14 @@ and (conversion_date)<=date(status_date)),
           'ios' AS source,
           timestamp,
           content,
-          timecode
+          max(timecode) as timecode
         FROM
           ios.timeupdate
         INNER JOIN
           a
         ON
-          SAFE_CAST(timeupdate.video_id AS int64)=SAFE_CAST(a.video_id AS int64))
+          SAFE_CAST(timeupdate.video_id AS int64)=SAFE_CAST(a.video_id AS int64)
+        group by 1,2,3,4)
 
 
         SELECT user_id,
@@ -283,22 +286,13 @@ and (conversion_date)<=date(status_date)),
                case when content="Bringing Up Bates" then safe_cast(safe_cast(timecode as string) as int64) else 0 end as bates_duration
          FROM ios),
 
-      l as
+      duration1 as
       (select e.user_id,
               num,
               case when bates_duration is null then 0 else bates_duration end as bates_duration,
               case when heartland_duration is null then 0 else heartland_duration end as heartland_duration,
               case when other_duration is null then 0 else other_duration end as other_duration
       from e left join duration on e.user_id=duration.user_id and date(timestamp) between start_date and end_date),
-
-      duration1 as
-      (select user_id,
-             num,
-             sum(bates_duration) as bates_duration,
-             sum(heartland_duration) as heartland_duration,
-             sum(other_duration) as other_duration
-      from l
-      group by 1,2),
 
 m as
 (select e.*,

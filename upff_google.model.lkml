@@ -88,6 +88,7 @@ include: "bigquery_marketing_installs.view.lkml"
 include: "bigquery_all_conversions.view.lkml"
 include: "bigquery_javascript_all_page_views.view.lkml"
 include: "bigquery_get_user_on_email_list.view.lkml"
+include: "gender.view.lkml"
 
 
 explore: bigquery_javascript_all_page_views {
@@ -369,6 +370,12 @@ explore: bigquery_allfirstplay {
     sql_on: ${bigquery_allfirstplay.timestamp_date}=${bigquery_analytics.timestamp_date} ;;
     relationship: one_to_one
   }
+  join: gender {
+    type: left_outer
+    sql_on: ${bigquery_http_api_purchase_event.fname}=${gender.name} ;;
+    relationship: many_to_one
+  }
+
 }
 explore: bigquery_derived_all_firstplay {
   join: bigquery_views{

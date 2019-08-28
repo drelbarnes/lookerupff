@@ -1,4 +1,4 @@
-view: bigquery_marketing_installs {
+view: redshift_marketing_installs {
   derived_table: {
     sql: with fb_installs as
       (select anonymous_id,
@@ -24,7 +24,7 @@ view: bigquery_marketing_installs {
       google_ios_installs as
       (select anonymous_id,
              timestamp,
-             context_idfa as ad_id,
+             context_idfa,
              context_campaign_medium as medium,
              'ios' as platform,
              'google' as channel
@@ -61,7 +61,7 @@ view: bigquery_marketing_installs {
       year
     ]
     sql: ${TABLE}.timestamp ;;
-    }
+  }
 
   dimension: ad_id {
     type: string

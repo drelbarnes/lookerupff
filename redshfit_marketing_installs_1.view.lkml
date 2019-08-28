@@ -1,41 +1,39 @@
-view: bigquery_marketing_installs {
+view: redshfit_marketing_installs_1 {
   derived_table: {
     sql: with fb_installs as
       (select anonymous_id,
-             timestamp,
-             case when aaid is null and idfa is null then null
-                  when aaid is null and idfa is not null then idfa
-                  when aaid is not null and idfa is null then aaid end as ad_id,
+             a.timestamp,
+             ad_id,
              feature as medium,
              case when platform='ANDROID_APP' then 'android'
                   when platform='IOS_APP' then 'ios' end as platform,
              'facebook' as channel
-      from php.get_app_installs),
+      from php.get_app_installs as a),
 
       google_android_installs as
       (select anonymous_id,
-             timestamp,
-             context_aaid as ad_id,
+             a.timestamp,
+             creative_id as ad_id,
              context_campaign_medium as medium,
              'android' as platform,
              'google' as channel
-      from android.branch_install),
+      from android.branch_install as a),
 
       google_ios_installs as
       (select anonymous_id,
-             timestamp,
-             context_idfa as ad_id,
+             a.timestamp,
+             creative_id as ad_id,
              context_campaign_medium as medium,
              'ios' as platform,
              'google' as channel
-      from ios.branch_install)
+      from ios.branch_install as a)
 
       select * from google_android_installs
       union all
       select * from google_ios_installs
       union all
       select * from fb_installs
-       ;;
+ ;;
   }
 
   measure: count {
@@ -50,18 +48,8 @@ view: bigquery_marketing_installs {
 
   dimension_group: timestamp {
     type: time
-    timeframes: [
-      raw,
-      time,
-      hour_of_day,
-      date,
-      week,
-      month,
-      quarter,
-      year
-    ]
     sql: ${TABLE}.timestamp ;;
-    }
+  }
 
   dimension: ad_id {
     type: string
@@ -71,11 +59,6 @@ view: bigquery_marketing_installs {
   dimension: medium {
     type: string
     sql: ${TABLE}.medium ;;
-  }
-
-  dimension: type {
-    type: string
-    sql: case when lower(${medium}) like '%paid%' then 'paid' else 'organic' end ;;
   }
 
   dimension: platform {
@@ -90,7 +73,7 @@ view: bigquery_marketing_installs {
 
   measure: installation_count {
     type: count_distinct
-    sql: ${anonymous_id} ;;
+    sql: ${anonymous_id}||${timestamp_raw};;
   }
 
   set: detail {

@@ -3,6 +3,7 @@ view: redshift_marketing_performance {
     sql: select b.name as ad_name,
        c.name as adset_name,
        d.name as campaign_name,
+      ad_id,
        date_start as timestamp,
        clicks,
        impressions,
@@ -18,6 +19,7 @@ union all
 select  'NA' as ad_name,
         c.name as adset_name,
         d.name as campaign_name,
+        ad_id,
         date_start as timestamp,
         clicks,
         impressions,
@@ -33,6 +35,11 @@ INNER JOIN adwords.campaigns  AS d ON c.campaign_id=d.id
   measure: count {
     type: count
     drill_fields: [detail*]
+  }
+
+  dimension: ad_id {
+    type: string
+    sql: ${TABLE}.ad_id ;;
   }
 
   dimension: ad_name {

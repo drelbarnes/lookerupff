@@ -33,8 +33,15 @@ include: "redshift_get_titles.view"
 include: "javascript_conversion.view"
 include: "redshift_php_get_user_on_email_list.view"
 include: "redshift_marketing_performance.view.lkml"
+include: "redshfit_marketing_installs_1.view.lkml"
 
-explore: redshift_marketing_performance {}
+explore: redshift_marketing_performance {
+  join: redshfit_marketing_installs_1 {
+    type: left_outer
+    sql_on: ${redshfit_marketing_installs_1.ad_id}=${redshift_marketing_performance.ad_id} and ${redshfit_marketing_installs_1.timestamp_date}>=${redshift_marketing_performance.timestamp_date};;
+    relationship: many_to_one
+  }
+}
 
 datagroup: upff_default_datagroup {
   # sql_trigger: SELECT MAX(id) FROM etl_log;;

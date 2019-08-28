@@ -456,6 +456,15 @@ dimension: tv_cast {
     sql: concat(${title},${user_id},cast(${timestamp_date} as string)) ;;
   }
 
+  measure: user_count_a {
+    type: count_distinct
+    filters: {
+      field: group_a
+      value: "yes"
+    }
+    sql: ${user_id} ;;
+  }
+
   measure: plays_b {
     type: count_distinct
     filters: {
@@ -463,6 +472,15 @@ dimension: tv_cast {
       value: "yes"
     }
     sql: concat(${title},${user_id},cast(${timestamp_date} as string)) ;;
+  }
+
+  measure: user_count_b {
+    type: count_distinct
+    filters: {
+      field: group_b
+      value: "yes"
+    }
+    sql: ${user_id} ;;
   }
 
   measure: plays_c {

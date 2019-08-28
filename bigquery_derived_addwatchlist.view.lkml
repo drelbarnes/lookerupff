@@ -1,7 +1,7 @@
 view: bigquery_derived_addwatchlist {
 
   derived_table: {
-    sql: (with a as
+    sql:
         (select a.timestamp,
                 user_id,
                 b.platform,
@@ -25,10 +25,7 @@ view: bigquery_derived_addwatchlist {
                 'Web' as source
          from javascript.addwatchlist as a left join customers.subscribers as b
          on SAFE_CAST(a.user_id AS INT64) = b.customer_id
-        )
-
-select a.*, status
-from a inner join customers.subscribers on SAFE_CAST(user_id AS INT64) = customer_id) ;;
+        );;
   }
 
   dimension: status {
