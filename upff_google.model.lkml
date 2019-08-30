@@ -89,6 +89,9 @@ include: "bigquery_all_conversions.view.lkml"
 include: "bigquery_javascript_all_page_views.view.lkml"
 include: "bigquery_get_user_on_email_list.view.lkml"
 include: "gender.view.lkml"
+include: "bigquery_heartland_viewer.view.lkml"
+
+explore: bigquery_heartland_viewer {}
 
 
 explore: bigquery_javascript_all_page_views {
