@@ -9,6 +9,7 @@ view: redshift_android_firstplay {
 
   dimension: anonymous_id {
     type: string
+    tags: ["anonymous_id"]
     sql: ${TABLE}.anonymous_id ;;
   }
 
@@ -320,6 +321,7 @@ view: redshift_android_firstplay {
 
   dimension: user_id {
     type: string
+    tags: ["user_id"]
     sql: ${TABLE}.user_id ;;
   }
 
