@@ -231,11 +231,13 @@ view: bigquery_heartland_viewer {
 
   dimension: bigquery_allfirstplay_user_id {
     type: string
+    tags: ["user_id"]
     sql: ${TABLE}.bigquery_allfirstplay_user_id ;;
   }
 
   dimension: email {
     type: string
+    tags: ["email"]
     sql: ${TABLE}.email ;;
   }
 
