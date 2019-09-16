@@ -6,7 +6,7 @@ view: bigquery_active_users {
        date_sub(date(analytics_timestamp),interval 7 day) week_ago,
        existing_free_trials+existing_paying as total_subs
 from php.get_analytics
-where date(sent_at)='2019-09-15'
+where date(sent_at)=current_date()
 order by 1 desc),
 
 allfirstplay as
