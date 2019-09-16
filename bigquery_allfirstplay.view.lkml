@@ -394,6 +394,45 @@ dimension: tv_cast {
 # Filters
 # ------
 
+filter: collections_a {
+  type: string
+}
+
+dimension: collections_group_a {
+  hidden: no
+  type: yesno
+  sql: {% condition collections_a %} ${collection} {% endcondition %};;
+}
+
+  measure: user_count_collections_a {
+    type: count_distinct
+    filters: {
+      field: collections_group_a
+      value: "yes"
+    }
+    sql: ${user_id} ;;
+  }
+
+  filter: collections_b {
+    type: string
+  }
+
+  dimension: collections_group_b {
+    hidden: no
+    type: yesno
+    sql: {% condition collections_b %} ${collection} {% endcondition %};;
+  }
+
+  measure: user_count_collections_b {
+    type: count_distinct
+    filters: {
+      field: collections_group_b
+      value: "yes"
+    }
+    sql: ${user_id} ;;
+  }
+
+
 ## filter determining time range for all "A" measures
   filter: time_a {
     type: date_time
