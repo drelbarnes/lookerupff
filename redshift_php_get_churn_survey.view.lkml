@@ -202,5 +202,6 @@ view: redshift_php_get_churn_survey {
   measure: avg {
     type: average
     sql:  CAST(${TABLE}.rating AS INT) ;;
+    value_format: "#.0"
   }
 }

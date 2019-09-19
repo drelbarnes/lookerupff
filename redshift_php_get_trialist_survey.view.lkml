@@ -99,6 +99,7 @@ view: redshift_php_get_trialist_survey {
   measure: avg_rating {
     type: average
     sql: ${total_rating} ;;
+    value_format: "#.0"
   }
 
   dimension: total_nps {
