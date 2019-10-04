@@ -83,6 +83,18 @@ a as
                 episode
          from ios.firstplay as a left join titles_id_mapping as b on a.video_id = safe_cast(b.id as string)
          union all
+         select sent_at as timestamp,
+                b.date as release_date,
+                collection,
+                case when series is null and upper(collection)=upper(title) then 'movie'
+                     when series is not null then 'series' else 'other' end as type,
+                safe_cast(a.video_id as int64) as video_id,
+                trim((title)) as title,
+                user_id,
+                'Roku' as source,
+                episode
+         from roku.firstplay as a left join titles_id_mapping as b on a.video_id = b.id
+         union all
          select timestamp,
                 b.date as release_date,
                 b.collection,

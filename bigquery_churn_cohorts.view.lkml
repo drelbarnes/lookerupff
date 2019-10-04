@@ -5,7 +5,7 @@ view: bigquery_churn_cohorts {
               platform,
               count(distinct user_id) as created_count
       from http_api.purchase_event
-      where date(created_at)>'2018-10-31' and topic<>'customer.created'
+      where date(created_at)>'2018-10-31' and topic<>'customer.created' and plan='standard'
       group by 1,2),
 
       b as

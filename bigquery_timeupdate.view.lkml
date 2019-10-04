@@ -84,6 +84,29 @@ union all
 
   union all
 
+  (SELECT
+    title,
+    a.user_id,
+    email,
+    cast(video_id as int64) as video_id,
+    case when collection in ('Season 1','Season 2','Season 3') then concat(series,' ',collection) else collection end as collection,
+    series,
+    season,
+    episode,
+    case when series is null and upper(collection)=upper(title) then 'movie'
+                     when series is not null then 'series' else 'other' end as type,
+    safe_cast(date(a.sent_at) as timestamp) as timestamp,
+    a3.duration*60 as duration,
+    max(timecode) as timecode,
+   'Roku' AS source
+  FROM
+    roku.timeupdate as a inner join a3 on safe_cast(a.video_id as int64)=a3.id inner join http_api.purchase_event as p on a.user_id=p.user_id
+  WHERE
+    a.user_id IS NOT NULL and safe_cast(a.user_id as string)!='0' and a3.duration>0
+  GROUP BY 1,2,3,4,5,6,7,8,9,10,11)
+
+  union all
+
 (SELECT
     title,
     a.user_id,
