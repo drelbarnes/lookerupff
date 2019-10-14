@@ -66,6 +66,21 @@ dimension: type {
     sql: ${TABLE}.duration ;;
   }
 
+  dimension_group: promotion_date {
+    type: time
+    timeframes: [
+      raw,
+      date,
+      week,
+      month,
+      quarter,
+      year
+    ]
+    convert_tz: no
+    datatype: date
+    sql: ${TABLE}.promotion ;;
+  }
+
   measure: count {
     type: count
     drill_fields: [id]

@@ -90,6 +90,7 @@ include: "bigquery_javascript_all_page_views.view.lkml"
 include: "bigquery_get_user_on_email_list.view.lkml"
 include: "gender.view.lkml"
 include: "bigquery_heartland_viewer.view.lkml"
+include: "bigquery_promoted_titles.view.lkml"
 
 explore: bigquery_heartland_viewer {}
 
@@ -377,6 +378,11 @@ explore: bigquery_allfirstplay {
     type: left_outer
     sql_on: ${bigquery_http_api_purchase_event.fname}=${gender.name} ;;
     relationship: many_to_one
+  }
+  join: bigquery_promoted_titles {
+    type: inner
+    sql_on: ${bigquery_allfirstplay.timestamp_day_of_week}=${bigquery_promoted_titles.timestamp_day_of_week} ;;
+    relationship: one_to_one
   }
 
 }

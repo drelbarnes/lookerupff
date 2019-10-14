@@ -89,7 +89,8 @@ a as
                 UNIX_SECONDS(sent_at) as EPOCH_TIMESTAMP,
                 CAST(platform_id AS int64) as platform_id,
                 episode,
-                cast(is_chromecast as int64) as tv_cast
+                cast(is_chromecast as int64) as tv_cast,
+                promotion
          from android.firstplay as a left join titles_id_mapping as b on a.video_id = b.id
 
          union all
@@ -108,7 +109,8 @@ a as
       UNIX_SECONDS(timestamp) as EPOCH_TIMESTAMP,
       CAST('1111' AS int64) as platform_id,
        b.episode,
-       null as tv_cast
+       null as tv_cast,
+       promotion
 from a32 as a left join titles_id_mapping as b on mysql_roku_firstplays_video_id=b.id
 
 
@@ -128,7 +130,8 @@ from a32 as a left join titles_id_mapping as b on mysql_roku_firstplays_video_id
                 UNIX_SECONDS(sent_at) as EPOCH_TIMESTAMP,
                 CAST(platform_id AS int64) as platform_id,
                 episode,
-                cast(is_chromecast as int64)+cast(is_airplay as int64) as tv_cast
+                cast(is_chromecast as int64)+cast(is_airplay as int64) as tv_cast,
+                promotion
          from ios.firstplay as a left join titles_id_mapping as b on a.video_id = safe_cast(b.id as string)
          union all
          select sent_at as timestamp,
@@ -145,7 +148,8 @@ from a32 as a left join titles_id_mapping as b on mysql_roku_firstplays_video_id
                 UNIX_SECONDS(sent_at) as EPOCH_TIMESTAMP,
                 CAST(platform_id AS int64) as platform_id,
                 episode,
-                cast(is_chromecast as int64)+cast(is_airplay as int64) as tv_cast
+                cast(is_chromecast as int64)+cast(is_airplay as int64) as tv_cast,
+                promotion
          from roku.firstplay as a left join titles_id_mapping as b on a.video_id = b.id
          union all
          select sent_at as timestamp,
@@ -162,7 +166,8 @@ from a32 as a left join titles_id_mapping as b on mysql_roku_firstplays_video_id
                 UNIX_SECONDS(sent_at) as EPOCH_TIMESTAMP,
                 CAST(platform_id AS int64) as platform_id,
                 episode,
-                null as tv_cast
+                null as tv_cast,
+                promotion
          from javascript.loadedmetadata as a left join titles_id_mapping as b on safe_cast(a.video_id as string)= safe_cast(b.id as string)
         union all
         select sent_at as timestamp,
@@ -179,7 +184,8 @@ from a32 as a left join titles_id_mapping as b on mysql_roku_firstplays_video_id
                 UNIX_SECONDS(sent_at) as EPOCH_TIMESTAMP,
                 CAST(platform_id AS int64) as platform_id,
                 episode,
-                null as tv_cast
+                null as tv_cast,
+                promotion
          from javascript.video_content_loaded as a left join titles_id_mapping as b on safe_cast(a.video_id as string)= safe_cast(b.id as string)
 
         union all
@@ -198,7 +204,8 @@ from a32 as a left join titles_id_mapping as b on mysql_roku_firstplays_video_id
                 UNIX_SECONDS(timestamp) as EPOCH_TIMESTAMP,
                 CAST('33064' AS int64) as platform_id,
                 episode,
-                null as tv_cast
+                null as tv_cast,
+                promotion
          from a2 as a left join titles_id_mapping as b on trim(upper(b.title)) = trim(upper(a.title)))
 
 
@@ -217,6 +224,7 @@ select a.user_id,
        a.episode,
       email,
       tv_cast,
+      promotion,
        case when cc.user_id is null then 'first-time customers' else 'reacquisitions' end as winback,
        case when date(a.timestamp) between DATE_SUB(date(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), QUARTER)), INTERVAL 0 QUARTER) and
             DATE_SUB(date(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY)), INTERVAL 0 QUARTER) then "Current Quarter"
@@ -360,6 +368,11 @@ dimension: tv_cast {
     sql: SAFE_CAST(${video_id} AS STRING) ;;
   }
 
+dimension: promotion_date {
+  type: date
+  sql: ${TABLE}.promotion ;;
+}
+
   dimension_group: timestamp {
     type: time
     timeframes: [
@@ -376,6 +389,8 @@ dimension: tv_cast {
     ]
     sql: ${TABLE}.timestamp ;;
   }
+
+
 
   dimension: release_date {
     type: date
@@ -518,6 +533,27 @@ dimension: collections_group_a {
       ;;
   }
 
+  filter: promotion_time {
+    type: date
+  }
+
+## flag for "D" measures to only include appropriate time range
+  dimension: promotion_group {
+    hidden: no
+    type: yesno
+    sql: {% condition promotion_time %} ${promotion_date} {% endcondition %}
+      ;;
+  }
+
+  measure: promotion_plays {
+    type: count_distinct
+    filters: {
+      field: promotion_group
+      value: "yes"
+    }
+    sql: concat(${title},${user_id},cast(${timestamp_date} as string)) ;;
+  }
+
 
 
   measure: plays_a {
@@ -609,7 +645,7 @@ dimension: collections_group_a {
       field: promotional
       value: "yes"
     }
-    sql: ${video_id} ;;
+    sql: ${collection} ;;
   }
 
   filter:  promotional_collection_a{
