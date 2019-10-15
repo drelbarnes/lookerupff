@@ -1,7 +1,8 @@
 view: bigquery_javascript_all_page_views {
   derived_table: {
     sql:
-select anonymous_id,
+with a as
+(select anonymous_id,
        context_campaign_source,
        context_campaign_medium,
        context_campaign_name,
@@ -10,6 +11,7 @@ select anonymous_id,
        context_page_referrer,
        timestamp
 from javascript.view
+where date(timestamp)>'2019-09-15'
 union all
 select anonymous_id,
        context_campaign_source,
@@ -20,6 +22,11 @@ select anonymous_id,
        context_page_referrer,
        timestamp
 from javascript_upff_home.pages
+where date(timestamp)>'2019-09-15')
+
+(select a.*,
+       case when name is null then 'organic' else 'paid' end as type
+from a left join facebook_ads.campaigns as b on a.context_campaign_name=name)
  ;;
   }
 
@@ -70,8 +77,7 @@ from javascript_upff_home.pages
 
   dimension: visit_type {
     type: string
-    sql: case when lower(${context_campaign_source})='facebook'
-                or lower(${context_campaign_source})='google' then 'paid' else 'organic' end ;;
+    sql: ${TABLE}.type ;;
   }
 
   dimension: campaign {

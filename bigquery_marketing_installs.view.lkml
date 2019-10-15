@@ -6,6 +6,7 @@ view: bigquery_marketing_installs {
              case when aaid is null and idfa is null then null
                   when aaid is null and idfa is not null then idfa
                   when aaid is not null and idfa is null then aaid end as ad_id,
+             campaign,
              feature as medium,
              case when platform='ANDROID_APP' then 'android'
                   when platform='IOS_APP' then 'ios' end as platform,
@@ -16,6 +17,7 @@ view: bigquery_marketing_installs {
       (select anonymous_id,
              timestamp,
              context_aaid as ad_id,
+             context_campaign_name as campaign,
              context_campaign_medium as medium,
              'android' as platform,
              'google' as channel
@@ -25,16 +27,22 @@ view: bigquery_marketing_installs {
       (select anonymous_id,
              timestamp,
              context_idfa as ad_id,
+             context_campaign_name as campaign,
              context_campaign_medium as medium,
              'ios' as platform,
              'google' as channel
-      from ios.branch_install)
+      from ios.branch_install),
 
-      select * from google_android_installs
+a as
+      (select * from google_android_installs
       union all
       select * from google_ios_installs
       union all
-      select * from fb_installs
+      select * from fb_installs)
+
+(select a.*,
+       case when name is null then 'organic' else 'paid' end as type
+from a left join facebook_ads.campaigns as b on a.campaign=name)
        ;;
   }
 
@@ -75,7 +83,7 @@ view: bigquery_marketing_installs {
 
   dimension: type {
     type: string
-    sql: case when lower(${medium}) like '%paid%' then 'paid' else 'organic' end ;;
+    sql: ${TABLE}.type ;;
   }
 
   dimension: platform {

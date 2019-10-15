@@ -1,5 +1,5 @@
 view: bigquery_javascript_conversion {
-  sql_table_name: javascript.conversion ;;
+  sql_table_name: javascript.order_completed ;;
 
   dimension: id {
     primary_key: yes
