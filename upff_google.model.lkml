@@ -96,6 +96,7 @@ include: "bigquery_vimeott_webinar_ads.view.lkml"
 
 explore: bigquery_vimeott_webinar_ads{}
 
+
 explore: bigquery_14_day_churn_list {}
 
 explore: bigquery_heartland_viewer {}
