@@ -1,5 +1,5 @@
 view: bigquery_vimeott_webinar_ads {
-  sql_table_name: vimeo_ott_webinar.ads ;;
+  sql_table_name: vimeo_ott_webinar.ads_v2 ;;
 
   dimension: ad_name {
     type: string
