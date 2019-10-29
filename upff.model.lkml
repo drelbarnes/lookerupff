@@ -34,7 +34,15 @@ include: "javascript_conversion.view"
 include: "redshift_php_get_user_on_email_list.view"
 include: "redshift_marketing_performance.view.lkml"
 include: "redshfit_marketing_installs_1.view.lkml"
+
 include: "redshift_javascript_conversion.view.lkml"
+
+include: "redshift_roku_firstplay.view.lkml"
+
+explore: redshift_roku_firstplay {
+
+}
+
 
 explore: redshift_marketing_performance {
   join: redshfit_marketing_installs_1 {
