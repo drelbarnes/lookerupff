@@ -45,4 +45,20 @@ view: bigquery_vimeott_webinar_ads {
     type: count
     drill_fields: [campaign_name, ad_set_name, ad_name]
   }
+
+  measure: clicks_ {
+    type: sum
+    sql: ${TABLE}.clicks ;;
+  }
+
+  measure: impressions_ {
+    type: sum
+    sql: ${TABLE}.impressions ;;
+  }
+
+  measure: ad_spend {
+    type: number
+    sql: ${TABLE}.spend ;;
+    value_format_name: usd
+  }
 }

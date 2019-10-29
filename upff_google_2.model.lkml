@@ -1,8 +1,10 @@
 connection: "google_bigquery_db_2"
 
 include: "bigquery_vimeott_webinar_ads.view.lkml"
+include: "bigquery_vimeott_webinar_organic_paid_web.view.lkml"
 
 explore: bigquery_vimeott_webinar_ads{}
+explore: bigquery_vimeott_webinar_organic_paid_web {}
                       # include all views in this project
 # include: "my_dashboard.dashboard.lookml"   # include a LookML dashboard called my_dashboard
 
