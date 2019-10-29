@@ -35,12 +35,12 @@ view: bigquery_vimeott_webinar_organic_paid_web {
 
   measure: organic_num {
     type: number
-    sql: ${TABLE}.Orangic  ;;
+    sql: count(${TABLE}.Orangic)  ;;
   }
 
   measure: paid_num {
     type: number
-    sql: ${TABLE}.Paid  ;;
+    sql: count(${TABLE}.Paid) ;;
   }
 
 }
