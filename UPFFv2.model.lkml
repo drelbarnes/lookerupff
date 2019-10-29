@@ -30,6 +30,7 @@ include: "redshift_google_ads.view.lkml"
 include: "redshift_google_ad_groups.view.lkml"
 include: "redshift_marketing_installs.view.lkml"
 
+
 explore: redshift_marketing_installs {}
 
 explore: redshift_facebook_insights {

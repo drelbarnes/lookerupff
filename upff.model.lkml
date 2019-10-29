@@ -34,12 +34,18 @@ include: "javascript_conversion.view"
 include: "redshift_php_get_user_on_email_list.view"
 include: "redshift_marketing_performance.view.lkml"
 include: "redshfit_marketing_installs_1.view.lkml"
+include: "redshift_javascript_conversion.view.lkml"
 
 explore: redshift_marketing_performance {
   join: redshfit_marketing_installs_1 {
     type: left_outer
     sql_on: ${redshfit_marketing_installs_1.ad_id}=${redshift_marketing_performance.ad_id} and ${redshfit_marketing_installs_1.timestamp_date}>=${redshift_marketing_performance.timestamp_date};;
     relationship: many_to_one
+  }
+  join: redshift_javascript_conversion {
+    type: left_outer
+    sql_on: ${redshift_marketing_performance.campaign_name}=${redshift_javascript_conversion.context_campaign_name} and ${redshift_marketing_performance.timestamp_date}=${redshift_javascript_conversion.timestamp_date};;
+    relationship: one_to_one
   }
 }
 
@@ -207,7 +213,7 @@ explore: customers{
     relationship: one_to_one
   }
 
- join: android_users {
+  join: android_users {
     type:  left_outer
     sql_on: ${customers.customer_id} = ${android_users.id};;
     relationship: one_to_one
@@ -262,66 +268,66 @@ include: "http_api_purchase_event.view"
 include: "customers_info_facts.view"
 explore: subscribed {}
 explore: http_api_purchase_event
-        {
-          label: "Subscribers"
+{
+  label: "Subscribers"
 
 
-          join: redshift_php_send_trialist_survey {
-            type: left_outer
-            sql_on: ${http_api_purchase_event.user_id} = ${redshift_php_send_trialist_survey.user_id};;
-            relationship: one_to_one
-          }
+  join: redshift_php_send_trialist_survey {
+    type: left_outer
+    sql_on: ${http_api_purchase_event.user_id} = ${redshift_php_send_trialist_survey.user_id};;
+    relationship: one_to_one
+  }
 
-          join: redshift_php_get_trialist_survey{
-            type: left_outer
-            sql_on: ${http_api_purchase_event.user_id} = ${redshift_php_get_trialist_survey.user_id};;
-            relationship: one_to_one
-          }
+  join: redshift_php_get_trialist_survey{
+    type: left_outer
+    sql_on: ${http_api_purchase_event.user_id} = ${redshift_php_get_trialist_survey.user_id};;
+    relationship: one_to_one
+  }
 
-          join: redshift_php_get_churn_survey {
-            type: left_outer
-            sql_on: ${http_api_purchase_event.user_id} = ${redshift_php_get_churn_survey.user_id};;
-            relationship: one_to_one
-          }
+  join: redshift_php_get_churn_survey {
+    type: left_outer
+    sql_on: ${http_api_purchase_event.user_id} = ${redshift_php_get_churn_survey.user_id};;
+    relationship: one_to_one
+  }
 
-            join: redshift_pixel_api_email_opened{
-              type: left_outer
-              sql_on: ${http_api_purchase_event.user_id} = ${redshift_pixel_api_email_opened.user_id};;
-              relationship: many_to_many
-            }
+  join: redshift_pixel_api_email_opened{
+    type: left_outer
+    sql_on: ${http_api_purchase_event.user_id} = ${redshift_pixel_api_email_opened.user_id};;
+    relationship: many_to_many
+  }
 
-            join: delighted_survey_question_answered {
-              type: left_outer
-              view_label: "Delighted: No Surveyed"
-              sql_on: ${delighted_survey_question_answered.user_id} != ${http_api_purchase_event.user_id};;
-              relationship: one_to_one
-            }
+  join: delighted_survey_question_answered {
+    type: left_outer
+    view_label: "Delighted: No Surveyed"
+    sql_on: ${delighted_survey_question_answered.user_id} != ${http_api_purchase_event.user_id};;
+    relationship: one_to_one
+  }
 
-            join: android_users {
-              type: left_outer
-              sql_on: ${http_api_purchase_event.user_id} = ${android_users.id};;
-              relationship: one_to_one
-            }
+  join: android_users {
+    type: left_outer
+    sql_on: ${http_api_purchase_event.user_id} = ${android_users.id};;
+    relationship: one_to_one
+  }
 
-          join: android_conversion {
-            type: left_outer
-            sql_on: ${android_users.context_traits_anonymous_id} = ${android_conversion.anonymous_id};;
-            relationship: one_to_one
-          }
+  join: android_conversion {
+    type: left_outer
+    sql_on: ${android_users.context_traits_anonymous_id} = ${android_conversion.anonymous_id};;
+    relationship: one_to_one
+  }
 
-          join: redshift_php_get_mobile_app_installs {
-            type: left_outer
-            sql_on: ${redshift_php_get_mobile_app_installs.anonymous_id} = ${android_conversion.anonymous_id};;
-            relationship: one_to_one
-          }
+  join: redshift_php_get_mobile_app_installs {
+    type: left_outer
+    sql_on: ${redshift_php_get_mobile_app_installs.anonymous_id} = ${android_conversion.anonymous_id};;
+    relationship: one_to_one
+  }
 
-          join: redshift_php_get_user_on_email_list {
-            type: left_outer
-            sql_on: ${http_api_purchase_event.email} = ${redshift_php_get_user_on_email_list.email};;
-            relationship: one_to_one
-          }
+  join: redshift_php_get_user_on_email_list {
+    type: left_outer
+    sql_on: ${http_api_purchase_event.email} = ${redshift_php_get_user_on_email_list.email};;
+    relationship: one_to_one
+  }
 
-        }
+}
 explore: customers_info_facts{}
 
 include: "analytics_v2.view"
@@ -401,34 +407,34 @@ explore: ios_signin { label: "iOS Sign-in"}
 explore: android_signupstarted {
   label: "Android Signupstarted"
 
-    join: customers_social_ads {
-      type: inner
-      sql_on: ${android_signupstarted.context_device_advertising_id} = ${customers_social_ads.user_data_aaid};;
-      relationship: one_to_one
-    }
-
-    join: android_users {
-      type: inner
-      sql_on: ${android_signupstarted.context_traits_user_id} = ${android_users.id};;
-      relationship: one_to_one
-    }
+  join: customers_social_ads {
+    type: inner
+    sql_on: ${android_signupstarted.context_device_advertising_id} = ${customers_social_ads.user_data_aaid};;
+    relationship: one_to_one
   }
+
+  join: android_users {
+    type: inner
+    sql_on: ${android_signupstarted.context_traits_user_id} = ${android_users.id};;
+    relationship: one_to_one
+  }
+}
 explore: ios_signupstarted {
   label: "iOS Signupstarted"
 
-    join: customers_social_ads {
-      type: inner
-      sql_on: ${ios_signupstarted.context_device_advertising_id} = ${customers_social_ads.user_data_idfa};;
-      relationship: one_to_one
-    }
-
-    join: ios_users {
-      type: inner
-      sql_on: ${ios_signupstarted.user_id} = ${ios_users.id};;
-      relationship: one_to_one
-    }
-
+  join: customers_social_ads {
+    type: inner
+    sql_on: ${ios_signupstarted.context_device_advertising_id} = ${customers_social_ads.user_data_idfa};;
+    relationship: one_to_one
   }
+
+  join: ios_users {
+    type: inner
+    sql_on: ${ios_signupstarted.user_id} = ${ios_users.id};;
+    relationship: one_to_one
+  }
+
+}
 
 include: "javascript_timeupdate.view"
 include: "ios_timeupdate.view"
@@ -459,13 +465,13 @@ explore: android_branch_reinstall {label: "Android Branch Re-Install"}
 explore: derived_subscriber_platform_total {label: "Subscriber Platform Total"}
 explore: customers_social_ads {
 
-    label: "Marketing Attribution"
-    join: ios_signupstarted {
-      type: inner
-      sql_on: ${customers_social_ads.user_data_idfa} = ${ios_signupstarted.context_device_advertising_id};;
-      relationship: one_to_one
-    }
+  label: "Marketing Attribution"
+  join: ios_signupstarted {
+    type: inner
+    sql_on: ${customers_social_ads.user_data_idfa} = ${ios_signupstarted.context_device_advertising_id};;
+    relationship: one_to_one
   }
+}
 
 explore: redshift_php_get_mobile_app_installs {
 

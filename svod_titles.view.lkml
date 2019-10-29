@@ -29,6 +29,13 @@ select *, case when platform_ = 'Comcast SVOD' then 'Comcast' else platform_ end
     sql: ${TABLE}.platform__;;
   }
 
+  dimension: heartland_bates {
+    type: string
+    sql: case when ${franchise} like '%Heartland%' then 'Heartland'
+              when ${franchise} like '%Bates%' then 'Bates'
+         else 'Other' end;;
+  }
+
   dimension: category {
     type: string
     sql: ${TABLE}.category ;;
