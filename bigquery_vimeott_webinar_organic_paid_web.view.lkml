@@ -31,4 +31,16 @@ view: bigquery_vimeott_webinar_organic_paid_web {
     type: count
     drill_fields: []
   }
+
+
+  measure: organic_num {
+    type: number
+    sql: ${TABLE}.Orangic  ;;
+  }
+
+  measure: paid_num {
+    type: number
+    sql: ${TABLE}.Paid  ;;
+  }
+
 }
