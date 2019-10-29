@@ -16,6 +16,11 @@ view: bigquery_vimeott_webinar_organic_paid_web {
     sql: ${TABLE}.Date ;;
   }
 
+  dimension: date_formatted {
+    sql: ${date_date} ;;
+    html: {{ rendered_value | date: "%b %e" }} ;;
+  }
+
   dimension: orangic {
     type: number
     sql: ${TABLE}.Orangic ;;
@@ -35,12 +40,12 @@ view: bigquery_vimeott_webinar_organic_paid_web {
 
   measure: organic_num {
     type: number
-    sql: count(${TABLE}.Orangic)  ;;
+    sql: ${TABLE}.Orangic  ;;
   }
 
   measure: paid_num {
     type: number
-    sql: count(${TABLE}.Paid) ;;
+    sql: ${TABLE}.Paid ;;
   }
 
 }
