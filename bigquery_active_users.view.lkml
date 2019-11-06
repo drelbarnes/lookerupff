@@ -129,7 +129,19 @@ a as
                 user_id,
                 'Web' as source,
                 episode
-         from javascript.video_content_loaded as a left join titles_id_mapping as b on safe_cast(a.video_id as string) = safe_cast(b.id as string))
+         from javascript.video_content_loaded as a left join titles_id_mapping as b on safe_cast(a.video_id as string) = safe_cast(b.id as string)
+        union all
+        select sent_at as timestamp,
+                b.date as release_date,
+                collection,
+                case when series is null and upper(collection)=upper(b.title) then 'movie'
+                     when series is not null then 'series' else 'other' end as type,
+                safe_cast(a.video_id as int64) as video_id,
+                trim((b.title)) as title,
+                user_id,
+                'iOS' as source,
+                episode
+         from ios.video_content_loaded as a left join titles_id_mapping as b on safe_cast(a.video_id as string) = safe_cast(b.id as string))
 
 
 select *,
