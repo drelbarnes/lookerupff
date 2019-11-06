@@ -206,7 +206,7 @@ select sent_at as timestamp,
                 episode,
                 null as tv_cast,
                 promotion
-         from ios.video_content_loaded as a left join titles_id_mapping as b on safe_cast(a.video_id as string)= safe_cast(b.id as string)
+         from ios.video_content_playing as a left join titles_id_mapping as b on safe_cast(a.video_id as string)= safe_cast(b.id as string)
 
         union all
 
