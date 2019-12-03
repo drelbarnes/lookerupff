@@ -1,23 +1,11 @@
-view: redshift_javascript_conversion {
-  derived_table: {
-    sql: select a.*,b.context_page_url as ad_url
-         from javascript.order_completed as a left join javascript_upff_home.pages as b on a.anonymous_id=b.anonymous_id;;
-  }
+view: redshift_javascript_upff_home_pages {
+  sql_table_name: javascript_upff_home.pages ;;
+  drill_fields: [id]
 
   dimension: id {
     primary_key: yes
     type: string
     sql: ${TABLE}.id ;;
-  }
-
-  dimension: ad_url {
-    type: string
-    sql: ${TABLE}.ad_url ;;
-  }
-
-  dimension: ad_id {
-    type: string
-    sql:  split_part(split_part(${ad_url},'ad_id=',2),'&',1);;
   }
 
   dimension: anonymous_id {
@@ -30,6 +18,11 @@ view: redshift_javascript_conversion {
     sql: ${TABLE}.context_campaign_content ;;
   }
 
+  dimension: context_campaign_expid {
+    type: string
+    sql: ${TABLE}.context_campaign_expid ;;
+  }
+
   dimension: context_campaign_medium {
     type: string
     sql: ${TABLE}.context_campaign_medium ;;
@@ -38,6 +31,16 @@ view: redshift_javascript_conversion {
   dimension: context_campaign_name {
     type: string
     sql: ${TABLE}.context_campaign_name ;;
+  }
+
+  dimension: context_campaign_preview {
+    type: string
+    sql: ${TABLE}.context_campaign_preview ;;
+  }
+
+  dimension: context_campaign_referrer {
+    type: string
+    sql: ${TABLE}.context_campaign_referrer ;;
   }
 
   dimension: context_campaign_source {
@@ -100,44 +103,6 @@ view: redshift_javascript_conversion {
     sql: ${TABLE}.context_user_agent ;;
   }
 
-  dimension_group: created {
-    type: time
-    timeframes: [
-      raw,
-      time,
-      date,
-      week,
-      month,
-      quarter,
-      year
-    ]
-    sql: ${TABLE}.created_at ;;
-  }
-
-  dimension: event {
-    type: string
-    sql: ${TABLE}.event ;;
-  }
-
-  dimension: event_text {
-    type: string
-    sql: ${TABLE}.event_text ;;
-  }
-
-  dimension_group: loaded {
-    type: time
-    timeframes: [
-      raw,
-      time,
-      date,
-      week,
-      month,
-      quarter,
-      year
-    ]
-    sql: ${TABLE}.loaded_at ;;
-  }
-
   dimension_group: original_timestamp {
     type: time
     timeframes: [
@@ -152,9 +117,9 @@ view: redshift_javascript_conversion {
     sql: ${TABLE}.original_timestamp ;;
   }
 
-  dimension: product_id {
-    type: number
-    sql: ${TABLE}.product_id ;;
+  dimension: path {
+    type: string
+    sql: ${TABLE}.path ;;
   }
 
   dimension_group: received {
@@ -171,9 +136,14 @@ view: redshift_javascript_conversion {
     sql: ${TABLE}.received_at ;;
   }
 
-  dimension: revenue {
-    type: number
-    sql: ${TABLE}.revenue ;;
+  dimension: referrer {
+    type: string
+    sql: ${TABLE}.referrer ;;
+  }
+
+  dimension: search {
+    type: string
+    sql: ${TABLE}.search ;;
   }
 
   dimension_group: sent {
@@ -190,11 +160,6 @@ view: redshift_javascript_conversion {
     sql: ${TABLE}.sent_at ;;
   }
 
-  dimension: state {
-    type: string
-    sql: ${TABLE}.state ;;
-  }
-
   dimension_group: timestamp {
     type: time
     timeframes: [
@@ -209,9 +174,25 @@ view: redshift_javascript_conversion {
     sql: ${TABLE}.timestamp ;;
   }
 
+  dimension: title {
+    type: string
+    sql: ${TABLE}.title ;;
+  }
+
+  dimension: url {
+    type: string
+    sql: ${TABLE}.url ;;
+  }
+
   dimension: user_id {
     type: string
     sql: ${TABLE}.user_id ;;
+  }
+
+  dimension: uuid {
+    type: number
+    value_format_name: id
+    sql: ${TABLE}.uuid ;;
   }
 
   dimension_group: uuid_ts {
@@ -231,15 +212,5 @@ view: redshift_javascript_conversion {
   measure: count {
     type: count
     drill_fields: [id, context_campaign_name, context_library_name]
-  }
-
-  measure: conversion_count {
-    type: count_distinct
-    sql: ${anonymous_id} ;;
-  }
-
-  measure: count_id {
-    type: count_distinct
-    sql: ${id} ;;
   }
 }

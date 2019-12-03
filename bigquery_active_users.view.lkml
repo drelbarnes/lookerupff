@@ -141,7 +141,31 @@ a as
                 user_id,
                 'iOS' as source,
                 episode
-         from ios.video_content_playing as a left join titles_id_mapping as b on safe_cast(a.video_id as string) = safe_cast(b.id as string))
+         from ios.video_content_playing as a left join titles_id_mapping as b on safe_cast(a.video_id as string) = safe_cast(b.id as string)
+        union all
+                select sent_at as timestamp,
+                b.date as release_date,
+                collection,
+                case when series is null and upper(collection)=upper(b.title) then 'movie'
+                     when series is not null then 'series' else 'other' end as type,
+                safe_cast(a.video_id as int64) as video_id,
+                trim((b.title)) as title,
+                user_id,
+                'Android' as source,
+                episode
+         from android.video_content_playing as a left join titles_id_mapping as b on safe_cast(a.video_id as string) = safe_cast(b.id as string)
+        union all
+        select sent_at as timestamp,
+                b.date as release_date,
+                collection,
+                case when series is null and upper(collection)=upper(b.title) then 'movie'
+                     when series is not null then 'series' else 'other' end as type,
+                safe_cast(a.video_id as int64) as video_id,
+                trim((b.title)) as title,
+                user_id,
+                'Roku' as source,
+                episode
+         from roku.video_content_playing as a left join titles_id_mapping as b on safe_cast(a.video_id as string) = safe_cast(b.id as string))
 
 
 select *,

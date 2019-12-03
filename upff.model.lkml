@@ -34,10 +34,9 @@ include: "javascript_conversion.view"
 include: "redshift_php_get_user_on_email_list.view"
 include: "redshift_marketing_performance.view.lkml"
 include: "redshfit_marketing_installs_1.view.lkml"
-
 include: "redshift_javascript_conversion.view.lkml"
-
 include: "redshift_roku_firstplay.view.lkml"
+include: "redshift_javascript_upff_home_pages.view.lkml"
 
 explore: redshift_roku_firstplay {
 
@@ -47,13 +46,13 @@ explore: redshift_roku_firstplay {
 explore: redshift_marketing_performance {
   join: redshfit_marketing_installs_1 {
     type: left_outer
-    sql_on: ${redshfit_marketing_installs_1.ad_id}=${redshift_marketing_performance.ad_id} and ${redshfit_marketing_installs_1.timestamp_date}>=${redshift_marketing_performance.timestamp_date};;
+    sql_on: ${redshfit_marketing_installs_1.ad_id}=${redshift_marketing_performance.ad_id} and ${redshift_marketing_performance.timestamp_date}=${redshfit_marketing_installs_1.timestamp_date};;
     relationship: many_to_one
   }
   join: redshift_javascript_conversion {
     type: left_outer
-    sql_on: ${redshift_marketing_performance.campaign_name}=${redshift_javascript_conversion.context_campaign_name} and ${redshift_marketing_performance.timestamp_date}=${redshift_javascript_conversion.timestamp_date};;
-    relationship: one_to_one
+    sql_on: ${redshift_javascript_conversion.ad_id}=${redshift_marketing_performance.ad_id} and ${redshift_javascript_conversion.timestamp_date}=${redshift_marketing_performance.timestamp_date};;
+    relationship: many_to_one
   }
 }
 

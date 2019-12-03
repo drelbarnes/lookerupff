@@ -58,6 +58,34 @@ from looker.roku_firstplays),
        'Roku' as source
 from a32 as a left join svod_titles.titles_id_mapping as b on mysql_roku_firstplays_video_id=b.id
 
+union all
+
+select sent_at as timestamp,
+                      b.date as release_date,
+                      1 as status_1,
+                      collection,
+                      case when series is null and upper(collection)=upper(title) then 'movie'
+                           when series is not null then 'series' else 'other' end as type,
+                      cast(a.video_id as int64) as video_id,
+                      trim((title)) as title1,
+                      user_id,
+                      'Roku' as source
+               from roku.video_content_playing as a left join svod_titles.titles_id_mapping as b on safe_cast(a.video_id as int64) = b.id
+
+union all
+
+              select sent_at as timestamp,
+                      b.date as release_date,
+                      1 as status_1,
+                      collection,
+                      case when series is null and upper(collection)=upper(title) then 'movie'
+                           when series is not null then 'series' else 'other' end as type,
+                      cast(a.video_id as int64) as video_id,
+                      trim((title)) as title1,
+                      user_id,
+                      'Android' as source
+               from android.video_content_playing as a left join svod_titles.titles_id_mapping as b on safe_cast(a.video_id as int64) = b.id
+
                union all
                select sent_at as timestamp,
                       b.date as release_date,
