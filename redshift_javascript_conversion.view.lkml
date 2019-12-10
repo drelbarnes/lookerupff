@@ -10,6 +10,11 @@ view: redshift_javascript_conversion {
     sql: ${TABLE}.id ;;
   }
 
+  dimension: source {
+    type: string
+    sql: 'web' ;;
+  }
+
   dimension: ad_url {
     type: string
     sql: ${TABLE}.ad_url ;;

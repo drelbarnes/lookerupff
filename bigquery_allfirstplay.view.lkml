@@ -186,7 +186,7 @@ from a32 as a left join titles_id_mapping as b on mysql_roku_firstplays_video_id
                 episode,
                 null as tv_cast,
                 promotion
-         from javascript.video_content_loaded as a left join titles_id_mapping as b on safe_cast(a.video_id as string)= safe_cast(b.id as string)
+         from javascript.video_playback_started as a left join titles_id_mapping as b on safe_cast(a.video_id as string)= safe_cast(b.id as string)
 
         union all
 
@@ -206,7 +206,7 @@ select sent_at as timestamp,
                 episode,
                 null as tv_cast,
                 promotion
-         from ios.video_content_playing as a left join titles_id_mapping as b on safe_cast(a.video_id as string)= safe_cast(b.id as string)
+         from ios.video_playback_started as a left join titles_id_mapping as b on safe_cast(a.video_id as string)= safe_cast(b.id as string)
 
         union all
 
@@ -226,7 +226,7 @@ select sent_at as timestamp,
                 episode,
                 null as tv_cast,
                 promotion
-         from android.video_content_playing as a left join titles_id_mapping as b on safe_cast(a.video_id as string)= safe_cast(b.id as string)
+         from android.video_playback_started as a left join titles_id_mapping as b on safe_cast(a.video_id as string)= safe_cast(b.id as string)
 
         union all
 
@@ -246,7 +246,7 @@ select sent_at as timestamp,
                 episode,
                 null as tv_cast,
                 promotion
-         from roku.video_content_playing as a left join titles_id_mapping as b on safe_cast(a.video_id as string)= safe_cast(b.id as string)
+         from roku.video_playback_started as a left join titles_id_mapping as b on safe_cast(a.video_id as string)= safe_cast(b.id as string)
 
 
         union all

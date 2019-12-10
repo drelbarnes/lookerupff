@@ -70,7 +70,7 @@ select sent_at as timestamp,
                       trim((title)) as title1,
                       user_id,
                       'Roku' as source
-               from roku.video_content_playing as a left join svod_titles.titles_id_mapping as b on safe_cast(a.video_id as int64) = b.id
+               from roku.video_playback_started as a left join svod_titles.titles_id_mapping as b on safe_cast(a.video_id as int64) = b.id
 
 union all
 
@@ -84,7 +84,7 @@ union all
                       trim((title)) as title1,
                       user_id,
                       'Android' as source
-               from android.video_content_playing as a left join svod_titles.titles_id_mapping as b on safe_cast(a.video_id as int64) = b.id
+               from android.video_playback_started as a left join svod_titles.titles_id_mapping as b on safe_cast(a.video_id as int64) = b.id
 
                union all
                select sent_at as timestamp,
@@ -109,7 +109,7 @@ union all
                       trim((title)) as title1,
                       user_id,
                       'iOS' as source
-               from ios.video_content_playing as a left join svod_titles.titles_id_mapping as b on safe_cast(a.video_id as int64) = b.id
+               from ios.video_playback_started as a left join svod_titles.titles_id_mapping as b on safe_cast(a.video_id as int64) = b.id
                union all
                select sent_at as timestamp,
                       b.date as release_date,
@@ -121,7 +121,7 @@ union all
                       trim((b.title)) as title1,
                       user_id,
                       'iOS' as source
-               from javascript.video_content_loaded as a left join svod_titles.titles_id_mapping as b on safe_cast(a.video_id as int64) = b.id
+               from javascript.video_playback_started as a left join svod_titles.titles_id_mapping as b on safe_cast(a.video_id as int64) = b.id
                union all
                select timestamp,
                       b.date as release_date,
