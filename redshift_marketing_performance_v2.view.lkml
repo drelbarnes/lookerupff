@@ -36,6 +36,7 @@ view: redshift_marketing_performance_v2 {
       (select ad_id,
              ad_name,
              campaign_name,
+             adset_name,
              source,
              date(m.timestamp) as timestamp,
              sum(spend) as spend,
@@ -43,7 +44,7 @@ view: redshift_marketing_performance_v2 {
              sum(impressions) as impressions
       from m
       where ad_id is not null or ad_id<>''
-      group by 1,2,3,4,5),
+      group by 1,2,3,4,5,6),
 
       a as
       (select anonymous_id,
@@ -160,6 +161,11 @@ view: redshift_marketing_performance_v2 {
   dimension: ad_id {
     type: string
     sql: ${TABLE}.ad_id ;;
+  }
+
+  dimension: adset_name {
+    type: string
+    sql: ${TABLE}.adset_name ;;
   }
 
   dimension: ad_name {
