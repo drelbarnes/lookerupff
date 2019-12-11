@@ -38,6 +38,9 @@ include: "redshift_javascript_conversion.view.lkml"
 include: "redshift_roku_firstplay.view.lkml"
 include: "redshift_javascript_upff_home_pages.view.lkml"
 include: "redshift_mobile_conversions.view.lkml"
+include: "redshift_marketing_performance_v2.view.lkml"
+
+explore: redshift_marketing_performance_v2 {}
 
 explore: redshift_roku_firstplay {
 
@@ -45,19 +48,19 @@ explore: redshift_roku_firstplay {
 
 
 explore: redshift_marketing_performance {
-  join: redshfit_marketing_installs_1 {
-    type: left_outer
-    sql_on: ${redshfit_marketing_installs_1.ad_id}=${redshift_marketing_performance.ad_id} and ${redshift_marketing_performance.timestamp_date}=${redshfit_marketing_installs_1.timestamp_date};;
-    relationship: many_to_one
-  }
   join: redshift_javascript_conversion {
     type: left_outer
     sql_on: ${redshift_javascript_conversion.ad_id}=${redshift_marketing_performance.ad_id} and ${redshift_javascript_conversion.timestamp_date}=${redshift_marketing_performance.timestamp_date};;
     relationship: many_to_one
   }
+  join: redshfit_marketing_installs_1 {
+    type: left_outer
+    sql_on: ${redshfit_marketing_installs_1.ad_id}=${redshift_marketing_performance.ad_id} and ${redshift_marketing_performance.timestamp_date}=${redshfit_marketing_installs_1.timestamp_date};;
+    relationship: many_to_one
+  }
   join: redshift_mobile_conversions {
     type: left_outer
-    sql_on: upper(${redshfit_marketing_installs_1.anonymous_id})=upper(${redshift_mobile_conversions.anonymous_id}) and ${redshfit_marketing_installs_1.timestamp_date}=${redshift_mobile_conversions.timestamp_date};;
+    sql_on: upper(${redshfit_marketing_installs_1.anonymous_id})=upper(${redshift_mobile_conversions.anonymous_id});;
     relationship: many_to_one
   }
 }
