@@ -1,7 +1,31 @@
 view: redshift_javascript_conversion {
   derived_table: {
-    sql: select a.*,b.context_page_url as ad_url
-         from javascript.order_completed as a left join javascript_upff_home.pages as b on a.anonymous_id=b.anonymous_id;;
+    sql:
+with c as
+(with a as
+(select anonymous_id,
+      max(timestamp) as timestamp
+from javascript_upff_home.pages
+group by 1),
+
+a1 as
+(select a.*, context_page_url
+from a inner join javascript_upff_home.pages as b on a.anonymous_id=b.anonymous_id and a.timestamp=b.timestamp)
+
+select a.*,
+       b.context_page_url as ad_url
+from javascript.order_completed as a inner join a1 as b on a.anonymous_id=b.anonymous_id and date(a.timestamp)=date(b.timestamp)
+where b.context_page_url<>''),
+
+d as
+(select split_part(split_part(ad_url,'ad_id=',2),'&',1) as ad_id,
+       date(timestamp) as timestamp,
+       count(distinct anonymous_id) as conversion_count
+from c
+where split_part(split_part(ad_url,'ad_id=',2),'&',1)<>''
+group by 2,1)
+
+select d.* from d;;
   }
 
   dimension: id {
@@ -15,6 +39,16 @@ view: redshift_javascript_conversion {
     sql: 'web' ;;
   }
 
+  dimension: web_conversions {
+    type: number
+    sql: ${TABLE}.conversion_count ;;
+  }
+
+  measure: web_conversions_ {
+    type: sum
+    sql: ${web_conversions} ;;
+  }
+
   dimension: ad_url {
     type: string
     sql: ${TABLE}.ad_url ;;
@@ -22,7 +56,7 @@ view: redshift_javascript_conversion {
 
   dimension: ad_id {
     type: string
-    sql:  split_part(split_part(${ad_url},'ad_id=',2),'&',1);;
+    sql:  ${TABLE}.ad_id;;
   }
 
   dimension: anonymous_id {
