@@ -4,29 +4,33 @@ view: derived_redshift_add_watchlist {
         (select a.received_at,
                 a.user_id,
                 a.video_id,
+                b.title,
                 'Android' as source
-         from android.added_to_watch_list as a inner join php.get_titles as b  on a.video_id = b.video_id inner join android.users as c on a.user_id = c.id )
+         from android.added_to_watch_list as a left join php.get_titles as b  on a.video_id = b.video_id left join android.users as c on a.user_id = c.id )
         ,
           b as
          (select a.received_at,
                 a.user_id,
                 a.video_id,
+                b.title,
                 'iOS' as source
-         from ios.added_to_watch_list as a inner join php.get_titles as b  on a.video_id = b.video_id inner join ios.users as c on a.user_id = c.id )
+         from ios.added_to_watch_list as a left join php.get_titles as b  on a.video_id = b.video_id left join ios.users as c on a.user_id = c.id )
         ,
         c as
          (select a.received_at,
                 a.user_id,
                 a.video_id,
+                b.title,
                 'Roku' as source
-         from roku.added_to_watch_list as a inner join php.get_titles as b  on a.video_id = b.video_id inner join roku.users as c on a.user_id = c.id )
+         from roku.added_to_watch_list as a left join php.get_titles as b  on a.video_id = b.video_id left join roku.users as c on a.user_id = c.id )
         ,
          d as
          (select a.received_at,
                 a.user_id,
-                a.video_id,
+                b.video_id,
+                b.title,
                 'Web' as source
-         from javacript.added_to_watch_list as a inner join php.get_titles as b  on a.video_id = b.video_id inner join roku.users as c on a.user_id = c.id )
+         from javascript.added_to_watch_list as a left join php.get_titles as b  on REPLACE(a.context_page_path, '/', '') = b.url left join javascript.users as c on a.user_id = c.id )
 
           (       select *
                   from a
@@ -34,7 +38,8 @@ view: derived_redshift_add_watchlist {
                   select * from b
                   union all
                   select * from c
-
+                   union all
+                  select * from d
           );;
   }
 
@@ -42,6 +47,12 @@ view: derived_redshift_add_watchlist {
     type: string
     sql: ${TABLE}.source ;;
   }
+
+  dimension: title {
+    type: string
+    sql: ${TABLE}.title ;;
+  }
+
 
   dimension: user_id {
     primary_key: yes
