@@ -5,22 +5,28 @@ view: derived_redshift_add_watchlist {
                 a.user_id,
                 a.video_id,
                 'Android' as source
-         from android.added_to_watch_list as a left join android.users as b on a.id = b.id AND a.user_id != cast(0 as string))
+         from android.added_to_watch_list as a inner join php.get_titles as b  on a.video_id = b.video_id inner join android.users as c on a.user_id = c.id )
         ,
           b as
          (select a.received_at,
                 a.user_id,
                 a.video_id,
                 'iOS' as source
-         from ios.added_to_watch_list as a left join ios.users as b on a.user_id = b.id AND a.user_id != cast(0 as string))
+         from ios.added_to_watch_list as a inner join php.get_titles as b  on a.video_id = b.video_id inner join ios.users as c on a.user_id = c.id )
         ,
         c as
          (select a.received_at,
                 a.user_id,
                 a.video_id,
                 'Roku' as source
-         from roku.added_to_watch_list as a left join roku.users as b on a.user_id = b.id AND a.user_id != cast(0 as string))
-
+         from roku.added_to_watch_list as a inner join php.get_titles as b  on a.video_id = b.video_id inner join roku.users as c on a.user_id = c.id )
+        ,
+         d as
+         (select a.received_at,
+                a.user_id,
+                a.video_id,
+                'Web' as source
+         from javacript.added_to_watch_list as a inner join php.get_titles as b  on a.video_id = b.video_id inner join roku.users as c on a.user_id = c.id )
 
           (       select *
                   from a
@@ -46,7 +52,7 @@ view: derived_redshift_add_watchlist {
 
   dimension: video_id {
     type: number
-    sql: ${TABLE}.email ;;
+    sql: ${TABLE}.video_id ;;
   }
 
 
