@@ -39,6 +39,9 @@ include: "redshift_roku_firstplay.view.lkml"
 include: "redshift_javascript_upff_home_pages.view.lkml"
 include: "redshift_mobile_conversions.view.lkml"
 include: "redshift_marketing_performance_v2.view.lkml"
+include: "amazon_personalize_recommendations.view.lkml"
+
+explore: amazon_personalize_recommendations {}
 
 explore: redshift_marketing_performance_v2 {}
 
