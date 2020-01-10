@@ -29,6 +29,9 @@ include: "redshift_google_ad_performance_reports.view.lkml"
 include: "redshift_google_ads.view.lkml"
 include: "redshift_google_ad_groups.view.lkml"
 include: "redshift_marketing_installs.view.lkml"
+include: "redshift_ribbow_agency_fee.view.lkml"
+
+explore: redshift_ribbow_agency_fee {}
 
 
 explore: redshift_marketing_installs {}
