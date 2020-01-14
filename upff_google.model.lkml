@@ -95,11 +95,13 @@ include: "bigquery_14_day_churn_list.view.lkml"
 include: "bigquery_vimeott_webinar_ads.view.lkml"
 include: "derived_redshift_add_watchlist.view.lkml"
 include: "bigquery_wicket_marketing_cost.view.lkml"
+include: "bigquery_vimeo_ott_customers.view.lkml"
+
+explore: bigquery_vimeo_ott_customers {}
 
 explore: bigquery_wicket_marketing_cost {}
 
 explore: derived_redshift_add_watchlist {}
-
 
 explore: bigquery_vimeott_webinar_ads{}
 
