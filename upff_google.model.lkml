@@ -97,7 +97,15 @@ include: "derived_redshift_add_watchlist.view.lkml"
 include: "bigquery_wicket_marketing_cost.view.lkml"
 include: "bigquery_vimeo_ott_customers.view.lkml"
 
-explore: bigquery_vimeo_ott_customers {}
+explore: bigquery_vimeo_ott_customers {
+
+  join: bigquery_http_api_purchase_event {
+    type: inner
+    sql_on: ${bigquery_vimeo_ott_customers.customer_id} = ${bigquery_http_api_purchase_event.user_id} ;;
+    relationship: one_to_many
+  }
+
+}
 
 explore: bigquery_wicket_marketing_cost {}
 
