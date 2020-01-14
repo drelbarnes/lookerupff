@@ -96,6 +96,17 @@ include: "bigquery_vimeott_webinar_ads.view.lkml"
 include: "derived_redshift_add_watchlist.view.lkml"
 include: "bigquery_wicket_marketing_cost.view.lkml"
 include: "bigquery_vimeo_ott_customers.view.lkml"
+include: "bigquery_vimeo_ott_customers_v2.view.lkml"
+
+explore: bigquery_vimeo_ott_customers_v2 {
+
+  join: bigquery_http_api_purchase_event {
+    type: inner
+    sql_on: ${bigquery_vimeo_ott_customers_v2.customer_id} = ${bigquery_http_api_purchase_event.user_id} ;;
+    relationship: one_to_many
+  }
+
+}
 
 explore: bigquery_vimeo_ott_customers {
 
