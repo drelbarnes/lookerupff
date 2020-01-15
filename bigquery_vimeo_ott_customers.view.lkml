@@ -143,6 +143,6 @@ view: bigquery_vimeo_ott_customers {
 
   measure: distinct_count {
     type: count_distinct
-    sql_distinct_key: ${customer_id} ;;
+    sql: ${customer_id} ;;
   }
 }

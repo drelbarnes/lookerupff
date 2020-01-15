@@ -2,7 +2,6 @@ view: bigquery_http_api_purchase_event {
   sql_table_name: http_api.purchase_event ;;
 
   dimension: id {
-    primary_key: yes
     type: string
     sql: ${TABLE}.id ;;
   }
@@ -260,6 +259,7 @@ view: bigquery_http_api_purchase_event {
   }
 
   dimension: user_id {
+    primary_key: yes
     type: string
     tags: ["user_id"]
     sql: ${TABLE}.user_id ;;
@@ -314,6 +314,11 @@ view: bigquery_http_api_purchase_event {
     type: string
     sql: MAX(${topic} = 'customer.product.cancelled' OR ${topic} = 'customer.product.expired') ;;
 
+  }
+
+  measure: distinct_count {
+    type: count
+    sql_distinct_key: ${user_id} ;;
   }
 
 

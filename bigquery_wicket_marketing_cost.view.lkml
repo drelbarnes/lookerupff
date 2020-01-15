@@ -1,6 +1,6 @@
 view: bigquery_wicket_marketing_cost {
   derived_table: {
-    sql: SELECT * FROM `up-faith-and-family-216419.customers.marketing_cost` LIMIT 10
+    sql: SELECT * FROM `up-faith-and-family-216419.customers.marketing_cost`
       ;;
   }
 
