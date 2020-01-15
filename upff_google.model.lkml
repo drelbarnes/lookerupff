@@ -112,7 +112,7 @@ explore: bigquery_vimeo_ott_customers {
 
   join: bigquery_http_api_purchase_event {
     type: inner
-    sql_on: ${bigquery_vimeo_ott_customers.customer_id} = ${bigquery_http_api_purchase_event.user_id} ;;
+    sql_on: ${bigquery_vimeo_ott_customers.customer_id} = SAFE_CAST(${bigquery_http_api_purchase_event.user_id} as INT64);;
     relationship: one_to_many
   }
 

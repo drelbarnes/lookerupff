@@ -52,6 +52,7 @@ view: bigquery_vimeo_ott_customers {
   }
 
   dimension: customer_id {
+    primary_key: yes
     type: number
     sql: ${TABLE}.customer_id ;;
   }
@@ -138,5 +139,10 @@ view: bigquery_vimeo_ott_customers {
   measure: count {
     type: count
     drill_fields: [last_name, product_name, first_name]
+  }
+
+  measure: distinct_count {
+    type: count_distinct
+    sql_distinct_key: ${customer_id} ;;
   }
 }
