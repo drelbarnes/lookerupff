@@ -317,8 +317,8 @@ view: bigquery_http_api_purchase_event {
   }
 
   measure: distinct_count {
-    type: count
-    sql_distinct_key: ${user_id} ;;
+    type: count_distinct
+    sql: ${user_id} ;;
   }
 
 
