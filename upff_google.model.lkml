@@ -98,6 +98,17 @@ include: "bigquery_wicket_marketing_cost.view.lkml"
 include: "bigquery_vimeo_ott_customers.view.lkml"
 include: "bigquery_vimeo_ott_customers_oct_2019.view.lkml"
 include: "bigquery_vimeo_ott_customers_nov_2019.view.lkml"
+include: "bigquery_vimeo_ott_customers_dec_2019.view.lkml"
+
+explore: bigquery_vimeo_ott_customers_dec_2019 {
+
+  join: bigquery_http_api_purchase_event {
+    type: inner
+    sql_on: ${bigquery_vimeo_ott_customers_dec_2019.customer_id} = SAFE_CAST(${bigquery_http_api_purchase_event.user_id} as INT64) ;;
+    relationship: one_to_many
+  }
+
+}
 
 explore: bigquery_vimeo_ott_customers_nov_2019 {
 

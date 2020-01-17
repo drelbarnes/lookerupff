@@ -1,5 +1,5 @@
-view: bigquery_vimeo_ott_customers_nov_2019 {
-  sql_table_name: customers.vimeo_ott_customers_nov_2019 ;;
+view: bigquery_vimeo_ott_customers_dec_2019 {
+  sql_table_name: customers.vimeo_ott_customers_dec_2019 ;;
 
   dimension: action {
     type: string
