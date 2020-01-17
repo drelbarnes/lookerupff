@@ -1,5 +1,5 @@
-view: bigquery_vimeo_ott_customers_oct_2019 {
-  sql_table_name: customers.vimeo_ott_customers_oct_2019 ;;
+view: bigquery_vimeo_ott_customers_nov_2019 {
+  sql_table_name: customers.vimeo_ott_all_customers_nov_2019 ;;
 
   dimension: action {
     type: string
@@ -114,7 +114,7 @@ view: bigquery_vimeo_ott_customers_oct_2019 {
   }
 
   dimension: promotion_id {
-    type: number
+    type: string
     sql: ${TABLE}.promotion_id ;;
   }
 
