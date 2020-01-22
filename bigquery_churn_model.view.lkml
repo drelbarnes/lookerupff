@@ -19,6 +19,7 @@ e as
        platform,
        date(status_date) as start_date,
        date_add(date(status_date), interval 30 day) as end_date,
+       extract(day from date(status_date)) as month_day,
        date_diff(date(status_date),(conversion_date),month) as num,
        case when moptin=true then 1 else 0 end as marketing_optin,
        case when topic = "customer.product.renewed" or status="renewed" then 0 else 1 end as churn_status
@@ -126,70 +127,147 @@ and (conversion_date)<=date(status_date)),
               user_id,
               'web' AS source,
               timestamp,
-              CASE
-                WHEN upper(title) LIKE '%HEARTLAND%' THEN 'Heartland'
-                WHEN upper(title) LIKE '%BRINGING UP BATES%' THEN 'Bringing Up Bates'
-                ELSE 'Other'
-              END AS content
+              content,
+              max(timecode) as duration
             FROM
-              javascript.firstplay
-            WHERE
-              user_id IS NOT NULL),
+              javascript.video_playback_started inner join a on video_playback_started.video_id=a.video_id
+              group by 1,2,3,4),
 
             droid AS (
             SELECT
               user_id,
               'android' AS source,
               timestamp,
-              content
+              content,
+              max(timecode) as duration
             FROM
-              android.firstplay
+              android.video_playback_started
             INNER JOIN
               a
             ON
-              firstplay.video_id=a.video_id),
+              video_playback_started.video_id=a.video_id
+              group by 1,2,3,4),
+
+            roku AS (
+            SELECT
+             user_id,
+              'roku' AS source,
+              timestamp,
+              content,
+              max(timecode) as duration
+            FROM
+              roku.video_playback_started
+            INNER JOIN
+              a
+            ON
+              video_playback_started.video_id=a.video_id
+              group by 1,2,3,4),
 
             apple AS (
             SELECT
               user_id,
               'ios' AS source,
               timestamp,
-              content
+              content,
+              max(timecode) as duration
             FROM
-              ios.firstplay
+              ios.video_playback_started
             INNER JOIN
               a
             ON
-              SAFE_CAST(firstplay.video_id AS int64)=SAFE_CAST(a.video_id AS int64))
+              SAFE_CAST(video_playback_started.video_id AS int64)=SAFE_CAST(a.video_id AS int64)
+              group by 1,2,3,4)
 
 
-            SELECT user_id,
+            SELECT web.user_id,
                    (timestamp) as timestamp,
                    (case when content="Other" then 1 else 0 end) as other_plays,
                    (case when content="Bringing Up Bates" then 1 else 0 end) as bates_plays,
-                   (case when content="Heartland" then 1 else 0 end) as heartland_plays
-            FROM web
+                   (case when content="Heartland" then 1 else 0 end) as heartland_plays,
+                   (case when content="Other" then duration else 0 end) as other_duration,
+                   (case when content="Bringing Up Bates" then duration else 0 end) as bates_duration,
+                   (case when content="Heartland" then duration else 0 end) as heartland_duration,
+                   (case when date(timestamp) between date_sub(end_date,interval 7 day) and end_date then 1 else 0 end) as one_week_view,
+                   (case when date(timestamp) between date_sub(end_date,interval 14 day) and date_sub(end_date,interval 8 day) then 1 else 0 end) as two_week_view,
+                   (case when date(timestamp) between date_sub(end_date,interval 21 day) and date_sub(end_date,interval 15 day) then 1 else 0 end) as three_week_view,
+                   (case when date(timestamp) > date_sub(end_date,interval 21 day) then 1 else 0 end) as four_week_view,
+                   (case when date(timestamp) between date_sub(end_date,interval 7 day) and end_date then duration else 0 end) as one_week_duration,
+                   (case when date(timestamp) between date_sub(end_date,interval 14 day) and date_sub(end_date,interval 8 day) then duration else 0 end) as two_week_duration,
+                   (case when date(timestamp) between date_sub(end_date,interval 21 day) and date_sub(end_date,interval 15 day) then duration else 0 end) as three_week_duration,
+                   (case when date(timestamp) > date_sub(end_date,interval 21 day) then duration else 0 end) as four_week_duration
+            FROM web inner join e on web.user_id=e.user_id and date(web.timestamp) between start_date and end_date
             UNION ALL
-            SELECT user_id,
+            SELECT droid.user_id,
                    (timestamp) as timestamp,
                    (case when content="Other" then 1 else 0 end) as other_plays,
                    (case when content="Bringing Up Bates" then 1 else 0 end) as bates_plays,
-                   (case when content="Heartland" then 1 else 0 end) as heartland_plays
-            FROM droid
+                   (case when content="Heartland" then 1 else 0 end) as heartland_plays,
+                   (case when content="Other" then duration else 0 end) as other_duration,
+                   (case when content="Bringing Up Bates" then duration else 0 end) as bates_duration,
+                   (case when content="Heartland" then duration else 0 end) as heartland_duration,
+                   (case when date(timestamp) between date_sub(end_date,interval 7 day) and end_date then 1 else 0 end) as one_week_view,
+                   (case when date(timestamp) between date_sub(end_date,interval 14 day) and date_sub(end_date,interval 8 day) then 1 else 0 end) as two_week_view,
+                   (case when date(timestamp) between date_sub(end_date,interval 21 day) and date_sub(end_date,interval 15 day) then 1 else 0 end) as three_week_view,
+                   (case when date(timestamp) > date_sub(end_date,interval 21 day) then 1 else 0 end) as four_week_view,
+                   (case when date(timestamp) between date_sub(end_date,interval 7 day) and end_date then duration else 0 end) as one_week_duration,
+                   (case when date(timestamp) between date_sub(end_date,interval 14 day) and date_sub(end_date,interval 8 day) then duration else 0 end) as two_week_duration,
+                   (case when date(timestamp) between date_sub(end_date,interval 21 day) and date_sub(end_date,interval 15 day) then duration else 0 end) as three_week_duration,
+                   (case when date(timestamp) > date_sub(end_date,interval 21 day) then duration else 0 end) as four_week_duration
+            FROM droid inner join e on droid.user_id=e.user_id and date(droid.timestamp) between start_date and end_date
             UNION ALL
-            SELECT user_id,
+            SELECT e.user_id,
                    (timestamp) as timestamp,
                    (case when content="Other" then 1 else 0 end) as other_plays,
                    (case when content="Bringing Up Bates" then 1 else 0 end) as bates_plays,
-                   (case when content="Heartland" then 1 else 0 end) as heartland_plays
-            FROM apple),
+                   (case when content="Heartland" then 1 else 0 end) as heartland_plays,
+                   (case when content="Other" then duration else 0 end) as other_duration,
+                   (case when content="Bringing Up Bates" then duration else 0 end) as bates_duration,
+                   (case when content="Heartland" then duration else 0 end) as heartland_duration,
+                   (case when date(timestamp) between date_sub(end_date,interval 7 day) and end_date then 1 else 0 end) as one_week_view,
+                   (case when date(timestamp) between date_sub(end_date,interval 14 day) and date_sub(end_date,interval 8 day) then 1 else 0 end) as two_week_view,
+                   (case when date(timestamp) between date_sub(end_date,interval 21 day) and date_sub(end_date,interval 15 day) then 1 else 0 end) as three_week_view,
+                   (case when date(timestamp) > date_sub(end_date,interval 21 day) then 1 else 0 end) as four_week_view,
+                   (case when date(timestamp) between date_sub(end_date,interval 7 day) and end_date then duration else 0 end) as one_week_duration,
+                   (case when date(timestamp) between date_sub(end_date,interval 14 day) and date_sub(end_date,interval 8 day) then duration else 0 end) as two_week_duration,
+                   (case when date(timestamp) between date_sub(end_date,interval 21 day) and date_sub(end_date,interval 15 day) then duration else 0 end) as three_week_duration,
+                   (case when date(timestamp) > date_sub(end_date,interval 21 day) then duration else 0 end) as four_week_duration
+            FROM apple inner join e on apple.user_id=e.user_id and date(apple.timestamp) between start_date and end_date
+            union all
+            SELECT e.user_id,
+                   (timestamp) as timestamp,
+                   (case when content="Other" then 1 else 0 end) as other_plays,
+                   (case when content="Bringing Up Bates" then 1 else 0 end) as bates_plays,
+                   (case when content="Heartland" then 1 else 0 end) as heartland_plays,
+                   (case when content="Other" then duration else 0 end) as other_duration,
+                   (case when content="Bringing Up Bates" then duration else 0 end) as bates_duration,
+                   (case when content="Heartland" then duration else 0 end) as heartland_duration,
+                   (case when date(timestamp) between date_sub(end_date,interval 7 day) and end_date then 1 else 0 end) as one_week_view,
+                   (case when date(timestamp) between date_sub(end_date,interval 14 day) and date_sub(end_date,interval 8 day) then 1 else 0 end) as two_week_view,
+                   (case when date(timestamp) between date_sub(end_date,interval 21 day) and date_sub(end_date,interval 15 day) then 1 else 0 end) as three_week_view,
+                   (case when date(timestamp) > date_sub(end_date,interval 21 day) then 1 else 0 end) as four_week_view,
+                   (case when date(timestamp) between date_sub(end_date,interval 7 day) and end_date then duration else 0 end) as one_week_duration,
+                   (case when date(timestamp) between date_sub(end_date,interval 14 day) and date_sub(end_date,interval 8 day) then duration else 0 end) as two_week_duration,
+                   (case when date(timestamp) between date_sub(end_date,interval 21 day) and date_sub(end_date,interval 15 day) then duration else 0 end) as three_week_duration,
+                   (case when date(timestamp) > date_sub(end_date,interval 21 day) then duration else 0 end) as four_week_duration
+            FROM roku inner join e on roku.user_id=e.user_id and date(roku.timestamp) between start_date and end_date),
 
       k as
       (select e.user_id,
               num,
               case when bates_plays is null then 0 else bates_plays end as bates_plays,
               case when heartland_plays is null then 0 else heartland_plays end as heartland_plays,
-              case when other_plays is null then 0 else other_plays end as other_plays
+              case when other_plays is null then 0 else other_plays end as other_plays,
+              case when bates_duration is null then 0 else bates_duration end as bates_duration,
+              case when heartland_duration is null then 0 else heartland_duration end as heartland_duration,
+              case when other_duration is null then 0 else other_duration end as other_duration,
+              case when one_week_view is null then 0 else one_week_view end as one_week_view,
+              case when two_week_view is null then 0 else two_week_view end as two_week_view,
+              case when three_week_view is null then 0 else three_week_view end as three_week_view,
+              case when four_week_view is null then 0 else four_week_view end as four_week_view,
+              case when one_week_duration is null then 0 else one_week_duration end as one_week_duration,
+              case when two_week_duration is null then 0 else two_week_duration end as two_week_duration,
+              case when three_week_duration is null then 0 else three_week_duration end as three_week_duration,
+              case when four_week_duration is null then 0 else four_week_duration end as four_week_duration
       from e left join fp on e.user_id=fp.user_id and date(timestamp) between start_date and end_date),
 
       fp1 as
@@ -197,102 +275,22 @@ and (conversion_date)<=date(status_date)),
              num,
              sum(bates_plays) as bates_plays,
              sum(heartland_plays) as heartland_plays,
-             sum(other_plays) as other_plays
+             sum(other_plays) as other_plays,
+             sum(bates_duration) as bates_duration,
+             sum(heartland_duration) as heartland_duration,
+             sum(other_duration) as other_duration,
+             sum(one_week_view) as one_week_view,
+             sum(two_week_view) as two_week_view,
+             sum(three_week_view) as three_week_view,
+             sum(four_week_view) as four_week_view,
+             sum(one_week_duration) as one_week_duration,
+             sum(two_week_duration) as two_week_duration,
+             sum(three_week_duration) as three_week_duration,
+             sum(four_week_duration) as four_week_duration
       from k
       group by 1,2),
 
-      duration as
-      (WITH
-        a AS (
-        SELECT
-          id AS video_id,
-          CASE
-            WHEN series LIKE '%Heartland%' THEN 'Heartland'
-            WHEN series LIKE '%Bringing Up Bates%' THEN 'Bringing Up Bates'
-            ELSE 'Other'
-          END AS content
-        FROM
-          svod_titles.titles_id_mapping),
 
-        web AS (
-        SELECT
-          user_id,
-          'web' AS source,
-          timestamp,
-          CASE
-            WHEN upper(title) LIKE '%HEARTLAND%' THEN 'Heartland'
-            WHEN upper(title) LIKE '%BRINGING UP BATES%' THEN 'Bringing Up Bates'
-            ELSE 'Other'
-          END AS content,
-          max(current_time) as timecode
-        FROM
-          javascript.timeupdate
-        WHERE
-          user_id IS NOT NULL
-        group by 1,2,3,4),
-
-        android AS (
-        SELECT
-          user_id,
-          'android' AS source,
-          timestamp,
-          content,
-          max(timecode) as timecode
-        FROM
-          android.timeupdate
-        INNER JOIN
-          a
-        ON
-          timeupdate.video_id=a.video_id
-        group by 1,2,3,4),
-
-        ios AS (
-        SELECT
-          user_id,
-          'ios' AS source,
-          timestamp,
-          content,
-          max(timecode) as timecode
-        FROM
-          ios.timeupdate
-        INNER JOIN
-          a
-        ON
-          SAFE_CAST(timeupdate.video_id AS int64)=SAFE_CAST(a.video_id AS int64)
-        group by 1,2,3,4)
-
-
-        SELECT user_id,
-               source,
-               timestamp,
-               case when content="Other" then safe_cast(safe_cast(timecode as string) as int64) else 0 end as other_duration,
-               case when content="Heartland" then safe_cast(safe_cast(timecode as string) as int64) else 0 end as heartland_duration,
-               case when content="Bringing Up Bates" then safe_cast(safe_cast(timecode as string) as int64) else 0 end as bates_duration
-        FROM web
-        UNION ALL
-        SELECT user_id,
-               source,
-               timestamp,
-               case when content="Other" then safe_cast(safe_cast(timecode as string) as int64) else 0 end as other_duration,
-               case when content="Heartland" then safe_cast(safe_cast(timecode as string) as int64) else 0 end as heartland_duration,
-               case when content="Bringing Up Bates" then safe_cast(safe_cast(timecode as string) as int64) else 0 end as bates_duration
-        FROM android
-        UNION ALL
-        SELECT user_id,
-               source,
-               timestamp,
-               case when content="Other" then safe_cast(safe_cast(timecode as string) as int64) else 0 end as other_duration,
-               case when content="Heartland" then safe_cast(safe_cast(timecode as string) as int64) else 0 end as heartland_duration,
-               case when content="Bringing Up Bates" then safe_cast(safe_cast(timecode as string) as int64) else 0 end as bates_duration
-         FROM ios),
-
-      duration1 as
-      (select e.user_id,
-              num,
-              case when bates_duration is null then 0 else bates_duration end as bates_duration,
-              case when heartland_duration is null then 0 else heartland_duration end as heartland_duration,
-              case when other_duration is null then 0 else other_duration end as other_duration
-      from e left join duration on e.user_id=duration.user_id and date(timestamp) between start_date and end_date),
 
 m as
 (select e.*,
@@ -305,13 +303,21 @@ m as
              heartland_plays,
              heartland_duration,
              other_plays,
-             other_duration
+             other_duration,
+             one_week_view,
+             two_week_view,
+             three_week_view,
+             four_week_view,
+             one_week_duration,
+             two_week_duration,
+             three_week_duration,
+             four_week_duration,
+             1 as code
       from e left join awl1 on e.user_id=awl1.user_id and e.num=awl1.num
              left join error1 on e.user_id=error1.user_id and e.num=error1.num
              left join rwl1 on e.user_id=rwl1.user_id and e.num=rwl1.num
              left join view1 on e.user_id=view1.user_id and e.num=view1.num
              left join fp1 on e.user_id=fp1.user_id and e.num=fp1.num
-             left join duration1 on e.user_id=duration1.user_id and e.num=duration1.num
       where e.user_id <>'0'),
 
 n as
@@ -326,6 +332,22 @@ n as
        min(heartland_duration) as hld_min,
        min(other_plays) as op_min,
        min(other_duration) as od_min,
+       min(one_week_view) as owv_min,
+       min(two_week_view) as twv_min,
+       min(three_week_view) as thwv_min,
+       min(four_week_view) as fwv_min,
+       min(one_week_duration) as owd_min,
+       min(two_week_duration) as twd_min,
+       min(three_week_duration) as thwd_min,
+       min(four_week_duration) as fwd_min,
+       max(one_week_view) as owv_max,
+       max(two_week_view) as twv_max,
+       max(three_week_view) as thwv_max,
+       max(four_week_view) as fwv_max,
+       max(one_week_duration) as owd_max,
+       max(two_week_duration) as twd_max,
+       max(three_week_duration) as thwd_max,
+       max(four_week_duration) as fwd_max,
        max(addwatchlist) as awl_max,
        max(error) as error_max,
        max(removewatchlist) as rwl_max,
@@ -338,11 +360,17 @@ n as
        max(other_duration) as od_max
 from m
 where num<12 and num>=0
-group by num)
+group by num),
+
+num1 as
+(select min(num) as num_min,
+        max(num) as num_max,
+        1 as code
+  from m)
 
 select m.user_id,
        status_date,
-       m.num+1 as num,
+       (m.num+1)/(num_max+1) as num,
        region as state,
        churn_status,
        end_date,
@@ -351,6 +379,16 @@ select m.user_id,
        created_at,
        topic as status,
        marketing_optin,
+       month_day/31 as month_day,
+       rand() as random,
+       (one_week_view-owv_min)/(owv_max-owv_min) as one_week_view,
+       (two_week_view-twv_min)/(twv_max-twv_min) as two_week_view,
+       (three_week_view-thwv_min)/(thwv_max-thwv_min) as three_week_view,
+       (four_week_view-fwv_min)/(fwv_max-fwv_min) as four_week_view,
+       (one_week_duration-owd_min)/(owd_max-owd_min) as one_week_duration,
+       (two_week_duration-twd_min)/(twd_max-twd_min) as two_week_duration,
+       (three_week_duration-thwd_min)/(thwd_max-thwd_min) as three_week_duration,
+       (four_week_duration-fwd_min)/(fwd_max-fwd_min) as four_week_duration,
        (addwatchlist-awl_min)/(awl_max-awl_min) as addwatchlist,
        (error-error_min)/(error_max-error_min) as error,
        (removewatchlist-rwl_min)/(rwl_max-rwl_min) as removewatchlist,
@@ -361,7 +399,7 @@ select m.user_id,
        (heartland_duration-hld_min)/(hld_max-hld_min) as heartland_duration,
        (other_plays-op_min)/(op_max-op_min) as other_plays,
        (other_duration-od_min)/(od_max-od_min) as other_duration
-from m left join n on m.num=n.num
+from m left join n on m.num=n.num inner join num1 on m.code=num1.code
 where
 awl_min<>awl_max and
 error_min<>error_max and
@@ -372,12 +410,52 @@ bd_min<>bd_max and
 hlp_min<>hlp_max and
 hld_min<>hld_max and
 op_min<>op_max and
-od_min<>od_max);;
+od_min<>od_max) ;;
   }
 
   measure: count {
     type: count
     drill_fields: [detail*]
+  }
+
+  dimension: one_week_view {
+    type: number
+    sql: ${TABLE}.one_week_view ;;
+  }
+
+  dimension: two_week_view {
+    type: number
+    sql: ${TABLE}.two_week_view ;;
+  }
+
+  dimension: three_week_view {
+    type: number
+    sql: ${TABLE}.three_week_view ;;
+  }
+
+  dimension: four_week_view {
+    type: number
+    sql: ${TABLE}.four_week_view ;;
+  }
+
+  dimension: one_week_duration {
+    type: number
+    sql: ${TABLE}.one_week_duration ;;
+  }
+
+  dimension: two_week_duration {
+    type: number
+    sql: ${TABLE}.two_week_duration ;;
+  }
+
+  dimension: three_week_duration {
+    type: number
+    sql: ${TABLE}.three_week_duration ;;
+  }
+
+  dimension: four_week_duration {
+    type: number
+    sql: ${TABLE}.four_week_duration ;;
   }
 
   dimension: customer_id {
@@ -418,6 +496,11 @@ od_min<>od_max);;
   dimension: platform {
     type: string
     sql: ${TABLE}.platform ;;
+  }
+
+  dimension: random {
+    type: number
+    sql: ${TABLE}.random ;;
   }
 
   dimension_group: event_created_at {
@@ -517,6 +600,11 @@ od_min<>od_max);;
   dimension: heartland_duration {
     type: number
     sql: ${TABLE}.heartland_duration ;;
+  }
+
+  dimension: month_day {
+    type: number
+    sql: ${TABLE}.month_day ;;
   }
 
   dimension: other_plays {

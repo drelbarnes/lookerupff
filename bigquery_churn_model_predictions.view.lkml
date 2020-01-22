@@ -24,18 +24,34 @@ view: churn_training_input {
       column: platform {}
       column: removewatchlist {}
       column: view {}
+      column: month_day {}
+      column: one_week_view {}
+      column: two_week_view {}
+      column: three_week_view {}
+      column: four_week_view {}
+      column: one_week_duration {}
+      column: two_week_duration {}
+      column: three_week_duration {}
+      column: four_week_duration {}
       derived_column: bates_plays_num {sql:bates_plays*(num);;}
       derived_column: bates_duration_num {sql:bates_duration*(num);;}
       derived_column: heartland_plays_num {sql:heartland_plays*(num);;}
-      derived_column: other_plays_num {sql:other_plays*(num+1);;}
+      derived_column: other_plays_num {sql:other_plays*(num);;}
       derived_column: heartland_duration_num {sql:heartland_duration*(num);;}
       derived_column: other_duration_num {sql:other_duration*(num);;}
-#
       derived_column: addwatchlist_num {sql:addwatchlist*(num);;}
-      derived_column: error_num {sql:error*(num+1);;}
+      derived_column: error_num {sql:error*(num);;}
       derived_column: removewatchlist_num {sql:removewatchlist*(num);;}
-      derived_column: view_num {sql:view*(num+1);;}
-      expression_custom_filter: ${bigquery_churn_model.event_created_at_date}< add_days(-1,now()) AND ${bigquery_churn_model.event_created_at_date} >= add_days(-30,now());;
+      derived_column: view_num {sql:view*(num);;}
+      derived_column: one_week_view_num {sql:one_week_view*num;;}
+      derived_column: two_week_view_num {sql:two_week_view*num;;}
+      derived_column: three_week_view_num {sql:three_week_view*num;;}
+      derived_column: four_week_view_num {sql:four_week_view*num;;}
+      derived_column: one_week_duration_num {sql:one_week_duration*num;;}
+      derived_column: two_week_duration_num {sql:two_week_duration*num;;}
+      derived_column: three_week_duration_num {sql:three_week_duration*num;;}
+      derived_column: four_week_duration_num {sql:four_week_duration*num;;}
+      expression_custom_filter: (${bigquery_churn_model.event_created_at_date}< now() AND ${bigquery_churn_model.event_created_at_date} >= add_days(-90,now())) AND ${bigquery_churn_model.random}<=0.7;;
     }
   }
   dimension: customer_id {
@@ -56,6 +72,15 @@ view: churn_training_input {
   dimension: platform {type:string}
   dimension: removewatchlist {type:number}
   dimension: view {type:number}
+  dimension: month_day {type: number}
+  dimension: one_week_view {type:number}
+  dimension: two_week_view {type:number}
+  dimension: three_week_view {type:number}
+  dimension: four_week_view {type:number}
+  dimension: one_week_duration {type:number}
+  dimension: two_week_duration {type:number}
+  dimension: three_week_duration {type:number}
+  dimension: four_week_duration {type:number}
 
 }
 
@@ -83,6 +108,15 @@ view: churn_testing_input {
       column: platform {}
       column: removewatchlist {}
       column: view {}
+      column: month_day{}
+      column: one_week_view {}
+      column: two_week_view {}
+      column: three_week_view {}
+      column: four_week_view {}
+      column: one_week_duration {}
+      column: two_week_duration {}
+      column: three_week_duration {}
+      column: four_week_duration {}
       derived_column: bates_plays_num {sql:bates_plays*(num);;}
       derived_column: bates_duration_num {sql:bates_duration*(num);;}
       derived_column: heartland_plays_num {sql:heartland_plays*(num);;}
@@ -93,7 +127,15 @@ view: churn_testing_input {
       derived_column: error_num {sql:error*(num);;}
       derived_column: removewatchlist_num {sql:removewatchlist*(num);;}
       derived_column: view_num {sql:view*(num);;}
-      expression_custom_filter: ${bigquery_churn_model.event_created_at_date} < now() AND ${bigquery_churn_model.event_created_at_date} >= add_days(-1,now());;
+      derived_column: one_week_view_num {sql:one_week_view*num;;}
+      derived_column: two_week_view_num {sql:two_week_view*num;;}
+      derived_column: three_week_view_num {sql:three_week_view*num;;}
+      derived_column: four_week_view_num {sql:four_week_view*num;;}
+      derived_column: one_week_duration_num {sql:one_week_duration*num;;}
+      derived_column: two_week_duration_num {sql:two_week_duration*num;;}
+      derived_column: three_week_duration_num {sql:three_week_duration*num;;}
+      derived_column: four_week_duration_num {sql:four_week_duration*num;;}
+      expression_custom_filter: (${bigquery_churn_model.event_created_at_date} < now() AND ${bigquery_churn_model.event_created_at_date} >= add_days(-90,now())) AND ${bigquery_churn_model.random}>0.3;;
     }
   }
   dimension: customer_id {
@@ -114,7 +156,15 @@ view: churn_testing_input {
   dimension: platform {type:string}
   dimension: removewatchlist {type:number}
   dimension: view {type:number}
-
+  dimension: month_day{type:number}
+  dimension: one_week_view {type:number}
+  dimension: two_week_view {type:number}
+  dimension: three_week_view {type:number}
+  dimension: four_week_view {type:number}
+  dimension: one_week_duration {type:number}
+  dimension: two_week_duration {type:number}
+  dimension: three_week_duration {type:number}
+  dimension: four_week_duration {type:number}
 }
 
 ######################## MODEL #############################
@@ -286,6 +336,15 @@ view: churn_future_input {
       column: platform {}
       column: removewatchlist {}
       column: view {}
+      column: month_day {}
+      column: one_week_view {}
+      column: two_week_view {}
+      column: three_week_view {}
+      column: four_week_view {}
+      column: one_week_duration {}
+      column: two_week_duration {}
+      column: three_week_duration {}
+      column: four_week_duration {}
       derived_column: bates_plays_num {sql:bates_plays*(num);;}
       derived_column: bates_duration_num {sql:bates_duration*(num);;}
       derived_column: heartland_plays_num {sql:heartland_plays*(num);;}
@@ -296,6 +355,14 @@ view: churn_future_input {
       derived_column: error_num {sql:error*(num);;}
       derived_column: removewatchlist_num {sql:removewatchlist*(num);;}
       derived_column: view_num {sql:view*(num);;}
+      derived_column: one_week_view_num {sql:one_week_view*num;;}
+      derived_column: two_week_view_num {sql:two_week_view*num;;}
+      derived_column: three_week_view_num {sql:three_week_view*num;;}
+      derived_column: four_week_view_num {sql:four_week_view*num;;}
+      derived_column: one_week_duration_num {sql:one_week_duration*num;;}
+      derived_column: two_week_duration_num {sql:two_week_duration*num;;}
+      derived_column: three_week_duration_num {sql:three_week_duration*num;;}
+      derived_column: four_week_duration_num {sql:four_week_duration*num;;}
 
       expression_custom_filter:  ${bigquery_churn_model.end_date_date}>now();;
     }
@@ -323,6 +390,15 @@ view: churn_future_input {
   dimension: platform {type:string}
   dimension: removewatchlist {type:number}
   dimension: view {type:number}
+  dimension: month_day{type:number}
+  dimension: one_week_view {type:number}
+  dimension: two_week_view {type:number}
+  dimension: three_week_view {type:number}
+  dimension: four_week_view {type:number}
+  dimension: one_week_duration {type:number}
+  dimension: two_week_duration {type:number}
+  dimension: three_week_duration {type:number}
+  dimension: four_week_duration {type:number}
 
 }
 
@@ -380,7 +456,7 @@ view: churn_prediction {
   dimension: view {
     type: number
   }
-
+ dimension: month_day{type:number}
   dimension: predicted_churn_status {
     type: number
     description: "Binary classification based on max predicted value"

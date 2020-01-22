@@ -99,6 +99,9 @@ include: "bigquery_vimeo_ott_customers.view.lkml"
 include: "bigquery_vimeo_ott_customers_oct_2019.view.lkml"
 include: "bigquery_vimeo_ott_customers_nov_2019.view.lkml"
 include: "bigquery_vimeo_ott_customers_dec_2019.view.lkml"
+include: "bigquery_involuntary_churn.view.lkml"
+
+explore: bigquery_involuntary_churn {}
 
 explore: bigquery_vimeo_ott_customers_dec_2019 {
 
