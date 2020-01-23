@@ -41,6 +41,11 @@ view: bigquery_involuntary_churn {
     sql: ${TABLE}.status_date ;;
   }
 
+  dimension: date_formatted {
+    sql: ${status_date_date} ;;
+    html: {{ rendered_value | date: "%m/%d/%Y" }};;
+  }
+
   set: detail {
     fields: [user_id, email, topic, status_date_time]
   }
