@@ -20,11 +20,13 @@ view: bigquery_involuntary_churn {
   }
 
   dimension: user_id {
+    tags: ["user_id"]
     type: string
     sql: ${TABLE}.user_id ;;
   }
 
   dimension: email {
+    tags: ["email"]
     type: string
     sql: ${TABLE}.email ;;
   }
@@ -37,6 +39,11 @@ view: bigquery_involuntary_churn {
   dimension_group: status_date {
     type: time
     sql: ${TABLE}.status_date ;;
+  }
+
+  dimension: date_formatted {
+    sql: ${status_date_date} ;;
+    html: {{ rendered_value | date: "%m/%d/%Y" }};;
   }
 
   set: detail {
