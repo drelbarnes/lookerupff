@@ -348,11 +348,11 @@ explore: bigquery_subscribers_v2 {
     relationship: one_to_one
   }
 
-  join: bigquery_conversion_model_firstplay {
-    type: left_outer
-    sql_on:  ${bigquery_subscribers_v2.user_id} = ${bigquery_conversion_model_firstplay.user_id};;
-    relationship: one_to_one
-  }
+#   join: bigquery_conversion_model_firstplay {
+#     type: left_outer
+#     sql_on:  ${bigquery_subscribers_v2.user_id} = ${bigquery_conversion_model_firstplay.user_id};;
+#     relationship: one_to_one
+#   }
 
   join: bigquery_conversion_model_removewatchlist {
     type: left_outer

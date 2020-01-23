@@ -7,7 +7,9 @@ with a as
 union all
 select distinct id as user_id, email, 'android' as source from android.users
 union all
-select distinct id as user_id, email, 'ios' as source from ios.users),
+select distinct id as user_id, email, 'ios' as source from ios.users
+union all
+select distinct id as user_id, email, 'roku' as source from roku.users),
 
 b as
 (select user_id, count(1) as number_of_platforms from a group by 1 order by 2 desc),
@@ -30,6 +32,7 @@ from http_api.purchase_event
 where ((topic='customer.product.renewed' or status='renewed') and date(created_at)>'2018-10-31') or (topic='customer.product.created' and date_diff(date(status_date),date(created_at),day)>14)and date(created_at)>'2018-10-31')
 
 select s.*,
+       rand() as random,
        case when number_of_platforms is null then 1 else number_of_platforms end as number_of_platforms,
        case when get_status is null then 0 else get_status end as get_status
 from purchase_event as s left join b on s.user_id=b.user_id left join renewed as c on s.user_id=c.user_id ;;
@@ -38,6 +41,11 @@ from purchase_event as s left join b on s.user_id=b.user_id left join renewed as
     dimension: number_of_platforms {
       type: number
       sql: ${TABLE}.number_of_platforms/3 ;;
+    }
+
+    dimension: random {
+      type: number
+      sql: ${TABLE}.random ;;
     }
 
     dimension: city {

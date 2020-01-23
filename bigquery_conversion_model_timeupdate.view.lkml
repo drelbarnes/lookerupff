@@ -1,20 +1,7 @@
 view: bigquery_conversion_model_timeupdate {
   derived_table: {
     sql:
-with a1 as
-(select sent_at,
-        user_id,
-        (split(title," - ")) as title,
-        (a.current_time) as _current_time
-from javascript.timeupdate as a),
-
-a2 as
-(select sent_at,
-        user_id,
-        title[safe_ordinal(1)] as title,
-        _current_time
- from a1),
-
+with
  a3 as
 (select distinct CASE
       WHEN collection LIKE '%Heartland%' THEN 'Heartland'
@@ -29,14 +16,14 @@ a2 as
 
 a4 as
 ((SELECT
-    a2.title,
+    a3.title,
     user_id,
     date(sent_at) as timestamp,
     a3.duration*60 as duration,
-    max(_current_time) as timecode,
+    max(timecode) as timecode,
    'web' AS source
   FROM
-    a2 inner join a3 on trim(upper(a2.title))=trim(upper(a3.title))
+    javascript.video_playback_started as a inner join a3 on safe_cast(a.video_id as int64)=a3.id
   WHERE
     user_id IS NOT NULL and safe_cast(user_id as string)!='0'
   GROUP BY 1,2,3,4)
@@ -51,7 +38,22 @@ union all
     max(timecode) as timecode,
    'iOS' AS source
   FROM
-    ios.timeupdate as a inner join a3 on safe_cast(a.video_id as int64)=a3.id
+    ios.video_playback_started as a inner join a3 on safe_cast(a.video_id as int64)=a3.id
+  WHERE
+    user_id IS NOT NULL and safe_cast(user_id as string)!='0'
+  GROUP BY 1,2,3,4)
+
+  union all
+
+  (SELECT
+    title,
+    user_id,
+    date(sent_at) as timestamp,
+    a3.duration*60 as duration,
+    max(timecode) as timecode,
+   'roku' AS source
+  FROM
+    roku.video_playback_started as a inner join a3 on safe_cast(a.video_id as int64)=a3.id
   WHERE
     user_id IS NOT NULL and safe_cast(user_id as string)!='0'
   GROUP BY 1,2,3,4)
@@ -66,7 +68,7 @@ union all
     max(timecode) as timecode,
    'Android' AS source
   FROM
-    android.timeupdate as a inner join a3 on a.video_id=a3.id
+    android.video_playback_started as a inner join a3 on a.video_id=a3.id
   WHERE
     user_id IS NOT NULL and safe_cast(user_id as string)!='0'
   GROUP BY 1,2,3,4)),

@@ -14,44 +14,47 @@ view: churn_training_input {
       column: state {}
       column: addwatchlist {}
       column: bates_duration {}
-      column: bates_plays {}
+#       column: bates_plays {}
       column: churn_status {}
       column: error {}
       column: heartland_duration {}
-      column: heartland_plays {}
+#       column: heartland_plays {}
       column: other_duration {}
-      column: other_plays {}
+#       column: other_plays {}
       column: platform {}
       column: removewatchlist {}
       column: view {}
       column: month_day {}
-      column: one_week_view {}
-      column: two_week_view {}
-      column: three_week_view {}
-      column: four_week_view {}
+#       column: one_week_view {}
+#       column: two_week_view {}
+#       column: three_week_view {}
+#       column: four_week_view {}
       column: one_week_duration {}
       column: two_week_duration {}
       column: three_week_duration {}
       column: four_week_duration {}
-      derived_column: bates_plays_num {sql:bates_plays*(num);;}
-      derived_column: bates_duration_num {sql:bates_duration*(num);;}
-      derived_column: heartland_plays_num {sql:heartland_plays*(num);;}
-      derived_column: other_plays_num {sql:other_plays*(num);;}
-      derived_column: heartland_duration_num {sql:heartland_duration*(num);;}
-      derived_column: other_duration_num {sql:other_duration*(num);;}
-      derived_column: addwatchlist_num {sql:addwatchlist*(num);;}
-      derived_column: error_num {sql:error*(num);;}
-      derived_column: removewatchlist_num {sql:removewatchlist*(num);;}
-      derived_column: view_num {sql:view*(num);;}
-      derived_column: one_week_view_num {sql:one_week_view*num;;}
-      derived_column: two_week_view_num {sql:two_week_view*num;;}
-      derived_column: three_week_view_num {sql:three_week_view*num;;}
-      derived_column: four_week_view_num {sql:four_week_view*num;;}
-      derived_column: one_week_duration_num {sql:one_week_duration*num;;}
-      derived_column: two_week_duration_num {sql:two_week_duration*num;;}
-      derived_column: three_week_duration_num {sql:three_week_duration*num;;}
-      derived_column: four_week_duration_num {sql:four_week_duration*num;;}
-      expression_custom_filter: (${bigquery_churn_model.event_created_at_date}< now() AND ${bigquery_churn_model.event_created_at_date} >= add_days(-90,now())) AND ${bigquery_churn_model.random}<=0.7;;
+      column: set_cancel {}
+      column: undo_cancel {}
+      column: charge_failed {}
+#       derived_column: bates_plays_num {sql:bates_plays*(num);;}
+#       derived_column: bates_duration_num {sql:bates_duration*(num);;}
+#       derived_column: heartland_plays_num {sql:heartland_plays*(num);;}
+#       derived_column: other_plays_num {sql:other_plays*(num);;}
+#       derived_column: heartland_duration_num {sql:heartland_duration*(num);;}
+#       derived_column: other_duration_num {sql:other_duration*(num);;}
+#       derived_column: addwatchlist_num {sql:addwatchlist*(num);;}
+#       derived_column: error_num {sql:error*(num);;}
+#       derived_column: removewatchlist_num {sql:removewatchlist*(num);;}
+#       derived_column: view_num {sql:view*(num);;}
+#       derived_column: one_week_view_num {sql:one_week_view*num;;}
+#       derived_column: two_week_view_num {sql:two_week_view*num;;}
+#       derived_column: three_week_view_num {sql:three_week_view*num;;}
+#       derived_column: four_week_view_num {sql:four_week_view*num;;}
+#       derived_column: one_week_duration_num {sql:one_week_duration*num;;}
+#       derived_column: two_week_duration_num {sql:two_week_duration*num;;}
+#       derived_column: three_week_duration_num {sql:three_week_duration*num;;}
+#       derived_column: four_week_duration_num {sql:four_week_duration*num;;}
+      expression_custom_filter: (${bigquery_churn_model.event_created_at_date}< now() AND ${bigquery_churn_model.event_created_at_date} >= add_days(-60,now())) AND ${bigquery_churn_model.random}<=0.7;;
     }
   }
   dimension: customer_id {
@@ -62,26 +65,28 @@ view: churn_training_input {
   dimension: state {type:string}
   dimension: addwatchlist {type:number}
   dimension: bates_duration {type:number}
-  dimension: bates_plays {type:number}
+#   dimension: bates_plays {type:number}
   dimension: churn_status {type:number}
   dimension: error {type:number}
   dimension: heartland_duration {type:number}
-  dimension: heartland_plays {type:number}
+#   dimension: heartland_plays {type:number}
   dimension: other_duration {type:number}
-  dimension: other_plays {type:number}
+#   dimension: other_plays {type:number}
   dimension: platform {type:string}
   dimension: removewatchlist {type:number}
   dimension: view {type:number}
   dimension: month_day {type: number}
-  dimension: one_week_view {type:number}
-  dimension: two_week_view {type:number}
-  dimension: three_week_view {type:number}
-  dimension: four_week_view {type:number}
+#   dimension: one_week_view {type:number}
+#   dimension: two_week_view {type:number}
+#   dimension: three_week_view {type:number}
+#   dimension: four_week_view {type:number}
   dimension: one_week_duration {type:number}
   dimension: two_week_duration {type:number}
   dimension: three_week_duration {type:number}
   dimension: four_week_duration {type:number}
-
+  dimension: set_cancel {type:number}
+  dimension: undo_cancel {type:number}
+  dimension: charge_failed {type:number}
 }
 
 
@@ -93,49 +98,53 @@ view: churn_testing_input {
   derived_table: {
     explore_source: bigquery_churn_model {
       column: customer_id {}
+      column: end_date2 {}
       column: marketing_optin {}
       column: num {}
       column: state {}
       column: addwatchlist {}
       column: bates_duration {}
-      column: bates_plays {}
+#       column: bates_plays {}
       column: churn_status {}
       column: error {}
       column: heartland_duration {}
-      column: heartland_plays {}
+#       column: heartland_plays {}
       column: other_duration {}
-      column: other_plays {}
+#       column: other_plays {}
       column: platform {}
       column: removewatchlist {}
       column: view {}
       column: month_day{}
-      column: one_week_view {}
-      column: two_week_view {}
-      column: three_week_view {}
-      column: four_week_view {}
+#       column: one_week_view {}
+#       column: two_week_view {}
+#       column: three_week_view {}
+#       column: four_week_view {}
       column: one_week_duration {}
       column: two_week_duration {}
       column: three_week_duration {}
       column: four_week_duration {}
-      derived_column: bates_plays_num {sql:bates_plays*(num);;}
-      derived_column: bates_duration_num {sql:bates_duration*(num);;}
-      derived_column: heartland_plays_num {sql:heartland_plays*(num);;}
-      derived_column: other_plays_num {sql:other_plays*(num);;}
-      derived_column: heartland_duration_num {sql:heartland_duration*(num);;}
-      derived_column: other_duration_num {sql:other_duration*(num);;}
-      derived_column: addwatchlist_num {sql:addwatchlist*(num);;}
-      derived_column: error_num {sql:error*(num);;}
-      derived_column: removewatchlist_num {sql:removewatchlist*(num);;}
-      derived_column: view_num {sql:view*(num);;}
-      derived_column: one_week_view_num {sql:one_week_view*num;;}
-      derived_column: two_week_view_num {sql:two_week_view*num;;}
-      derived_column: three_week_view_num {sql:three_week_view*num;;}
-      derived_column: four_week_view_num {sql:four_week_view*num;;}
-      derived_column: one_week_duration_num {sql:one_week_duration*num;;}
-      derived_column: two_week_duration_num {sql:two_week_duration*num;;}
-      derived_column: three_week_duration_num {sql:three_week_duration*num;;}
-      derived_column: four_week_duration_num {sql:four_week_duration*num;;}
-      expression_custom_filter: (${bigquery_churn_model.event_created_at_date} < now() AND ${bigquery_churn_model.event_created_at_date} >= add_days(-90,now())) AND ${bigquery_churn_model.random}>0.3;;
+      column: set_cancel {}
+      column: undo_cancel {}
+      column: charge_failed {}
+#       derived_column: bates_plays_num {sql:bates_plays*(num);;}
+#       derived_column: bates_duration_num {sql:bates_duration*(num);;}
+#       derived_column: heartland_plays_num {sql:heartland_plays*(num);;}
+#       derived_column: other_plays_num {sql:other_plays*(num);;}
+#       derived_column: heartland_duration_num {sql:heartland_duration*(num);;}
+#       derived_column: other_duration_num {sql:other_duration*(num);;}
+#       derived_column: addwatchlist_num {sql:addwatchlist*(num);;}
+#       derived_column: error_num {sql:error*(num);;}
+#       derived_column: removewatchlist_num {sql:removewatchlist*(num);;}
+#       derived_column: view_num {sql:view*(num);;}
+#       derived_column: one_week_view_num {sql:one_week_view*num;;}
+#       derived_column: two_week_view_num {sql:two_week_view*num;;}
+#       derived_column: three_week_view_num {sql:three_week_view*num;;}
+#       derived_column: four_week_view_num {sql:four_week_view*num;;}
+#       derived_column: one_week_duration_num {sql:one_week_duration*num;;}
+#       derived_column: two_week_duration_num {sql:two_week_duration*num;;}
+#       derived_column: three_week_duration_num {sql:three_week_duration*num;;}
+#       derived_column: four_week_duration_num {sql:four_week_duration*num;;}
+      expression_custom_filter: (${bigquery_churn_model.event_created_at_date} < now() AND ${bigquery_churn_model.event_created_at_date} >= add_days(-60,now())) AND ${bigquery_churn_model.random}>0.3;;
     }
   }
   dimension: customer_id {
@@ -146,25 +155,28 @@ view: churn_testing_input {
   dimension: state {type:string}
   dimension: addwatchlist {type:number}
   dimension: bates_duration {type:number}
-  dimension: bates_plays {type:number}
+#   dimension: bates_plays {type:number}
   dimension: churn_status {type:number}
   dimension: error {type:number}
   dimension: heartland_duration {type:number}
-  dimension: heartland_plays {type:number}
+#   dimension: heartland_plays {type:number}
   dimension: other_duration {type:number}
-  dimension: other_plays {type:number}
+#   dimension: other_plays {type:number}
   dimension: platform {type:string}
   dimension: removewatchlist {type:number}
   dimension: view {type:number}
   dimension: month_day{type:number}
-  dimension: one_week_view {type:number}
-  dimension: two_week_view {type:number}
-  dimension: three_week_view {type:number}
-  dimension: four_week_view {type:number}
+#   dimension: one_week_view {type:number}
+#   dimension: two_week_view {type:number}
+#   dimension: three_week_view {type:number}
+#   dimension: four_week_view {type:number}
   dimension: one_week_duration {type:number}
   dimension: two_week_duration {type:number}
   dimension: three_week_duration {type:number}
   dimension: four_week_duration {type:number}
+  dimension: set_cancel {type:number}
+  dimension: undo_cancel {type:number}
+  dimension: charge_failed {type:number}
 }
 
 ######################## MODEL #############################
@@ -193,7 +205,7 @@ view: churn_model_evaluation {
   derived_table: {
     sql: SELECT * FROM ml.EVALUATE(
           MODEL ${churn_model.SQL_TABLE_NAME},
-          (SELECT * FROM ${churn_testing_input.SQL_TABLE_NAME}), struct(0.16 as threshold));;
+          (SELECT * FROM ${churn_testing_input.SQL_TABLE_NAME}), struct(0.13 as threshold));;
   }
   dimension: recall {
     type: number
@@ -326,45 +338,48 @@ view: churn_future_input {
       column: state {}
       column: addwatchlist {}
       column: bates_duration {}
-      column: bates_plays {}
+#       column: bates_plays {}
       column: churn_status {}
       column: error {}
       column: heartland_duration {}
-      column: heartland_plays {}
+#       column: heartland_plays {}
       column: other_duration {}
-      column: other_plays {}
+#       column: other_plays {}
       column: platform {}
       column: removewatchlist {}
       column: view {}
       column: month_day {}
-      column: one_week_view {}
-      column: two_week_view {}
-      column: three_week_view {}
-      column: four_week_view {}
+#       column: one_week_view {}
+#       column: two_week_view {}
+#       column: three_week_view {}
+#       column: four_week_view {}
       column: one_week_duration {}
       column: two_week_duration {}
       column: three_week_duration {}
       column: four_week_duration {}
-      derived_column: bates_plays_num {sql:bates_plays*(num);;}
-      derived_column: bates_duration_num {sql:bates_duration*(num);;}
-      derived_column: heartland_plays_num {sql:heartland_plays*(num);;}
-      derived_column: other_plays_num {sql:other_plays*(num);;}
-      derived_column: heartland_duration_num {sql:heartland_duration*(num);;}
-      derived_column: other_duration_num {sql:other_duration*(num);;}
-      derived_column: addwatchlist_num {sql:addwatchlist*(num);;}
-      derived_column: error_num {sql:error*(num);;}
-      derived_column: removewatchlist_num {sql:removewatchlist*(num);;}
-      derived_column: view_num {sql:view*(num);;}
-      derived_column: one_week_view_num {sql:one_week_view*num;;}
-      derived_column: two_week_view_num {sql:two_week_view*num;;}
-      derived_column: three_week_view_num {sql:three_week_view*num;;}
-      derived_column: four_week_view_num {sql:four_week_view*num;;}
-      derived_column: one_week_duration_num {sql:one_week_duration*num;;}
-      derived_column: two_week_duration_num {sql:two_week_duration*num;;}
-      derived_column: three_week_duration_num {sql:three_week_duration*num;;}
-      derived_column: four_week_duration_num {sql:four_week_duration*num;;}
+      column: set_cancel {}
+      column: undo_cancel {}
+      column: charge_failed {}
+#       derived_column: bates_plays_num {sql:bates_plays*(num);;}
+#       derived_column: bates_duration_num {sql:bates_duration*(num);;}
+#       derived_column: heartland_plays_num {sql:heartland_plays*(num);;}
+#       derived_column: other_plays_num {sql:other_plays*(num);;}
+#       derived_column: heartland_duration_num {sql:heartland_duration*(num);;}
+#       derived_column: other_duration_num {sql:other_duration*(num);;}
+#       derived_column: addwatchlist_num {sql:addwatchlist*(num);;}
+#       derived_column: error_num {sql:error*(num);;}
+#       derived_column: removewatchlist_num {sql:removewatchlist*(num);;}
+#       derived_column: view_num {sql:view*(num);;}
+#       derived_column: one_week_view_num {sql:one_week_view*num;;}
+#       derived_column: two_week_view_num {sql:two_week_view*num;;}
+#       derived_column: three_week_view_num {sql:three_week_view*num;;}
+#       derived_column: four_week_view_num {sql:four_week_view*num;;}
+#       derived_column: one_week_duration_num {sql:one_week_duration*num;;}
+#       derived_column: two_week_duration_num {sql:two_week_duration*num;;}
+#       derived_column: three_week_duration_num {sql:three_week_duration*num;;}
+#       derived_column: four_week_duration_num {sql:four_week_duration*num;;}
 
-      expression_custom_filter:  ${bigquery_churn_model.end_date_date}>now();;
+      expression_custom_filter: ${bigquery_churn_model.end_date2}>now();;
     }
   }
   dimension: customer_id {
@@ -380,25 +395,28 @@ view: churn_future_input {
   dimension: state {type:string}
   dimension: addwatchlist {type:number}
   dimension: bates_duration {type:number}
-  dimension: bates_plays {type:number}
+#   dimension: bates_plays {type:number}
   dimension: churn_status {type:number}
   dimension: error {type:number}
   dimension: heartland_duration {type:number}
-  dimension: heartland_plays {type:number}
+#   dimension: heartland_plays {type:number}
   dimension: other_duration {type:number}
-  dimension: other_plays {type:number}
+#   dimension: other_plays {type:number}
   dimension: platform {type:string}
   dimension: removewatchlist {type:number}
   dimension: view {type:number}
   dimension: month_day{type:number}
-  dimension: one_week_view {type:number}
-  dimension: two_week_view {type:number}
-  dimension: three_week_view {type:number}
-  dimension: four_week_view {type:number}
+#   dimension: one_week_view {type:number}
+#   dimension: two_week_view {type:number}
+#   dimension: three_week_view {type:number}
+#   dimension: four_week_view {type:number}
   dimension: one_week_duration {type:number}
   dimension: two_week_duration {type:number}
   dimension: three_week_duration {type:number}
   dimension: four_week_duration {type:number}
+  dimension: set_cancel {type:number}
+  dimension: undo_cancel {type:number}
+  dimension: charge_failed {type:number}
 
 }
 
@@ -406,7 +424,7 @@ view: churn_prediction {
   derived_table: {
     sql: SELECT * FROM ml.PREDICT(
           MODEL ${churn_model.SQL_TABLE_NAME},
-          (SELECT * FROM ${churn_future_input.SQL_TABLE_NAME}),struct(0.16 as threshold));;
+          (SELECT * FROM ${churn_future_input.SQL_TABLE_NAME}),struct(0.17 as threshold));;
   }
 
   dimension: customer_id {

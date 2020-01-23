@@ -8,25 +8,35 @@ view: bigquery_churn_model {
  where ((topic='customer.product.renewed' or status='renewed') and date(created_at)>'2018-10-31') or (topic='customer.product.created' and date_diff(date(status_date),date(created_at),day)>14 and date(created_at)>'2018-10-31')
  group by 1),
 
+e1 as
+(select user_id,
+       status_date,
+       case when topic='customer.product.set_cancellation' then 1 else 0 end as set_cancel,
+       case when topic='customer.product.undo_set_paused' then 1 else 0 end as undo_cancel,
+       case when topic='customer.product.charge_failed' then 1 else 0 end as charge_failed
+from http_api.purchase_event),
+
 e as
-(select b.user_id,
+(select distinct b.user_id,
        created_at,
        conversion_date,
-       status_date,
+       b.status_date,
        email,
        topic,
        region,
        platform,
-       date(status_date) as start_date,
-       date_add(date(status_date), interval 30 day) as end_date,
-       extract(day from date(status_date)) as month_day,
-       date_diff(date(status_date),(conversion_date),month) as num,
+       date(b.status_date) as end_date,
+       date_sub(date(b.status_date), interval 30 day) as start_date,
+       date(b.status_date) as start_date2,
+       date_add(date(b.status_date), interval 30 day) as end_date2,
+       extract(day from date(b.status_date)) as month_day,
+       date_diff(date(b.status_date),(conversion_date),month) as num,
        case when moptin=true then 1 else 0 end as marketing_optin,
        case when topic = "customer.product.renewed" or status="renewed" then 0 else 1 end as churn_status
 from http_api.purchase_event as b inner join a on a.user_id=b.user_id
 where (topic in ('customer.product.expired','customer.product.disabled','customer.product.cancelled','customer.product.renewed'))
 and (country='United States' or country is null)
-and (conversion_date)<=date(status_date)),
+and (conversion_date)<=date(b.status_date)),
 
 
       awl as
@@ -181,16 +191,16 @@ and (conversion_date)<=date(status_date)),
 
             SELECT web.user_id,
                    (timestamp) as timestamp,
-                   (case when content="Other" then 1 else 0 end) as other_plays,
-                   (case when content="Bringing Up Bates" then 1 else 0 end) as bates_plays,
-                   (case when content="Heartland" then 1 else 0 end) as heartland_plays,
+--                    (case when content="Other" then 1 else 0 end) as other_plays,
+--                    (case when content="Bringing Up Bates" then 1 else 0 end) as bates_plays,
+--                    (case when content="Heartland" then 1 else 0 end) as heartland_plays,
                    (case when content="Other" then duration else 0 end) as other_duration,
                    (case when content="Bringing Up Bates" then duration else 0 end) as bates_duration,
                    (case when content="Heartland" then duration else 0 end) as heartland_duration,
-                   (case when date(timestamp) between date_sub(end_date,interval 7 day) and end_date then 1 else 0 end) as one_week_view,
-                   (case when date(timestamp) between date_sub(end_date,interval 14 day) and date_sub(end_date,interval 8 day) then 1 else 0 end) as two_week_view,
-                   (case when date(timestamp) between date_sub(end_date,interval 21 day) and date_sub(end_date,interval 15 day) then 1 else 0 end) as three_week_view,
-                   (case when date(timestamp) > date_sub(end_date,interval 21 day) then 1 else 0 end) as four_week_view,
+--                    (case when date(timestamp) between date_sub(end_date,interval 7 day) and end_date then 1 else 0 end) as one_week_view,
+--                    (case when date(timestamp) between date_sub(end_date,interval 14 day) and date_sub(end_date,interval 8 day) then 1 else 0 end) as two_week_view,
+--                    (case when date(timestamp) between date_sub(end_date,interval 21 day) and date_sub(end_date,interval 15 day) then 1 else 0 end) as three_week_view,
+--                    (case when date(timestamp) > date_sub(end_date,interval 21 day) then 1 else 0 end) as four_week_view,
                    (case when date(timestamp) between date_sub(end_date,interval 7 day) and end_date then duration else 0 end) as one_week_duration,
                    (case when date(timestamp) between date_sub(end_date,interval 14 day) and date_sub(end_date,interval 8 day) then duration else 0 end) as two_week_duration,
                    (case when date(timestamp) between date_sub(end_date,interval 21 day) and date_sub(end_date,interval 15 day) then duration else 0 end) as three_week_duration,
@@ -199,16 +209,16 @@ and (conversion_date)<=date(status_date)),
             UNION ALL
             SELECT droid.user_id,
                    (timestamp) as timestamp,
-                   (case when content="Other" then 1 else 0 end) as other_plays,
-                   (case when content="Bringing Up Bates" then 1 else 0 end) as bates_plays,
-                   (case when content="Heartland" then 1 else 0 end) as heartland_plays,
+--                    (case when content="Other" then 1 else 0 end) as other_plays,
+--                    (case when content="Bringing Up Bates" then 1 else 0 end) as bates_plays,
+--                    (case when content="Heartland" then 1 else 0 end) as heartland_plays,
                    (case when content="Other" then duration else 0 end) as other_duration,
                    (case when content="Bringing Up Bates" then duration else 0 end) as bates_duration,
                    (case when content="Heartland" then duration else 0 end) as heartland_duration,
-                   (case when date(timestamp) between date_sub(end_date,interval 7 day) and end_date then 1 else 0 end) as one_week_view,
-                   (case when date(timestamp) between date_sub(end_date,interval 14 day) and date_sub(end_date,interval 8 day) then 1 else 0 end) as two_week_view,
-                   (case when date(timestamp) between date_sub(end_date,interval 21 day) and date_sub(end_date,interval 15 day) then 1 else 0 end) as three_week_view,
-                   (case when date(timestamp) > date_sub(end_date,interval 21 day) then 1 else 0 end) as four_week_view,
+--                    (case when date(timestamp) between date_sub(end_date,interval 7 day) and end_date then 1 else 0 end) as one_week_view,
+--                    (case when date(timestamp) between date_sub(end_date,interval 14 day) and date_sub(end_date,interval 8 day) then 1 else 0 end) as two_week_view,
+--                    (case when date(timestamp) between date_sub(end_date,interval 21 day) and date_sub(end_date,interval 15 day) then 1 else 0 end) as three_week_view,
+--                    (case when date(timestamp) > date_sub(end_date,interval 21 day) then 1 else 0 end) as four_week_view,
                    (case when date(timestamp) between date_sub(end_date,interval 7 day) and end_date then duration else 0 end) as one_week_duration,
                    (case when date(timestamp) between date_sub(end_date,interval 14 day) and date_sub(end_date,interval 8 day) then duration else 0 end) as two_week_duration,
                    (case when date(timestamp) between date_sub(end_date,interval 21 day) and date_sub(end_date,interval 15 day) then duration else 0 end) as three_week_duration,
@@ -217,16 +227,16 @@ and (conversion_date)<=date(status_date)),
             UNION ALL
             SELECT e.user_id,
                    (timestamp) as timestamp,
-                   (case when content="Other" then 1 else 0 end) as other_plays,
-                   (case when content="Bringing Up Bates" then 1 else 0 end) as bates_plays,
-                   (case when content="Heartland" then 1 else 0 end) as heartland_plays,
+--                    (case when content="Other" then 1 else 0 end) as other_plays,
+--                    (case when content="Bringing Up Bates" then 1 else 0 end) as bates_plays,
+--                    (case when content="Heartland" then 1 else 0 end) as heartland_plays,
                    (case when content="Other" then duration else 0 end) as other_duration,
                    (case when content="Bringing Up Bates" then duration else 0 end) as bates_duration,
                    (case when content="Heartland" then duration else 0 end) as heartland_duration,
-                   (case when date(timestamp) between date_sub(end_date,interval 7 day) and end_date then 1 else 0 end) as one_week_view,
-                   (case when date(timestamp) between date_sub(end_date,interval 14 day) and date_sub(end_date,interval 8 day) then 1 else 0 end) as two_week_view,
-                   (case when date(timestamp) between date_sub(end_date,interval 21 day) and date_sub(end_date,interval 15 day) then 1 else 0 end) as three_week_view,
-                   (case when date(timestamp) > date_sub(end_date,interval 21 day) then 1 else 0 end) as four_week_view,
+--                    (case when date(timestamp) between date_sub(end_date,interval 7 day) and end_date then 1 else 0 end) as one_week_view,
+--                    (case when date(timestamp) between date_sub(end_date,interval 14 day) and date_sub(end_date,interval 8 day) then 1 else 0 end) as two_week_view,
+--                    (case when date(timestamp) between date_sub(end_date,interval 21 day) and date_sub(end_date,interval 15 day) then 1 else 0 end) as three_week_view,
+--                    (case when date(timestamp) > date_sub(end_date,interval 21 day) then 1 else 0 end) as four_week_view,
                    (case when date(timestamp) between date_sub(end_date,interval 7 day) and end_date then duration else 0 end) as one_week_duration,
                    (case when date(timestamp) between date_sub(end_date,interval 14 day) and date_sub(end_date,interval 8 day) then duration else 0 end) as two_week_duration,
                    (case when date(timestamp) between date_sub(end_date,interval 21 day) and date_sub(end_date,interval 15 day) then duration else 0 end) as three_week_duration,
@@ -235,16 +245,16 @@ and (conversion_date)<=date(status_date)),
             union all
             SELECT e.user_id,
                    (timestamp) as timestamp,
-                   (case when content="Other" then 1 else 0 end) as other_plays,
-                   (case when content="Bringing Up Bates" then 1 else 0 end) as bates_plays,
-                   (case when content="Heartland" then 1 else 0 end) as heartland_plays,
+--                    (case when content="Other" then 1 else 0 end) as other_plays,
+--                    (case when content="Bringing Up Bates" then 1 else 0 end) as bates_plays,
+--                    (case when content="Heartland" then 1 else 0 end) as heartland_plays,
                    (case when content="Other" then duration else 0 end) as other_duration,
                    (case when content="Bringing Up Bates" then duration else 0 end) as bates_duration,
                    (case when content="Heartland" then duration else 0 end) as heartland_duration,
-                   (case when date(timestamp) between date_sub(end_date,interval 7 day) and end_date then 1 else 0 end) as one_week_view,
-                   (case when date(timestamp) between date_sub(end_date,interval 14 day) and date_sub(end_date,interval 8 day) then 1 else 0 end) as two_week_view,
-                   (case when date(timestamp) between date_sub(end_date,interval 21 day) and date_sub(end_date,interval 15 day) then 1 else 0 end) as three_week_view,
-                   (case when date(timestamp) > date_sub(end_date,interval 21 day) then 1 else 0 end) as four_week_view,
+--                    (case when date(timestamp) between date_sub(end_date,interval 7 day) and end_date then 1 else 0 end) as one_week_view,
+--                    (case when date(timestamp) between date_sub(end_date,interval 14 day) and date_sub(end_date,interval 8 day) then 1 else 0 end) as two_week_view,
+--                    (case when date(timestamp) between date_sub(end_date,interval 21 day) and date_sub(end_date,interval 15 day) then 1 else 0 end) as three_week_view,
+--                    (case when date(timestamp) > date_sub(end_date,interval 21 day) then 1 else 0 end) as four_week_view,
                    (case when date(timestamp) between date_sub(end_date,interval 7 day) and end_date then duration else 0 end) as one_week_duration,
                    (case when date(timestamp) between date_sub(end_date,interval 14 day) and date_sub(end_date,interval 8 day) then duration else 0 end) as two_week_duration,
                    (case when date(timestamp) between date_sub(end_date,interval 21 day) and date_sub(end_date,interval 15 day) then duration else 0 end) as three_week_duration,
@@ -254,16 +264,16 @@ and (conversion_date)<=date(status_date)),
       k as
       (select e.user_id,
               num,
-              case when bates_plays is null then 0 else bates_plays end as bates_plays,
-              case when heartland_plays is null then 0 else heartland_plays end as heartland_plays,
-              case when other_plays is null then 0 else other_plays end as other_plays,
+--               case when bates_plays is null then 0 else bates_plays end as bates_plays,
+--               case when heartland_plays is null then 0 else heartland_plays end as heartland_plays,
+--               case when other_plays is null then 0 else other_plays end as other_plays,
               case when bates_duration is null then 0 else bates_duration end as bates_duration,
               case when heartland_duration is null then 0 else heartland_duration end as heartland_duration,
               case when other_duration is null then 0 else other_duration end as other_duration,
-              case when one_week_view is null then 0 else one_week_view end as one_week_view,
-              case when two_week_view is null then 0 else two_week_view end as two_week_view,
-              case when three_week_view is null then 0 else three_week_view end as three_week_view,
-              case when four_week_view is null then 0 else four_week_view end as four_week_view,
+--               case when one_week_view is null then 0 else one_week_view end as one_week_view,
+--               case when two_week_view is null then 0 else two_week_view end as two_week_view,
+--               case when three_week_view is null then 0 else three_week_view end as three_week_view,
+--               case when four_week_view is null then 0 else four_week_view end as four_week_view,
               case when one_week_duration is null then 0 else one_week_duration end as one_week_duration,
               case when two_week_duration is null then 0 else two_week_duration end as two_week_duration,
               case when three_week_duration is null then 0 else three_week_duration end as three_week_duration,
@@ -273,16 +283,16 @@ and (conversion_date)<=date(status_date)),
       fp1 as
       (select user_id,
              num,
-             sum(bates_plays) as bates_plays,
-             sum(heartland_plays) as heartland_plays,
-             sum(other_plays) as other_plays,
+--              sum(bates_plays) as bates_plays,
+--              sum(heartland_plays) as heartland_plays,
+--              sum(other_plays) as other_plays,
              sum(bates_duration) as bates_duration,
              sum(heartland_duration) as heartland_duration,
              sum(other_duration) as other_duration,
-             sum(one_week_view) as one_week_view,
-             sum(two_week_view) as two_week_view,
-             sum(three_week_view) as three_week_view,
-             sum(four_week_view) as four_week_view,
+--              sum(one_week_view) as one_week_view,
+--              sum(two_week_view) as two_week_view,
+--              sum(three_week_view) as three_week_view,
+--              sum(four_week_view) as four_week_view,
              sum(one_week_duration) as one_week_duration,
              sum(two_week_duration) as two_week_duration,
              sum(three_week_duration) as three_week_duration,
@@ -290,6 +300,14 @@ and (conversion_date)<=date(status_date)),
       from k
       group by 1,2),
 
+m0 as
+(select e1.user_id,
+        date_diff(date(e1.status_date),(conversion_date),month) as num,
+        sum(set_cancel) as set_cancel,
+        sum(undo_cancel) as undo_cancel,
+        sum(charge_failed) as charge_failed
+ from e1 inner join a on a.user_id=e1.user_id
+ group by 1,2),
 
 
 m as
@@ -298,26 +316,30 @@ m as
              error,
              removewatchlist,
              view,
-             bates_plays,
+--              bates_plays,
              bates_duration,
-             heartland_plays,
+--              heartland_plays,
              heartland_duration,
-             other_plays,
+--              other_plays,
              other_duration,
-             one_week_view,
-             two_week_view,
-             three_week_view,
-             four_week_view,
+--              one_week_view,
+--              two_week_view,
+--              three_week_view,
+--              four_week_view,
              one_week_duration,
              two_week_duration,
              three_week_duration,
              four_week_duration,
+             m0.set_cancel,
+             m0.undo_cancel,
+             m0.charge_failed,
              1 as code
       from e left join awl1 on e.user_id=awl1.user_id and e.num=awl1.num
              left join error1 on e.user_id=error1.user_id and e.num=error1.num
              left join rwl1 on e.user_id=rwl1.user_id and e.num=rwl1.num
              left join view1 on e.user_id=view1.user_id and e.num=view1.num
              left join fp1 on e.user_id=fp1.user_id and e.num=fp1.num
+             left join m0 on e.user_id=m0.user_id and e.num=m0.num
       where e.user_id <>'0'),
 
 n as
@@ -326,24 +348,24 @@ n as
        min(error) as error_min,
        min(removewatchlist) as rwl_min,
        min(view) as view_min,
-       min(bates_plays) as bp_min,
+--        min(bates_plays) as bp_min,
        min(bates_duration) as bd_min,
-       min(heartland_plays) as hlp_min,
+--        min(heartland_plays) as hlp_min,
        min(heartland_duration) as hld_min,
-       min(other_plays) as op_min,
+--        min(other_plays) as op_min,
        min(other_duration) as od_min,
-       min(one_week_view) as owv_min,
-       min(two_week_view) as twv_min,
-       min(three_week_view) as thwv_min,
-       min(four_week_view) as fwv_min,
+--        min(one_week_view) as owv_min,
+--        min(two_week_view) as twv_min,
+--        min(three_week_view) as thwv_min,
+--        min(four_week_view) as fwv_min,
        min(one_week_duration) as owd_min,
        min(two_week_duration) as twd_min,
        min(three_week_duration) as thwd_min,
        min(four_week_duration) as fwd_min,
-       max(one_week_view) as owv_max,
-       max(two_week_view) as twv_max,
-       max(three_week_view) as thwv_max,
-       max(four_week_view) as fwv_max,
+--        max(one_week_view) as owv_max,
+--        max(two_week_view) as twv_max,
+--        max(three_week_view) as thwv_max,
+--        max(four_week_view) as fwv_max,
        max(one_week_duration) as owd_max,
        max(two_week_duration) as twd_max,
        max(three_week_duration) as thwd_max,
@@ -352,11 +374,11 @@ n as
        max(error) as error_max,
        max(removewatchlist) as rwl_max,
        max(view) as view_max,
-       max(bates_plays) as bp_max,
+--        max(bates_plays) as bp_max,
        max(bates_duration) as bd_max,
-       max(heartland_plays) as hlp_max,
+--        max(heartland_plays) as hlp_max,
        max(heartland_duration) as hld_max,
-       max(other_plays) as op_max,
+--        max(other_plays) as op_max,
        max(other_duration) as od_max
 from m
 where num<12 and num>=0
@@ -374,17 +396,19 @@ select m.user_id,
        region as state,
        churn_status,
        end_date,
+       start_date,
+       end_date2,
+       start_date2,
        platform,
        email,
        created_at,
        topic as status,
        marketing_optin,
        month_day/31 as month_day,
-       rand() as random,
-       (one_week_view-owv_min)/(owv_max-owv_min) as one_week_view,
-       (two_week_view-twv_min)/(twv_max-twv_min) as two_week_view,
-       (three_week_view-thwv_min)/(thwv_max-thwv_min) as three_week_view,
-       (four_week_view-fwv_min)/(fwv_max-fwv_min) as four_week_view,
+--        (one_week_view-owv_min)/(owv_max-owv_min) as one_week_view,
+--        (two_week_view-twv_min)/(twv_max-twv_min) as two_week_view,
+--        (three_week_view-thwv_min)/(thwv_max-thwv_min) as three_week_view,
+--        (four_week_view-fwv_min)/(fwv_max-fwv_min) as four_week_view,
        (one_week_duration-owd_min)/(owd_max-owd_min) as one_week_duration,
        (two_week_duration-twd_min)/(twd_max-twd_min) as two_week_duration,
        (three_week_duration-thwd_min)/(thwd_max-thwd_min) as three_week_duration,
@@ -393,29 +417,58 @@ select m.user_id,
        (error-error_min)/(error_max-error_min) as error,
        (removewatchlist-rwl_min)/(rwl_max-rwl_min) as removewatchlist,
        (view-view_min)/(view_max-view_min) as view,
-       (bates_plays-bp_min)/(bp_max-bp_min) as bates_plays,
+--        (bates_plays-bp_min)/(bp_max-bp_min) as bates_plays,
        (bates_duration-bd_min)/(bd_max-bd_min) as bates_duration,
-       (heartland_plays-hlp_min)/(hlp_max-hlp_min) as heartland_plays,
+--        (heartland_plays-hlp_min)/(hlp_max-hlp_min) as heartland_plays,
        (heartland_duration-hld_min)/(hld_max-hld_min) as heartland_duration,
-       (other_plays-op_min)/(op_max-op_min) as other_plays,
-       (other_duration-od_min)/(od_max-od_min) as other_duration
+--        (other_plays-op_min)/(op_max-op_min) as other_plays,
+       (other_duration-od_min)/(od_max-od_min) as other_duration,
+       rand() as random,
+       set_cancel,
+       undo_cancel,
+       charge_failed
 from m left join n on m.num=n.num inner join num1 on m.code=num1.code
 where
 awl_min<>awl_max and
 error_min<>error_max and
 rwl_min<>rwl_max and
 view_min<>view_max and
-bp_min<>bp_max and
+-- bp_min<>bp_max and
 bd_min<>bd_max and
-hlp_min<>hlp_max and
+-- hlp_min<>hlp_max and
 hld_min<>hld_max and
-op_min<>op_max and
+-- op_min<>op_max and
 od_min<>od_max) ;;
   }
 
   measure: count {
     type: count
     drill_fields: [detail*]
+  }
+
+  dimension: set_cancel {
+    type: number
+    sql: ${TABLE}.set_cancel ;;
+  }
+
+  dimension: undo_cancel {
+    type: number
+    sql: ${TABLE}.undo_cancel ;;
+  }
+
+  dimension: charge_failed {
+    type: number
+    sql: ${TABLE}.charge_failed ;;
+  }
+
+  dimension: start_date2 {
+    type: date
+    sql: ${TABLE}.start_date2 ;;
+  }
+
+  dimension: end_date2 {
+    type: date
+    sql: ${TABLE}.end_date2 ;;
   }
 
   dimension: one_week_view {

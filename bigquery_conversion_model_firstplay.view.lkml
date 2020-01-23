@@ -1,7 +1,7 @@
 view: bigquery_conversion_model_firstplay {
   derived_table: {
     sql:
-     WITH
+ WITH
       a AS (
       SELECT
         distinct id AS video_id,
@@ -13,53 +13,70 @@ view: bigquery_conversion_model_firstplay {
       FROM
         svod_titles.titles_id_mapping),
 
-      web AS (
-      SELECT
-        user_id,
-        'web' AS source,
-        timestamp,
-        CASE
-          WHEN upper(title) LIKE '%HEARTLAND%' THEN 'Heartland'
-          WHEN upper(title) LIKE '%BRINGING UP BATES%' THEN 'Bringing Up Bates'
-          ELSE 'Other'
-        END AS content
-      FROM
-        javascript.firstplay
-      WHERE
-        user_id IS NOT NULL),
+       web AS (
+            SELECT
+              user_id,
+              'web' AS source,
+              timestamp,
+              content,
+              max(timecode) as duration
+            FROM
+              javascript.video_playback_started inner join a on video_playback_started.video_id=a.video_id
+              group by 1,2,3,4),
 
-      droid AS (
-      SELECT
-        user_id,
-        'android' AS source,
-        timestamp,
-        content
-      FROM
-        android.firstplay
-      INNER JOIN
-        a
-      ON
-        firstplay.video_id=a.video_id),
+            droid AS (
+            SELECT
+              user_id,
+              'android' AS source,
+              timestamp,
+              content,
+              max(timecode) as duration
+            FROM
+              android.video_playback_started
+            INNER JOIN
+              a
+            ON
+              video_playback_started.video_id=a.video_id
+              group by 1,2,3,4),
 
-      apple AS (
-      SELECT
-        user_id,
-        'ios' AS source,
-        timestamp,
-        content
-      FROM
-        ios.firstplay
-      INNER JOIN
-        a
-      ON
-        SAFE_CAST(firstplay.video_id AS int64)=SAFE_CAST(a.video_id AS int64)),
+            roku AS (
+            SELECT
+             user_id,
+              'roku' AS source,
+              timestamp,
+              content,
+              max(timecode) as duration
+            FROM
+              roku.video_playback_started
+            INNER JOIN
+              a
+            ON
+              video_playback_started.video_id=a.video_id
+              group by 1,2,3,4),
+
+            apple AS (
+            SELECT
+              user_id,
+              'ios' AS source,
+              timestamp,
+              content,
+              max(timecode) as duration
+            FROM
+              ios.video_playback_started
+            INNER JOIN
+              a
+            ON
+              SAFE_CAST(video_playback_started.video_id AS int64)=SAFE_CAST(a.video_id AS int64)
+              group by 1,2,3,4),
 
       b AS (
       SELECT * FROM web
       UNION ALL
       SELECT * FROM droid
       UNION ALL
-      SELECT * FROM apple),
+      SELECT * FROM apple
+      UNION ALL
+      SELECT * FROM roku),
 
 purchase_event as
 (with
@@ -123,19 +140,25 @@ where topic in ('customer.product.free_trial_created','customer.product.created'
     web_days as
     (select distinct a.user_id,
                     date(a.timestamp) as timestamp
-    from javascript.firstplay as a right join purchase_event as b on a.user_id=b.user_id
+    from javascript.video_playback_started as a right join purchase_event as b on a.user_id=b.user_id
     where date(a.timestamp)>=date(created_at) and date(a.timestamp)<=date_add(date(created_at), interval 14 day)),
 
     android_days as
     (select distinct a.user_id,
                     date(a.timestamp) as timestamp
-    from android.firstplay as a right join purchase_event as b on a.user_id=b.user_id
+    from android.video_playback_started as a right join purchase_event as b on a.user_id=b.user_id
     where date(a.timestamp)>=date(created_at) and date(a.timestamp)<=date_add(date(created_at), interval 14 day)),
 
     ios_days as
     (select distinct a.user_id,
                     date(a.timestamp) as timestamp
-    from ios.firstplay as a right join purchase_event as b on a.user_id=b.user_id
+    from ios.video_playback_started  as a right join purchase_event as b on a.user_id=b.user_id
+    where date(a.timestamp)>=date(created_at) and date(a.timestamp)<=date_add(date(created_at), interval 14 day)),
+
+    roku_days as
+    (select distinct a.user_id,
+                    date(a.timestamp) as timestamp
+    from roku.video_playback_started  as a right join purchase_event as b on a.user_id=b.user_id
     where date(a.timestamp)>=date(created_at) and date(a.timestamp)<=date_add(date(created_at), interval 14 day)),
 
     all_days as
@@ -143,7 +166,9 @@ where topic in ('customer.product.free_trial_created','customer.product.created'
     union all
     select * from android_days
     union all
-    select * from ios_days),
+    select * from ios_days
+    union all
+    select * from roku_days),
 
     e as
     (select distinct user_id,

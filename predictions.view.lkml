@@ -10,7 +10,7 @@ view: training_input {
     explore_source: bigquery_subscribers_v2 {
       column: day_of_week {}
       column: customer_created_at_day {}
-      column: days_played {field: bigquery_conversion_model_firstplay.days_played}
+#       column: days_played {field: bigquery_conversion_model_firstplay.days_played}
       column: user_id {}
       column: state {}
       column: get_status {}
@@ -30,18 +30,18 @@ view: training_input {
 #       derived_column: bates {sql:bates_play*bates_duration;;}
 #       derived_column: heartland {sql:heartland_play*heartland_duration;;}
 #       derived_column: other {sql: other_play*other_duration;;}
-      column: bates_play_day_1 { field: bigquery_conversion_model_firstplay.bates_play_day_1 }
-      column: bates_play_day_2 { field: bigquery_conversion_model_firstplay.bates_play_day_2 }
-      column: bates_play_day_3 { field: bigquery_conversion_model_firstplay.bates_play_day_3 }
-      column: bates_play_day_4 { field: bigquery_conversion_model_firstplay.bates_play_day_4 }
-      column: heartland_play_day_1 { field: bigquery_conversion_model_firstplay.heartland_play_day_1 }
-      column: heartland_play_day_2 { field: bigquery_conversion_model_firstplay.heartland_play_day_2 }
-      column: heartland_play_day_3 { field: bigquery_conversion_model_firstplay.heartland_play_day_3 }
-      column: heartland_play_day_4 { field: bigquery_conversion_model_firstplay.heartland_play_day_4 }
-      column: other_play_day_1 { field: bigquery_conversion_model_firstplay.other_play_day_1 }
-      column: other_play_day_2 { field: bigquery_conversion_model_firstplay.other_play_day_2 }
-      column: other_play_day_3 { field: bigquery_conversion_model_firstplay.other_play_day_3 }
-      column: other_play_day_4 { field: bigquery_conversion_model_firstplay.other_play_day_4 }
+#       column: bates_play_day_1 { field: bigquery_conversion_model_firstplay.bates_play_day_1 }
+#       column: bates_play_day_2 { field: bigquery_conversion_model_firstplay.bates_play_day_2 }
+#       column: bates_play_day_3 { field: bigquery_conversion_model_firstplay.bates_play_day_3 }
+#       column: bates_play_day_4 { field: bigquery_conversion_model_firstplay.bates_play_day_4 }
+#       column: heartland_play_day_1 { field: bigquery_conversion_model_firstplay.heartland_play_day_1 }
+#       column: heartland_play_day_2 { field: bigquery_conversion_model_firstplay.heartland_play_day_2 }
+#       column: heartland_play_day_3 { field: bigquery_conversion_model_firstplay.heartland_play_day_3 }
+#       column: heartland_play_day_4 { field: bigquery_conversion_model_firstplay.heartland_play_day_4 }
+#       column: other_play_day_1 { field: bigquery_conversion_model_firstplay.other_play_day_1 }
+#       column: other_play_day_2 { field: bigquery_conversion_model_firstplay.other_play_day_2 }
+#       column: other_play_day_3 { field: bigquery_conversion_model_firstplay.other_play_day_3 }
+#       column: other_play_day_4 { field: bigquery_conversion_model_firstplay.other_play_day_4 }
       column: bates_duration_day_1 { field: bigquery_conversion_model_timeupdate.bates_duration_day_1 }
       column: bates_duration_day_2 { field: bigquery_conversion_model_timeupdate.bates_duration_day_2 }
       column: bates_duration_day_3 { field: bigquery_conversion_model_timeupdate.bates_duration_day_3 }
@@ -68,7 +68,7 @@ view: training_input {
 #       derived_column: other_day_4 {sql: other_play_day_4*other_duration_day_4;;}
 
 
-      expression_custom_filter: ${bigquery_subscribers_v2.customer_created_date}<=add_days(-43,now()) AND ${bigquery_subscribers_v2.customer_created_date}>=date(2018,12,14);;
+      expression_custom_filter:${bigquery_subscribers_v2.random}>=0.7 AND ${bigquery_subscribers_v2.customer_created_date}<add_days(-14,now()) AND ${bigquery_subscribers_v2.customer_created_date}>=add_days(-45,now()) ;;
     }
   }
 
@@ -82,7 +82,7 @@ view: testing_input {
     explore_source: bigquery_subscribers_v2 {
       column: day_of_week {}
       column: customer_created_at_day {}
-      column: days_played {field: bigquery_conversion_model_firstplay.days_played}
+#       column: days_played {field: bigquery_conversion_model_firstplay.days_played}
       column: user_id {}
       column: state {}
       column: get_status {}
@@ -101,18 +101,18 @@ view: testing_input {
 #       derived_column: bates {sql:bates_play*bates_duration;;}
 #       derived_column: heartland {sql:heartland_play*heartland_duration;;}
 #       derived_column: other {sql: other_play*other_duration;;}
-      column: bates_play_day_1 { field: bigquery_conversion_model_firstplay.bates_play_day_1 }
-      column: bates_play_day_2 { field: bigquery_conversion_model_firstplay.bates_play_day_2 }
-      column: bates_play_day_3 { field: bigquery_conversion_model_firstplay.bates_play_day_3 }
-      column: bates_play_day_4 { field: bigquery_conversion_model_firstplay.bates_play_day_4 }
-      column: heartland_play_day_1 { field: bigquery_conversion_model_firstplay.heartland_play_day_1 }
-      column: heartland_play_day_2 { field: bigquery_conversion_model_firstplay.heartland_play_day_2 }
-      column: heartland_play_day_3 { field: bigquery_conversion_model_firstplay.heartland_play_day_3 }
-      column: heartland_play_day_4 { field: bigquery_conversion_model_firstplay.heartland_play_day_4 }
-      column: other_play_day_1 { field: bigquery_conversion_model_firstplay.other_play_day_1 }
-      column: other_play_day_2 { field: bigquery_conversion_model_firstplay.other_play_day_2 }
-      column: other_play_day_3 { field: bigquery_conversion_model_firstplay.other_play_day_3 }
-      column: other_play_day_4 { field: bigquery_conversion_model_firstplay.other_play_day_4 }
+#       column: bates_play_day_1 { field: bigquery_conversion_model_firstplay.bates_play_day_1 }
+#       column: bates_play_day_2 { field: bigquery_conversion_model_firstplay.bates_play_day_2 }
+#       column: bates_play_day_3 { field: bigquery_conversion_model_firstplay.bates_play_day_3 }
+#       column: bates_play_day_4 { field: bigquery_conversion_model_firstplay.bates_play_day_4 }
+#       column: heartland_play_day_1 { field: bigquery_conversion_model_firstplay.heartland_play_day_1 }
+#       column: heartland_play_day_2 { field: bigquery_conversion_model_firstplay.heartland_play_day_2 }
+#       column: heartland_play_day_3 { field: bigquery_conversion_model_firstplay.heartland_play_day_3 }
+#       column: heartland_play_day_4 { field: bigquery_conversion_model_firstplay.heartland_play_day_4 }
+#       column: other_play_day_1 { field: bigquery_conversion_model_firstplay.other_play_day_1 }
+#       column: other_play_day_2 { field: bigquery_conversion_model_firstplay.other_play_day_2 }
+#       column: other_play_day_3 { field: bigquery_conversion_model_firstplay.other_play_day_3 }
+#       column: other_play_day_4 { field: bigquery_conversion_model_firstplay.other_play_day_4 }
       column: bates_duration_day_1 { field: bigquery_conversion_model_timeupdate.bates_duration_day_1 }
       column: bates_duration_day_2 { field: bigquery_conversion_model_timeupdate.bates_duration_day_2 }
       column: bates_duration_day_3 { field: bigquery_conversion_model_timeupdate.bates_duration_day_3 }
@@ -138,7 +138,7 @@ view: testing_input {
 #       derived_column: other_day_3 {sql: other_play_day_3*other_duration_day_3;;}
 #       derived_column: other_day_4 {sql: other_play_day_4*other_duration_day_4;;}
 
-      expression_custom_filter: ${bigquery_subscribers_v2.customer_created_date}<add_days(-15,now()) AND ${bigquery_subscribers_v2.customer_created_date}>add_days(-43,now());;
+      expression_custom_filter: ${bigquery_subscribers_v2.random}<0.7 AND  ${bigquery_subscribers_v2.customer_created_date}<add_days(-14,now()) AND ${bigquery_subscribers_v2.customer_created_date}>=add_days(-45,now());;
     }
   }
 
@@ -298,7 +298,7 @@ view: future_input {
   explore_source: bigquery_subscribers_v2 {
     column: day_of_week {}
     column: customer_created_at_day {}
-    column: days_played {field: bigquery_conversion_model_firstplay.days_played}
+#     column: days_played {field: bigquery_conversion_model_firstplay.days_played}
     column: user_id {}
     column: email {}
     column: moptin {}
@@ -319,18 +319,18 @@ view: future_input {
 #       derived_column: bates {sql:bates_play*bates_duration;;}
 #       derived_column: heartland {sql:heartland_play*heartland_duration;;}
 #       derived_column: other {sql: other_play*other_duration;;}
-    column: bates_play_day_1 { field: bigquery_conversion_model_firstplay.bates_play_day_1 }
-    column: bates_play_day_2 { field: bigquery_conversion_model_firstplay.bates_play_day_2 }
-    column: bates_play_day_3 { field: bigquery_conversion_model_firstplay.bates_play_day_3 }
-    column: bates_play_day_4 { field: bigquery_conversion_model_firstplay.bates_play_day_4 }
-    column: heartland_play_day_1 { field: bigquery_conversion_model_firstplay.heartland_play_day_1 }
-    column: heartland_play_day_2 { field: bigquery_conversion_model_firstplay.heartland_play_day_2 }
-    column: heartland_play_day_3 { field: bigquery_conversion_model_firstplay.heartland_play_day_3 }
-    column: heartland_play_day_4 { field: bigquery_conversion_model_firstplay.heartland_play_day_4 }
-    column: other_play_day_1 { field: bigquery_conversion_model_firstplay.other_play_day_1 }
-    column: other_play_day_2 { field: bigquery_conversion_model_firstplay.other_play_day_2 }
-    column: other_play_day_3 { field: bigquery_conversion_model_firstplay.other_play_day_3 }
-    column: other_play_day_4 { field: bigquery_conversion_model_firstplay.other_play_day_4 }
+#     column: bates_play_day_1 { field: bigquery_conversion_model_firstplay.bates_play_day_1 }
+#     column: bates_play_day_2 { field: bigquery_conversion_model_firstplay.bates_play_day_2 }
+#     column: bates_play_day_3 { field: bigquery_conversion_model_firstplay.bates_play_day_3 }
+#     column: bates_play_day_4 { field: bigquery_conversion_model_firstplay.bates_play_day_4 }
+#     column: heartland_play_day_1 { field: bigquery_conversion_model_firstplay.heartland_play_day_1 }
+#     column: heartland_play_day_2 { field: bigquery_conversion_model_firstplay.heartland_play_day_2 }
+#     column: heartland_play_day_3 { field: bigquery_conversion_model_firstplay.heartland_play_day_3 }
+#     column: heartland_play_day_4 { field: bigquery_conversion_model_firstplay.heartland_play_day_4 }
+#     column: other_play_day_1 { field: bigquery_conversion_model_firstplay.other_play_day_1 }
+#     column: other_play_day_2 { field: bigquery_conversion_model_firstplay.other_play_day_2 }
+#     column: other_play_day_3 { field: bigquery_conversion_model_firstplay.other_play_day_3 }
+#     column: other_play_day_4 { field: bigquery_conversion_model_firstplay.other_play_day_4 }
     column: bates_duration_day_1 { field: bigquery_conversion_model_timeupdate.bates_duration_day_1 }
     column: bates_duration_day_2 { field: bigquery_conversion_model_timeupdate.bates_duration_day_2 }
     column: bates_duration_day_3 { field: bigquery_conversion_model_timeupdate.bates_duration_day_3 }
@@ -356,7 +356,7 @@ view: future_input {
 #       derived_column: other_day_3 {sql: other_play_day_3*other_duration_day_3;;}
 #       derived_column: other_day_4 {sql: other_play_day_4*other_duration_day_4;;}
 
-    expression_custom_filter: ${bigquery_subscribers_v2.customer_created_date}<add_days(-8,now()) AND ${bigquery_subscribers_v2.customer_created_date}>=add_days(-15,now());;
+    expression_custom_filter: ${bigquery_subscribers_v2.customer_created_date}<add_days(-8,now()) AND ${bigquery_subscribers_v2.customer_created_date}>=add_days(-14,now());;
   }
   }
 
