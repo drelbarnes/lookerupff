@@ -20,11 +20,13 @@ view: bigquery_involuntary_churn {
   }
 
   dimension: user_id {
+    tags: ["user_id"]
     type: string
     sql: ${TABLE}.user_id ;;
   }
 
   dimension: email {
+    tags: ["email"]
     type: string
     sql: ${TABLE}.email ;;
   }
