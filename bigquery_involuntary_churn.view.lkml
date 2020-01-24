@@ -4,6 +4,7 @@ view: bigquery_involuntary_churn {
       (select user_id,
              email,
              topic,
+             fname,
              max(status_date) as status_date
       from http_api.purchase_event
       group by 1,2,3)
@@ -34,6 +35,11 @@ view: bigquery_involuntary_churn {
   dimension: topic {
     type: string
     sql: ${TABLE}.topic ;;
+  }
+
+  dimension: fname {
+    type: string
+    sql: ${TABLE}.fname ;;
   }
 
   dimension_group: status_date {
