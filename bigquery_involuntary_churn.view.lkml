@@ -7,7 +7,7 @@ view: bigquery_involuntary_churn {
              fname,
              max(status_date) as status_date
       from http_api.purchase_event
-      group by 1,2,3)
+      group by 1,2,3,4)
 
       select *
       from a
