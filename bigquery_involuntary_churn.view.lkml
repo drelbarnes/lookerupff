@@ -1,7 +1,7 @@
 view: bigquery_involuntary_churn {
   derived_table: {
     sql: with a as
-      (select user_id,
+      (select distinct user_id,
              email,
              topic,
              fname,
