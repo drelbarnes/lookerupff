@@ -3,28 +3,34 @@ view: bigquery_derived_addwatchlist {
   derived_table: {
     sql:
         (select a.timestamp,
-                user_id,
+                b.recieved_at,
+                b.topic,
+                a.user_id,
                 b.platform,
                 a.event,
                 'Android' as source
-         from android.addwatchlist as a left join customers.subscribers as b
-         on SAFE_CAST(a.user_id AS INT64) = b.customer_id
+         from android.addwatchlist as a left join http_api.purchase_event as b
+         on SAFE_CAST(a.user_id AS INT64) = b.user_id
          union all
          select a.timestamp,
-                user_id,
+                b.recieved_at,
+                b.topic,
+                a.user_id,
                 b.platform,
                 a.event,
                 'iOS' as source
-         from ios.addwatchlist as a left join customers.subscribers as b
-         on SAFE_CAST(a.user_id AS INT64) = b.customer_id
+         from ios.addwatchlist as a left join http_api.purchase_event as b
+         on SAFE_CAST(a.user_id AS INT64) = b.user_id
          union all
          select a.timestamp,
-                user_id,
+                b.recieved_at,
+                b.topic,
+                a.user_id,
                 b.platform,
                 a.event,
                 'Web' as source
-         from javascript.addwatchlist as a left join customers.subscribers as b
-         on SAFE_CAST(a.user_id AS INT64) = b.customer_id
+         from javascript.addwatchlist as a left join http_api.purchase_event as b
+         on SAFE_CAST(a.user_id AS INT64) = b.user_id
         );;
   }
 
@@ -68,6 +74,20 @@ view: bigquery_derived_addwatchlist {
       year
     ]
     sql: ${TABLE}.timestamp ;;
+  }
+
+  dimension_group: received_at {
+    type: time
+    timeframes: [
+      raw,
+      time,
+      date,
+      week,
+      month,
+      quarter,
+      year
+    ]
+    sql: ${TABLE}.received_at ;;
   }
 
   measure: count {
