@@ -95,6 +95,10 @@ view: bigquery_derived_addwatchlist {
     drill_fields: [detail*]
   }
 
+  measure: distinct_count {
+    type: count_distinct
+  }
+
 
 # ----- Sets of fields for drilling ------
   set: detail {
