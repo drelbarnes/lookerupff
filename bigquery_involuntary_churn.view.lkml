@@ -47,6 +47,15 @@ view: bigquery_involuntary_churn {
     sql: ${TABLE}.status_date ;;
   }
 
+  dimension: status {
+    type: string
+    sql: case
+             when ${topic} = 'customers.product.expired' then "involuntary_churn"
+             when ${topic} = 'customers.product.disabled' then "involuntary_churn" end;;
+  }
+
+
+
   dimension: date_formatted {
     sql: ${status_date_date} ;;
     html: {{ rendered_value | date: "%m/%d/%Y" }};;
