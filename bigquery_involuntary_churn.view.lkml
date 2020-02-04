@@ -50,8 +50,8 @@ view: bigquery_involuntary_churn {
   dimension: status {
     type: string
     sql: case
-             when ${topic} = 'customers.product.expired' then "involuntary_churn"
-             when ${topic} = 'customers.product.disabled' then "involuntary_churn" end;;
+             when ${topic} = 'customer.product.expired' then "involuntary_churn"
+             when ${topic} = 'customer.product.disabled' then "involuntary_churn" end;;
   }
 
 
