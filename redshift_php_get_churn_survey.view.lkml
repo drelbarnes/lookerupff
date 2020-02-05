@@ -204,4 +204,30 @@ view: redshift_php_get_churn_survey {
     sql:  CAST(${TABLE}.rating AS INT) ;;
     value_format: "#.0"
   }
+
+  measure: promoters {
+    type:  count_distinct
+    sql: ${user_id} ;;
+    filters: {
+      field: rating
+      value: "10,9"
+    }
+  }
+  measure: passives {
+    type:  count_distinct
+    sql: ${user_id} ;;
+    filters: {
+      field: rating
+      value: "8,7"
+    }
+  }
+
+  measure: detractors {
+    type:  count_distinct
+    sql: ${user_id} ;;
+    filters: {
+      field: rating
+      value: "6,5,4,3,2,1,0"
+    }
+  }
 }
