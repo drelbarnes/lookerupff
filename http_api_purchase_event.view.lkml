@@ -335,6 +335,7 @@ view: http_api_purchase_event {
     sql: ${months_since_created};;
   }
 
+
   measure: moptin_yes {
     type: count_distinct
     sql: ${TABLE}.user_id ;;
@@ -343,6 +344,8 @@ view: http_api_purchase_event {
       value: "yes"
     }
   }
+
+
 
   measure: moptin_no {
     type: count_distinct

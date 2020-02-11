@@ -2,35 +2,41 @@ view: bigquery_derived_addwatchlist {
 
   derived_table: {
     sql:
-        (select a.timestamp,
-                b.recieved_at,
+        (select min(a.timestamp) as timestamp,
+                b.received_at,
+                b.created_at,
                 b.topic,
                 a.user_id,
                 b.platform,
                 a.event,
                 'Android' as source
          from android.addwatchlist as a left join http_api.purchase_event as b
-         on SAFE_CAST(a.user_id AS INT64) = b.user_id
+         on a.user_id = b.user_id
+        GROUP BY 2,3,4,5,6,7
          union all
-         select a.timestamp,
-                b.recieved_at,
+         select min(a.timestamp) as timestamp,
+                b.received_at,
+                 b.created_at,
                 b.topic,
                 a.user_id,
                 b.platform,
                 a.event,
                 'iOS' as source
          from ios.addwatchlist as a left join http_api.purchase_event as b
-         on SAFE_CAST(a.user_id AS INT64) = b.user_id
+         on a.user_id = b.user_id
+        GROUP BY 2,3,4,5,6,7
          union all
-         select a.timestamp,
-                b.recieved_at,
+         select  min(a.timestamp) as timestamp,
+                b.received_at,
+                 b.created_at,
                 b.topic,
                 a.user_id,
                 b.platform,
                 a.event,
                 'Web' as source
          from javascript.addwatchlist as a left join http_api.purchase_event as b
-         on SAFE_CAST(a.user_id AS INT64) = b.user_id
+         on a.user_id = b.user_id
+        GROUP BY 2,3,4,5,6,7
         );;
   }
 
@@ -54,6 +60,11 @@ view: bigquery_derived_addwatchlist {
     sql: ${TABLE}.event ;;
   }
 
+  dimension: topic {
+    type: string
+    sql: ${TABLE}.topic ;;
+  }
+
   dimension: user_id {
     primary_key: yes
     tags: ["user_id"]
@@ -73,7 +84,7 @@ view: bigquery_derived_addwatchlist {
       quarter,
       year
     ]
-    sql: ${TABLE}.timestamp ;;
+    sql: ${TABLE}.timestamp;;
   }
 
   dimension_group: received_at {
@@ -90,6 +101,31 @@ view: bigquery_derived_addwatchlist {
     sql: ${TABLE}.received_at ;;
   }
 
+  dimension_group: created_at {
+    type: time
+    timeframes: [
+      raw,
+      time,
+      date,
+      week,
+      month,
+      quarter,
+      year
+    ]
+    sql: ${TABLE}.created_at ;;
+  }
+
+  dimension: days_since_addedwatchlist {
+    type: number
+    sql:  DATE_DIFF(${timestamp_date},${received_at_date},DAY);;
+
+  }
+
+  measure: average_days_since_addedwatchlist {
+    type: average
+    sql: ${days_since_addedwatchlist};;
+  }
+
   measure: count {
     type: count
     drill_fields: [detail*]
@@ -97,6 +133,7 @@ view: bigquery_derived_addwatchlist {
 
   measure: distinct_count {
     type: count_distinct
+    sql: ${user_id} ;;
   }
 
 
