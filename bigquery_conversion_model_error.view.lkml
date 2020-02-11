@@ -7,7 +7,9 @@ WITH
   UNION ALL
   SELECT user_id,timestamp FROM android.error where user_id is not null
   UNION ALL
-  SELECT user_id,timestamp FROM ios.error where user_id is not null),
+  SELECT user_id,timestamp FROM ios.error where user_id is not null
+  union all
+  SELECT user_id,timestamp FROM roku.error where user_id is not null),
 
 purchase_event as
 (with

@@ -158,7 +158,7 @@ explore: bigquery_heartland_viewer {}
 explore: bigquery_javascript_all_page_views {
   join: bigquery_javascript_conversion {
     type: left_outer
-    sql_on: ${bigquery_javascript_all_page_views.anonymous_id}=${bigquery_javascript_conversion.anonymous_id} ;;
+    sql_on: ${bigquery_javascript_all_page_views.anonymous_id}=${bigquery_javascript_conversion.anonymous_id} and ${bigquery_javascript_all_page_views.timestamp_date}=${bigquery_javascript_conversion.timestamp_date};;
     relationship: one_to_one
   }
 

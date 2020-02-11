@@ -7,7 +7,9 @@ view: bigquery_conversion_model_view {
   UNION ALL
   SELECT safe_cast(user_id as int64) as user_id,timestamp FROM android.view where user_id is not null
   UNION ALL
-  SELECT user_id,timestamp FROM ios.view where user_id is not null),
+  SELECT user_id,timestamp FROM ios.view where user_id is not null
+  union all
+  SELECT safe_cast(user_id as int64) as user_id,timestamp FROM roku.view where user_id is not null),
 
 purchase_event as
 (with

@@ -222,7 +222,7 @@ view: churn_confusion_matrix {
   derived_table: {
     sql: SELECT * FROM ml.confusion_matrix(
         MODEL ${churn_model.SQL_TABLE_NAME},
-        (SELECT * FROM ${churn_testing_input.SQL_TABLE_NAME}),struct(0.16 as threshold));;
+        (SELECT * FROM ${churn_testing_input.SQL_TABLE_NAME}),struct(0.13 as threshold));;
   }
 
   dimension: expected_label {}

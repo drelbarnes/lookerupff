@@ -367,7 +367,10 @@ from a4 as a));;
     timeframes: [
       raw,
       time,
+      hour_of_day,
       date,
+      day_of_week_index,
+      day_of_week,
       week,
       month,
       quarter,
@@ -375,6 +378,7 @@ from a4 as a));;
     ]
     sql: ${TABLE}.timestamp ;;
   }
+
 
   measure: count {
     type: count

@@ -7,7 +7,9 @@ WITH
   UNION ALL
   SELECT user_id,timestamp FROM android.addwatchlist where user_id is not null
   UNION ALL
-  SELECT user_id,timestamp FROM ios.addwatchlist where user_id is not null),
+  SELECT user_id,timestamp FROM ios.addwatchlist where user_id is not null
+  union all
+  SELECT user_id,timestamp FROM roku.addwatchlist where user_id is not null),
 
 purchase_event as
 (with
