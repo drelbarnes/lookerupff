@@ -320,6 +320,33 @@ view: http_api_purchase_event {
     sql: ${TABLE}.moptin ;;
   }
 
+# My original dimension group
+  dimension_group: create {
+    hidden: yes
+    type: time
+    timeframes: [date,week,month]
+    sql: ${TABLE}.created_at ;;
+  }
+
+# My customized timeframes, added under the group "Created"
+  dimension: date_formatted {
+    group_label: "Created" label: "Date"
+    sql: ${create_date} ;;
+    html: {{ rendered_value | date: "%b %d, %y" }};;
+  }
+
+  dimension: week_formatted {
+    group_label: "Created" label: "Week"
+    sql: ${create_week} ;;
+    html: {{ rendered_value | date: "Week %U (%b %d)" }};;
+  }
+
+  dimension: month_formatted {
+    group_label: "Created" label: "Month"
+    sql: ${create_month} ;;
+    html: {{ rendered_value | append: "-01" | date: "%B %Y" }};;
+  }
+
   measure: count {
     type: count
     drill_fields: [detail*]

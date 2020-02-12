@@ -413,6 +413,28 @@ measure: targets {
     sql: ${TABLE}.timestamp ;;
   }
 
+# My original dimension group
+  dimension_group: created {
+    hidden: yes
+    type: time
+    timeframes: [date,time,week,month]
+    sql: ${TABLE}.timestamp ;;
+  }
+
+# My customized timeframes, added under the group "Created"
+  dimension: date_formatted {
+    group_label: "Created" label: "Date"
+    sql: ${created_date} ;;
+    html: {{ rendered_value | date: "%b %d, %y" }};;
+  }
+
+  dimension: weekday_formatted {
+    group_label: "Created" label: "WeekDay"
+    sql: ${created_date} ;;
+    html: {{ rendered_value | date: "%a" }};;
+  }
+
+
   dimension: total_free_trials {
     type: number
     sql: ${TABLE}.total_free_trials ;;
