@@ -144,7 +144,7 @@ view: churn_testing_input {
 #       derived_column: two_week_duration_num {sql:two_week_duration*num;;}
 #       derived_column: three_week_duration_num {sql:three_week_duration*num;;}
 #       derived_column: four_week_duration_num {sql:four_week_duration*num;;}
-      expression_custom_filter: (${bigquery_churn_model.event_created_at_date} < now() AND ${bigquery_churn_model.event_created_at_date} >= add_days(-60,now())) AND ${bigquery_churn_model.random}>0.3;;
+      expression_custom_filter: (${bigquery_churn_model.event_created_at_date} < now() AND ${bigquery_churn_model.event_created_at_date} >= add_days(-60,now())) AND ${bigquery_churn_model.random}>0.7;;
     }
   }
   dimension: customer_id {

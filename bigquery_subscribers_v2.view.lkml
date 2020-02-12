@@ -12,7 +12,7 @@ union all
 select distinct id as user_id, email, 'roku' as source from roku.users),
 
 b as
-(select user_id, count(1) as number_of_platforms from a group by 1 order by 2 desc),
+(select user_id, count(distinct source) as number_of_platforms from a group by 1 order by 2 desc),
 
 purchase_event as
 (with

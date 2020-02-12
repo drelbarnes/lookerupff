@@ -1,29 +1,22 @@
 view: bigquery_conversion_model_view {
   derived_table: {
     sql:
-    WITH
+ WITH
   b AS (
-  SELECT safe_cast(user_id as int64) as user_id,timestamp FROM javascript.pages where user_id is not null
+  SELECT  user_id,timestamp FROM javascript.view where user_id is not null
   UNION ALL
-  SELECT safe_cast(user_id as int64) as user_id,timestamp FROM android.view where user_id is not null
+  SELECT user_id,timestamp FROM android.view where user_id is not null
   UNION ALL
-  SELECT user_id,timestamp FROM ios.view where user_id is not null
+  SELECT cast(user_id as string) as user_id,timestamp FROM ios.view where user_id is not null
   union all
-  SELECT safe_cast(user_id as int64) as user_id,timestamp FROM roku.view where user_id is not null),
+  SELECT user_id,timestamp FROM roku.view where user_id is not null),
 
 purchase_event as
-(with
-b as
-(select user_id, min(received_at) as received_at
+(select distinct  user_id, created_at, platform
 from http_api.purchase_event
-where topic in ('customer.product.free_trial_created','customer.product.created','customer.created') and date(created_at)=date(received_at) and date(created_at)>'2018-10-31'
-group by 1)
+where date(created_at)>'2018-10-31'),
 
-select a.user_id, a.platform, created_at
-from b inner join http_api.purchase_event as a on a.user_id=b.user_id and a.received_at=b.received_at
-where topic in ('customer.product.free_trial_created','customer.product.created','customer.created') and date(created_at)=date(a.received_at) and date(created_at)>'2018-10-31'),
-
-c as
+d as
 (SELECT
   a.user_id,
   platform,
@@ -31,27 +24,20 @@ c as
 --   date_diff(date(timestamp),date(customer_created_at),day) as daydiff,
   count(*) as view_count
 FROM
-  purchase_event as a left JOIN b ON SAFE_CAST(a.user_id AS int64)=SAFE_CAST(b.user_id AS int64)
-where date(b.timestamp)>=date(created_at) and date(b.timestamp)<=date_add(date(created_at), interval 14 day)
+  purchase_event as a left JOIN b ON SAFE_CAST(b.user_id AS int64)=SAFE_CAST(a.user_id AS int64) and date(b.timestamp)>=date(created_at) and date(b.timestamp)<=date_add(date(created_at), interval 14 day)
 group by 1,2,3),
 
-d as
-(select a.user_id,
-       a.platform,
-       a.created_at,
-       case when view_count is null then 0 else view_count end as view_count
-from purchase_event as a left join c on a.user_id=c.user_id
-where a.user_id<>'0'),
 
 e as
-(select max(view_count) as v_max, min(view_count) as v_min
+(select max(view_count) as rwl_max, min(view_count) as rwl_min
 from d)
 
 select user_id,
 platform,
 created_at as customer_created_at,
-(view_count-v_min)/(v_max-v_min) as view_count
-from d,e;;
+(view_count-rwl_min)/(rwl_max-rwl_min) as view_count
+from d,e
+;;
   }
 
   dimension: user_id {

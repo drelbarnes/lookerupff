@@ -73,26 +73,16 @@ union all
     user_id IS NOT NULL and safe_cast(user_id as string)!='0'
   GROUP BY 1,2,3,4)),
 
-a5 as
+b as
 (select a4.*,
         content
 from a4 inner join a3 on a4.title=a3.title),
 
-b as
-(select *
-from a5),
 
 purchase_event as
-(with
-b as
-(select user_id, min(received_at) as received_at
+(select distinct  user_id, created_at, platform
 from http_api.purchase_event
-where topic in ('customer.product.free_trial_created','customer.product.created','customer.created') and date(created_at)=date(received_at) and date(created_at)>'2018-10-31'
-group by 1)
-
-select a.user_id, a.platform, created_at
-from b inner join http_api.purchase_event as a on a.user_id=b.user_id and a.received_at=b.received_at
-where topic in ('customer.product.free_trial_created','customer.product.created','customer.created') and date(created_at)=date(a.received_at) and date(created_at)>'2018-10-31') ,
+where date(created_at)>'2018-10-31') ,
 
 
  c as
