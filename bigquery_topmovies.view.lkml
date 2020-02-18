@@ -12,6 +12,21 @@ view: bigquery_topmovies {
               title[safe_ordinal(1)] as title
        from a1 order by 1),
 
+       titles_id_mapping as
+       (select distinct
+       metadata_series_name as series,
+       case when metadata_season_name in ('Season 1','Season 2','Season 3') then concat(metadata_series_name,'-',metadata_season_name)
+            when metadata_season_name is null then metadata_movie_name else metadata_season_name end as collection,
+       season_number as season,
+       a.title,
+       video_id as id,
+       episode_number as episode,
+       date(time_available) as date,
+       round(duration_seconds/60) as duration,
+       promotion
+from php.get_titles as a inner join svod_titles.titles_id_mapping as b on a.video_id=b.id
+where date(ingest_at)>='2020-02-13' ),
+
       a32 as
 (select distinct mysql_roku_firstplays_firstplay_date_date as timestamp,
                 mysql_roku_firstplays_video_id,
@@ -29,7 +44,7 @@ from looker.roku_firstplays),
                       trim((title)) as title1,
                       user_id,
                       'Android' as source
-               from android.firstplay as a left join svod_titles.titles_id_mapping as b on a.video_id = b.id
+               from android.firstplay as a left join titles_id_mapping as b on a.video_id = b.id
                union all
 
                select sent_at as timestamp,
@@ -42,7 +57,7 @@ from looker.roku_firstplays),
                       trim((title)) as title1,
                       user_id,
                       'Roku' as source
-               from roku.firstplay as a left join svod_titles.titles_id_mapping as b on a.video_id = b.id
+               from roku.firstplay as a left join titles_id_mapping as b on a.video_id = b.id
 
                union all
 
@@ -56,7 +71,7 @@ from looker.roku_firstplays),
        trim(b.title) as title1,
        user_id,
        'Roku' as source
-from a32 as a left join svod_titles.titles_id_mapping as b on mysql_roku_firstplays_video_id=b.id
+from a32 as a left join titles_id_mapping as b on mysql_roku_firstplays_video_id=b.id
 
 union all
 
@@ -70,7 +85,7 @@ select sent_at as timestamp,
                       trim((title)) as title1,
                       user_id,
                       'Roku' as source
-               from roku.video_playback_started as a left join svod_titles.titles_id_mapping as b on safe_cast(a.video_id as int64) = b.id
+               from roku.video_playback_started as a left join titles_id_mapping as b on safe_cast(a.video_id as int64) = b.id
 
 union all
 
@@ -84,7 +99,7 @@ union all
                       trim((title)) as title1,
                       user_id,
                       'Android' as source
-               from android.video_playback_started as a left join svod_titles.titles_id_mapping as b on safe_cast(a.video_id as int64) = b.id
+               from android.video_playback_started as a left join titles_id_mapping as b on safe_cast(a.video_id as int64) = b.id
 
                union all
                select sent_at as timestamp,
@@ -97,7 +112,7 @@ union all
                       trim((title)) as title1,
                       user_id,
                       'iOS' as source
-               from ios.firstplay as a left join svod_titles.titles_id_mapping as b on safe_cast(a.video_id as int64) = b.id
+               from ios.firstplay as a left join titles_id_mapping as b on safe_cast(a.video_id as int64) = b.id
                union all
               select sent_at as timestamp,
                       b.date as release_date,
@@ -109,7 +124,7 @@ union all
                       trim((title)) as title1,
                       user_id,
                       'iOS' as source
-               from ios.video_playback_started as a left join svod_titles.titles_id_mapping as b on safe_cast(a.video_id as int64) = b.id
+               from ios.video_playback_started as a left join titles_id_mapping as b on safe_cast(a.video_id as int64) = b.id
                union all
                select sent_at as timestamp,
                       b.date as release_date,
@@ -121,7 +136,7 @@ union all
                       trim((b.title)) as title1,
                       user_id,
                       'iOS' as source
-               from javascript.video_playback_started as a left join svod_titles.titles_id_mapping as b on safe_cast(a.video_id as int64) = b.id
+               from javascript.video_playback_started as a left join titles_id_mapping as b on safe_cast(a.video_id as int64) = b.id
                union all
                select timestamp,
                       b.date as release_date,
@@ -133,7 +148,7 @@ union all
                       trim(b.title) as title1,
                       user_id,
                       'Web' as source
-               from a2 as a left join svod_titles.titles_id_mapping as b on trim(upper(b.title)) = trim(upper(a.title))
+               from a2 as a left join titles_id_mapping as b on trim(upper(b.title)) = trim(upper(a.title))
               union all
                select sent_at as timestamp,
                       b.date as release_date,
@@ -145,7 +160,7 @@ union all
                       trim((title)) as title1,
                       user_id,
                       'Web' as source
-               from javascript.loadeddata as a left join svod_titles.titles_id_mapping as b on a.video_id = b.id)
+               from javascript.loadeddata as a left join titles_id_mapping as b on a.video_id = b.id)
 
 
       select a.*

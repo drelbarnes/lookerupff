@@ -1,24 +1,20 @@
 view: bigquery_timeupdate {
   derived_table: {
-    sql:((with a1 as
-(select sent_at,
-        user_id,
-        (split(title," - ")) as title,
-        a.current_time as _current_time
-from javascript.timeupdate as a),
-
-a2 as
-(select sent_at,
-        user_id,
-        title[safe_ordinal(1)] as title,
-        concat(title[safe_ordinal(2)]," - ",title[safe_ordinal(3)]) as collection,
-        _current_time
- from a1),
-
- a3 as
-(select *
- from svod_titles.titles_id_mapping
- where (series is null and upper(collection)=upper(title)) or series is not null),
+    sql:((with a3 as
+(select distinct
+       metadata_series_name as series,
+       case when metadata_season_name in ('Season 1','Season 2','Season 3') then concat(metadata_series_name,'-',metadata_season_name)
+            when metadata_season_name is null then metadata_movie_name else metadata_season_name end as collection,
+       season_number as season,
+       a.title,
+       video_id as id,
+       episode_number as episode,
+       date(time_available) as date,
+       round(duration_seconds/60) as duration,
+       promotion
+from php.get_titles as a left join svod_titles.titles_id_mapping as b on a.video_id=b.id
+where date(ingest_at)>='2020-02-13'
+order by collection desc, metadata_series_name),
 
 a31 as
 (select mysql_roku_firstplays_firstplay_date_date as timestamp,
