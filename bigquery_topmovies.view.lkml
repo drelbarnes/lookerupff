@@ -24,7 +24,7 @@ view: bigquery_topmovies {
        date(time_available) as date,
        round(duration_seconds/60) as duration,
        promotion
-from php.get_titles as a inner join svod_titles.titles_id_mapping as b on a.video_id=b.id
+from php.get_titles as a left join svod_titles.titles_id_mapping as b on a.video_id=b.id
 where date(ingest_at)>='2020-02-13' ),
 
       a32 as
