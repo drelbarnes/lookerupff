@@ -87,7 +87,7 @@ inner join
 on a.row=b.row) as b
 on a.timestamp=b.timestamp),
 
-t8 as (select t6.timestamp, CPA, LTV, cast(LTV as decimal)/cast(CPA as decimal) as LTV_CPA_Ratio, 1.4 as LTV_CPA_Ratio_Target,  ROW_NUMBER() OVER(ORDER BY t6.timestamp desc) AS Row
+t8 as (select t6.timestamp, CPA, LTV, cast(LTV as decimal)/cast(CPA as decimal) as LTV_CPA_Ratio, 1.8 as LTV_CPA_Ratio_Target,  ROW_NUMBER() OVER(ORDER BY t6.timestamp desc) AS Row
 from t6 inner join t7 on t6.timestamp=t7.timestamp),
 
 t9 as (select a1.timestamp,
@@ -106,7 +106,7 @@ from t8 inner join t9 on t8.timestamp=t9.timestamp
 
   measure: target_ratio {
   type: sum
-  sql: 1.4 ;;
+  sql: 1.8 ;;
   value_format_name: percent_0
 }
 
@@ -210,13 +210,13 @@ from t8 inner join t9 on t8.timestamp=t9.timestamp
 
           dimension: LTV_Goal {
             type: number
-            sql: (${CPA}*1.4)-${LTV};;
+            sql: (${CPA}*1.8)-${LTV};;
             value_format_name: usd
           }
 
           dimension: CPA_Goal{
             type: number
-            sql: (${LTV}/1.4)-${CPA} ;;
+            sql: (${LTV}/1.8)-${CPA} ;;
             value_format_name: usd
           }
           }
