@@ -37,18 +37,18 @@ order by timestamp desc),
 
 b as
 (select a1.timestamp,
-       case when cast(date_part('month',date(a1.timestamp)) as integer)=1 then (12000*(cast(date_part('day',date(a1.timestamp)) as integer))/30.44)
-            when cast(date_part('month',date(a1.timestamp)) as integer)=2 then (9500*(cast(date_part('day',date(a1.timestamp)) as integer))/30.44)
-            when cast(date_part('month',date(a1.timestamp)) as integer)=3 then (10000*(cast(date_part('day',date(a1.timestamp)) as integer))/30.44)
-            when cast(date_part('month',date(a1.timestamp)) as integer)=4 then (12000*(cast(date_part('day',date(a1.timestamp)) as integer))/30.44)
-            when cast(date_part('month',date(a1.timestamp)) as integer)=5 then (9000*(cast(date_part('day',date(a1.timestamp)) as integer))/30.44)
-            when cast(date_part('month',date(a1.timestamp)) as integer)=6 then (9000*(cast(date_part('day',date(a1.timestamp)) as integer))/30.44)
-            when cast(date_part('month',date(a1.timestamp)) as integer)=7 then (9000*(cast(date_part('day',date(a1.timestamp)) as integer))/30.44)
-            when cast(date_part('month',date(a1.timestamp)) as integer)=8 then (9000*(cast(date_part('day',date(a1.timestamp)) as integer))/30.44)
-            when cast(date_part('month',date(a1.timestamp)) as integer)=9 then (9000*(cast(date_part('day',date(a1.timestamp)) as integer))/30.44)
-            when cast(date_part('month',date(a1.timestamp)) as integer)=10 then (9000*(cast(date_part('day',date(a1.timestamp)) as integer))/30.44)
-            when cast(date_part('month',date(a1.timestamp)) as integer)=11 then (10000*(cast(date_part('day',date(a1.timestamp)) as integer))/30.44)
-            when cast(date_part('month',date(a1.timestamp)) as integer)=12 then (12000*(cast(date_part('day',date(a1.timestamp)) as integer))/30.44)
+       case when cast(date_part('month',date(a1.timestamp)) as integer)=1 then (19500*(cast(date_part('day',date(a1.timestamp)) as integer))/30.44)
+            when cast(date_part('month',date(a1.timestamp)) as integer)=2 then (19500*(cast(date_part('day',date(a1.timestamp)) as integer))/30.44)
+            when cast(date_part('month',date(a1.timestamp)) as integer)=3 then (19500*(cast(date_part('day',date(a1.timestamp)) as integer))/30.44)
+            when cast(date_part('month',date(a1.timestamp)) as integer)=4 then (19500*(cast(date_part('day',date(a1.timestamp)) as integer))/30.44)
+            when cast(date_part('month',date(a1.timestamp)) as integer)=5 then (19500*(cast(date_part('day',date(a1.timestamp)) as integer))/30.44)
+            when cast(date_part('month',date(a1.timestamp)) as integer)=6 then (19500*(cast(date_part('day',date(a1.timestamp)) as integer))/30.44)
+            when cast(date_part('month',date(a1.timestamp)) as integer)=7 then (19500*(cast(date_part('day',date(a1.timestamp)) as integer))/30.44)
+            when cast(date_part('month',date(a1.timestamp)) as integer)=8 then (19500*(cast(date_part('day',date(a1.timestamp)) as integer))/30.44)
+            when cast(date_part('month',date(a1.timestamp)) as integer)=9 then (19500*(cast(date_part('day',date(a1.timestamp)) as integer))/30.44)
+            when cast(date_part('month',date(a1.timestamp)) as integer)=10 then (19500*(cast(date_part('day',date(a1.timestamp)) as integer))/30.44)
+            when cast(date_part('month',date(a1.timestamp)) as integer)=11 then (19500*(cast(date_part('day',date(a1.timestamp)) as integer))/30.44)
+            when cast(date_part('month',date(a1.timestamp)) as integer)=12 then (19500*(cast(date_part('day',date(a1.timestamp)) as integer))/30.44)
             end as mtd_running_trials_target
 from customers_analytics as a1
 order by 1 desc)
