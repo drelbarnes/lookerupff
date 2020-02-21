@@ -347,6 +347,20 @@ view: http_api_purchase_event {
     html: {{ rendered_value | append: "-01" | date: "%B %Y" }};;
   }
 
+  dimension_group: max_status {
+    type: time
+    timeframes: [
+      raw,
+      time,
+      date,
+      week,
+      month,
+      quarter,
+      year
+    ]
+    sql: max(${TABLE}.status_date);;
+  }
+
   measure: count {
     type: count
     drill_fields: [detail*]
