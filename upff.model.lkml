@@ -40,6 +40,9 @@ include: "redshift_javascript_upff_home_pages.view.lkml"
 include: "redshift_mobile_conversions.view.lkml"
 include: "redshift_marketing_performance_v2.view.lkml"
 include: "amazon_personalize_recommendations.view.lkml"
+include: "redshift_looker_customer_conversion_scores.view.lkml"
+
+explore: redshift_looker_customer_conversion_scores {}
 
 explore: amazon_personalize_recommendations {}
 
@@ -48,7 +51,6 @@ explore: redshift_marketing_performance_v2 {}
 explore: redshift_roku_firstplay {
 
 }
-
 
 explore: redshift_marketing_performance {
   join: redshift_javascript_conversion {
