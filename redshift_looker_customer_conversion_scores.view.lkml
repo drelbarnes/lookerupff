@@ -106,6 +106,7 @@ view: redshift_looker_customer_conversion_scores {
 
   dimension: user_id {
     type: string
+    tags:["user_id"]
     sql: ${TABLE}.user_id ;;
   }
 
