@@ -41,8 +41,15 @@ include: "redshift_mobile_conversions.view.lkml"
 include: "redshift_marketing_performance_v2.view.lkml"
 include: "amazon_personalize_recommendations.view.lkml"
 include: "redshift_looker_customer_conversion_scores.view.lkml"
+include: "redshift_php_get_average_predicted_conversion_score.view.lkml"
 
-explore: redshift_looker_customer_conversion_scores {}
+explore: redshift_looker_customer_conversion_scores {
+  join: redshift_php_get_average_predicted_conversion_score {
+    type: left_outer
+    sql_on:  ${redshift_looker_customer_conversion_scores.received_date} = ${redshift_php_get_average_predicted_conversion_score.received_date_date};;
+    relationship: many_to_one
+  }
+}
 
 explore: amazon_personalize_recommendations {}
 
