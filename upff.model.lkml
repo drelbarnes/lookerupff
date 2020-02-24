@@ -42,6 +42,7 @@ include: "redshift_marketing_performance_v2.view.lkml"
 include: "amazon_personalize_recommendations.view.lkml"
 include: "redshift_looker_customer_conversion_scores.view.lkml"
 include: "redshift_php_get_average_predicted_conversion_score.view.lkml"
+include: "redshift_php_get_referral_program_info.view.lkml"
 
 explore: redshift_looker_customer_conversion_scores {
   join: redshift_php_get_average_predicted_conversion_score {
@@ -298,6 +299,12 @@ explore: subscribed {}
 explore: http_api_purchase_event
 {
   label: "Subscribers"
+
+  join: redshift_php_get_referral_program_info {
+    type: left_outer
+    sql_on: ${http_api_purchase_event.user_id} = ${redshift_php_get_referral_program_info.user_id};;
+    relationship: one_to_one
+  }
 
 
   join: redshift_php_send_trialist_survey {
