@@ -112,7 +112,7 @@ view: redshift_php_get_referral_program_info {
   dimension: user_id {
     type: string
     tags: ["user_id"]
-    sql: ${TABLE}.user_id ;;
+    sql:${TABLE}.user_id ;;
   }
 
   dimension: uuid {

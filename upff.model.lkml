@@ -301,7 +301,7 @@ explore: http_api_purchase_event
   label: "Subscribers"
 
   join: redshift_php_get_referral_program_info {
-    type: left_outer
+    type: inner
     sql_on: ${http_api_purchase_event.user_id} = ${redshift_php_get_referral_program_info.user_id};;
     relationship: one_to_one
   }
