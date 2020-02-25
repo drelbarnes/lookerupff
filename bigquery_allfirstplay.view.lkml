@@ -41,7 +41,7 @@ titles_id_mapping as
        round(duration_seconds/60) as duration,
        promotion
 from php.get_titles as a left join svod_titles.titles_id_mapping as b on a.video_id=b.id
-where date(ingest_at)>='2020-02-13'
+ where date(ingest_at)>='2020-02-13' and (metadata_series_name is not null or metadata_movie_name is not null)
 ),
 
 a32 as

@@ -100,6 +100,10 @@ include: "bigquery_vimeo_ott_customers_oct_2019.view.lkml"
 include: "bigquery_vimeo_ott_customers_nov_2019.view.lkml"
 include: "bigquery_vimeo_ott_customers_dec_2019.view.lkml"
 include: "bigquery_involuntary_churn.view.lkml"
+include: "bigquery_personas_v2.view.lkml"
+include: "bigquery_personas_cluster_analysis.view.lkml"
+
+explore: bigquery_personas_v2 {}
 
 explore: bigquery_involuntary_churn {}
 

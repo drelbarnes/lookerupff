@@ -120,72 +120,61 @@ and (conversion_date)<=date(b.status_date)),
       group by 1,2),
 
       fp as
-      (WITH
-            a AS (
+      (WITH web AS (
             SELECT
-              id AS video_id,
-              CASE
-                WHEN series LIKE '%Heartland%' THEN 'Heartland'
-                WHEN series LIKE '%Bringing Up Bates%' THEN 'Bringing Up Bates'
-                ELSE 'Other'
-              END AS content
-            FROM
-              svod_titles.titles_id_mapping),
-
-            web AS (
-            SELECT
-              user_id,
+              b.user_id,
               'web' AS source,
-              timestamp,
-              content,
+              b.timestamp,
+              case WHEN metadata_series_name LIKE '%Heartland%' THEN 'Heartland'
+                WHEN metadata_series_name LIKE '%Bates%' THEN 'Bringing Up Bates'
+                ELSE 'Other'
+              END AS content,
               max(timecode) as duration
             FROM
-              javascript.video_playback_started inner join a on video_playback_started.video_id=a.video_id
+              javascript.video_content_playing as b inner join php.get_titles as a on b.video_id=a.video_id
+            where date(ingest_at)>'2020-02-13'
               group by 1,2,3,4),
 
             droid AS (
             SELECT
-              user_id,
-              'android' AS source,
-              timestamp,
-              content,
+              b.user_id,
+              'web' AS source,
+              b.timestamp,
+              case WHEN metadata_series_name LIKE '%Heartland%' THEN 'Heartland'
+                WHEN metadata_series_name LIKE '%Bates%' THEN 'Bringing Up Bates'
+                ELSE 'Other'
+              END AS content,
               max(timecode) as duration
-            FROM
-              android.video_playback_started
-            INNER JOIN
-              a
-            ON
-              video_playback_started.video_id=a.video_id
+            FROM android.video_content_playing as b inner join php.get_titles as a on b.video_id=a.video_id
+            where date(ingest_at)>'2020-02-13'
               group by 1,2,3,4),
 
             roku AS (
             SELECT
-             user_id,
-              'roku' AS source,
-              timestamp,
-              content,
+             b.user_id,
+              'web' AS source,
+              b.timestamp,
+              case WHEN metadata_series_name LIKE '%Heartland%' THEN 'Heartland'
+                WHEN metadata_series_name LIKE '%Bates%' THEN 'Bringing Up Bates'
+                ELSE 'Other'
+              END AS content,
               max(timecode) as duration
-            FROM
-              roku.video_playback_started
-            INNER JOIN
-              a
-            ON
-              video_playback_started.video_id=a.video_id
+            FROM roku.video_content_playing as b inner join php.get_titles as a on b.video_id=a.video_id
+            where date(ingest_at)>'2020-02-13'
               group by 1,2,3,4),
 
             apple AS (
             SELECT
-              user_id,
-              'ios' AS source,
-              timestamp,
-              content,
+              b.user_id,
+              'web' AS source,
+              b.timestamp,
+              case WHEN metadata_series_name LIKE '%Heartland%' THEN 'Heartland'
+                WHEN metadata_series_name LIKE '%Bates%' THEN 'Bringing Up Bates'
+                ELSE 'Other'
+              END AS content,
               max(timecode) as duration
-            FROM
-              ios.video_playback_started
-            INNER JOIN
-              a
-            ON
-              SAFE_CAST(video_playback_started.video_id AS int64)=SAFE_CAST(a.video_id AS int64)
+            FROM ios.video_content_playing as b inner join php.get_titles as a on b.video_id=safe_cast(a.video_id as string)
+            where date(ingest_at)>'2020-02-13'
               group by 1,2,3,4)
 
 
@@ -204,7 +193,7 @@ and (conversion_date)<=date(b.status_date)),
                    (case when date(timestamp) between date_sub(end_date,interval 7 day) and end_date then duration else 0 end) as one_week_duration,
                    (case when date(timestamp) between date_sub(end_date,interval 14 day) and date_sub(end_date,interval 8 day) then duration else 0 end) as two_week_duration,
                    (case when date(timestamp) between date_sub(end_date,interval 21 day) and date_sub(end_date,interval 15 day) then duration else 0 end) as three_week_duration,
-                   (case when date(timestamp) > date_sub(end_date,interval 21 day) then duration else 0 end) as four_week_duration
+                   (case when date(timestamp) between date_sub(end_date,interval 28 day) and date_sub(end_date,interval 21 day) then duration else 0 end) as four_week_duration
             FROM web inner join e on web.user_id=e.user_id and date(web.timestamp) between start_date and end_date
             UNION ALL
             SELECT droid.user_id,
@@ -222,7 +211,7 @@ and (conversion_date)<=date(b.status_date)),
                    (case when date(timestamp) between date_sub(end_date,interval 7 day) and end_date then duration else 0 end) as one_week_duration,
                    (case when date(timestamp) between date_sub(end_date,interval 14 day) and date_sub(end_date,interval 8 day) then duration else 0 end) as two_week_duration,
                    (case when date(timestamp) between date_sub(end_date,interval 21 day) and date_sub(end_date,interval 15 day) then duration else 0 end) as three_week_duration,
-                   (case when date(timestamp) > date_sub(end_date,interval 21 day) then duration else 0 end) as four_week_duration
+                   (case when date(timestamp) between date_sub(end_date,interval 28 day) and date_sub(end_date,interval 21 day) then duration else 0 end) as four_week_duration
             FROM droid inner join e on droid.user_id=e.user_id and date(droid.timestamp) between start_date and end_date
             UNION ALL
             SELECT e.user_id,
@@ -240,7 +229,7 @@ and (conversion_date)<=date(b.status_date)),
                    (case when date(timestamp) between date_sub(end_date,interval 7 day) and end_date then duration else 0 end) as one_week_duration,
                    (case when date(timestamp) between date_sub(end_date,interval 14 day) and date_sub(end_date,interval 8 day) then duration else 0 end) as two_week_duration,
                    (case when date(timestamp) between date_sub(end_date,interval 21 day) and date_sub(end_date,interval 15 day) then duration else 0 end) as three_week_duration,
-                   (case when date(timestamp) > date_sub(end_date,interval 21 day) then duration else 0 end) as four_week_duration
+                   (case when date(timestamp) between date_sub(end_date,interval 28 day) and date_sub(end_date,interval 21 day) then duration else 0 end) as four_week_duration
             FROM apple inner join e on apple.user_id=e.user_id and date(apple.timestamp) between start_date and end_date
             union all
             SELECT e.user_id,
@@ -258,7 +247,7 @@ and (conversion_date)<=date(b.status_date)),
                    (case when date(timestamp) between date_sub(end_date,interval 7 day) and end_date then duration else 0 end) as one_week_duration,
                    (case when date(timestamp) between date_sub(end_date,interval 14 day) and date_sub(end_date,interval 8 day) then duration else 0 end) as two_week_duration,
                    (case when date(timestamp) between date_sub(end_date,interval 21 day) and date_sub(end_date,interval 15 day) then duration else 0 end) as three_week_duration,
-                   (case when date(timestamp) > date_sub(end_date,interval 21 day) then duration else 0 end) as four_week_duration
+                   (case when date(timestamp) between date_sub(end_date,interval 28 day) and date_sub(end_date,interval 21 day) then duration else 0 end) as four_week_duration
             FROM roku inner join e on roku.user_id=e.user_id and date(roku.timestamp) between start_date and end_date),
 
       k as
@@ -438,7 +427,7 @@ bd_min<>bd_max and
 -- hlp_min<>hlp_max and
 hld_min<>hld_max and
 -- op_min<>op_max and
-od_min<>od_max) ;;
+od_min<>od_max);;
   }
 
   measure: count {

@@ -2,6 +2,21 @@ view: bigquery_conversion_model_timeupdate {
   derived_table: {
     sql:
 with
+titles_id_mapping as
+(select distinct
+       metadata_series_name as series,
+       case when metadata_season_name in ('Season 1','Season 2','Season 3') then concat(metadata_series_name,'-',metadata_season_name)
+            when metadata_season_name is null then metadata_movie_name else metadata_season_name end as collection,
+       season_number as season,
+       a.title,
+       video_id as id,
+       episode_number as episode,
+       date(time_available) as date,
+       round(duration_seconds/60) as duration,
+       promotion
+from php.get_titles as a inner join svod_titles.titles_id_mapping as b on a.video_id=b.id
+where date(ingest_at)>='2020-02-13' ),
+
  a3 as
 (select distinct CASE
       WHEN collection LIKE '%Heartland%' THEN 'Heartland'
@@ -11,7 +26,7 @@ with
                  title,
                  id,
                  duration
- from svod_titles.titles_id_mapping
+ from titles_id_mapping
  where (series is null and upper(collection)=upper(title)) or series is not null),
 
 a4 as
@@ -109,9 +124,8 @@ where date(created_at)>'2018-10-31') ,
 FROM
   b right JOIN purchase_event as a ON a.user_id=b.user_id
 where (b.timestamp)>=date(created_at) and (b.timestamp)<=date_add(date(created_at), interval 14 day)
-group by 1,2,3),
+group by 1,2,3)
 
-d as
 (select a.user_id,
        a.platform,
        a.created_at,
@@ -131,47 +145,7 @@ d as
        case when other_duration_day_3 is null then 0 else other_duration_day_3 end as other_duration_day_3,
        case when other_duration_day_4 is null then 0 else other_duration_day_4 end as other_duration_day_4
 from purchase_event as a left join c on a.user_id=c.user_id
-where a.user_id<>'0'),
-
-e as
-(select
-       max(heartland_duration) hl_max, min(heartland_duration) as hl_min,
-       max(bates_duration) b_max, min(bates_duration) as b_min,
-       max(other_duration) o_max, min(other_duration) as o_min,
-       max(heartland_duration_day_1) hl1_max, min(heartland_duration_day_1) as hl1_min,
-       max(heartland_duration_day_2) hl2_max, min(heartland_duration_day_2) as hl2_min,
-       max(heartland_duration_day_3) hl3_max, min(heartland_duration_day_3) as hl3_min,
-       max(heartland_duration_day_4) hl4_max, min(heartland_duration_day_4) as hl4_min,
-       max(bates_duration_day_1) b1_max, min(bates_duration_day_1) as b1_min,
-       max(bates_duration_day_2) b2_max, min(bates_duration_day_2) as b2_min,
-       max(bates_duration_day_3) b3_max, min(bates_duration_day_3) as b3_min,
-       max(bates_duration_day_4) b4_max, min(bates_duration_day_4) as b4_min,
-       max(other_duration_day_1) o1_max, min(other_duration_day_1) as o1_min,
-       max(other_duration_day_2) o2_max, min(other_duration_day_2) as o2_min,
-       max(other_duration_day_3) o3_max, min(other_duration_day_3) as o3_min,
-       max(other_duration_day_4) o4_max, min(other_duration_day_4) as o4_min
-       from d)
-
-
-select user_id,
-        platform,
-        created_at as customer_created_at,
-        (heartland_duration - hl_min)/(hl_max-hl_min) as heartland_duration,
-        (bates_duration - b_min)/(b_max-b_min) as bates_duration,
-        (other_duration - o_min)/(o_max-o_min) as other_duration,
-        (heartland_duration_day_1 - hl1_min)/(hl1_max-hl1_min) as heartland_duration_day_1,
-        (heartland_duration_day_2 - hl2_min)/(hl2_max-hl2_min) as heartland_duration_day_2,
-        (heartland_duration_day_3 - hl3_min)/(hl3_max-hl3_min) as heartland_duration_day_3,
-        (heartland_duration_day_4 - hl4_min)/(hl4_max-hl4_min) as heartland_duration_day_4,
-        (bates_duration_day_1 - b1_min)/(b1_max-b1_min) as bates_duration_day_1,
-        (bates_duration_day_2 - b2_min)/(b2_max-b2_min) as bates_duration_day_2,
-        (bates_duration_day_3 - b3_min)/(b3_max-b3_min) as bates_duration_day_3,
-        (bates_duration_day_4 - b4_min)/(b4_max-b4_min) as bates_duration_day_4,
-        (other_duration_day_1 - o1_min)/(o1_max-o1_min) as other_duration_day_1,
-        (other_duration_day_2 - o2_min)/(o2_max-o2_min) as other_duration_day_2,
-        (other_duration_day_3 - o3_min)/(o3_max-o3_min) as other_duration_day_3,
-        (other_duration_day_4 - o4_min)/(o4_max-o4_min) as other_duration_day_4
- from d, e
+where a.user_id<>'0')
  ;;
   }
   dimension: user_id {

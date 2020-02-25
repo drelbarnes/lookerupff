@@ -14,9 +14,8 @@ WITH
 purchase_event as
 (select distinct  user_id, created_at, platform
 from http_api.purchase_event
-where date(created_at)>'2018-10-31'),
+where date(created_at)>'2018-10-31')
 
-d as
 (SELECT
   a.user_id,
   platform,
@@ -25,18 +24,7 @@ d as
   count(*) as error_count
 FROM
   purchase_event as a left JOIN b ON SAFE_CAST(b.user_id AS int64)=SAFE_CAST(a.user_id AS int64) and date(b.timestamp)>=date(created_at) and date(b.timestamp)<=date_add(date(created_at), interval 14 day)
-group by 1,2,3),
-
-
-e as
-(select max(error_count) as rwl_max, min(error_count) as rwl_min
-from d)
-
-select user_id,
-platform,
-created_at as customer_created_at,
-(error_count-rwl_min)/(rwl_max-rwl_min) as error_count
-from d,e ;;
+group by 1,2,3) ;;
   }
 
   dimension: user_id {
