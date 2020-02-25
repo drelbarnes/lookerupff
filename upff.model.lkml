@@ -40,6 +40,17 @@ include: "redshift_javascript_upff_home_pages.view.lkml"
 include: "redshift_mobile_conversions.view.lkml"
 include: "redshift_marketing_performance_v2.view.lkml"
 include: "amazon_personalize_recommendations.view.lkml"
+include: "redshift_looker_customer_conversion_scores.view.lkml"
+include: "redshift_php_get_average_predicted_conversion_score.view.lkml"
+include: "redshift_php_get_referral_program_info.view.lkml"
+
+explore: redshift_looker_customer_conversion_scores {
+  join: redshift_php_get_average_predicted_conversion_score {
+    type: left_outer
+    sql_on:  ${redshift_looker_customer_conversion_scores.received_date} = ${redshift_php_get_average_predicted_conversion_score.received_date_date};;
+    relationship: many_to_one
+  }
+}
 
 explore: amazon_personalize_recommendations {}
 
@@ -48,7 +59,6 @@ explore: redshift_marketing_performance_v2 {}
 explore: redshift_roku_firstplay {
 
 }
-
 
 explore: redshift_marketing_performance {
   join: redshift_javascript_conversion {
@@ -289,6 +299,12 @@ explore: subscribed {}
 explore: http_api_purchase_event
 {
   label: "Subscribers"
+
+  join: redshift_php_get_referral_program_info {
+    type: inner
+    sql_on: ${http_api_purchase_event.user_id} = ${redshift_php_get_referral_program_info.user_id};;
+    relationship: one_to_one
+  }
 
 
   join: redshift_php_send_trialist_survey {
