@@ -126,11 +126,21 @@ web AS (
 
 current_customers as
 (select email,
+        c.user_id,
         'current customer' as customer_type,
         created_at,
         date(status_date) as status_date,
-        fp.*
-from c left join fp on c.user_id=fp.user_id),
+        web_views,
+        android_views,
+        ios_views,
+        roku_views,
+        recent_views,
+        heartland_views,
+        semi_recent_views,
+        bates_views,
+        laggard_views,
+        other_content_views
+        from c left join fp on c.user_id=fp.user_id),
 
 c1 as
 (select distinct b.user_id,
@@ -138,14 +148,24 @@ c1 as
                  created_at,
                  b.status_date
 from a inner join b on a.user_id=b.user_id and a.status_date=b.status_date
-where topic in ('customer.product.disabled','customer.product.paused','customer.product.cancelled','customer.product.expired','customer.product.charge_failed','customer.created')),
+where topic in ('customer.product.disabled','customer.product.paused','customer.product.cancelled','customer.product.expired')),
 
 prior_customers as
 (select email,
+        c1.user_id,
         'previous customer' as customer_type,
         created_at,
         date(status_date) as status_date,
-        fp.*
+        web_views,
+        android_views,
+        ios_views,
+        roku_views,
+        recent_views,
+        heartland_views,
+        semi_recent_views,
+        bates_views,
+        laggard_views,
+        other_content_views
 from c1 left join fp on c1.user_id=fp.user_id),
 
 e as
@@ -171,9 +191,7 @@ union all
 select a.*,
        0 as resubscriber,
        tenure as tenure_days
-from prior_customers as a left join e1 on a.user_id=e1.user_id)
-
-       ;;
+from prior_customers as a left join e1 on a.user_id=e1.user_id);;
   }
 
   measure: count {
@@ -208,57 +226,57 @@ from prior_customers as a left join e1 on a.user_id=e1.user_id)
 
   dimension: web_views {
     type: number
-    sql: ${TABLE}.web_views ;;
+    sql: coalesce(${TABLE}.web_views,0) ;;
   }
 
   dimension: android_views {
     type: number
-    sql: ${TABLE}.android_views ;;
+    sql: coalesce(${TABLE}.android_views,0) ;;
   }
 
   dimension: ios_views {
     type: number
-    sql: ${TABLE}.ios_views ;;
+    sql: coalesce(${TABLE}.ios_views,0) ;;
   }
 
   dimension: roku_views {
     type: number
-    sql: ${TABLE}.roku_views ;;
+    sql: coalesce(${TABLE}.roku_views,0) ;;
   }
 
   dimension: recent_views {
     type: number
-    sql: ${TABLE}.recent_views ;;
+    sql: coalesce(${TABLE}.recent_views,0) ;;
   }
 
   dimension: heartland_views {
     type: number
-    sql: ${TABLE}.heartland_views ;;
+    sql: coalesce(${TABLE}.heartland_views,0) ;;
   }
 
   dimension: semi_recent_views {
     type: number
-    sql: ${TABLE}.semi_recent_views ;;
+    sql: coalesce(${TABLE}.semi_recent_views,0) ;;
   }
 
   dimension: bates_views {
     type: number
-    sql: ${TABLE}.bates_views ;;
+    sql: coalesce(${TABLE}.bates_views,0) ;;
   }
 
   dimension: laggard_views {
     type: number
-    sql: ${TABLE}.laggard_views ;;
+    sql: coalesce(${TABLE}.laggard_views,0) ;;
   }
 
   dimension: other_content_views {
     type: number
-    sql: ${TABLE}.other_content_views ;;
+    sql: coalesce(${TABLE}.other_content_views,0) ;;
   }
 
   dimension: resubscriber {
     type: number
-    sql: ${TABLE}.resubscriber ;;
+    sql: coalesce(${TABLE}.resubscriber,0) ;;
   }
 
   dimension: tenure_days {
