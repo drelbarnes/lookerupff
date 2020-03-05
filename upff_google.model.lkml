@@ -102,6 +102,9 @@ include: "bigquery_vimeo_ott_customers_dec_2019.view.lkml"
 include: "bigquery_involuntary_churn.view.lkml"
 include: "bigquery_personas_v2.view.lkml"
 include: "bigquery_personas_cluster_analysis.view.lkml"
+include: "new_video_release.view.lkml"
+
+explore: new_video_release {}
 
 explore: bigquery_personas_v2 {}
 

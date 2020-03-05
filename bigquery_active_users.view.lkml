@@ -129,7 +129,7 @@ a as
                 user_id,
                 'Web' as source,
                 episode
-         from javascript.video_content_loaded as a left join titles_id_mapping as b on safe_cast(a.video_id as string) = safe_cast(b.id as string)
+         from javascript.video_content_playing as a left join titles_id_mapping as b on safe_cast(a.video_id as string) = safe_cast(b.id as string)
         union all
         select sent_at as timestamp,
                 b.date as release_date,
