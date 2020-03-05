@@ -72,9 +72,10 @@ view: new_video_release {
         label: "Yes"
       }
       when: {
-        sql: ${status} = 'pub sub' ;;
+        sql: ${status} = 'paid sub' ;;
         label: "No"
       }
+      else: "No"
     }
   }
 
