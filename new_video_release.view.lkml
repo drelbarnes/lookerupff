@@ -75,7 +75,7 @@ view: new_video_release {
         sql: ${status} = 'paid sub' ;;
         label: "No"
       }
-      else: "No"
+
     }
   }
 
