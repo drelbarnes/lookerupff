@@ -211,6 +211,11 @@ view: redshift_get_titles {
     sql: ${TABLE}.time_unavailable ;;
   }
 
+dimension: expiration_date {
+  type: date
+  sql: DATEADD(day,-1, ${time_unavailable_date})  ;;
+}
+
   dimension_group: timestamp {
     type: time
     timeframes: [
