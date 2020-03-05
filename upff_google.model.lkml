@@ -103,6 +103,9 @@ include: "bigquery_involuntary_churn.view.lkml"
 include: "bigquery_personas_v2.view.lkml"
 include: "bigquery_personas_cluster_analysis.view.lkml"
 include: "new_video_release.view.lkml"
+include: "customer_segmentation.view.lkml"
+
+explore: customer_segmentation {}
 
 explore: new_video_release {}
 
