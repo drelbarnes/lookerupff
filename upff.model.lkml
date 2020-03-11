@@ -43,6 +43,11 @@ include: "amazon_personalize_recommendations.view.lkml"
 include: "redshift_looker_customer_conversion_scores.view.lkml"
 include: "redshift_php_get_average_predicted_conversion_score.view.lkml"
 include: "redshift_php_get_referral_program_info.view.lkml"
+include: "redshift_php_get_email_campaigns.view.lkml"
+
+explore: redshift_php_get_email_campaigns {
+  label: "Email Campaigns"
+}
 
 explore: redshift_looker_customer_conversion_scores {
   join: redshift_php_get_average_predicted_conversion_score {
