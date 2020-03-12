@@ -365,6 +365,11 @@ view: redshift_php_get_email_campaigns {
     sql: ${TABLE}.uuid_ts ;;
   }
 
+  measure: unique_email_opens {
+    type: sum
+    sql: ${opens_unique} ;;
+  }
+
   measure: count {
     type: count
     drill_fields: [id, context_library_name, list_name]
