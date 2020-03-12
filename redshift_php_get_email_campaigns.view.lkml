@@ -370,6 +370,39 @@ view: redshift_php_get_email_campaigns {
     sql: ${opens_unique} ;;
   }
 
+  measure: campaign_open_rate {
+    type: number
+    value_format: "0\%"
+    sql: ${opens_open_rate} * 100 ;;
+  }
+
+  measure: list_open_rate {
+    type: number
+    value_format: "0\%"
+    sql: ${list_stats_open_rate} ;;
+  }
+
+  measure: industry_open_rate {
+    type: number
+    value_format: "0\%"
+    sql: ${industry_stats_open_rate} * 100 ;;
+  }
+
+  measure: unique_email_clicks {
+    type: sum
+    sql: ${clicks_unique} ;;
+  }
+
+  measure:  bounces_total {
+    type: sum
+    sql: ${bounces_hard} + ${bounces_soft} ;;
+  }
+
+  measure: unsubscribed_total {
+    type: sum
+    sql:  ${unsubscribed};;
+  }
+
   measure: count {
     type: count
     drill_fields: [id, context_library_name, list_name]
