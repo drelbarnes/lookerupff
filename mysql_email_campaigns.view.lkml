@@ -44,8 +44,6 @@ view: mysql_email_campaigns {
   }
 
 
-
-
   dimension: url {
     type: string
     sql: ${TABLE}.url ;;
@@ -63,6 +61,8 @@ view: mysql_email_campaigns {
       value: "open"
     }
   }
+
+
 
   measure: click_count {
     type: count
