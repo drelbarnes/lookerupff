@@ -20,6 +20,7 @@ view: mysql_email_campaigns {
 
   dimension: email {
     type: string
+    tags: ["email"]
     sql: ${TABLE}.email ;;
   }
 
