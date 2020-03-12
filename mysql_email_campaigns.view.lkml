@@ -43,6 +43,9 @@ view: mysql_email_campaigns {
     sql: ${TABLE}.timestamp ;;
   }
 
+
+
+
   dimension: url {
     type: string
     sql: ${TABLE}.url ;;
@@ -51,5 +54,21 @@ view: mysql_email_campaigns {
   measure: count {
     type: count
     drill_fields: [id]
+  }
+
+  measure: open_count {
+    type: count
+    filters: {
+      field: action
+      value: "open"
+    }
+  }
+
+  measure: click_count {
+    type: count
+    filters: {
+      field: action
+      value: "click"
+    }
   }
 }
