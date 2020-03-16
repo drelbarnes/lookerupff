@@ -58,7 +58,7 @@ view: mysql_email_campaigns {
     type: count
     filters: {
       field: action
-      value: "open"
+      value: "'open'"
     }
   }
 
@@ -68,7 +68,7 @@ view: mysql_email_campaigns {
     type: count
     filters: {
       field: action
-      value: "click"
+      value: "'click'"
     }
   }
 }
