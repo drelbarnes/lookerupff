@@ -107,7 +107,9 @@ include: "customer_segmentation.view.lkml"
 include: "bigquery_platform_conversions.view.lkml"
 include: "bigquery_firebase_events.view.lkml"
 
-explore: bigquery_firebase_events {}
+explore: bigquery_firebase_events {
+  label: "Push Notifications"
+}
 
 explore: bigquery_platform_conversions {}
 
