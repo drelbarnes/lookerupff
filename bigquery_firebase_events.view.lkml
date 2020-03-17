@@ -3,7 +3,7 @@ view: bigquery_firebase_events {
   derived_table: {
     sql: SELECT * FROM `up-faith-and-family.analytics_164012552.events_*`
       WHERE
-        _TABLE_SUFFIX = CAST(FORMAT_DATE("%Y%m%d", DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY) ) AS STRING ;;
+        _TABLE_SUFFIX = CAST(FORMAT_DATE("%Y%m%d", DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY) ) AS STRING) ;;
 
     }
 
