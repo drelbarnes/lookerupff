@@ -105,7 +105,9 @@ include: "bigquery_personas_cluster_analysis.view.lkml"
 include: "new_video_release.view.lkml"
 include: "customer_segmentation.view.lkml"
 include: "bigquery_platform_conversions.view.lkml"
+include: "bigquery_churn_by_platform.view.lkml"
 
+explore: bigquery_churn_by_platform {}
 
 explore: bigquery_platform_conversions {}
 
