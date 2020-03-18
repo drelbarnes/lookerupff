@@ -1,19 +1,25 @@
 view: bigquery_timeupdate {
   derived_table: {
-    sql:((with a3 as
+    sql:((with a30 as
+(select video_id,
+       max(ingest_at) as ingest_at
+from php.get_titles
+group by 1),
+
+a3 as
 (select distinct
        metadata_series_name as series,
        case when metadata_season_name in ('Season 1','Season 2','Season 3') then concat(metadata_series_name,'-',metadata_season_name)
             when metadata_season_name is null then metadata_movie_name else metadata_season_name end as collection,
        season_number as season,
        a.title,
-       video_id as id,
+       a.video_id as id,
        episode_number as episode,
        date(time_available) as date,
        round(duration_seconds/60) as duration,
        promotion
-from php.get_titles as a left join svod_titles.titles_id_mapping as b on a.video_id=b.id
-where date(ingest_at)>='2020-02-13'
+from php.get_titles as a left join svod_titles.titles_id_mapping as b on a.video_id=b.id inner join a30 on a30.video_id=a.video_id and a30.ingest_at=a.ingest_at
+where date(a.ingest_at)>='2020-02-13'
 order by collection desc, metadata_series_name),
 
 a31 as
