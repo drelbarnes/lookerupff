@@ -17,6 +17,46 @@ view: bigquery_firebase_events {
       sql: ${TABLE}.device ;;
     }
 
+    dimension: device_category {
+      type: string
+      sql: JSON_EXTRACT_SCALAR(TO_JSON_STRING(${TABLE}.device), '$.category') ;;
+    }
+
+    dimension: device_mobile_brand_name {
+      type: string
+      sql: JSON_EXTRACT_SCALAR(TO_JSON_STRING(${TABLE}.device), '$.mobile_brand_name') ;;
+    }
+
+    dimension: device_mobile_model_name {
+      type: string
+      sql: JSON_EXTRACT_SCALAR(TO_JSON_STRING(${TABLE}.device), '$.mobile_model_name') ;;
+    }
+
+    dimension: device_mobile_marketing_name {
+      type: string
+      sql: JSON_EXTRACT_SCALAR(TO_JSON_STRING(${TABLE}.device), '$.mobile_marketing_name') ;;
+    }
+
+    dimension: device_mobile_os_hardware_model {
+      type: string
+      sql: JSON_EXTRACT_SCALAR(TO_JSON_STRING(${TABLE}.device), '$.mobile_os_hardware_model') ;;
+    }
+
+    dimension: device_operating_system {
+      type: string
+      sql: JSON_EXTRACT_SCALAR(TO_JSON_STRING(${TABLE}.device), '$.operating_system') ;;
+    }
+
+    dimension: device_operating_system_version {
+      type: string
+      sql: JSON_EXTRACT_SCALAR(TO_JSON_STRING(${TABLE}.device), '$.operating_system_version') ;;
+    }
+
+    dimension: device_advertising_id {
+      type: string
+      sql: JSON_EXTRACT_SCALAR(TO_JSON_STRING(${TABLE}.device), '$.advertising_id') ;;
+    }
+
     dimension: event_bundle_sequence_id {
       type: number
       sql: ${TABLE}.event_bundle_sequence_id ;;
@@ -66,6 +106,11 @@ view: bigquery_firebase_events {
       hidden: yes
       sql: ${TABLE}.geo ;;
     }
+
+  dimension: geo_continent {
+    type: string
+    sql: JSON_EXTRACT_SCALAR(TO_JSON_STRING(${TABLE}.geo), '$.continent') ;;
+  }
 
     dimension: platform {
       type: string
