@@ -82,6 +82,11 @@ view: bigquery_firebase_events {
       sql: ${TABLE}.event_params ;;
     }
 
+    dimension: event_params_key {
+      type: string
+      sql: JSON_EXTRACT_SCALAR(TO_JSON_STRING(${TABLE}.event_params), '$') ;;
+    }
+
     dimension: event_previous_timestamp {
       type: number
       sql: ${TABLE}.event_previous_timestamp ;;
@@ -107,10 +112,30 @@ view: bigquery_firebase_events {
       sql: ${TABLE}.geo ;;
     }
 
-  dimension: geo_continent {
-    type: string
-    sql: JSON_EXTRACT_SCALAR(TO_JSON_STRING(${TABLE}.geo), '$.continent') ;;
-  }
+    dimension: geo_continent {
+      type: string
+      sql: JSON_EXTRACT_SCALAR(TO_JSON_STRING(${TABLE}.geo), '$.continent') ;;
+    }
+
+    dimension: geo_country {
+      type: string
+      sql: JSON_EXTRACT_SCALAR(TO_JSON_STRING(${TABLE}.geo), '$.country') ;;
+    }
+
+    dimension: geo_region {
+      type: string
+      sql: JSON_EXTRACT_SCALAR(TO_JSON_STRING(${TABLE}.geo), '$.region') ;;
+    }
+
+    dimension: geo_city {
+      type: string
+      sql: JSON_EXTRACT_SCALAR(TO_JSON_STRING(${TABLE}.geo), '$.city') ;;
+    }
+
+    dimension: geo_sub_continent {
+      type: string
+      sql: JSON_EXTRACT_SCALAR(TO_JSON_STRING(${TABLE}.geo), '$.sub_continent') ;;
+    }
 
     dimension: platform {
       type: string
@@ -125,6 +150,21 @@ view: bigquery_firebase_events {
     dimension: traffic_source {
       hidden: yes
       sql: ${TABLE}.traffic_source ;;
+    }
+
+    dimension: traffic_source_name {
+      type: string
+      sql: JSON_EXTRACT_SCALAR(TO_JSON_STRING(${TABLE}.traffic_source), '$.name') ;;
+    }
+
+    dimension: traffic_source_medium {
+      type: string
+      sql: JSON_EXTRACT_SCALAR(TO_JSON_STRING(${TABLE}.traffic_source), '$.medium') ;;
+    }
+
+    dimension: traffic_source_source {
+      type: string
+      sql: JSON_EXTRACT_SCALAR(TO_JSON_STRING(${TABLE}.traffic_source), '$.source') ;;
     }
 
     dimension: user_first_touch_timestamp {
