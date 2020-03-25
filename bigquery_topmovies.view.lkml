@@ -219,6 +219,7 @@ union all
   dimension: title {
     type: string
     sql: ${TABLE}.title ;;
+    label: "title"
   }
 
   dimension: user_id {
@@ -239,6 +240,7 @@ union all
   measure: play_count {
     type: count_distinct
     sql: concat(safe_cast(${video_id} as string),${user_id},cast(${timestamp_date} as string)) ;;
+    label: "Video Starts"
   }
 
   set: detail {

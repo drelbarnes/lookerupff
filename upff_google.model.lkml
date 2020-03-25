@@ -106,6 +106,15 @@ include: "new_video_release.view.lkml"
 include: "customer_segmentation.view.lkml"
 include: "bigquery_platform_conversions.view.lkml"
 include: "bigquery_churn_by_platform.view.lkml"
+include: "op_uplift.view.lkml"
+
+explore: op_uplift {
+  join: bigquery_http_api_purchase_event {
+    type: left_outer
+    sql_on: ${bigquery_http_api_purchase_event.email}=${op_uplift.email} and ${bigquery_http_api_purchase_event.status_date}>=${op_uplift.entry_date} ;;
+    relationship: one_to_one
+  }
+}
 
 explore: bigquery_churn_by_platform {}
 
@@ -212,6 +221,12 @@ explore: bigquery_http_api_purchase_event {
   join: gender {
     type: left_outer
     sql_on: ${gender.name}=${bigquery_http_api_purchase_event.fname} ;;
+    relationship: one_to_one
+  }
+
+  join: op_uplift {
+    type: left_outer
+    sql_on: ${op_uplift.email}=${bigquery_http_api_purchase_event.email} and ${bigquery_http_api_purchase_event.status_date}>=${op_uplift.entry_date};;
     relationship: one_to_one
   }
 }
