@@ -5,6 +5,7 @@ view: redshift_derived_mobile_app_engagement {
     sql:
 
        (select
+          user_id,
           anonymous_id as anonymousId,
           received_at,
           'iOS' as platform,
@@ -14,6 +15,7 @@ view: redshift_derived_mobile_app_engagement {
      UNION ALL
 
      (select
+          user_id,
           anonymous_id as anonymousId,
           received_at,
           'iOS' as platform,
@@ -23,6 +25,7 @@ view: redshift_derived_mobile_app_engagement {
      UNION ALL
 
     (select
+          user_id,
           anonymous_id as anonymousId,
           received_at,
           'Android' as platform,
@@ -32,6 +35,7 @@ view: redshift_derived_mobile_app_engagement {
      UNION ALL
 
      (select
+          user_id,
           anonymous_id as anonymousId,
           received_at,
           'Android' as platform,
@@ -39,6 +43,11 @@ view: redshift_derived_mobile_app_engagement {
         from android.video_content_playing);;
 
     }
+
+  dimension: user_id {
+    type: string
+    sql: ${TABLE}.user_id ;;
+  }
 
 
     dimension: anonymousId {
@@ -94,6 +103,26 @@ view: redshift_derived_mobile_app_engagement {
   measure: count_distinct_video_playing {
     type: count_distinct
     sql: ${anonymousId} ;;
+    filters: {
+      field: event
+      value: "video_playing"
+    }
+  }
+
+  measure: known_user_count_app_opened {
+    label: "Known App Opened Users"
+    type: count_distinct
+    sql: ${user_id} ;;
+    filters: {
+      field: event
+      value: "app_opened"
+    }
+  }
+
+  measure: known_user_count_video_plays {
+    label: "Known Video Plays Users"
+    type: count_distinct
+    sql: ${user_id} ;;
     filters: {
       field: event
       value: "video_playing"
