@@ -400,7 +400,7 @@ view: redshift_php_get_email_campaigns {
 
   measure: unsubscribed_total {
     type: sum
-    sql:  ${unsubscribed};;
+    sql:  ${campaign_unsubscribed};;
   }
 
   measure: count {

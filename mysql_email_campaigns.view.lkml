@@ -63,6 +63,14 @@ view: mysql_email_campaigns {
   }
 
 
+  measure: open_count_distinct {
+    type: count_distinct
+    sql: ${email} ;;
+    filters: {
+      field: action
+      value: "open"
+    }
+  }
 
   measure: click_count {
     type: count
@@ -71,4 +79,16 @@ view: mysql_email_campaigns {
       value: "'click'"
     }
   }
+
+
+  measure: click_count_distinct {
+    type: count_distinct
+    sql: ${email} ;;
+    filters: {
+      field: action
+      value: "click"
+    }
+  }
+
+
 }
