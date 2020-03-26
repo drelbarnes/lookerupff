@@ -157,7 +157,7 @@ view: redshift_derived_mobile_app_engagement {
     sql: ${user_id} ;;
     filters: {
       field: event
-      value: "watch_list"
+      value: "added_to_watch_list"
     }
   }
 
