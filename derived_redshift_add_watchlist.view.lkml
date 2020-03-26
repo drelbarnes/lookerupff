@@ -32,7 +32,7 @@ view: derived_redshift_add_watchlist {
                 'Web' as source
          from javascript.added_to_watch_list as a left join php.get_titles as b  on REPLACE(a.context_page_path, '/', '') = b.url left join javascript.users as c on a.user_id = c.id )
 
-          (       select *
+          (       select distinct *
                   from a
                   union all
                   select * from b
