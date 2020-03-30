@@ -8,9 +8,11 @@ group by 1),
 
 a3 as
 (select distinct
-       metadata_series_name as series,
+       case when a.title like '%The Art of Trust%' then 'Heartland' else metadata_series_name  end as series,
        case when metadata_season_name in ('Season 1','Season 2','Season 3') then concat(metadata_series_name,'-',metadata_season_name)
-            when metadata_season_name is null then metadata_movie_name else metadata_season_name end as collection,
+            when metadata_season_name is null then metadata_movie_name
+            when a.title like '%The Art of Trust%' then 'Heartland - Season 13'
+            else metadata_season_name end as collection,
        season_number as season,
        a.title,
        a.video_id as id,
@@ -19,8 +21,7 @@ a3 as
        round(duration_seconds/60) as duration,
        promotion
 from php.get_titles as a left join svod_titles.titles_id_mapping as b on a.video_id=b.id inner join a30 on a30.video_id=a.video_id and a30.ingest_at=a.ingest_at
-where date(a.ingest_at)>='2020-02-13'
-order by collection desc, metadata_series_name),
+ where date(a.loaded_at)>='2020-02-13'  ),
 
 a31 as
 (select mysql_roku_firstplays_firstplay_date_date as timestamp,
@@ -58,7 +59,7 @@ a4 as
   FROM
     javascript.durationchange as a inner join a3 on safe_cast(a.video_id as int64)=a3.id inner join http_api.purchase_event as p on a.user_id=p.user_id
   WHERE
-    a.user_id IS NOT NULL and safe_cast(a.user_id as string)!='0' and a3.duration>0
+    a.user_id IS NOT NULL /*and safe_cast(a.user_id as string)!='0'*/ and a3.duration>0
   GROUP BY 1,2,3,4,5,6,7,8,9,10,11)
 
 union all
@@ -81,7 +82,7 @@ union all
   FROM
     ios.timeupdate as a inner join a3 on safe_cast(a.video_id as int64)=a3.id inner join http_api.purchase_event as p on a.user_id=p.user_id
   WHERE
-    a.user_id IS NOT NULL and safe_cast(a.user_id as string)!='0' and a3.duration>0
+    a.user_id IS NOT NULL /*and safe_cast(a.user_id as string)!='0'*/ and a3.duration>0
   GROUP BY 1,2,3,4,5,6,7,8,9,10,11)
 
   union all
@@ -104,7 +105,7 @@ union all
   FROM
     ios.video_content_playing as a inner join a3 on safe_cast(a.video_id as int64)=a3.id inner join http_api.purchase_event as p on a.user_id=p.user_id
   WHERE
-    a.user_id IS NOT NULL and safe_cast(a.user_id as string)!='0' and a3.duration>0
+    a.user_id IS NOT NULL /*and safe_cast(a.user_id as string)!='0'*/ and a3.duration>0
   GROUP BY 1,2,3,4,5,6,7,8,9,10,11)
 
   union all
@@ -127,7 +128,7 @@ union all
   FROM
     roku.video_content_playing as a inner join a3 on safe_cast(a.video_id as int64)=a3.id inner join http_api.purchase_event as p on a.user_id=p.user_id
   WHERE
-    a.user_id IS NOT NULL and safe_cast(a.user_id as string)!='0' and a3.duration>0
+    a.user_id IS NOT NULL /*and safe_cast(a.user_id as string)!='0'*/ and a3.duration>0
   GROUP BY 1,2,3,4,5,6,7,8,9,10,11)
 
   union all
@@ -150,7 +151,7 @@ union all
   FROM
     android.video_content_playing as a inner join a3 on safe_cast(a.video_id as int64)=a3.id inner join http_api.purchase_event as p on a.user_id=p.user_id
   WHERE
-    a.user_id IS NOT NULL and safe_cast(a.user_id as string)!='0' and a3.duration>0
+    a.user_id IS NOT NULL /*and safe_cast(a.user_id as string)!='0'*/ and a3.duration>0
   GROUP BY 1,2,3,4,5,6,7,8,9,10,11)
 
   union all
@@ -173,7 +174,7 @@ union all
   FROM
     javascript.video_content_playing as a inner join a3 on safe_cast(a.video_id as int64)=a3.id inner join http_api.purchase_event as p on a.user_id=p.user_id
   WHERE
-    a.user_id IS NOT NULL and safe_cast(a.user_id as string)!='0' and a3.duration>0
+    a.user_id IS NOT NULL /*and safe_cast(a.user_id as string)!='0'*/ and a3.duration>0
   GROUP BY 1,2,3,4,5,6,7,8,9,10,11)
 
   union all
@@ -196,7 +197,7 @@ union all
   FROM
     roku.timeupdate as a inner join a3 on safe_cast(a.video_id as int64)=a3.id inner join http_api.purchase_event as p on a.user_id=p.user_id
   WHERE
-    a.user_id IS NOT NULL and safe_cast(a.user_id as string)!='0' and a3.duration>0
+    a.user_id IS NOT NULL /*and safe_cast(a.user_id as string)!='0'*/ and a3.duration>0
   GROUP BY 1,2,3,4,5,6,7,8,9,10,11)
 
   union all
@@ -219,7 +220,7 @@ union all
   FROM
     android.timeupdate as a inner join a3 on a.video_id=a3.id inner join http_api.purchase_event as p on a.user_id=p.user_id
   WHERE
-    a.user_id IS NOT NULL and safe_cast(a.user_id as string)!='0' and a3.duration>0
+    a.user_id IS NOT NULL /*and safe_cast(a.user_id as string)!='0'*/ and a3.duration>0
   GROUP BY 1,2,3,4,5,6,7,8,9,10,11)
 
   union all
@@ -243,7 +244,7 @@ union all
   FROM
     a32 as a inner join a3 on  mysql_roku_firstplays_video_id=a3.id inner join http_api.purchase_event as p on a.user_id=p.user_id
   WHERE
-    a.user_id IS NOT NULL and a.user_id<>'0' and a3.duration>0))
+    a.user_id IS NOT NULL /*and a.user_id<>'0'*/ and a3.duration>0))
 
   select *,
        case when date(a.timestamp) between DATE_SUB(date(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), QUARTER)), INTERVAL 0 QUARTER) and
