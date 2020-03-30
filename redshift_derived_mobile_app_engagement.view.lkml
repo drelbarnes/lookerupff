@@ -24,6 +24,16 @@ view: redshift_derived_mobile_app_engagement {
 
      UNION ALL
 
+     (select
+          user_id,
+          anonymous_id as anonymousId,
+          received_at,
+          'iOS' as platform,
+          'added_to_watch_list' as event
+        from ios.added_to_watch_list)
+
+     UNION ALL
+
     (select
           user_id,
           anonymous_id as anonymousId,
@@ -40,7 +50,19 @@ view: redshift_derived_mobile_app_engagement {
           received_at,
           'Android' as platform,
           'video_playing' as event
-        from android.video_content_playing);;
+        from android.video_content_playing)
+
+      UNION ALL
+
+     (select
+          user_id,
+          anonymous_id as anonymousId,
+          received_at,
+          'Android' as platform,
+          'added_to_watch_list' as event
+        from android.added_to_watch_list)
+
+        ;;
 
     }
 
@@ -126,6 +148,16 @@ view: redshift_derived_mobile_app_engagement {
     filters: {
       field: event
       value: "video_playing"
+    }
+  }
+
+  measure: known_user_count_watch_list {
+    label: "Known Watch List Users"
+    type: count_distinct
+    sql: ${user_id} ;;
+    filters: {
+      field: event
+      value: "added_to_watch_list"
     }
   }
 
