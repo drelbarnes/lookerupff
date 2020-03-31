@@ -107,6 +107,15 @@ include: "customer_segmentation.view.lkml"
 include: "bigquery_platform_conversions.view.lkml"
 include: "bigquery_churn_by_platform.view.lkml"
 include: "op_uplift.view.lkml"
+include: "op_uplift_registrations.view.lkml"
+
+explore: op_uplift_registrations {
+  join: bigquery_http_api_purchase_event {
+    type: left_outer
+    sql_on: ${bigquery_http_api_purchase_event.email}=${op_uplift_registrations.email} and ${bigquery_http_api_purchase_event.status_date}>=${op_uplift_registrations.entry_date} ;;
+    relationship: one_to_one
+  }
+}
 
 explore: op_uplift {
   join: bigquery_http_api_purchase_event {
