@@ -45,6 +45,11 @@ include: "redshift_php_get_average_predicted_conversion_score.view.lkml"
 include: "redshift_php_get_referral_program_info.view.lkml"
 include: "redshift_php_get_email_campaigns.view.lkml"
 include: "redshift_derived_mobile_app_engagement.view.lkml"
+include: "redshift_derived_added_to_watch_list.view.lkml"
+
+explore: redshift_derived_added_to_watch_list{
+  label: "Add Watch List"
+}
 
 explore: redshift_derived_mobile_app_engagement {
   label: "Mobile App Engagement"

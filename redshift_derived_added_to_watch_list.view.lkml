@@ -1,4 +1,4 @@
-view: derived_redshift_add_watchlist {
+view: redshift_derived_added_to_watch_list {
   derived_table: {
     sql: with a as
         (select distinct a.received_at,
