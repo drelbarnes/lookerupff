@@ -32,6 +32,17 @@ view: derived_redshift_add_watchlist {
                  b.url,
                  'Roku' as source
           from roku.added_to_watch_list as a, php.get_titles as b WHERE a.video_id = b.video_id AND a.video_id NOT IN (SELECT video_id FROM roku.removed_from_watch_list WHERE user_id = a.user_id))
+          ,
+          d as
+         (select distinct a.received_at,
+                 a.user_id,
+                 b.video_id,
+                 b.title,
+                 b.short_description,
+                 b.thumbnail,
+                 split_part(a.context_page_url,'/', 4) AS url,
+                 'Web' as source
+          from javascript.added_to_watch_list as a, php.get_titles as b WHERE url = b.url AND url NOT IN (SELECT split_part(context_page_url,'/', 4) AS url FROM javascript.removed_from_watch_list WHERE user_id = a.user_id))
 
 
           (       select *
@@ -40,6 +51,8 @@ view: derived_redshift_add_watchlist {
                   select * from b
                   union all
                   select * from c
+                  union all
+                  select * from d
 
           );;
   }
