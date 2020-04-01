@@ -5,7 +5,7 @@ view: bigquery_platform_conversions {
              platform,
              date(created_at) as created_at
       from http_api.purchase_event
-      where topic in ('customer.created','customer.product.free_trial_created')),
+      where topic in ('customer.created','customer.product.free_trial_created') and plan='standard'),
 
       b as
       (select user_id,

@@ -3,6 +3,21 @@ view: bigquery_all_conversions {
     sql: select anonymous_id,
        timestamp,
        'android' as platform
+from android.order_completed
+union all
+select anonymous_id,
+       timestamp,
+       'ios' as platform
+from ios.order_completed
+union all
+select anonymous_id,
+       timestamp,
+       'web' as platform
+from javascript.order_completed
+union all
+select anonymous_id,
+       timestamp,
+       'android' as platform
 from android.conversion
 union all
 select anonymous_id,
