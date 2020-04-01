@@ -1,45 +1,46 @@
 view: derived_redshift_add_watchlist {
   derived_table: {
     sql: with a as
-        (select a.received_at,
-                a.user_id,
-                a.video_id,
-                b.title,
-                'Android' as source
-         from android.added_to_watch_list as a left join php.get_titles as b  on a.video_id = b.video_id left join android.users as c on a.user_id = c.id )
+        (select distinct a.received_at,
+                 a.user_id,
+                 a.video_id,
+                 b.title,
+                 b.short_description,
+                 b.thumbnail,
+                 b.url,
+                 'Android' as source
+          from android.added_to_watch_list as a, php.get_titles as b WHERE a.video_id = b.video_id AND a.video_id NOT IN (SELECT video_id FROM android.removed_from_watch_list WHERE user_id = a.user_id))
         ,
           b as
-         (select a.received_at,
-                a.user_id,
-                a.video_id,
-                b.title,
-                'iOS' as source
-         from ios.added_to_watch_list as a left join php.get_titles as b  on a.video_id = b.video_id left join ios.users as c on a.user_id = c.id )
+         (select distinct a.received_at,
+                 a.user_id,
+                 a.video_id,
+                 b.title,
+                 b.short_description,
+                 b.thumbnail,
+                 b.url,
+                 'iOS' as source
+          from ios.added_to_watch_list as a, php.get_titles as b WHERE a.video_id = b.video_id AND a.video_id NOT IN (SELECT video_id FROM ios.removed_from_watch_list WHERE user_id = a.user_id))
         ,
         c as
-         (select a.received_at,
-                a.user_id,
-                a.video_id,
-                b.title,
-                'Roku' as source
-         from roku.added_to_watch_list as a left join php.get_titles as b  on a.video_id = b.video_id left join roku.users as c on a.user_id = c.id )
-        ,
-         d as
-         (select a.received_at,
-                a.user_id,
-                b.video_id,
-                b.title,
-                'Web' as source
-         from javascript.added_to_watch_list as a left join php.get_titles as b  on REPLACE(a.context_page_path, '/', '') = b.url left join javascript.users as c on a.user_id = c.id )
+         (select distinct a.received_at,
+                 a.user_id,
+                 a.video_id,
+                 b.title,
+                 b.short_description,
+                 b.thumbnail,
+                 b.url,
+                 'Roku' as source
+          from roku.added_to_watch_list as a, php.get_titles as b WHERE a.video_id = b.video_id AND a.video_id NOT IN (SELECT video_id FROM roku.removed_from_watch_list WHERE user_id = a.user_id))
 
-          (       select distinct *
+
+          (       select *
                   from a
                   union all
                   select * from b
                   union all
                   select * from c
-                   union all
-                  select * from d
+
           );;
   }
 
@@ -53,6 +54,20 @@ view: derived_redshift_add_watchlist {
     sql: ${TABLE}.title ;;
   }
 
+  dimension: short_description {
+    type: string
+    sql: ${TABLE}.short_description ;;
+  }
+
+  dimension: thumbnail {
+    type: string
+    sql: ${TABLE}.thumbnail ;;
+  }
+
+  dimension: url {
+    type: string
+    sql: ${TABLE}.url ;;
+  }
 
   dimension: user_id {
     primary_key: yes
@@ -89,7 +104,5 @@ view: derived_redshift_add_watchlist {
     type: count_distinct
     sql: ${user_id};;
   }
-
-
 
 }
