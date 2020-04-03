@@ -9,7 +9,7 @@ view: redshift_derived_added_to_watch_list {
                  b.short_description,
                  b.thumbnail,
                  b.url,
-                 MAX(b.time_unavailable),
+                 MAX(b.time_unavailable) AS time_unavailable,
                  'Android' as source
           from android.added_to_watch_list as a, php.get_titles as b, http_api.purchase_event as i WHERE a.video_id = b.video_id AND a.user_id = i.user_id AND date(b.time_unavailable) > trunc(getdate()) AND (a.video_id NOT IN (SELECT video_id FROM android.removed_from_watch_list WHERE user_id = a.user_id) OR a.video_id NOT IN (SELECT video_id FROM android.video_content_playing WHERE user_id = a.user_id) ) GROUP BY 1,2,3,4,5,6,7,8,10 )
         ,
@@ -22,7 +22,7 @@ view: redshift_derived_added_to_watch_list {
                  b.short_description,
                  b.thumbnail,
                  b.url,
-                 MAX(b.time_unavailable),
+                 MAX(b.time_unavailable) AS time_unavailable,
                  'iOS' as source
           from ios.added_to_watch_list as a, php.get_titles as b, http_api.purchase_event as i WHERE a.video_id = b.video_id AND a.user_id = i.user_id AND date(b.time_unavailable) > trunc(getdate()) AND (a.video_id NOT IN (SELECT video_id FROM ios.removed_from_watch_list WHERE user_id = a.user_id) OR a.video_id NOT IN (SELECT video_id FROM ios.video_content_playing WHERE user_id = a.user_id)) GROUP BY 1,2,3,4,5,6,7,8,10 )
         ,
@@ -35,7 +35,7 @@ view: redshift_derived_added_to_watch_list {
                  b.short_description,
                  b.thumbnail,
                  b.url,
-                 MAX(b.time_unavailable),
+                 MAX(b.time_unavailable) AS time_unavailable,
                  'Roku' as source
           from roku.added_to_watch_list as a, php.get_titles as b, http_api.purchase_event as i WHERE a.video_id = b.video_id AND a.user_id = i.user_id AND date(b.time_unavailable) > trunc(getdate()) AND (a.video_id NOT IN (SELECT video_id FROM roku.removed_from_watch_list WHERE user_id = a.user_id) OR a.video_id NOT IN (SELECT video_id FROM roku.video_content_playing WHERE user_id = a.user_id)) GROUP BY 1,2,3,4,5,6,7,8,10 )
           ,
@@ -48,7 +48,7 @@ view: redshift_derived_added_to_watch_list {
                  b.short_description,
                  b.thumbnail,
                  split_part(a.context_page_url,'/', 4) AS url,
-                 MAX(b.time_unavailable),
+                 MAX(b.time_unavailable) AS time_unavailable,
                  'Web' as source
           from javascript.added_to_watch_list as a, php.get_titles as b, http_api.purchase_event as i  WHERE url = b.url AND a.user_id = i.user_id AND date(b.time_unavailable) > trunc(getdate()) AND (url NOT IN (SELECT split_part(context_page_url,'/', 4) AS url FROM javascript.removed_from_watch_list WHERE user_id = a.user_id) OR url NOT IN (SELECT split_part(context_page_url,'/', 4) AS url FROM javascript.video_content_playing WHERE user_id = a.user_id)) GROUP BY 1,2,3,4,5,6,7,8,10 )
 
