@@ -68,6 +68,7 @@ view: redshift_derived_added_to_watch_list {
 
   dimension: email {
     type: string
+    tags: ["email"]
     sql: ${TABLE}.email ;;
   }
 
