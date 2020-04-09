@@ -11,7 +11,7 @@ view: bigquery_platform_conversions {
       (select user_id,
              date(min(status_date)) as status_date
       from http_api.purchase_event
-      where topic='customer.product.renewed'
+      where (topic in ('customer.product.renewed','customer.product.created') and platform='web') or (platform <>'web' and topic='customer.product.renewed')
       group by 1),
 
       c as

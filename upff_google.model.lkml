@@ -366,7 +366,9 @@ explore: bigquery_timeupdate {
     sql_on: ${bigquery_allfirstplay.user_id}=${bigquery_timeupdate.user_id} and ${bigquery_allfirstplay.timestamp_date}=${bigquery_timeupdate.timestamp_date} and ${bigquery_allfirstplay.video_id}=${bigquery_timeupdate.video_id} ;;
     relationship:one_to_one}
 }
-explore: bigquery_topmovies {}
+explore: bigquery_topmovies {
+  view_label: "Movie"
+}
 explore: bigquery_topseries {}
 explore: bigquery_prior_days_title_performance {}
 explore: bigquery_churn_model_view {}

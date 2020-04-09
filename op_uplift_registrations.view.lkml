@@ -1,6 +1,6 @@
 view: op_uplift_registrations {
-  sql_table_name: svod_titles.op_uplift_registrations
-    ;;
+  derived_table: {
+    sql:select distinct * from svod_titles.op_uplift_registrations;;}
 
   dimension: email {
     type: string

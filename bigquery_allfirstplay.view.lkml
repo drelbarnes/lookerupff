@@ -46,6 +46,7 @@ titles_id_mapping as
        a.video_id as id,
        episode_number as episode,
        date(time_available) as date,
+       date(time_unavailable) as end_date,
        round(duration_seconds/60) as duration,
        promotion
 from php.get_titles as a left join svod_titles.titles_id_mapping as b on a.video_id=b.id inner join a30 on a30.video_id=a.video_id and a30.ingest_at=a.ingest_at
@@ -64,6 +65,7 @@ from looker.roku_firstplays),
 a as
         (select sent_at as timestamp,
                 b.date as release_date,
+                end_date,
                 case when collection in ('Season 1','Season 2','Season 3') then concat(series,' ',collection) else collection end as collection,
                 case when series is null and upper(collection)=upper(b.title) then 'movie'
                      when series is not null then 'series' else 'other' end as type,
@@ -84,7 +86,8 @@ a as
          union all
 
         select timestamp,
-       b.date,
+       b.date as release_date,
+       end_date,
        case when b.collection in ('Season 1','Season 2','Season 3') then concat(b.series,' ',b.collection) else collection end as collection,
        case when b.series is null and upper(b.collection)=upper(b.title) then 'movie'
                      when b.series is not null then 'series' else 'other' end as type,
@@ -107,6 +110,7 @@ from a32 as a left join titles_id_mapping as b on mysql_roku_firstplays_video_id
 
          select sent_at as timestamp,
                 b.date as release_date,
+                end_date,
                 case when collection in ('Season 1','Season 2','Season 3') then concat(series,' ',collection) else collection end as collection,
                 case when series is null and upper(collection)=upper(b.title) then 'movie'
                      when series is not null then 'series' else 'other' end as type,
@@ -126,6 +130,7 @@ from a32 as a left join titles_id_mapping as b on mysql_roku_firstplays_video_id
          union all
          select sent_at as timestamp,
                 b.date as release_date,
+                end_date,
                 case when collection in ('Season 1','Season 2','Season 3') then concat(series,' ',collection) else collection end as collection,
                 case when series is null and upper(collection)=upper(b.title) then 'movie'
                      when series is not null then 'series' else 'other' end as type,
@@ -145,6 +150,7 @@ from a32 as a left join titles_id_mapping as b on mysql_roku_firstplays_video_id
          union all
          select sent_at as timestamp,
                 b.date as release_date,
+                end_date,
                 case when collection in ('Season 1','Season 2','Season 3') then concat(series,' ',collection) else collection end as collection,
                 case when series is null and upper(collection)=upper(b.title) then 'movie'
                      when series is not null then 'series' else 'other' end as type,
@@ -164,6 +170,7 @@ from a32 as a left join titles_id_mapping as b on mysql_roku_firstplays_video_id
         union all
         select sent_at as timestamp,
                 b.date as release_date,
+                end_date,
                 case when collection in ('Season 1','Season 2','Season 3') then concat(series,' ',collection) else collection end as collection,
                 case when series is null and upper(collection)=upper(b.title) then 'movie'
                      when series is not null then 'series' else 'other' end as type,
@@ -185,6 +192,7 @@ from a32 as a left join titles_id_mapping as b on mysql_roku_firstplays_video_id
 
 select sent_at as timestamp,
                 b.date as release_date,
+                end_date,
                 case when collection in ('Season 1','Season 2','Season 3') then concat(series,' ',collection) else collection end as collection,
                 case when series is null and upper(collection)=upper(b.title) then 'movie'
                      when series is not null then 'series' else 'other' end as type,
@@ -206,6 +214,7 @@ select sent_at as timestamp,
 
         select sent_at as timestamp,
                 b.date as release_date,
+                end_date,
                 case when collection in ('Season 1','Season 2','Season 3') then concat(series,' ',collection) else collection end as collection,
                 case when series is null and upper(collection)=upper(b.title) then 'movie'
                      when series is not null then 'series' else 'other' end as type,
@@ -227,6 +236,7 @@ select sent_at as timestamp,
 
         select sent_at as timestamp,
                 b.date as release_date,
+                end_date,
                 case when collection in ('Season 1','Season 2','Season 3') then concat(series,' ',collection) else collection end as collection,
                 case when series is null and upper(collection)=upper(b.title) then 'movie'
                      when series is not null then 'series' else 'other' end as type,
@@ -249,6 +259,7 @@ select sent_at as timestamp,
 
         select timestamp,
                 b.date as release_date,
+                end_date,
                 case when b.collection in ('Season 1','Season 2','Season 3') then concat(series,' ',b.collection) else b.collection end as collection,
                 case when series is null and upper(b.collection)=upper(b.title) then 'movie'
                      when series is not null then 'series' else 'other' end as type,
@@ -274,6 +285,8 @@ select a.user_id,
        a.EPOCH_TIMESTAMP,
        a.platform_id,
        a.release_date,
+       a.end_date,
+       date_diff(date(timestamp_sub(a.timestamp,interval 4 hour)),a.release_date,day) as days_since_release,
        a.collection,
        a.type,
        a.video_id,
@@ -300,6 +313,11 @@ from a left join cc on a.user_id=cc.user_id
 dimension: winback {
   type: string
   sql: ${TABLE}.winback ;;
+}
+
+dimension: days_since_release {
+  type: number
+  sql: ${TABLE}.days_since_release ;;
 }
 
 dimension: tv_cast {
@@ -469,7 +487,7 @@ dimension: promotion_date {
 
   measure: play_count {
     type: count_distinct
-    sql: concat(safe_cast(${video_id} as string),${user_id},cast(${timestamp_date} as string)) ;;
+    sql: case when user_id is null or user_id='0' or length(user_id)=0 then concat(safe_cast(${video_id} as string),${anonymousId},cast(${timestamp_date} as string)) else concat(safe_cast(${video_id} as string),${user_id},cast(${timestamp_date} as string)) end ;;
   }
 
   measure: number_of_platforms_by_user {
