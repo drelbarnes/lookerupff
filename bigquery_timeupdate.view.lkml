@@ -264,6 +264,7 @@ from a4 as a));;
 
   dimension: email {
     type: string
+    tags: ["email"]
     sql: ${TABLE}.email ;;
   }
 
