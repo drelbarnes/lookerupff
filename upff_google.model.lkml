@@ -108,6 +108,9 @@ include: "bigquery_platform_conversions.view.lkml"
 include: "bigquery_churn_by_platform.view.lkml"
 include: "op_uplift.view.lkml"
 include: "op_uplift_registrations.view.lkml"
+include: "sat.view.lkml"
+
+explore: sat {}
 
 explore: op_uplift_registrations {
   join: bigquery_http_api_purchase_event {
