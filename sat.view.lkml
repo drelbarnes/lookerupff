@@ -286,11 +286,13 @@ view: sat {
 
   dimension: email {
     type: string
+    tags: ["email"]
     sql: ${TABLE}.email ;;
   }
 
   dimension: user_id {
     type: string
+    tags: ["user_id"]
     sql: ${TABLE}.user_id ;;
   }
 
