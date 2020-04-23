@@ -8,6 +8,12 @@ view: mysql_email_campaigns {
     sql: ${TABLE}.id ;;
   }
 
+  dimension: user_id {
+    type: number
+    tags: ["user_id"]
+    sql: 1 ;;
+  }
+
   dimension: action {
     type: string
     sql: ${TABLE}.action ;;
