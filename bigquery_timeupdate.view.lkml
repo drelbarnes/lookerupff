@@ -1,6 +1,6 @@
 view: bigquery_timeupdate {
   derived_table: {
-    sql:((with a30 as
+    sql:with a30 as
 (select video_id,
        max(ingest_at) as ingest_at
 from php.get_titles
@@ -254,7 +254,7 @@ union all
             DATE_SUB(date(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY)), INTERVAL 4 QUARTER) then "YAGO Quarter"
             else "NA"
             end as Quarter
-from a4 as a));;
+from a4 as a;;
   }
 
   dimension: video_id {

@@ -109,6 +109,8 @@ include: "bigquery_churn_by_platform.view.lkml"
 include: "op_uplift.view.lkml"
 include: "op_uplift_registrations.view.lkml"
 include: "sat.view.lkml"
+include: "bigquery_ribbow_audiences.view.lkml"
+
 
 explore: sat {}
 
@@ -490,7 +492,16 @@ explore: bigquery_allfirstplay {
     relationship: one_to_one
   }
 
+  join: bigquery_ribbow_audiences {
+    type: left_outer
+    sql_on: ${bigquery_allfirstplay.user_id}=${bigquery_ribbow_audiences.user_id} ;;
+    relationship: many_to_one
+  }
+
 }
+
+explore: bigquery_ribbow_audiences {}
+
 explore: bigquery_derived_all_firstplay {
   join: bigquery_views{
     type: left_outer
