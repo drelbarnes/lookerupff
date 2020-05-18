@@ -506,6 +506,17 @@ dimension: promotion_date {
     value_format: "0.0"
   }
 
+  measure: id_count {
+    type: count_distinct
+    sql: ${TABLE}.anonymous_id ;;
+  }
+
+  measure: views_per_id {
+    type: number
+    sql: 1.0*${play_count}/${id_count} ;;
+    value_format: "0.0"
+  }
+
 
 # ----- Sets of fields for drilling ------
   set: detail {
