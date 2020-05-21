@@ -1,4 +1,4 @@
-view: mysql_get_email_automation_emails {
+view: redshift_get_email_automation_emails {
   sql_table_name: php.get_email_automation_emails ;;
   drill_fields: [id]
 
