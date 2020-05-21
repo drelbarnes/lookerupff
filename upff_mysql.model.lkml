@@ -2,6 +2,7 @@ connection: "upff_mysql"
 
 include: "mysql_roku_firstplays.view"
 include: "mysql_email_campaigns.view"
+
 # include all views in this project
 # include: "my_dashboard.dashboard.lookml"   # include a LookML dashboard called my_dashboard
 

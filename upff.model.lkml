@@ -46,6 +46,16 @@ include: "redshift_php_get_referral_program_info.view.lkml"
 include: "redshift_php_get_email_campaigns.view.lkml"
 include: "redshift_derived_mobile_app_engagement.view.lkml"
 include: "redshift_derived_added_to_watch_list.view.lkml"
+include: "redshift_get_email_automation_emails.view.lkml"
+include: "redshift_get_email_automations.view.lkml"
+
+explore: redshift_get_email_automation_emails {
+  label: "Email Automation Emails"
+}
+
+explore: redshift_get_email_automations {
+  label: "Email Automations"
+}
 
 explore: redshift_derived_added_to_watch_list{
   label: "Add Watch List"
