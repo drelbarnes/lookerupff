@@ -110,6 +110,9 @@ include: "op_uplift.view.lkml"
 include: "op_uplift_registrations.view.lkml"
 include: "sat.view.lkml"
 include: "bigquery_ribbow_audiences.view.lkml"
+include: "bigquery_fox_promo.view.lkml"
+
+explore: bigquery_fox_promo {}
 
 
 explore: sat {}
