@@ -19,7 +19,7 @@ view: bigquery_platform_conversions {
              case when b.user_id is not null then 1 else 0 end as converted
       from a left join b on a.user_id=b.user_id)
 
-      select user_id, created_at,
+      select created_at,
              platform,
              count(distinct user_id) as total_created,
              sum(converted) as total_converted
@@ -56,10 +56,6 @@ view: bigquery_platform_conversions {
     sql: ${TABLE}.platform ;;
   }
 
-  dimension: user_id {
-    type: number
-    sql: ${TABLE}.user_id ;;
-  }
 
   dimension: total_created {
     type: number
