@@ -56,6 +56,11 @@ view: bigquery_platform_conversions {
     sql: ${TABLE}.platform ;;
   }
 
+  dimension: user_id {
+    type: number
+    sql: ${TABLE}.user_id ;;
+  }
+
   dimension: total_created {
     type: number
     sql: ${TABLE}.total_created ;;
