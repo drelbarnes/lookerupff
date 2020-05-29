@@ -39,7 +39,7 @@ and (country='United States' or country is null)
 and (conversion_date)<=date(b.status_date)),
 
 
-      awl as
+/*      awl as
       (SELECT user_id,timestamp, 1 as addwatchlist FROM javascript.addwatchlist where user_id is not null
         UNION ALL
         SELECT user_id,timestamp, 1 as addwatchlist FROM android.addwatchlist where user_id is not null
@@ -57,7 +57,7 @@ and (conversion_date)<=date(b.status_date)),
              num,
              sum(addwatchlist) as addwatchlist
       from f
-      group by 1,2),
+      group by 1,2),*/
 
       error as
       (SELECT user_id,timestamp, 1 as error FROM javascript.error where user_id is not null
@@ -79,7 +79,7 @@ and (conversion_date)<=date(b.status_date)),
       from g
       group by 1,2),
 
-      rwl as
+/*      rwl as
       (SELECT user_id,timestamp, 1 as removewatchlist FROM javascript.removewatchlist where user_id is not null
         UNION ALL
         SELECT user_id,timestamp, 1 as removewatchlist FROM android.removewatchlist where user_id is not null
@@ -97,7 +97,7 @@ and (conversion_date)<=date(b.status_date)),
              num,
              sum(removewatchlist) as removewatchlist
       from i
-      group by 1,2),
+      group by 1,2),*/
 
       view as
       (SELECT safe_cast(user_id as int64) as user_id,timestamp, 1 as view FROM javascript.pages where user_id is not null
@@ -301,9 +301,9 @@ m0 as
 
 m as
 (select e.*,
-             addwatchlist,
+--              addwatchlist,
              error,
-             removewatchlist,
+--              removewatchlist,
              view,
 --              bates_plays,
              bates_duration,
@@ -323,9 +323,9 @@ m as
              m0.undo_cancel,
              m0.charge_failed,
              1 as code
-      from e left join awl1 on e.user_id=awl1.user_id and e.num=awl1.num
+      from e /*left join awl1 on e.user_id=awl1.user_id and e.num=awl1.num*/
              left join error1 on e.user_id=error1.user_id and e.num=error1.num
-             left join rwl1 on e.user_id=rwl1.user_id and e.num=rwl1.num
+--              left join rwl1 on e.user_id=rwl1.user_id and e.num=rwl1.num
              left join view1 on e.user_id=view1.user_id and e.num=view1.num
              left join fp1 on e.user_id=fp1.user_id and e.num=fp1.num
              left join m0 on e.user_id=m0.user_id and e.num=m0.num
@@ -333,9 +333,9 @@ m as
 
 n as
 (select num,
-       min(addwatchlist) as awl_min,
+--        min(addwatchlist) as awl_min,
        min(error) as error_min,
-       min(removewatchlist) as rwl_min,
+--        min(removewatchlist) as rwl_min,
        min(view) as view_min,
 --        min(bates_plays) as bp_min,
        min(bates_duration) as bd_min,
@@ -359,9 +359,9 @@ n as
        max(two_week_duration) as twd_max,
        max(three_week_duration) as thwd_max,
        max(four_week_duration) as fwd_max,
-       max(addwatchlist) as awl_max,
+--        max(addwatchlist) as awl_max,
        max(error) as error_max,
-       max(removewatchlist) as rwl_max,
+--        max(removewatchlist) as rwl_max,
        max(view) as view_max,
 --        max(bates_plays) as bp_max,
        max(bates_duration) as bd_max,
@@ -402,9 +402,9 @@ select m.user_id,
        (two_week_duration-twd_min)/(twd_max-twd_min) as two_week_duration,
        (three_week_duration-thwd_min)/(thwd_max-thwd_min) as three_week_duration,
        (four_week_duration-fwd_min)/(fwd_max-fwd_min) as four_week_duration,
-       (addwatchlist-awl_min)/(awl_max-awl_min) as addwatchlist,
+--        (addwatchlist-awl_min)/(awl_max-awl_min) as addwatchlist,
        (error-error_min)/(error_max-error_min) as error,
-       (removewatchlist-rwl_min)/(rwl_max-rwl_min) as removewatchlist,
+--        (removewatchlist-rwl_min)/(rwl_max-rwl_min) as removewatchlist,
        (view-view_min)/(view_max-view_min) as view,
 --        (bates_plays-bp_min)/(bp_max-bp_min) as bates_plays,
        (bates_duration-bd_min)/(bd_max-bd_min) as bates_duration,
@@ -418,9 +418,9 @@ select m.user_id,
        charge_failed
 from m left join n on m.num=n.num inner join num1 on m.code=num1.code
 where
-awl_min<>awl_max and
+-- awl_min<>awl_max and
 error_min<>error_max and
-rwl_min<>rwl_max and
+-- rwl_min<>rwl_max and
 view_min<>view_max and
 -- bp_min<>bp_max and
 bd_min<>bd_max and

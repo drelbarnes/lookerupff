@@ -12,7 +12,7 @@ view: churn_training_input {
       column: marketing_optin {}
       column: num {}
       column: state {}
-      column: addwatchlist {}
+#       column: addwatchlist {}
       column: bates_duration {}
 #       column: bates_plays {}
       column: churn_status {}
@@ -22,7 +22,7 @@ view: churn_training_input {
       column: other_duration {}
 #       column: other_plays {}
       column: platform {}
-      column: removewatchlist {}
+#       column: removewatchlist {}
       column: view {}
       column: month_day {}
 #       column: one_week_view {}
@@ -54,7 +54,7 @@ view: churn_training_input {
 #       derived_column: two_week_duration_num {sql:two_week_duration*num;;}
 #       derived_column: three_week_duration_num {sql:three_week_duration*num;;}
 #       derived_column: four_week_duration_num {sql:four_week_duration*num;;}
-      expression_custom_filter: (${bigquery_churn_model.event_created_at_date}< now() AND ${bigquery_churn_model.event_created_at_date} >= add_days(-60,now())) AND ${bigquery_churn_model.random}<=0.7;;
+      expression_custom_filter: (${bigquery_churn_model.event_created_at_date}< now() AND ${bigquery_churn_model.event_created_at_date} >= add_days(-30,now())) AND ${bigquery_churn_model.random}<=0.7;;
     }
   }
   dimension: customer_id {
@@ -63,7 +63,7 @@ view: churn_training_input {
   dimension: marketing_optin {type:number}
   dimension: num {type:number}
   dimension: state {type:string}
-  dimension: addwatchlist {type:number}
+#   dimension: addwatchlist {type:number}
   dimension: bates_duration {type:number}
 #   dimension: bates_plays {type:number}
   dimension: churn_status {type:number}
@@ -73,7 +73,7 @@ view: churn_training_input {
   dimension: other_duration {type:number}
 #   dimension: other_plays {type:number}
   dimension: platform {type:string}
-  dimension: removewatchlist {type:number}
+#   dimension: removewatchlist {type:number}
   dimension: view {type:number}
   dimension: month_day {type: number}
 #   dimension: one_week_view {type:number}
@@ -102,7 +102,7 @@ view: churn_testing_input {
       column: marketing_optin {}
       column: num {}
       column: state {}
-      column: addwatchlist {}
+#       column: addwatchlist {}
       column: bates_duration {}
 #       column: bates_plays {}
       column: churn_status {}
@@ -112,7 +112,7 @@ view: churn_testing_input {
       column: other_duration {}
 #       column: other_plays {}
       column: platform {}
-      column: removewatchlist {}
+#       column: removewatchlist {}
       column: view {}
       column: month_day{}
 #       column: one_week_view {}
@@ -144,7 +144,7 @@ view: churn_testing_input {
 #       derived_column: two_week_duration_num {sql:two_week_duration*num;;}
 #       derived_column: three_week_duration_num {sql:three_week_duration*num;;}
 #       derived_column: four_week_duration_num {sql:four_week_duration*num;;}
-      expression_custom_filter: (${bigquery_churn_model.event_created_at_date} < now() AND ${bigquery_churn_model.event_created_at_date} >= add_days(-60,now())) AND ${bigquery_churn_model.random}>0.7;;
+      expression_custom_filter: (${bigquery_churn_model.event_created_at_date} < now() AND ${bigquery_churn_model.event_created_at_date} >= add_days(-30,now())) AND ${bigquery_churn_model.random}>0.7;;
     }
   }
   dimension: customer_id {
@@ -153,7 +153,7 @@ view: churn_testing_input {
   dimension: marketing_optin {type:number}
   dimension: num {type:number}
   dimension: state {type:string}
-  dimension: addwatchlist {type:number}
+#   dimension: addwatchlist {type:number}
   dimension: bates_duration {type:number}
 #   dimension: bates_plays {type:number}
   dimension: churn_status {type:number}
@@ -163,7 +163,7 @@ view: churn_testing_input {
   dimension: other_duration {type:number}
 #   dimension: other_plays {type:number}
   dimension: platform {type:string}
-  dimension: removewatchlist {type:number}
+#   dimension: removewatchlist {type:number}
   dimension: view {type:number}
   dimension: month_day{type:number}
 #   dimension: one_week_view {type:number}
@@ -187,7 +187,7 @@ view: churn_model {
       CREATE OR REPLACE MODEL ${SQL_TABLE_NAME}
       OPTIONS(model_type='logistic_reg'
         , labels=['churn_status']
-        , min_rel_progress = 0.00000005
+        , min_rel_progress = 0.0005
         , max_iterations = 20
         ) AS
       SELECT
@@ -336,7 +336,7 @@ view: churn_future_input {
       column: num {}
       column: email {}
       column: state {}
-      column: addwatchlist {}
+#       column: addwatchlist {}
       column: bates_duration {}
 #       column: bates_plays {}
       column: churn_status {}
@@ -346,7 +346,7 @@ view: churn_future_input {
       column: other_duration {}
 #       column: other_plays {}
       column: platform {}
-      column: removewatchlist {}
+#       column: removewatchlist {}
       column: view {}
       column: month_day {}
 #       column: one_week_view {}
@@ -393,7 +393,7 @@ view: churn_future_input {
   dimension: marketing_optin {type:number}
   dimension: num {type:number}
   dimension: state {type:string}
-  dimension: addwatchlist {type:number}
+#   dimension: addwatchlist {type:number}
   dimension: bates_duration {type:number}
 #   dimension: bates_plays {type:number}
   dimension: churn_status {type:number}
@@ -403,7 +403,7 @@ view: churn_future_input {
   dimension: other_duration {type:number}
 #   dimension: other_plays {type:number}
   dimension: platform {type:string}
-  dimension: removewatchlist {type:number}
+#   dimension: removewatchlist {type:number}
   dimension: view {type:number}
   dimension: month_day{type:number}
 #   dimension: one_week_view {type:number}
@@ -440,9 +440,9 @@ view: churn_prediction {
     type: number
   }
   dimension: state {}
-  dimension: addwatchlist {
-    type: number
-  }
+#   dimension: addwatchlist {
+#     type: number
+#   }
   dimension: bates_duration {
     type: number
   }
@@ -468,9 +468,9 @@ view: churn_prediction {
     type: number
   }
   dimension: platform {}
-  dimension: removewatchlist {
-    type: number
-  }
+#   dimension: removewatchlist {
+#     type: number
+#   }
   dimension: view {
     type: number
   }
