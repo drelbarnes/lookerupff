@@ -2,13 +2,14 @@ view: bigquery_timeupdate {
   derived_table: {
     sql:with a30 as
 (select video_id,
-       max(ingest_at) as ingest_at
+       max(loaded_at) as loaded_at
 from php.get_titles
+where metadata_movie_name<>'Operation UPlift' or metadata_movie_name is null
 group by 1),
 
 a3 as
 (select distinct
-       metadata_series_name as series,
+       metadata_series_name  as series,
        case when metadata_season_name in ('Season 1','Season 2','Season 3') then concat(metadata_series_name,'-',metadata_season_name)
             when metadata_season_name is null then metadata_movie_name
             else metadata_season_name end as collection,
@@ -17,10 +18,11 @@ a3 as
        a.video_id as id,
        episode_number as episode,
        date(time_available) as date,
+       date(time_unavailable) as end_date,
        round(duration_seconds/60) as duration,
        promotion
-from php.get_titles as a left join svod_titles.titles_id_mapping as b on a.video_id=b.id inner join a30 on a30.video_id=a.video_id and a30.ingest_at=a.ingest_at
- where date(a.loaded_at)>='2020-02-13'  ),
+from php.get_titles as a left join svod_titles.titles_id_mapping as b on a.video_id=b.id inner join a30 on a30.video_id=a.video_id and a30.loaded_at=a.loaded_at
+ where date(a.loaded_at)>='2020-02-13'),
 
 a31 as
 (select mysql_roku_firstplays_firstplay_date_date as timestamp,
