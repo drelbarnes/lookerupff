@@ -355,6 +355,70 @@ view: redshift_get_email_automation_emails {
     sql: ${TABLE}.workflow_id ;;
   }
 
+  measure: email_send_count_7_days {
+    type: sum
+    hidden: yes
+    sql: ${TABLE}.emails_sent;;
+    filters: [timestamp_date: "7 days ago"]
+    # Reference fields from other joined views with view_name.field_name syntax
+    # Minus sign means "not" in this case, but check notation docs for details
+  }
+
+  measure: email_send_count_14_days {
+    type: sum
+    hidden: yes
+    sql: ${TABLE}.emails_sent;;
+    filters: [timestamp_date: "14 days ago"]
+    # Reference fields from other joined views with view_name.field_name syntax
+    # Minus sign means "not" in this case, but check notation docs for details
+  }
+
+  measure: email_send_count_21_days {
+    type: sum
+    hidden: yes
+    sql: ${TABLE}.emails_sent;;
+    filters: [timestamp_date: "21 days ago"]
+    # Reference fields from other joined views with view_name.field_name syntax
+    # Minus sign means "not" in this case, but check notation docs for details
+  }
+
+  measure: email_send_count_today {
+    type: sum
+    sql: ${TABLE}.emails_sent;;
+    filters: [timestamp_date: "1 days"]
+    # Reference fields from other joined views with view_name.field_name syntax
+    # Minus sign means "not" in this case, but check notation docs for details
+  }
+
+  measure: email_sends_count{
+    type: sum
+    sql: ${TABLE}.emails_sent;;
+    # Reference fields from other joined views with view_name.field_name syntax
+    # Minus sign means "not" in this case, but check notation docs for details
+  }
+
+  measure: email_send_count_7 {
+    type: number
+    sql: ${email_send_count_today} - ${email_send_count_7_days};;
+    # Reference fields from other joined views with view_name.field_name syntax
+    # Minus sign means "not" in this case, but check notation docs for details
+  }
+
+  measure: email_send_count_14 {
+    type: number
+    sql: ${email_send_count_today} - ${email_send_count_14_days};;
+    # Reference fields from other joined views with view_name.field_name syntax
+    # Minus sign means "not" in this case, but check notation docs for details
+  }
+
+
+  measure: email_send_count_21 {
+    type: number
+    sql: ${email_send_count_today} - ${email_send_count_21_days};;
+    # Reference fields from other joined views with view_name.field_name syntax
+    # Minus sign means "not" in this case, but check notation docs for details
+  }
+
   measure: count {
     type: count
     drill_fields: [id, context_library_name, settings_from_name, recipients_list_name]

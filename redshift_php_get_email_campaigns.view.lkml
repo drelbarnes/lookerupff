@@ -403,6 +403,32 @@ view: redshift_php_get_email_campaigns {
     sql:  ${campaign_unsubscribed};;
   }
 
+  measure:  email_send_count {
+    type: number
+    sql: ${campaign_email_sent} ;;
+  }
+
+  measure: email_send_count_by_list_id_fc061462da {
+    type: sum_distinct
+    sql_distinct_key: ${campaign_id} ;;
+    sql: ${campaign_email_sent} ;;
+    filters: [list_id: "fc061462da"]
+  }
+
+  measure: email_send_count_by_list_id_0748018761 {
+    type: sum_distinct
+    sql_distinct_key: ${campaign_id} ;;
+    sql: ${campaign_email_sent} ;;
+    filters: [list_id: "0748018761"]
+  }
+
+  measure: email_send_count_by_list_id_29ba9331b8 {
+    type: sum_distinct
+    sql_distinct_key: ${campaign_id} ;;
+    sql: ${campaign_email_sent} ;;
+    filters: [list_id: "29ba9331b8"]
+  }
+
   measure: count {
     type: count
     drill_fields: [id, context_library_name, list_name]
