@@ -48,6 +48,16 @@ include: "redshift_derived_mobile_app_engagement.view.lkml"
 include: "redshift_derived_added_to_watch_list.view.lkml"
 include: "redshift_get_email_automation_emails.view.lkml"
 include: "redshift_get_email_automations.view.lkml"
+include: "redshift_data_warehouse_info.view.lkml"
+include: "redshift_segment_anonymous_known_users.view.lkml"
+
+explore: redshift_segment_anonymous_known_users {
+  label: "Segment Monthly Tracked Users"
+}
+
+explore: redshift_data_warehouse_info {
+  label: "Redshift DW Info"
+}
 
 explore: redshift_get_email_automation_emails {
   label: "Email Automation Emails"
