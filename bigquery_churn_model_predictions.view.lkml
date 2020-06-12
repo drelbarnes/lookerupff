@@ -205,7 +205,7 @@ view: churn_model_evaluation {
   derived_table: {
     sql: SELECT * FROM ml.EVALUATE(
           MODEL ${churn_model.SQL_TABLE_NAME},
-          (SELECT * FROM ${churn_testing_input.SQL_TABLE_NAME}), struct(0.13 as threshold));;
+          (SELECT * FROM ${churn_testing_input.SQL_TABLE_NAME}), struct(0.17 as threshold));;
   }
   dimension: recall {
     type: number
@@ -222,7 +222,7 @@ view: churn_confusion_matrix {
   derived_table: {
     sql: SELECT * FROM ml.confusion_matrix(
         MODEL ${churn_model.SQL_TABLE_NAME},
-        (SELECT * FROM ${churn_testing_input.SQL_TABLE_NAME}),struct(0.13 as threshold));;
+        (SELECT * FROM ${churn_testing_input.SQL_TABLE_NAME}),struct(0.16 as threshold));;
   }
 
   dimension: expected_label {}
@@ -379,7 +379,7 @@ view: churn_future_input {
 #       derived_column: three_week_duration_num {sql:three_week_duration*num;;}
 #       derived_column: four_week_duration_num {sql:four_week_duration*num;;}
 
-      expression_custom_filter: ${bigquery_churn_model.end_date2}>now();;
+      expression_custom_filter: ${bigquery_churn_model.end_date2}>=now();;
     }
   }
   dimension: customer_id {
