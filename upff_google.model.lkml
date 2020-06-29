@@ -111,6 +111,10 @@ include: "op_uplift_registrations.view.lkml"
 include: "sat.view.lkml"
 include: "bigquery_ribbow_audiences.view.lkml"
 include: "bigquery_fox_promo.view.lkml"
+include: "vimeo_ott_metadata.view.lkml"
+
+explore: vimeo_ott_metadata{
+}
 
 explore: bigquery_fox_promo {}
 
