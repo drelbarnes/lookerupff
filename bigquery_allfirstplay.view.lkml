@@ -32,13 +32,14 @@ a30 as
 (select video_id,
        max(loaded_at) as loaded_at
 from php.get_titles
-where metadata_movie_name<>'Operation UPlift' or metadata_movie_name is null
+where (metadata_movie_name not like '%Operation UPlift%' or metadata_movie_name is null) or (metadata_season_name not like '%Operation UPlift%')
 group by 1),
 
 titles_id_mapping as
 (select distinct
        metadata_series_name  as series,
-       case when metadata_season_name in ('Season 1','Season 2','Season 3') then concat(metadata_series_name,'-',metadata_season_name)
+       case when metadata_season_name in ('Season 1','Season 2','Season 3', 'Season 4', 'Season 5', 'Season 6','Season 7') then concat(metadata_series_name,'-',metadata_season_name)
+            when metadata_season_name like '%Operation UPlift%' then concat(metadata_series_name,'-',metadata_season_name)
             when metadata_season_name is null then metadata_movie_name
             else metadata_season_name end as collection,
        season_number as season,
