@@ -112,7 +112,11 @@ include: "sat.view.lkml"
 include: "bigquery_ribbow_audiences.view.lkml"
 include: "bigquery_fox_promo.view.lkml"
 include: "vimeo_ott_metadata.view.lkml"
+include: "metadata_live_grid.view.lkml"
 
+explore: metadata_live_grid {
+
+}
 explore: vimeo_ott_metadata{
 }
 
