@@ -115,9 +115,14 @@ select *, case when platform_ = 'Comcast SVOD' then 'Comcast' else platform_ end
     drill_fields: []
   }
 
-  measure: total_views {
+  measure: total_views_ {
     type: sum
     sql: ${views} ;;
+  }
+
+  measure: total_views {
+    type: number
+    sql: case when ${total_views_} is null then 0 else ${total_views_} end ;;
   }
 
 

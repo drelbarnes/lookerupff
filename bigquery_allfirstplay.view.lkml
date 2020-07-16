@@ -561,6 +561,17 @@ dimension: collections_group_a {
     sql: {% condition collections_b %} ${collection} {% endcondition %};;
   }
 
+  filter: collection_type {
+    type: string
+  }
+
+  dimension: collections_type_group {
+    hidden: no
+    type: yesno
+    sql: {% condition collections_b %} ${type}{% endcondition %};;
+  }
+
+
   measure: user_count_collections_b {
     type: count_distinct
     filters: {
@@ -638,6 +649,15 @@ dimension: collections_group_a {
     type: count_distinct
     filters: {
       field: promotion_group
+      value: "yes"
+    }
+    sql: concat(${title},${user_id},cast(${timestamp_date} as string)) ;;
+  }
+
+  measure: promotion_type_plays {
+    type: count_distinct
+    filters: {
+      field: collections_type_group
       value: "yes"
     }
     sql: concat(${title},${user_id},cast(${timestamp_date} as string)) ;;
@@ -779,6 +799,21 @@ dimension: collections_group_a {
     type: count_distinct
     filters: {
       field: promotional_collection_b_
+      value: "yes"
+    }
+    sql: concat(safe_cast(${video_id} as string),${user_id},cast(${timestamp_date} as string))  ;;
+  }
+
+  dimension: promotional_collection_c_{
+    hidden: no
+    type: yesno
+    sql: {%condition promotional_collection_a%} ${collection} {%endcondition%};;
+  }
+
+  measure: promotional_collection_plays_c {
+    type: count_distinct
+    filters: {
+      field: promotional_collection_c_
       value: "yes"
     }
     sql: concat(safe_cast(${video_id} as string),${user_id},cast(${timestamp_date} as string))  ;;
