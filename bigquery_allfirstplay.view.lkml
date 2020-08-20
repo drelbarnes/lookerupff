@@ -38,8 +38,7 @@ group by 1),
 titles_id_mapping as
 (select distinct
        metadata_series_name  as series,
-       case when metadata_season_name in ('Season 1','Season 2','Season 3', 'Season 4', 'Season 5', 'Season 6','Season 7') then concat(metadata_series_name,'-',metadata_season_name)
-            when metadata_season_name like '%Operation UPlift%' then concat(metadata_series_name,'-',metadata_season_name)
+       case when metadata_season_name in ('Season 1','Season 2','Season 3') then concat(metadata_series_name,'-',metadata_season_name)
             when metadata_season_name is null then metadata_movie_name
             else metadata_season_name end as collection,
        season_number as season,
@@ -187,7 +186,7 @@ from a32 as a left join titles_id_mapping as b on mysql_roku_firstplays_video_id
                 episode,
                 null as tv_cast,
                 promotion
-         from javascript.video_playback_started as a left join titles_id_mapping as b on safe_cast(a.video_id as string)= safe_cast(b.id as string)
+         from javascript.video_content_playing as a left join titles_id_mapping as b on safe_cast(a.video_id as string)= safe_cast(b.id as string)
 
         union all
 
@@ -209,7 +208,7 @@ select sent_at as timestamp,
                 episode,
                 null as tv_cast,
                 promotion
-         from ios.video_playback_started as a left join titles_id_mapping as b on safe_cast(a.video_id as string)= safe_cast(b.id as string)
+         from ios.video_content_playing as a left join titles_id_mapping as b on safe_cast(a.video_id as string)= safe_cast(b.id as string)
 
         union all
 
@@ -231,7 +230,7 @@ select sent_at as timestamp,
                 episode,
                 null as tv_cast,
                 promotion
-         from android.video_playback_started as a left join titles_id_mapping as b on safe_cast(a.video_id as string)= safe_cast(b.id as string)
+         from android.video_content_playing as a left join titles_id_mapping as b on safe_cast(a.video_id as string)= safe_cast(b.id as string)
 
         union all
 
@@ -253,7 +252,7 @@ select sent_at as timestamp,
                 episode,
                 null as tv_cast,
                 promotion
-         from roku.video_playback_started as a left join titles_id_mapping as b on safe_cast(a.video_id as string)= safe_cast(b.id as string)
+         from roku.video_content_playing as a left join titles_id_mapping as b on safe_cast(a.video_id as string)= safe_cast(b.id as string)
 
 
         union all
@@ -278,7 +277,6 @@ select sent_at as timestamp,
                 promotion
          from a2 as a left join titles_id_mapping as b on trim(upper(b.title)) = trim(upper(a.title)))
 
-
 select a.user_id,
        a.anonymous_id,
        a.event_type,
@@ -297,7 +295,7 @@ select a.user_id,
        a.episode,
       email,
       tv_cast,
-      promotion,
+      c.promotion,
        case when cc.user_id is null then 'first-time customers' else 'reacquisitions' end as winback,
        case when date(a.timestamp) between DATE_SUB(date(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), QUARTER)), INTERVAL 0 QUARTER) and
             DATE_SUB(date(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY)), INTERVAL 0 QUARTER) then "Current Quarter"
@@ -307,7 +305,7 @@ select a.user_id,
             DATE_SUB(date(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY)), INTERVAL 4 QUARTER) then "YAGO Quarter"
             else "NA"
             end as Quarter
-from a left join cc on a.user_id=cc.user_id
+from a left join cc on a.user_id=cc.user_id left join svod_titles.promos as c on a.video_id=c.video_id
 /* where a.user_id<>'0' */ ;;
   }
 
@@ -828,6 +826,14 @@ dimension: collections_group_a {
     sql: ${video_id} ;;
   }
 
+  dimension: content_type {
+    type: string
+    sql: case when ${type}='series' then ${type}
+              when ${series} like '%Heartland%' then 'Heartland'
+              when ${series} like '%Bates%' then 'Bates'
+              when (${collection} LIKE '%Letter Never Sent%' OR ${collection} LIKE '%It Had to Be You%' OR ${collection} LIKE '%Instant Nanny%' OR ${collection} LIKE '%Love Throws a Curve%' OR ${collection} LIKE '%Romantically Speaking%' OR ${collection} LIKE '%Wedding Do Over%' OR ${collection} LIKE '%When Duty Calls%' OR ${collection} LIKE '%The Right Girl%' OR ${collection} LIKE '%Brimming With Love%' OR ${collection} LIKE '%Sweet Surrender%' OR ${collection} LIKE '%Hopeless Romantic%' OR ${collection} LIKE '%Secret Summer%' OR ${collection} LIKE '%Late Bloomer%' OR ${collection} LIKE '%Win, Lose or Love%' OR ${collection} LIKE '%Mr. Write%' OR ${collection} LIKE '%Once Upon a Date%' OR ${collection} LIKE '%Twist of Fate%' OR ${collection} LIKE '%Vision of Love (FKA The Michaels)%' OR ${collection} LIKE '%Secret Millionaire%' OR ${collection} LIKE '%Tomboy%' OR ${collection} LIKE '%Advance & Retreat%' OR ${collection} LIKE '%Diagnosis Delicious%' OR ${collection} LIKE '%Undercover Angel%' OR ${collection} LIKE '%Love on the Vines%' OR ${collection} LIKE '%Woman of the House%' OR ${collection} LIKE '%A Moving Romance%' OR ${collection} LIKE '%Change of Heart%' OR ${collection} LIKE '%Touched by Love (FKA Touched)%' OR ${collection} LIKE '%Buy My Love%' OR ${collection} LIKE '%Groomzilla%' OR ${collection} LIKE '%How Not to Propose%' OR ${collection} LIKE '%Sisters of the Groom%' OR ${collection} LIKE '%Mechanics of Love%' OR ${collection} LIKE '%Accidentally in Love%' OR ${collection} LIKE '%Class%' OR ${collection} LIKE '%Keeping Up with the Randalls%' OR ${collection} LIKE '%Rock the House%' OR ${collection} LIKE '%Place Called Home, A%' OR ${collection} LIKE '%Out of the Woods%' OR ${collection} LIKE '%Thicker Than Water%' OR ${collection} LIKE '%Long Shot, The%' OR ${collection} LIKE '%After the Fall%' OR ${collection} LIKE '%Soldier Love Story%' OR ${collection} LIKE '%Mending Fences%' OR ${collection} LIKE '%A Time to Remember%' OR ${collection} LIKE '%Expecting a Miracle%' OR ${collection} LIKE '%Annie’s Point%' OR ${collection} LIKE '%Bound by a Secret%' OR ${collection} LIKE '%Ladies of the House%' OR ${collection} LIKE '%Where There’s a Will%' OR ${collection} LIKE '%Family Plan%' OR ${collection} LIKE '%Backyard Wedding%' OR ${collection} LIKE '%Honeymoon for One%' OR ${collection} LIKE '%Wedding Daze%' OR ${collection} LIKE '%The Nanny Express%' OR ${collection} LIKE '%Fielder’s Choice%' OR ${collection} LIKE '%Generation Gap%' OR ${collection} LIKE '%Love Will Keep Us Together%' OR ${collection} LIKE '%Relative Stranger%' OR ${collection} LIKE '%Working Miracles (aka Healing Hands)%' OR ${collection} LIKE '%Vickery’s Wild Ride%' OR ${collection} LIKE '%The Reading Room%' OR ${collection} LIKE '%Miles From Nowhere (aka Chasing A Dream)%' OR ${collection} LIKE '%Ordinary Miracles%' OR ${collection} LIKE '%Home Fires Burning%' OR ${collection} LIKE '%Vision of Love%' OR ${collection} LIKE '%The Michaels%' OR ${collection} LIKE '%Touched by Love%' OR ${collection} LIKE '%Touched%' OR ${collection} LIKE '%Working Miracles%' OR ${collection} LIKE '%Healing Hands%' OR ${collection} LIKE '%Miracles From Nowhere%' OR ${collection} LIKE '%Chasing A Dream%') then 'LLP'
+              when ${type}='movie' and (${collection} NOT LIKE '%Letter Never Sent%' OR ${collection} NOT LIKE '%It Had to Be You%' OR ${collection} NOT LIKE '%Instant Nanny%' OR ${collection} NOT LIKE '%Love Throws a Curve%' OR ${collection} NOT LIKE '%Romantically Speaking%' OR ${collection} NOT LIKE '%Wedding Do Over%' OR ${collection} NOT LIKE '%When Duty Calls%' OR ${collection} NOT LIKE '%The Right Girl%' OR ${collection} NOT LIKE '%Brimming With Love%' OR ${collection} NOT LIKE '%Sweet Surrender%' OR ${collection} NOT LIKE '%Hopeless Romantic%' OR ${collection} NOT LIKE '%Secret Summer%' OR ${collection} NOT LIKE '%Late Bloomer%' OR ${collection} NOT LIKE '%Win, Lose or Love%' OR ${collection} NOT LIKE '%Mr. Write%' OR ${collection} NOT LIKE '%Once Upon a Date%' OR ${collection} NOT LIKE '%Twist of Fate%' OR ${collection} NOT LIKE '%Vision of Love (FKA The Michaels)%' OR ${collection} NOT LIKE '%Secret Millionaire%' OR ${collection} NOT LIKE '%Tomboy%' OR ${collection} NOT LIKE '%Advance & Retreat%' OR ${collection} NOT LIKE '%Diagnosis Delicious%' OR ${collection} NOT LIKE '%Undercover Angel%' OR ${collection} NOT LIKE '%Love on the Vines%' OR ${collection} NOT LIKE '%Woman of the House%' OR ${collection} NOT LIKE '%A Moving Romance%' OR ${collection} NOT LIKE '%Change of Heart%' OR ${collection} NOT LIKE '%Touched by Love (FKA Touched)%' OR ${collection} NOT LIKE '%Can\'t Buy My Love%' OR ${collection} NOT LIKE '%Groomzilla%' OR ${collection} NOT LIKE '%How Not to Propose%' OR ${collection} NOT LIKE '%Sisters of the Groom%' OR ${collection} NOT LIKE '%Mechanics of Love%' OR ${collection} NOT LIKE '%Accidentally in Love%' OR ${collection} NOT LIKE '%Class%' OR ${collection} NOT LIKE '%Keeping Up with the Randalls%' OR ${collection} NOT LIKE '%Rock the House%' OR ${collection} NOT LIKE '%Place Called Home, A%' OR ${collection} NOT LIKE '%Out of the Woods%' OR ${collection} NOT LIKE '%Thicker Than Water%' OR ${collection} NOT LIKE '%Long Shot, The%' OR ${collection} NOT LIKE '%After the Fall%' OR ${collection} NOT LIKE '%Soldier Love Story%' OR ${collection} NOT LIKE '%Mending Fences%' OR ${collection} NOT LIKE '%A Time to Remember%' OR ${collection} NOT LIKE '%Expecting a Miracle%' OR ${collection} NOT LIKE '%Annie’s Point%' OR ${collection} NOT LIKE '%Bound by a Secret%' OR ${collection} NOT LIKE '%Ladies of the House%' OR ${collection} NOT LIKE '%Where There’s a Will%' OR ${collection} NOT LIKE '%Family Plan%' OR ${collection} NOT LIKE '%Backyard Wedding%' OR ${collection} NOT LIKE '%Honeymoon for One%' OR ${collection} NOT LIKE '%Wedding Daze%' OR ${collection} NOT LIKE '%The Nanny Express%' OR ${collection} NOT LIKE '%Fielder’s Choice%' OR ${collection} NOT LIKE '%Generation Gap%' OR ${collection} NOT LIKE '%Love Will Keep Us Together%' OR ${collection} NOT LIKE '%Relative Stranger%' OR ${collection} NOT LIKE '%Working Miracles (aka Healing Hands)%' OR ${collection} NOT LIKE '%Vickery’s Wild Ride%' OR ${collection} NOT LIKE '%The Reading Room%' OR ${collection} NOT LIKE '%Miles From Nowhere (aka Chasing A Dream)%' OR ${collection} NOT LIKE '%Ordinary Miracles%' OR ${collection} NOT LIKE '%Home Fires Burning%' OR ${collection} NOT LIKE '%Vision of Love%' OR ${collection} NOT LIKE '%The Michaels%' OR ${collection} NOT LIKE '%Touched by Love%' OR ${collection} NOT LIKE '%Touched%' OR ${collection} NOT LIKE '%Working Miracles%' OR ${collection} NOT LIKE '%Healing Hands%' OR ${collection} NOT LIKE '%Miracles From Nowhere%' OR ${collection} NOT LIKE '%Chasing A Dream%') then 'movie' end;;
+  }
 
   dimension: date {
     label_from_parameter: date_granularity

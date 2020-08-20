@@ -44,6 +44,7 @@ group by 1,2,3),
 a4 as
 ((SELECT
     a3.title,
+    a3.date as release,
     a.user_id,
     email,
     cast(video_id as int64) as video_id,
@@ -61,12 +62,13 @@ a4 as
     javascript.durationchange as a inner join a3 on safe_cast(a.video_id as int64)=a3.id inner join http_api.purchase_event as p on a.user_id=p.user_id
   WHERE
     a.user_id IS NOT NULL /*and safe_cast(a.user_id as string)!='0'*/ and a3.duration>0
-  GROUP BY 1,2,3,4,5,6,7,8,9,10,11)
+  GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12)
 
 union all
 
 (SELECT
     title,
+    a3.date as release,
     a.user_id,
     email,
     cast(video_id as int64) as video_id,
@@ -84,12 +86,13 @@ union all
     ios.timeupdate as a inner join a3 on safe_cast(a.video_id as int64)=a3.id inner join http_api.purchase_event as p on a.user_id=p.user_id
   WHERE
     a.user_id IS NOT NULL /*and safe_cast(a.user_id as string)!='0'*/ and a3.duration>0
-  GROUP BY 1,2,3,4,5,6,7,8,9,10,11)
+  GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12)
 
   union all
 
   (SELECT
     title,
+    a3.date as release,
     a.user_id,
     email,
     cast(video_id as int64) as video_id,
@@ -107,12 +110,13 @@ union all
     ios.video_content_playing as a inner join a3 on safe_cast(a.video_id as int64)=a3.id inner join http_api.purchase_event as p on a.user_id=p.user_id
   WHERE
     a.user_id IS NOT NULL /*and safe_cast(a.user_id as string)!='0'*/ and a3.duration>0
-  GROUP BY 1,2,3,4,5,6,7,8,9,10,11)
+  GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12)
 
   union all
 
   (SELECT
     title,
+    a3.date as release,
     a.user_id,
     email,
     cast(video_id as int64) as video_id,
@@ -130,12 +134,13 @@ union all
     roku.video_content_playing as a inner join a3 on safe_cast(a.video_id as int64)=a3.id inner join http_api.purchase_event as p on a.user_id=p.user_id
   WHERE
     a.user_id IS NOT NULL /*and safe_cast(a.user_id as string)!='0'*/ and a3.duration>0
-  GROUP BY 1,2,3,4,5,6,7,8,9,10,11)
+  GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12)
 
   union all
 
   (SELECT
     title,
+    a3.date as release,
     a.user_id,
     email,
     cast(video_id as int64) as video_id,
@@ -153,12 +158,13 @@ union all
     android.video_content_playing as a inner join a3 on safe_cast(a.video_id as int64)=a3.id inner join http_api.purchase_event as p on a.user_id=p.user_id
   WHERE
     a.user_id IS NOT NULL /*and safe_cast(a.user_id as string)!='0'*/ and a3.duration>0
-  GROUP BY 1,2,3,4,5,6,7,8,9,10,11)
+  GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12)
 
   union all
 
   (SELECT
     a3.title,
+    a3.date as release,
     a.user_id,
     email,
     cast(video_id as int64) as video_id,
@@ -176,12 +182,13 @@ union all
     javascript.video_content_playing as a inner join a3 on safe_cast(a.video_id as int64)=a3.id inner join http_api.purchase_event as p on a.user_id=p.user_id
   WHERE
     a.user_id IS NOT NULL /*and safe_cast(a.user_id as string)!='0'*/ and a3.duration>0
-  GROUP BY 1,2,3,4,5,6,7,8,9,10,11)
+  GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12)
 
   union all
 
   (SELECT
     title,
+    a3.date as release,
     a.user_id,
     email,
     cast(video_id as int64) as video_id,
@@ -199,12 +206,13 @@ union all
     roku.timeupdate as a inner join a3 on safe_cast(a.video_id as int64)=a3.id inner join http_api.purchase_event as p on a.user_id=p.user_id
   WHERE
     a.user_id IS NOT NULL /*and safe_cast(a.user_id as string)!='0'*/ and a3.duration>0
-  GROUP BY 1,2,3,4,5,6,7,8,9,10,11)
+  GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12)
 
   union all
 
 (SELECT
     title,
+    a3.date as release,
     a.user_id,
     email,
     video_id,
@@ -222,13 +230,14 @@ union all
     android.timeupdate as a inner join a3 on a.video_id=a3.id inner join http_api.purchase_event as p on a.user_id=p.user_id
   WHERE
     a.user_id IS NOT NULL /*and safe_cast(a.user_id as string)!='0'*/ and a3.duration>0
-  GROUP BY 1,2,3,4,5,6,7,8,9,10,11)
+  GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12)
 
   union all
 
   (SELECT
     distinct
     a3.title,
+    a3.date as release,
     a.user_id,
     email,
      mysql_roku_firstplays_video_id as video_id,
@@ -262,6 +271,11 @@ from a4 as a;;
   dimension: video_id {
     type: number
     sql: ${TABLE}.video_id ;;
+  }
+
+  dimension: release {
+    type: date
+    sql: ${TABLE}.release ;;
   }
 
   dimension: email {
@@ -400,6 +414,11 @@ from a4 as a;;
     type: number
     value_format: "0\%"
     sql: case when ${timecode_count}>${duration_count} then 100.00 else 100.00*${timecode_count}/${duration_count} end ;;
+  }
+
+  measure: play_count {
+    type: count_distinct
+    sql: concat(safe_cast(${video_id} as string),${user_id},cast(${timestamp_date} as string)) ;;
   }
 
   measure: timecode_count {
