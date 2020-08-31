@@ -85,6 +85,7 @@ dimension: paying_30_days_prior {
 
   dimension: user_id {
     type: number
+    tags: ["user_id"]
     sql: 1 ;;
   }
 
