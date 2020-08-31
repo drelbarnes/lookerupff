@@ -83,6 +83,11 @@ dimension: paying_30_days_prior {
   sql: ${TABLE}.paying_30_days_prior ;;
 }
 
+  dimension: user_id {
+    type: number
+    sql: 1 ;;
+  }
+
 measure: paying_30_days_prior_ {
   type: sum
   sql: ${paying_30_days_prior} ;;
