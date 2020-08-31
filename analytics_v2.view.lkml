@@ -754,6 +754,11 @@ measure: end_of_prior_week_subs {
     sql: (${trials_a}-${avg_trials_b}) ;;
   }
 
+  measure: trials_by_day {
+    type: number
+    sql: (${avg_trials_b}-${trials_a}) ;;
+  }
+
   measure: avg_conversions_b {
     type: average
     sql:  ${free_trial_converted};;
