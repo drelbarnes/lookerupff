@@ -50,6 +50,11 @@ include: "redshift_get_email_automation_emails.view.lkml"
 include: "redshift_get_email_automations.view.lkml"
 include: "redshift_data_warehouse_info.view.lkml"
 include: "redshift_segment_anonymous_known_users.view.lkml"
+include: "redshift_looker_get_kpis.view.lkml"
+
+explore: redshift_looker_get_kpis {
+  label: "Get KPIs"
+}
 
 explore: redshift_segment_anonymous_known_users {
   label: "Segment Monthly Tracked Users"
