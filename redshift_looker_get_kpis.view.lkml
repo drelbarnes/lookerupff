@@ -16,6 +16,15 @@ view: redshift_looker_get_kpis {
 
   dimension_group: received_at {
     type: time
+    timeframes: [
+      raw,
+      time,
+      date,
+      week,
+      month,
+      quarter,
+      year
+    ]
     sql: ${TABLE}.received_at ;;
   }
 
@@ -41,6 +50,15 @@ view: redshift_looker_get_kpis {
 
   dimension_group: analytics_v2_timestamp_date {
     type: time
+    timeframes: [
+      raw,
+      time,
+      date,
+      week,
+      month,
+      quarter,
+      year
+    ]
     sql: ${TABLE}.analytics_v2_timestamp_date ;;
   }
 
@@ -61,6 +79,15 @@ view: redshift_looker_get_kpis {
 
   dimension_group: timestamp {
     type: time
+    timeframes: [
+      raw,
+      time,
+      date,
+      week,
+      month,
+      quarter,
+      year
+    ]
     sql: ${TABLE}.timestamp ;;
   }
 
@@ -71,6 +98,15 @@ view: redshift_looker_get_kpis {
 
   dimension_group: original_timestamp {
     type: time
+    timeframes: [
+      raw,
+      time,
+      date,
+      week,
+      month,
+      quarter,
+      year
+    ]
     sql: ${TABLE}.original_timestamp ;;
   }
 
@@ -116,6 +152,15 @@ view: redshift_looker_get_kpis {
 
   dimension_group: ltv_cpa_timestamp_date {
     type: time
+    timeframes: [
+      raw,
+      time,
+      date,
+      week,
+      month,
+      quarter,
+      year
+    ]
     sql: ${TABLE}.ltv_cpa_timestamp_date ;;
   }
 
