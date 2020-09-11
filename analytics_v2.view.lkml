@@ -83,6 +83,12 @@ dimension: paying_30_days_prior {
   sql: ${TABLE}.paying_30_days_prior ;;
 }
 
+  dimension: user_id {
+    type: number
+    tags: ["user_id"]
+    sql: 1 ;;
+  }
+
 measure: paying_30_days_prior_ {
   type: sum
   sql: ${paying_30_days_prior} ;;
@@ -752,6 +758,11 @@ measure: end_of_prior_week_subs {
   measure: trials_change {
     type: number
     sql: (${trials_a}-${avg_trials_b}) ;;
+  }
+
+  measure: trials_by_day {
+    type: number
+    sql: (${avg_trials_b}-${trials_a}) ;;
   }
 
   measure: avg_conversions_b {
