@@ -13,7 +13,7 @@ view: ltv_cpa{
        total_free_trials,
        total_paying
 from php.get_analytics
-where date(sent_at)='2020-09-10'),
+where date(sent_at)=current_date),
 
       fb_perf as (select
                 i.date_start,
