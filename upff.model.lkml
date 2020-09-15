@@ -51,11 +51,7 @@ include: "redshift_get_email_automations.view.lkml"
 include: "redshift_data_warehouse_info.view.lkml"
 include: "redshift_segment_anonymous_known_users.view.lkml"
 include: "redshift_looker_get_kpis.view.lkml"
-include: "redshift_exec_summary_metrics.view.lkml"
 
-explore: redshift_exec_summary_metrics {
-  label: "Exec Summary Metrics"
-}
 
 explore: redshift_looker_get_kpis {
   label: "Get KPIs"
