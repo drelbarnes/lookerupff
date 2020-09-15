@@ -77,7 +77,7 @@ view: redshift_exec_summary_metrics  {
             select f.*,paying_30_days_prior,churn_30_days,churn_30_day_percent,winback_30_days from e inner join f on e.timestamp=f.timestamp )
       SELECT
         DATE(analytics_v2.timestamp ) AS "ingestion_date",
-        COALESCE(SUM(churn_30_days ), 0)/COALESCE(SUM(analytics_v2.paying_30_days_prior ), 0) AS "metric",
+        CAST(COALESCE(SUM(churn_30_days ), 0)/COALESCE(SUM(analytics_v2.paying_30_days_prior ), 0) AS VARCHAR) AS "metric",
         'churn_rate' As metric_type
       FROM analytics_v2
 
@@ -159,7 +159,7 @@ view: redshift_exec_summary_metrics  {
             select f.*,paying_30_days_prior,churn_30_days,churn_30_day_percent,winback_30_days from e inner join f on e.timestamp=f.timestamp )
       SELECT
         DATE(analytics_v2.timestamp ) AS "ingestion_date",
-        100.0*(COALESCE(SUM(analytics_v2.free_trial_converted ), 0))/(COALESCE(SUM(analytics_v2.new_trials_14_days_prior), 0))  AS "metric",
+        CAST(100.0*(COALESCE(SUM(analytics_v2.free_trial_converted ), 0))/(COALESCE(SUM(analytics_v2.new_trials_14_days_prior), 0)) AS VARCHAR)  AS "metric",
         'paid_conversion_rate' As metric_type
       FROM analytics_v2
 
@@ -273,7 +273,7 @@ view: redshift_exec_summary_metrics  {
       )
       SELECT
         DATE(ltv_cpa.timestamp ) AS "ingestion_date",
-          ltv_cpa.CPA  AS "metric",
+          CAST(ltv_cpa.CPA AS VARCHAR)  AS "metric",
         'cpa' AS metric_type
       FROM ltv_cpa
 
@@ -385,7 +385,7 @@ view: redshift_exec_summary_metrics  {
       )
       SELECT
         DATE(ltv_cpa.timestamp ) AS "ingestion_date",
-        ltv_cpa.LTV  AS "ltv",
+        CAST(ltv_cpa.LTV AS VARCHAR)  AS "metric",
         'ltv' AS metric_type
       FROM ltv_cpa
 
@@ -468,7 +468,7 @@ view: redshift_exec_summary_metrics  {
             select f.*,paying_30_days_prior,churn_30_days,churn_30_day_percent,winback_30_days from e inner join f on e.timestamp=f.timestamp )
       SELECT
         DATE(analytics_v2.timestamp ) AS "ingestion_date",
-        analytics_v2.existing_free_trials  AS "metric",
+        CAST(analytics_v2.existing_free_trials AS VARCHAR)  AS "metric",
         'free_trial_subs' as metric_type
       FROM analytics_v2
 
@@ -551,8 +551,8 @@ view: redshift_exec_summary_metrics  {
             select f.*,paying_30_days_prior,churn_30_days,churn_30_day_percent,winback_30_days from e inner join f on e.timestamp=f.timestamp )
       SELECT
         DATE(analytics_v2.timestamp ) AS "ingestion_date",
-        COALESCE(SUM(CASE WHEN 1=1 -- no filter on 'analytics_v2.time_a'
-             THEN analytics_v2.total_paying ELSE NULL END), 0) AS "metric",
+        CAST(COALESCE(SUM(CASE WHEN 1=1 -- no filter on 'analytics_v2.time_a'
+             THEN analytics_v2.total_paying ELSE NULL END), 0) AS VARCHAR) AS "metric",
              'paid_subs' AS metric_type
       FROM analytics_v2
 
@@ -601,8 +601,8 @@ view: redshift_exec_summary_metrics  {
   }
 
   dimension: metric {
-    type: number
-    sql: ${TABLE}.metric ;;
+    type: string
+    sql: cast(${TABLE}.metric as VARCHAR ) ;;
   }
 
   dimension: metric_type {
