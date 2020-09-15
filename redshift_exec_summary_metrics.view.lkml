@@ -77,8 +77,8 @@ view: redshift_exec_summary_metrics  {
             select f.*,paying_30_days_prior,churn_30_days,churn_30_day_percent,winback_30_days from e inner join f on e.timestamp=f.timestamp )
       SELECT
         DATE(analytics_v2.timestamp ) AS "ingestion_date",
-        CAST(COALESCE(SUM(churn_30_days ), 0)/COALESCE(SUM(analytics_v2.paying_30_days_prior ), 0) AS VARCHAR) AS "metric",
-        'churn_rate' As metric_type
+        CAST(COALESCE(SUM(churn_30_days ), 0)/COALESCE(SUM(analytics_v2.paying_30_days_prior ), 0) AS text) AS "metric",
+        CAST('churn_rate' as text) As metric_type
       FROM analytics_v2
 
       GROUP BY 1),
@@ -159,8 +159,8 @@ view: redshift_exec_summary_metrics  {
             select f.*,paying_30_days_prior,churn_30_days,churn_30_day_percent,winback_30_days from e inner join f on e.timestamp=f.timestamp )
       SELECT
         DATE(analytics_v2.timestamp ) AS "ingestion_date",
-        CAST(100.0*(COALESCE(SUM(analytics_v2.free_trial_converted ), 0))/(COALESCE(SUM(analytics_v2.new_trials_14_days_prior), 0)) AS VARCHAR)  AS "metric",
-        'paid_conversion_rate' As metric_type
+        CAST(100.0*(COALESCE(SUM(analytics_v2.free_trial_converted ), 0))/(COALESCE(SUM(analytics_v2.new_trials_14_days_prior), 0)) AS text)  AS "metric",
+        CAST('paid_conversion_rate' as text) As metric_type
       FROM analytics_v2
 
       GROUP BY 1
@@ -273,8 +273,8 @@ view: redshift_exec_summary_metrics  {
       )
       SELECT
         DATE(ltv_cpa.timestamp ) AS "ingestion_date",
-          CAST(ltv_cpa.CPA AS VARCHAR)  AS "metric",
-        'cpa' AS metric_type
+          CAST(ltv_cpa.CPA AS text)  AS "metric",
+          CAST('cpa' as text) AS metric_type
       FROM ltv_cpa
 
       GROUP BY 1,2,3
@@ -385,8 +385,8 @@ view: redshift_exec_summary_metrics  {
       )
       SELECT
         DATE(ltv_cpa.timestamp ) AS "ingestion_date",
-        CAST(ltv_cpa.LTV AS VARCHAR)  AS "metric",
-        'ltv' AS metric_type
+        CAST(ltv_cpa.LTV AS text)  AS "metric",
+        CAST('ltv' as text) AS metric_type
       FROM ltv_cpa
 
       GROUP BY 1,2
@@ -468,8 +468,8 @@ view: redshift_exec_summary_metrics  {
             select f.*,paying_30_days_prior,churn_30_days,churn_30_day_percent,winback_30_days from e inner join f on e.timestamp=f.timestamp )
       SELECT
         DATE(analytics_v2.timestamp ) AS "ingestion_date",
-        CAST(analytics_v2.existing_free_trials AS VARCHAR)  AS "metric",
-        'free_trial_subs' as metric_type
+        CAST(analytics_v2.existing_free_trials AS text)  AS "metric",
+        CAST('free_trial_subs' as text) as metric_type
       FROM analytics_v2
 
       GROUP BY 1,2
@@ -552,14 +552,15 @@ view: redshift_exec_summary_metrics  {
       SELECT
         DATE(analytics_v2.timestamp ) AS "ingestion_date",
         CAST(COALESCE(SUM(CASE WHEN 1=1 -- no filter on 'analytics_v2.time_a'
-             THEN analytics_v2.total_paying ELSE NULL END), 0) AS VARCHAR) AS "metric",
-             'paid_subs' AS metric_type
+             THEN analytics_v2.total_paying ELSE NULL END), 0) AS text) AS "metric",
+             CAST('paid_subs' AS text) AS metric_type
       FROM analytics_v2
 
       GROUP BY 1
       ORDER BY 1 DESC
-      )
+      ),
 
+    g as (
       select * from a
 
       UNION ALL
@@ -580,7 +581,10 @@ view: redshift_exec_summary_metrics  {
 
       UNION ALL
 
-      select * from f
+      select * from f)
+
+      select * from g
+
        ;;
   }
 
@@ -602,7 +606,7 @@ view: redshift_exec_summary_metrics  {
 
   dimension: metric {
     type: string
-    sql: cast(${TABLE}.metric as VARCHAR ) ;;
+    sql: ${TABLE}.metric ;;
   }
 
   dimension: metric_type {
