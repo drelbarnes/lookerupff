@@ -30,6 +30,11 @@ include: "redshift_google_ads.view.lkml"
 include: "redshift_google_ad_groups.view.lkml"
 include: "redshift_marketing_installs.view.lkml"
 include: "redshift_ribbow_agency_fee.view.lkml"
+include: "redshift_exec_summary_metrics.view.lkml"
+
+explore: redshift_exec_summary_metrics {
+  label: "Exec Summary Metrics"
+}
 
 explore: redshift_ribbow_agency_fee {}
 
