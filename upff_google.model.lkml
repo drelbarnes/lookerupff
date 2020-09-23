@@ -113,6 +113,9 @@ include: "bigquery_ribbow_audiences.view.lkml"
 include: "bigquery_fox_promo.view.lkml"
 include: "vimeo_ott_metadata.view.lkml"
 include: "metadata_live_grid.view.lkml"
+include: "bigquery_annual_subs.view.lkml"
+
+explore: bigquery_annual_subs {}
 
 explore: metadata_live_grid {
 
