@@ -1,6 +1,6 @@
 view: bigquery_annual_subs {
   derived_table: {
-    sql: with a0 as
+    sql: (with a0 as
       (select user_id,
               max((status_date)) as max_date
       from http_api.purchase_event
@@ -27,7 +27,7 @@ view: bigquery_annual_subs {
              a11.topic,
              plan,
              LAG(date(status_date)) OVER (PARTITION BY a11.user_id ORDER BY date(status_date) ASC) as prior_status_date,
-             case when LAG(a11.topic) OVER (PARTITION BY a11.user_id ORDER BY date(status_date) ASC) in ('customer.product.renewed','customer.created','customer.product.created','customer.product.free_trial_created') and                            date_diff(date(status_date),date(LAG(date(status_date)) OVER (PARTITION BY a11.user_id ORDER BY date(status_date) ASC)),day)>45 and
+             case when LAG(a11.topic) OVER (PARTITION BY a11.user_id ORDER BY date(status_date) ASC) in ('customer.product.renewed','customer.created','customer.product.created','customer.product.free_trial_created') and date_diff(date(status_date),date(LAG(date(status_date)) OVER (PARTITION BY a11.user_id ORDER BY date(status_date) ASC)),day)>45 and
              LAG(plan) OVER (PARTITION BY a11.user_id ORDER BY date(status_date) ASC)='standard' then 1 else 0 end as sub_1,
              case when (a1.topic in ('customer.product.renewed','customer.created','customer.product.created','customer.product.free_trial_created') and plan='standard' and date(a11.status_date)=max_date and date_diff(current_date(),max_date,day)>45) then 1 else 0 end as sub_2
       from http_api.purchase_event as a11 inner join a12 on a11.user_id=a12.user_id and a11.status_date=max_date2 left join a1 on a11.user_id=a1.user_id
@@ -41,10 +41,12 @@ view: bigquery_annual_subs {
       order by user_id,prior_status_date)
 
       select *,
+             case when lag(prior_status_date) over (partition by user_id order by date(status_date) asc) is null and prior_status_date is not null then 1 else 0 end as free_trial,
              case when LAG(sub_plan) OVER (PARTITION BY user_id ORDER BY date(status_date) ASC)='monthly' and sub_plan='yearly' and LAG(topic) OVER (PARTITION BY user_id ORDER BY date(status_date) asc) in ('customer.product.created','customer.product.renewed') and topic <>'customer.product.set_cancellation' then 1 else 0 end as annual_conversion,
              case when sub_plan='yearly' and LAG(topic) OVER (PARTITION BY user_id ORDER BY date(status_date) asc) in ('customer.created','customer.product.free_trial_created') then 1 else 0 end as free_to_annual
       from c
-      where plan<>'none' and topic<>'customer.created'
+      where plan<>'none' or topic<>'customer.created'
+       )
        ;;
   }
 
@@ -128,6 +130,11 @@ dimension_group: created_date_ {
     sql: timestamp(${TABLE}.prior_status_date) ;;
   }
 
+  dimension: free_trial {
+    type: number
+    sql: ${TABLE}.free_trial ;;
+  }
+
   dimension: sub_1 {
     type: number
     sql: ${TABLE}.sub_1 ;;
@@ -173,6 +180,11 @@ dimension_group: created_date_ {
     sql: case when ${sub_plan}='yearly' then ${user_id} else null end ;;
   }
 
+  measure: free_trial_count {
+    type: sum
+    sql: ${free_trial} ;;
+  }
+
   set: detail {
     fields: [
       user_id,
@@ -185,7 +197,8 @@ dimension_group: created_date_ {
       sub_2,
       sub_plan,
       annual_conversion,
-      free_to_annual
+      free_to_annual,
+      free_trial
     ]
   }
 }
