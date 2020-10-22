@@ -67,7 +67,7 @@ a as
                 b.date as release_date,
                 end_date,
                 case when collection in ('Season 1','Season 2','Season 3') then concat(series,' ',collection) else collection end as collection,
-                case when series is null and upper(collection)=upper(b.title) then 'movie'
+                case when (series is null and upper(b.title) like upper(b.collection)) then 'movie'
                      when series is not null then 'series' else 'other' end as type,
                 safe_cast(a.video_id as int64) as video_id,
                 series,
@@ -89,7 +89,7 @@ a as
        b.date as release_date,
        end_date,
        case when b.collection in ('Season 1','Season 2','Season 3') then concat(b.series,' ',b.collection) else collection end as collection,
-       case when b.series is null and upper(b.collection)=upper(b.title) then 'movie'
+       case when (series is null and upper(b.title) like upper(b.collection)) then 'movie'
                      when b.series is not null then 'series' else 'other' end as type,
        mysql_roku_firstplays_video_id as video_id,
        series,
@@ -112,7 +112,7 @@ from a32 as a left join titles_id_mapping as b on mysql_roku_firstplays_video_id
                 b.date as release_date,
                 end_date,
                 case when collection in ('Season 1','Season 2','Season 3') then concat(series,' ',collection) else collection end as collection,
-                case when series is null and upper(collection)=upper(b.title) then 'movie'
+                case when (series is null and upper(b.title) like upper(b.collection)) then 'movie'
                      when series is not null then 'series' else 'other' end as type,
                 safe_cast(a.video_id as int64) as video_id,
                 series,
@@ -132,7 +132,7 @@ from a32 as a left join titles_id_mapping as b on mysql_roku_firstplays_video_id
                 b.date as release_date,
                 end_date,
                 case when collection in ('Season 1','Season 2','Season 3') then concat(series,' ',collection) else collection end as collection,
-                case when series is null and upper(collection)=upper(b.title) then 'movie'
+                case when (series is null and upper(b.title) like upper(b.collection)) then 'movie'
                      when series is not null then 'series' else 'other' end as type,
                 safe_cast(a.video_id as int64) as video_id,
                 series,
@@ -152,7 +152,7 @@ from a32 as a left join titles_id_mapping as b on mysql_roku_firstplays_video_id
                 b.date as release_date,
                 end_date,
                 case when collection in ('Season 1','Season 2','Season 3') then concat(series,' ',collection) else collection end as collection,
-                case when series is null and upper(collection)=upper(b.title) then 'movie'
+                case when (series is null and upper(b.title) like upper(b.collection)) then 'movie'
                      when series is not null then 'series' else 'other' end as type,
                 safe_cast(a.video_id as int64) as video_id,
                 series,
@@ -172,7 +172,7 @@ from a32 as a left join titles_id_mapping as b on mysql_roku_firstplays_video_id
                 b.date as release_date,
                 end_date,
                 case when collection in ('Season 1','Season 2','Season 3') then concat(series,' ',collection) else collection end as collection,
-                case when series is null and upper(collection)=upper(b.title) then 'movie'
+                case when (series is null and upper(b.title) like upper(b.collection)) then 'movie'
                      when series is not null then 'series' else 'other' end as type,
                 safe_cast(a.video_id as int64) as video_id,
                 series,
@@ -194,7 +194,7 @@ select sent_at as timestamp,
                 b.date as release_date,
                 end_date,
                 case when collection in ('Season 1','Season 2','Season 3') then concat(series,' ',collection) else collection end as collection,
-                case when series is null and upper(collection)=upper(b.title) then 'movie'
+                case when (series is null and upper(b.title) like upper(b.collection)) then 'movie'
                      when series is not null then 'series' else 'other' end as type,
                 safe_cast(a.video_id as int64) as video_id,
                 series,
@@ -216,7 +216,7 @@ select sent_at as timestamp,
                 b.date as release_date,
                 end_date,
                 case when collection in ('Season 1','Season 2','Season 3') then concat(series,' ',collection) else collection end as collection,
-                case when series is null and upper(collection)=upper(b.title) then 'movie'
+                case when (series is null and upper(b.title) like upper(b.collection)) then 'movie'
                      when series is not null then 'series' else 'other' end as type,
                 safe_cast(a.video_id as int64) as video_id,
                 series,
@@ -238,7 +238,7 @@ select sent_at as timestamp,
                 b.date as release_date,
                 end_date,
                 case when collection in ('Season 1','Season 2','Season 3') then concat(series,' ',collection) else collection end as collection,
-                case when series is null and upper(collection)=upper(b.title) then 'movie'
+                case when (series is null and upper(b.title) like upper(b.collection)) then 'movie'
                      when series is not null then 'series' else 'other' end as type,
                 safe_cast(a.video_id as int64) as video_id,
                 series,
@@ -261,7 +261,7 @@ select sent_at as timestamp,
                 b.date as release_date,
                 end_date,
                 case when b.collection in ('Season 1','Season 2','Season 3') then concat(series,' ',b.collection) else b.collection end as collection,
-                case when series is null and upper(b.collection)=upper(b.title) then 'movie'
+                case when (series is null and upper(b.title) like upper(b.collection))  then 'movie'
                      when series is not null then 'series' else 'other' end as type,
                 safe_cast(b.id as int64) as video_id,
                 series,
