@@ -1,6 +1,6 @@
 view: redshift_javascript_mybundle_tv {
   derived_table: {
-    sql: SELECT p.received_at, o.anonymous_id, replace(regexp_substr(o.context_page_search,'\&(.*)'), '&mybundleid=', '') AS mybundle_id, o.user_email, p.topic FROM javascript.order_completed AS o, http_api.purchase_event AS p WHERE o.user_email = p.email AND o.context_page_search LIKE '%mybundleid%' ORDER BY p.received_at DESC
+    sql: SELECT p.status_date, o.anonymous_id, replace(regexp_substr(o.context_page_search,'\&(.*)'), '&mybundleid=', '') AS mybundle_id, o.user_email, p.topic FROM javascript.order_completed AS o, http_api.purchase_event AS p WHERE o.user_email = p.email AND o.context_page_search LIKE '%mybundleid%' ORDER BY p.status_date DESC
       ;;
   }
 
@@ -9,9 +9,9 @@ view: redshift_javascript_mybundle_tv {
     drill_fields: [detail*]
   }
 
-  dimension_group: received_at {
+  dimension_group: status_date {
     type: time
-    sql: ${TABLE}.received_at ;;
+    sql: ${TABLE}.status_date ;;
   }
 
   dimension: anonymous_id {
@@ -37,6 +37,6 @@ view: redshift_javascript_mybundle_tv {
   }
 
   set: detail {
-    fields: [received_at_time, mybundle_id, user_email, topic]
+    fields: [status_date_time, mybundle_id, user_email, topic]
   }
 }
