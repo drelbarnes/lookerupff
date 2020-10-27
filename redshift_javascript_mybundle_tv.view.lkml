@@ -16,6 +16,7 @@ view: redshift_javascript_mybundle_tv {
 
   dimension: anonymous_id {
     type: string
+    tags: ["anonmyous_id"]
     sql: ${TABLE}.anonymous_id ;;
   }
 
@@ -26,6 +27,7 @@ view: redshift_javascript_mybundle_tv {
 
   dimension: user_email {
     type: string
+    tags: ["email"]
     sql: ${TABLE}.user_email ;;
   }
 
