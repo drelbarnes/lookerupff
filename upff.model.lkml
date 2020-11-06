@@ -52,9 +52,15 @@ include: "redshift_data_warehouse_info.view.lkml"
 include: "redshift_segment_anonymous_known_users.view.lkml"
 include: "redshift_looker_get_kpis.view.lkml"
 include: "redshift_javascript_mybundle_tv.view.lkml"
+include: "redshift_javascript_mybundle_tv_signup.view.lkml"
 
 explore: redshift_javascript_mybundle_tv {
   label: "My Bundle"
+  join: redshift_javascript_mybundle_tv_signup {
+    type: left_outer
+    sql_on:  ${redshift_javascript_mybundle_tv.anonymous_id} = ${redshift_javascript_mybundle_tv_signup.anonymous_id};;
+    relationship: one_to_one
+  }
 }
 
 explore: redshift_looker_get_kpis {
