@@ -1,6 +1,6 @@
 view: redshift_javascript_mybundle_tv_signup {
   derived_table: {
-    sql: SELECT received_at, anonymous_id, replace(regexp_substr(context_page_search,'\&(.*)'), '&mybundleid=', '') AS mybundle_id FROM javascript_upff_home.pages WHERE context_page_referrer = 'https://mybundle.tv/' ORDER BY received_at DESC
+    sql: SELECT received_at, anonymous_id, replace(context_page_search, '?mybundleid=', '') AS mybundle_id FROM javascript_upff_home.pages WHERE context_page_search LIKE '%mybundleid%' ORDER BY received_at DESC
       ;;
   }
 
