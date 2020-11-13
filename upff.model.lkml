@@ -51,7 +51,17 @@ include: "redshift_get_email_automations.view.lkml"
 include: "redshift_data_warehouse_info.view.lkml"
 include: "redshift_segment_anonymous_known_users.view.lkml"
 include: "redshift_looker_get_kpis.view.lkml"
+include: "redshift_javascript_mybundle_tv.view.lkml"
+include: "redshift_javascript_mybundle_tv_signup.view.lkml"
 
+explore: redshift_javascript_mybundle_tv_signup {
+  label: "My Bundle.TV Signup"
+
+}
+
+explore: redshift_javascript_mybundle_tv {
+  label: "My Bundle.TV Free Trial & Paid"
+}
 
 explore: redshift_looker_get_kpis {
   label: "Get KPIs"
