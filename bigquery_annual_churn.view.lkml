@@ -27,9 +27,9 @@ view: bigquery_annual_churn {
              a11.topic,
              plan,
              LAG(date(status_date)) OVER (PARTITION BY a11.user_id ORDER BY date(status_date) ASC) as prior_status_date,
-             case when LAG(a11.topic) OVER (PARTITION BY a11.user_id ORDER BY date(status_date) ASC) in ('customer.product.renewed','customer.created','customer.product.created','customer.product.free_trial_created') and date_diff(date(status_date),date(LAG(date(status_date)) OVER (PARTITION BY a11.user_id ORDER BY date(status_date) ASC)),day)>45 and
+             case when LAG(a11.topic) OVER (PARTITION BY a11.user_id ORDER BY date(status_date) ASC) in ('customer.product.renewed','customer.created','customer.product.created','customer.product.free_trial_created','customer.product.free_trial_converted') and date_diff(date(status_date),date(LAG(date(status_date)) OVER (PARTITION BY a11.user_id ORDER BY date(status_date) ASC)),day)>45 and
              LAG(plan) OVER (PARTITION BY a11.user_id ORDER BY date(status_date) ASC)='standard' then 1 else 0 end as sub_1,
-             case when (a1.topic in ('customer.product.renewed','customer.created','customer.product.created','customer.product.free_trial_created') and plan='standard' and date(a11.status_date)=max_date and date_diff(current_date(),max_date,day)>45) then 1 else 0 end as sub_2
+             case when (a1.topic in ('customer.product.renewed','customer.created','customer.product.created','customer.product.free_trial_created','customer.product.free_trial_converted') and plan='standard' and date(a11.status_date)=max_date and date_diff(current_date(),max_date,day)>45) then 1 else 0 end as sub_2
       from http_api.purchase_event as a11 inner join a12 on a11.user_id=a12.user_id and a11.status_date=max_date2 left join a1 on a11.user_id=a1.user_id
       order by user_id,
                status_date asc),

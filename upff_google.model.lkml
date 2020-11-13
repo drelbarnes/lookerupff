@@ -115,6 +115,7 @@ include: "vimeo_ott_metadata.view.lkml"
 include: "metadata_live_grid.view.lkml"
 include: "bigquery_annual_subs.view.lkml"
 include: "bigquery_annual_churn.view.lkml"
+include: "promos.view.lkml"
 
 explore: bigquery_annual_churn {}
 
@@ -512,6 +513,11 @@ explore: bigquery_allfirstplay {
   join: bigquery_ribbow_audiences {
     type: left_outer
     sql_on: ${bigquery_allfirstplay.user_id}=${bigquery_ribbow_audiences.user_id} ;;
+    relationship: many_to_one
+  }
+  join: promos {
+    type: left_outer
+    sql_on: ${bigquery_allfirstplay.video_id}=${promos.video_id} ;;
     relationship: many_to_one
   }
 
