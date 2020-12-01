@@ -53,6 +53,12 @@ include: "redshift_segment_anonymous_known_users.view.lkml"
 include: "redshift_looker_get_kpis.view.lkml"
 include: "redshift_javascript_mybundle_tv.view.lkml"
 include: "redshift_javascript_mybundle_tv_signup.view.lkml"
+include: "redshift_php_mybundle_library.view.lkml"
+
+explore: redshift_php_mybundle_library {
+  label: "My Bundle.TV Library Feed"
+
+}
 
 explore: redshift_javascript_mybundle_tv_signup {
   label: "My Bundle.TV Signup"
