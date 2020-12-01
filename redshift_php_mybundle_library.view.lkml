@@ -25,7 +25,7 @@ view: redshift_php_mybundle_library {
   }
 
   dimension: metadata_year_released {
-    type: number
+    type: string
     sql: ${TABLE}.metadata_year_released ;;
   }
 
