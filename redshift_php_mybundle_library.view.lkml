@@ -26,7 +26,7 @@ view: redshift_php_mybundle_library {
 
   dimension: metadata_year_released {
     type: number
-    sql: CAST(${TABLE}.metadata_year_released AS VARCHAR) ;;
+    sql: CAST(${TABLE}.metadata_year_released AS NUMERIC) ;;
   }
 
   dimension: thumbnail {
