@@ -2,25 +2,25 @@ view: video_content_playing_by_source {
   derived_table: {
     sql: with r as
       (
-        SELECT received_at as 'reporting_date', 'roku' as platfrom, count(distinct id) FROM roku.video_content_playing
+        SELECT received_at, 'roku' as platfrom, count(distinct id) FROM roku.video_content_playing
       ),
 
       a as (
 
-        SELECT received_at as 'reporting_date', 'android' as platform, count(distinct id) FROM android.video_content_playing
+        SELECT received_at, 'android' as platform, count(distinct id) FROM android.video_content_playing
 
       ),
 
       i as (
 
-        SELECT received_at as 'reporting_date', 'ios' as android, count(distinct id) FROM ios.video_content_playing
+        SELECT received_at, 'ios' as android, count(distinct id) FROM ios.video_content_playing
 
       ),
 
       w as
 
       (
-        SELECT received_at as 'reporting_date', 'web' as platform, count(distinct id) FROM javascript.video_content_playing
+        SELECT received_at', 'web' as platform, count(distinct id) FROM javascript.video_content_playing
       ),
 
       b as (
