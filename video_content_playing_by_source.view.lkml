@@ -20,7 +20,7 @@ view: video_content_playing_by_source {
       w as
 
       (
-        SELECT id, received_at', 'web' as platform, count(distinct id) FROM javascript.video_content_playing
+        SELECT id, received_at, 'web' as platform, count(distinct id) FROM javascript.video_content_playing
       ),
 
       b as (
@@ -67,12 +67,12 @@ view: video_content_playing_by_source {
     sql: ${TABLE}.platfrom ;;
   }
 
-  dimension: count_ {
+  dimension: total_count {
     type: number
     sql: ${TABLE}.count ;;
   }
 
   set: detail {
-    fields: [platfrom, count_]
+    fields: [platfrom, total_count]
   }
 }
