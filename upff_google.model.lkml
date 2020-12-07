@@ -116,6 +116,9 @@ include: "metadata_live_grid.view.lkml"
 include: "bigquery_annual_subs.view.lkml"
 include: "bigquery_annual_churn.view.lkml"
 include: "promos.view.lkml"
+include: "customer_frequency.view.lkml"
+
+explore: customer_frequency {}
 
 explore: bigquery_annual_churn {}
 
