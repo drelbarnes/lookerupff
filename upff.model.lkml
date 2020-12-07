@@ -54,6 +54,12 @@ include: "redshift_looker_get_kpis.view.lkml"
 include: "redshift_javascript_mybundle_tv.view.lkml"
 include: "redshift_javascript_mybundle_tv_signup.view.lkml"
 include: "redshift_php_mybundle_library.view.lkml"
+include: "video_content_playing_by_source.view.lkml"
+
+explore: video_content_playing_by_source {
+  label: "Video Content Playing"
+
+}
 
 explore: redshift_php_mybundle_library {
   label: "My Bundle.TV Library Feed"
