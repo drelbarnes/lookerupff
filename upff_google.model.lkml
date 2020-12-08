@@ -117,6 +117,9 @@ include: "bigquery_annual_subs.view.lkml"
 include: "bigquery_annual_churn.view.lkml"
 include: "promos.view.lkml"
 include: "customer_frequency.view.lkml"
+include: "bigquery_video_content_playing_by_source.view.lkml"
+
+explore: bigquery_video_content_playing_by_source {}
 
 explore: customer_frequency {}
 

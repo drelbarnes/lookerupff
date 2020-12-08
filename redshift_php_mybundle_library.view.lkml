@@ -1,6 +1,6 @@
 view: redshift_php_mybundle_library {
   derived_table: {
-    sql: SELECT distinct t.video_id, i.short_description, t.description, t.duration_seconds, t.metadata_year_released, i.thumbnail, t.additional_images_aspect_ratio_1_1_source,t.metadata_secondary_genre, t.metadata_primary_genre, t.title, t.url,t.metadata_movie_name, t.metadata_series_name FROM php.get_title_category_items i INNER JOIN php.get_titles as t ON i.slug = t.url WHERE t.is_available = 'true'
+    sql: SELECT distinct i.item_id, i.short_description, t.description, t.duration_seconds, t.metadata_year_released, i.thumbnail, t.additional_images_aspect_ratio_1_1_source,t.metadata_secondary_genre, t.metadata_primary_genre, t.title, t.url,t.metadata_movie_name, t.metadata_series_name FROM php.get_title_category_items i INNER JOIN php.get_titles as t ON i.slug = t.url WHERE t.is_available = 'true'
       ;;
   }
 
@@ -9,9 +9,9 @@ view: redshift_php_mybundle_library {
     drill_fields: [detail*]
   }
 
-  dimension: video_id {
+  dimension: item_id {
     type: number
-    sql: ${TABLE}.video_id ;;
+    sql: ${TABLE}.item_id ;;
   }
 
   dimension: short_description {
