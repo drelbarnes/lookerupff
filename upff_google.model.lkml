@@ -120,7 +120,13 @@ include: "customer_frequency.view.lkml"
 
 explore: customer_frequency {}
 
-explore: bigquery_annual_churn {}
+explore: bigquery_annual_churn {
+  join: bigquery_analytics {
+    type: inner
+    sql_on: date(${bigquery_annual_churn.status_date_date})=date(${bigquery_analytics.timestamp_date}) ;;
+    relationship: one_to_one
+  }
+}
 
 explore: bigquery_annual_subs {}
 
