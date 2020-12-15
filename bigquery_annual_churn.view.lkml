@@ -54,19 +54,27 @@ view: bigquery_annual_churn {
 from http_api.purchase_event
 where topic in ('customer.product.cancelled','customer.product.disabled','customer.product.expired')),
 
+e1 as
+(select event_created_at,
+       count(distinct customer_id) as annual_churn
+from svod_titles.customer_frequency
+where (frequency='yearly' and status in ('disabled','cancelled','expired'))
+group by 1),
+
 f as
 (select d.*,
        case when e.status_date is not null then e.status_date else null end as churn_date,
-       case when e.status_date is not null then 1 else 0 end as churn,
+       case when (e.status_date is not null or (frequency='yearly' and status in ('disabled','cancelled','expired'))) then 1 else 0 end as churn,
        case when d.status_date between date_add(e.status_date,interval 21 day) and e.status_date and (case when e.status_date is not null then 1 else 0 end)=0 then date_add(d.status_date,interval 1 year) else e.status_date end as one_year
 
-from d left join e on d.user_id=e.user_id and (d.status_date<e.status_date and date_add(d.status_date,interval 395 day)>e.status_date))
+from d left join e on d.user_id=e.user_id and (d.status_date<e.status_date and date_add(d.status_date,interval 395 day)>e.status_date)
+       left join svod_titles.customer_frequency as f on d.user_id=cast(customer_id as string) and date(d.status_date)=date(event_created_at))
 
 select status_date,
-       sum(churn) as churn,
+       annual_churn as churn,
        count(distinct user_id) as total_annual
-from f
-group by 1
+from f left join e1 on status_date=event_created_at
+group by 1,2
  ;;
   }
 
