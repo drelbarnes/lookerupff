@@ -71,7 +71,7 @@ from d left join e on d.user_id=e.user_id and (d.status_date<e.status_date and d
        left join svod_titles.customer_frequency as f on d.user_id=cast(customer_id as string) and date(d.status_date)=date(event_created_at))
 
 select status_date,
-       annual_churn as churn,
+       sum(churn) as churn,
        count(distinct user_id) as total_annual
 from f left join e1 on status_date=event_created_at
 group by 1,2
