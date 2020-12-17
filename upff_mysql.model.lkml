@@ -2,7 +2,6 @@ connection: "upff_mysql"
 
 include: "mysql_roku_firstplays.view"
 include: "mysql_email_campaigns.view"
-include: "mysql_upff_library_category_items.view"
 include: "mysql_upff_category_items.view"
 
 # include all views in this project
@@ -27,9 +26,6 @@ explore: mysql_upff_category_items {
   label: "Category Items"
 }
 
-explore: mysql_upff_library_category_items {
-  label: "Library Category Items"
-}
 
 explore: mysql_roku_firstplays {
   label: "Roku Firstplays"

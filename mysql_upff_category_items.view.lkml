@@ -11,8 +11,13 @@ view: mysql_upff_category_items {
   dimension: id {
     type: number
     primary_key: yes
-    tags: ["user_id"]
     sql: ${TABLE}.id ;;
+  }
+
+  dimension: lid {
+    type: number
+    tags: ["user_id"]
+    sql: 1 ;;
   }
 
   dimension: name {
