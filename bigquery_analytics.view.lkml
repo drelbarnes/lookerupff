@@ -12,7 +12,7 @@ view: bigquery_analytics {
        total_free_trials,
        total_paying
 from php.get_analytics
-where date(sent_at)=current_date)
+where date(sent_at)=current_date())
  ;;
   }
 
