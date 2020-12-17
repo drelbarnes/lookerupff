@@ -1,8 +1,7 @@
 view: mysql_upff_category_items {
-  derived_table: {
-    sql: SELECT * FROM admin_roku.upff_library_category_items
-      ;;
-  }
+
+  sql_table_name: admin_roku.upff_library_category_items ;;
+  drill_fields: [id]
 
   measure: count {
     type: count
