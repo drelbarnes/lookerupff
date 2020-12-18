@@ -1,6 +1,20 @@
 view: redshift_php_mybundle_library {
   derived_table: {
-    sql: SELECT distinct i.item_id, i.short_description, t.description, t.duration_seconds, t.metadata_year_released, i.thumbnail, t.additional_images_aspect_ratio_1_1_source,t.metadata_secondary_genre, t.metadata_primary_genre, t.title, t.url,t.metadata_movie_name, t.metadata_series_name FROM php.get_title_category_items i INNER JOIN php.get_titles as t ON i.slug = t.url WHERE t.is_available = 'true'
+    sql:  SELECT
+ distinct i.mysql_upff_category_items_item_id,
+ i.mysql_upff_category_items_short_description,
+ t.description, t.duration_seconds,
+ t.metadata_year_released,
+ i.mysql_upff_category_items_thumbnail,
+ t.additional_images_aspect_ratio_1_1_source,
+ t.metadata_secondary_genre,
+ t.metadata_primary_genre,
+ t.title,
+ t.url,
+ t.metadata_series_name,
+ t.metadata_movie_name,
+ max(t.timestamp)
+ FROM looker.get_library_category_items i INNER JOIN php.get_titles as t ON i.mysql_upff_category_items_slug = t.url WHERE t.is_available = 'true' GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13
       ;;
   }
 
