@@ -68,13 +68,20 @@ f as
        case when d.status_date between date_add(e.status_date,interval 21 day) and e.status_date and (case when e.status_date is not null then 1 else 0 end)=0 then date_add(d.status_date,interval 1 year) else e.status_date end as one_year
 
 from d left join e on d.user_id=e.user_id and (d.status_date<e.status_date and date_add(d.status_date,interval 395 day)>e.status_date)
-       left join svod_titles.customer_frequency as f on d.user_id=cast(customer_id as string) and date(d.status_date)=date(event_created_at))
+       left join svod_titles.customer_frequency as f on d.user_id=cast(customer_id as string) and date(d.status_date)=date(event_created_at)),
 
-select status_date,
+f1 as
+(select status_date,
        sum(churn) as churn,
        count(distinct user_id) as total_annual
 from f left join e1 on status_date=event_created_at
-group by 1,2
+group by 1)
+
+select status_date,
+       churn + annual_churn as churn,
+       total_annual
+from f1 left join e1 on status_date=event_created_at
+order by 1 desc
  ;;
   }
 

@@ -39,16 +39,19 @@ group by a1.timestamp,a1.paying_churn)),
          from (select distinct * from (select a.*,
                 case when extract(YEAR from a.timestamp)='2018' then 795+((49000-795)*(cast(datepart(dayofyear,date(a.timestamp)) as integer)-1)/365)
                      when extract(YEAR from a.timestamp)='2019' then 16680+((55000-16680)*(cast(datepart(dayofyear,date(a.timestamp)) as integer)-1)/365)
-                     when extract(YEAR from a.timestamp)='2020' then 64907+((125000-64907)*(cast(datepart(dayofyear,date(a.timestamp)) as integer)-1)/365)end as target,
+                     when extract(YEAR from a.timestamp)='2020' then 64907+((125000-64907)*(cast(datepart(dayofyear,date(a.timestamp)) as integer)-1)/365)
+                     when extract(YEAR from a.timestamp)='2021' then 148678+((190000-148678)*(cast(datepart(dayofyear,date(a.timestamp)) as integer)-1)/365) end as target,
                 case when extract(YEAR from a.timestamp)='2018' then 3246+((49000-3246)*(cast(datepart(dayofyear,date(a.timestamp)) as integer)-1)/365)
                      when extract(YEAR from a.timestamp)='2019' then 24268+((55000-24268)*(cast(datepart(dayofyear,date(a.timestamp)) as integer)-1)/365)
-                     when extract(YEAR from a.timestamp)='2020' then 70039+((125000-70039)*(cast(datepart(dayofyear,date(a.timestamp)) as integer)-1)/365) end as total_target,
-                70039+((125000-70039)*(cast(datepart(dayofyear,date(a.timestamp)) as integer)+14)/365) as target_14_days_future,
+                     when extract(YEAR from a.timestamp)='2020' then 70039+((125000-70039)*(cast(datepart(dayofyear,date(a.timestamp)) as integer)-1)/365)
+                     when extract(YEAR from a.timestamp)='2021' then 157586+((190000-157586)*(cast(datepart(dayofyear,date(a.timestamp)) as integer)-1)/365) end as total_target,
+                157586+((190000-157586)*(cast(datepart(dayofyear,date(a.timestamp)) as integer)+14)/365) as target_14_days_future,
                 cast(datepart(dayofyear,date(a.timestamp)) as integer)-1 as day_of_year,
                 cast(datepart(dayofyear,date(a.timestamp)) as integer)+14 as day_of_year_14_days,
                 case when extract(YEAR from a.timestamp)='2018' then 49000
                      when extract(YEAR from a.timestamp)='2019' then 55000
-                     when extract(YEAR from a.timestamp)='2020' then 125000 end  as annual_target,
+                     when extract(YEAR from a.timestamp)='2020' then 125000
+                     when extract(YEAR from a.timestamp)='2020' then 190000 end  as annual_target,
                 case when rownum=max(rownum) over(partition by Week) then existing_paying end as PriorWeekExistingSubs,
                 case when rownum=max(rownum) over(partition by Month) then existing_paying end as PriorMonthExistingSubs,
                 case when rownum=min(rownum) over(partition by Week||year) then total_paying end as CurrentWeekExistingSubs,
