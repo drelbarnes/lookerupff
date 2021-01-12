@@ -13,6 +13,10 @@ view: daily_spend {
        total_paying
 from php.get_analytics
 where date(sent_at)=current_date),
+      apple_perf as (select start_date as date_start,
+                            sum(total_local_spend_amount) as spend
+                     from php.get_apple_search_ads_campaigns
+                     group by 1),
 
       fb_perf as (select
                 i.date_start,
@@ -47,7 +51,11 @@ case when TO_CHAR(DATE_TRUNC('month', date_start), 'YYYY-MM') = '2018-07' then s
       union all
         select  date_start,
                 spend
-        from fb_perf),
+        from fb_perf
+      union all
+        select date_start,
+               spend
+        from apple_perf),
 
 trials as
 (select

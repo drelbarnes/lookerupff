@@ -1,6 +1,6 @@
 view: bigquery_annual_churn {
   derived_table: {
-    sql: with a0 as
+    sql:  with a0 as
       (select user_id,
               max((status_date)) as max_date
       from http_api.purchase_event
@@ -25,18 +25,19 @@ view: bigquery_annual_churn {
              date(created_at) as created_date,
              date(status_date) as status_date,
              a11.topic,
+             subscription_frequency,
+             subscription_status,
              plan,
              LAG(date(status_date)) OVER (PARTITION BY a11.user_id ORDER BY date(status_date) ASC) as prior_status_date,
              case when LAG(a11.topic) OVER (PARTITION BY a11.user_id ORDER BY date(status_date) ASC) in ('customer.product.renewed','customer.created','customer.product.created','customer.product.free_trial_created','customer.product.free_trial_converted') and date_diff(date(status_date),date(LAG(date(status_date)) OVER (PARTITION BY a11.user_id ORDER BY date(status_date) ASC)),day)>45 and
              LAG(plan) OVER (PARTITION BY a11.user_id ORDER BY date(status_date) ASC)='standard' then 1 else 0 end as sub_1,
              case when frequency='yearly' and a111.status='enabled' then 1 else 0 end as sub_2
-      from http_api.purchase_event as a11 inner join a12 on a11.user_id=a12.user_id and a11.status_date=max_date2 left join a1 on a11.user_id=a1.user_id left join svod_titles.customer_frequency as a111 on a11.user_id=cast(a111.customer_id as string) and date(event_created_at)=date(status_date)
-      order by user_id,
-               status_date asc),
+      from http_api.purchase_event as a11 inner join a12 on a11.user_id=a12.user_id and a11.status_date=max_date2 left join a1 on a11.user_id=a1.user_id left join svod_titles.customer_frequency as a111 on a11.user_id=cast(a111.customer_id as string) and date(event_created_at)=date(status_date)),
 
       c as
       (select *,
-             case when sub_1=1 or sub_2=1 then 'yearly' else 'monthly' end as sub_plan
+             case when status_date<'2021-01-06' then case when sub_1=1 or sub_2=1 then 'yearly' else 'monthly' end
+                  when status_date>='2021-01-06' and subscription_status='enabled' then subscription_frequency end as sub_plan
       from b
       order by user_id,prior_status_date),
 
@@ -46,7 +47,7 @@ view: bigquery_annual_churn {
                        status_date,
                        sub_plan
       from c
-      where (plan<>'none' or topic<>'customer.created') and sub_plan='yearly'),
+      where (plan<>'none' and topic not in('customer.created','customer.product.free_trial_created','customer.product.free_trial_expired')) and sub_plan='yearly'),
 
       e as
       (select distinct user_id,
@@ -54,12 +55,24 @@ view: bigquery_annual_churn {
 from http_api.purchase_event
 where topic in ('customer.product.cancelled','customer.product.disabled','customer.product.expired')),
 
-e1 as
+e11 as
 (select event_created_at,
        count(distinct customer_id) as annual_churn
 from svod_titles.customer_frequency
 where (frequency='yearly' and status in ('disabled','cancelled','expired'))
 group by 1),
+
+e12 as
+(select date(status_date) as status_date,
+       count(distinct user_id) as annual_churn
+from http_api.purchase_event
+where subscription_frequency='yearly' and subscription_status in ('disabled','cancelled','expired')
+group by 1),
+
+e1 as
+(select case when status_date is not null then status_date else event_created_at end as event_created_at,
+        case when e12.annual_churn is not null then e12.annual_churn else e11.annual_churn end as annual_churn
+  from e11 full join e12 on status_date=event_created_at),
 
 f as
 (select d.*,
