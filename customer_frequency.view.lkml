@@ -1,7 +1,11 @@
 view: customer_frequency {
   derived_table: {
-    sql: select * from  svod_titles.customer_frequency
-      ;;
+    sql: select  status_date,
+       count(distinct user_id) as annual_signups
+from http_api.purchase_event
+where subscription_frequency='yearly' and topic in ('customer.created','customer.product.free_trial_created')
+group by 1
+ ;;
   }
 
   measure: count {
@@ -9,51 +13,34 @@ view: customer_frequency {
     drill_fields: [detail*]
   }
 
-  dimension: customer_id {
+  dimension_group:status_date {
+    type: time
+    timeframes: [
+      raw,
+      time,
+      date,
+      week,
+      month,
+      quarter,
+      year
+    ]
+    sql: ${TABLE}.status_date ;;
+  }
+
+  dimension: annual_signups {
     type: number
-    sql: ${TABLE}.customer_id ;;
+    sql: ${TABLE}.annual_signups ;;
   }
 
-  dimension: email {
-    type: string
-    sql: ${TABLE}.email ;;
+  measure: annual_signups_ {
+    type: sum
+    sql: ${annual_signups} ;;
   }
 
-  dimension: status {
-    type: string
-    sql: ${TABLE}.status ;;
-  }
-
-  dimension: frequency {
-    type: string
-    sql: ${TABLE}.frequency ;;
-  }
-
-  dimension: event_created_at {
-    type: date
-    datatype: date
-    sql: ${TABLE}.event_created_at ;;
-  }
-
-  dimension: customer_created_at {
-    type: date
-    datatype: date
-    sql: ${TABLE}.customer_created_at ;;
-  }
-
-  measure: user_count {
-    type: count_distinct
-    sql: ${customer_id} ;;
-  }
 
   set: detail {
-    fields: [
-      customer_id,
-      email,
-      status,
-      frequency,
-      event_created_at,
-      customer_created_at
-    ]
+    fields: [ annual_signups]
   }
 }
+
+
