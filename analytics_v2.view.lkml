@@ -51,7 +51,7 @@ group by a1.timestamp,a1.paying_churn)),
                 case when extract(YEAR from a.timestamp)='2018' then 49000
                      when extract(YEAR from a.timestamp)='2019' then 55000
                      when extract(YEAR from a.timestamp)='2020' then 125000
-                     when extract(YEAR from a.timestamp)='2020' then 190000 end  as annual_target,
+                     when extract(YEAR from a.timestamp)='2021' then 190000 end  as annual_target,
                 case when rownum=max(rownum) over(partition by Week) then existing_paying end as PriorWeekExistingSubs,
                 case when rownum=max(rownum) over(partition by Month) then existing_paying end as PriorMonthExistingSubs,
                 case when rownum=min(rownum) over(partition by Week||year) then total_paying end as CurrentWeekExistingSubs,
