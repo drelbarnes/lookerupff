@@ -118,7 +118,12 @@ include: "bigquery_annual_churn.view.lkml"
 include: "promos.view.lkml"
 include: "customer_frequency.view.lkml"
 include: "bigquery_video_content_playing_by_source.view.lkml"
+include: "users.view.lkml"
+include: "annual_kpis.view.lkml"
 
+explore: annual_kpis {}
+
+explore: users {}
 explore: bigquery_video_content_playing_by_source {}
 
 explore: customer_frequency {}
@@ -520,6 +525,11 @@ explore: bigquery_allfirstplay {
     type: inner
     sql_on: ${bigquery_allfirstplay.timestamp_day_of_week}=${bigquery_promoted_titles.timestamp_day_of_week} ;;
     relationship: one_to_one
+  }
+  join: users {
+    type: left_outer
+    sql_on: ${bigquery_allfirstplay.user_id}=${users.user_id} ;;
+    relationship: many_to_one
   }
 
   join: bigquery_ribbow_audiences {

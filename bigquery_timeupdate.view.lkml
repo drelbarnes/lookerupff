@@ -271,6 +271,11 @@ from a4 as a;;
     sql: ${TABLE}.video_id ;;
   }
 
+  dimension: hour {
+    type: number
+    sql: ${TABLE}.hour ;;
+  }
+
   dimension: release {
     type: date
     sql: ${TABLE}.release ;;

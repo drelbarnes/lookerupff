@@ -1,6 +1,6 @@
 view: promos {
   derived_table: {
-    sql: select * from svod_titles.promos3q20
+    sql: select * from svod_titles.promos4q20
       ;;
   }
 
