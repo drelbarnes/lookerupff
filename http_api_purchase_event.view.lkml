@@ -320,6 +320,67 @@ view: http_api_purchase_event {
     sql: ${TABLE}.moptin ;;
   }
 
+
+  dimension: subscription_price {
+    type: number
+    sql: ${TABLE}.subscription_price ;;
+  }
+
+  dimension: first_name {
+    type: string
+    sql: ${TABLE}.first_name ;;
+  }
+
+  dimension_group: next_payment_date {
+    type: time
+    sql: ${TABLE}.next_payment_date ;;
+  }
+
+  dimension: referrer {
+    type: string
+    sql: ${TABLE}.referrer ;;
+  }
+
+  dimension: subscription_status {
+    type: string
+    sql: ${TABLE}.subscription_status ;;
+  }
+
+  dimension: subscription_frequency {
+    type: string
+    sql: ${TABLE}.subscription_frequency ;;
+  }
+
+  dimension_group: last_payment_date {
+    type: time
+    sql: ${TABLE}.last_payment_date ;;
+  }
+
+  dimension_group: pause_end_date {
+    type: time
+    sql: ${TABLE}.pause_end_date ;;
+  }
+
+  dimension: last_name {
+    type: string
+    sql: ${TABLE}.last_name ;;
+  }
+
+  dimension: campaign {
+    type: string
+    sql: ${TABLE}.campaign ;;
+  }
+
+  dimension: promotion_code {
+    type: string
+    sql: ${TABLE}.promotion_code ;;
+  }
+
+  dimension: coupon_code {
+    type: string
+    sql: ${TABLE}.coupon_code ;;
+  }
+
 # My original dimension group
   dimension_group: create {
     hidden: yes
@@ -441,8 +502,6 @@ view: http_api_purchase_event {
       value: "${fname}"
     }
   }
-
-
 
 
   # ----- Sets of fields for drilling ------

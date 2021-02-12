@@ -25,6 +25,11 @@ view: mysql_upff_category_items {
     sql: ${TABLE}.name ;;
   }
 
+  dimension: cat_name {
+    type: string
+    sql: ${TABLE}.cat_name ;;
+  }
+
   dimension: item_id {
     type: string
     sql: ${TABLE}.item_id ;;
