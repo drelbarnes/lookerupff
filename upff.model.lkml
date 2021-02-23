@@ -59,7 +59,6 @@ include: "redshift_http_api_zendesk_vimeo_ott_users.view.lkml"
 
 explore: redshift_http_api_zendesk_vimeo_ott_users {
   label: "Zendesk Vimeo OTT Users"
-
 }
 
 explore: video_content_playing_by_source {
