@@ -87,7 +87,7 @@ union all
       quarter,
       year
     ]
-    sql: ${TABLE}.created_at ;;}
+    sql: timestamp(${TABLE}.created_at) ;;}
 
   dimension: billing_period {
     type: number
