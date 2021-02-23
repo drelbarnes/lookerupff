@@ -36,6 +36,7 @@ view: redshift_http_api_zendesk_vimeo_ott_users {
 
   dimension: email {
     type: string
+    tags: ["email"]
     sql: ${TABLE}.email ;;
   }
 
