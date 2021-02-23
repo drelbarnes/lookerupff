@@ -55,6 +55,12 @@ include: "redshift_javascript_mybundle_tv.view.lkml"
 include: "redshift_javascript_mybundle_tv_signup.view.lkml"
 include: "redshift_php_mybundle_library.view.lkml"
 include: "video_content_playing_by_source.view.lkml"
+include: "redshift_http_api_zendesk_vimeo_ott_users.view.lkml"
+
+explore: redshift_http_api_zendesk_vimeo_ott_users {
+  label: "Zendesk Vimeo OTT Users"
+
+}
 
 explore: video_content_playing_by_source {
   label: "Video Content Playing"
