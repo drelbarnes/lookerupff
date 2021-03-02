@@ -447,6 +447,20 @@ view: http_api_purchase_event {
     }
   }
 
+measure: voluntary_churn {
+  type: count_distinct
+  sql: ${TABLE}.user_id ;;
+  filters: {
+    field: http_api_purchase_event.topic
+    value: "customer.product.cancelled"
+  }
+}
+
+dimension: churn_type {
+  type: string
+  sql: case when ${topic}='customer.product.cancelled' then 'voluntary churn'
+            when ${topic} in ('customer.product.deleted','customer.product.disabled','customer.product.expired') then 'involuntary churn' else null end;;
+}
 
 
   measure: moptin_no {

@@ -189,10 +189,16 @@ view: redshift_get_mailchimp_campaigns {
     sql: ${TABLE}.uuid_ts ;;
   }
 
-  measure: conversion_rate {
+  measure: open_rate {
     type: number
     value_format: ".0#\%"
     sql: 100.0*${email_count}/${http_api_purchase_event.distinct_count};;
+}
+
+measure: click_rate {
+  type: number
+  value_format: ".0#\%"
+  sql: 100.0*${click_count}/${http_api_purchase_event.distinct_count};;
 }
   measure: count {
     type: count
