@@ -54,7 +54,8 @@ view: redshift_http_api_zendesk_vimeo_ott_users {
     WHEN ${TABLE}.topic = 'customer.product.undo_set_cancellation' THEN 'Undo Set Cancellation'
     WHEN ${TABLE}.topic = 'customer.product.undo_set_paused' THEN 'Undo Set Paused'
     WHEN ${TABLE}.topic = 'customer.product.updated' THEN 'Product Updated'
-    WHEN ${TABLE}.topic = 'ccustomer.updated' THEN 'Updated'
+    WHEN ${TABLE}.topic = 'ccustomer.updated' THEN 'Account Updated'
+    WHEN ${TABLE}.topic = 'ccustomer.created' THEN 'Account Created'
     END ;;
   }
 
