@@ -43,19 +43,19 @@ view: redshift_http_api_zendesk_vimeo_ott_users {
   dimension: topic {
     type: string
     sql: CASE
-    WHEN ${TABLE}.topic = 'customer.product.created' THEN 'Product Created'
-    WHEN ${TABLE}.topic = 'customer.product.charge_failed' THEN 'Charge Failed'
-    WHEN ${TABLE}.topic = 'customer.product.paused_created' THEN 'Paused Created'
-    WHEN ${TABLE}.topic = 'customer.product.free_trial_converted' THEN 'Free Trial Converted'
-    WHEN ${TABLE}.topic = 'customer.product.free_trial_created' THEN 'Free Trial Created'
-    WHEN ${TABLE}.topic = 'customer.product.renewed' THEN 'Renewed'
-    WHEN ${TABLE}.topic = 'customer.product.set_cancellation' THEN 'Set Cancellation'
-    WHEN ${TABLE}.topic = 'customer.product.set_paused' THEN 'Set Paused'
-    WHEN ${TABLE}.topic = 'customer.product.undo_set_cancellation' THEN 'Undo Set Cancellation'
-    WHEN ${TABLE}.topic = 'customer.product.undo_set_paused' THEN 'Undo Set Paused'
-    WHEN ${TABLE}.topic = 'customer.product.updated' THEN 'Product Updated'
-    WHEN ${TABLE}.topic = 'customer.updated' THEN 'Account Updated'
-    WHEN ${TABLE}.topic = 'customer.created' THEN 'Account Created'
+    WHEN ${TABLE}.topic = 'customer.product.created' THEN 'product created'
+    WHEN ${TABLE}.topic = 'customer.product.charge_failed' THEN 'charge failed'
+    WHEN ${TABLE}.topic = 'customer.product.paused_created' THEN 'paused created'
+    WHEN ${TABLE}.topic = 'customer.product.free_trial_converted' THEN 'free trial converted'
+    WHEN ${TABLE}.topic = 'customer.product.free_trial_created' THEN 'rree trial created'
+    WHEN ${TABLE}.topic = 'customer.product.renewed' THEN 'renewed'
+    WHEN ${TABLE}.topic = 'customer.product.set_cancellation' THEN 'set cancellation'
+    WHEN ${TABLE}.topic = 'customer.product.set_paused' THEN 'set paused'
+    WHEN ${TABLE}.topic = 'customer.product.undo_set_cancellation' THEN 'undo set cancellation'
+    WHEN ${TABLE}.topic = 'customer.product.undo_set_paused' THEN 'undo set paused'
+    WHEN ${TABLE}.topic = 'customer.product.updated' THEN 'product updated'
+    WHEN ${TABLE}.topic = 'customer.updated' THEN 'account updated'
+    WHEN ${TABLE}.topic = 'customer.created' THEN 'account created'
     ELSE ${TABLE}.topic
     END ;;
   }
