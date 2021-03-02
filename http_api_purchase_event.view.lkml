@@ -459,7 +459,8 @@ measure: voluntary_churn {
 dimension: churn_type {
   type: string
   sql: case when ${topic}='customer.product.cancelled' then 'voluntary churn'
-            when ${topic} in ('customer.product.deleted','customer.product.disabled','customer.product.expired') then 'involuntary churn' else null end;;
+            when ${topic} in ('customer.product.deleted','customer.product.disabled','customer.product.expired') then 'involuntary churn'
+            when ${topic}='customer.product.renewed' then 'renewed' else null end;;
 }
 
 
