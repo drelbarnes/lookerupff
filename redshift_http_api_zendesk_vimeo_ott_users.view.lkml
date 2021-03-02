@@ -47,7 +47,7 @@ view: redshift_http_api_zendesk_vimeo_ott_users {
     WHEN ${TABLE}.topic = 'customer.product.charge_failed' THEN 'charge failed'
     WHEN ${TABLE}.topic = 'customer.product.paused_created' THEN 'paused created'
     WHEN ${TABLE}.topic = 'customer.product.free_trial_converted' THEN 'free trial converted'
-    WHEN ${TABLE}.topic = 'customer.product.free_trial_created' THEN 'rree trial created'
+    WHEN ${TABLE}.topic = 'customer.product.free_trial_created' THEN 'free trial created'
     WHEN ${TABLE}.topic = 'customer.product.renewed' THEN 'renewed'
     WHEN ${TABLE}.topic = 'customer.product.set_cancellation' THEN 'set cancellation'
     WHEN ${TABLE}.topic = 'customer.product.set_paused' THEN 'set paused'
