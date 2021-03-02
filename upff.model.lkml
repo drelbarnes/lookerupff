@@ -55,6 +55,7 @@ include: "redshift_javascript_mybundle_tv.view.lkml"
 include: "redshift_javascript_mybundle_tv_signup.view.lkml"
 include: "redshift_php_mybundle_library.view.lkml"
 include: "video_content_playing_by_source.view.lkml"
+include: "redshift_get_mailchimp_campaigns.view.lkml"
 include: "redshift_http_api_zendesk_vimeo_ott_users.view.lkml"
 
 explore: redshift_http_api_zendesk_vimeo_ott_users {
@@ -111,6 +112,15 @@ explore: redshift_derived_mobile_app_engagement {
 explore: redshift_php_get_email_campaigns {
   label: "Email Campaigns"
 }
+
+explore: redshift_get_mailchimp_campaigns {
+  join: http_api_purchase_event {
+    type: inner
+    sql_on: ${http_api_purchase_event.email}=${redshift_get_mailchimp_campaigns.email} ;;
+    relationship: many_to_many
+  }
+}
+
 
 explore: redshift_looker_customer_conversion_scores {
   join: redshift_php_get_average_predicted_conversion_score {
@@ -360,6 +370,8 @@ explore: customers{
 
 }
 
+explore: mailchimp_email_campaigns {}
+
 include: "javascript_subscribed.view"
 include: "http_api_purchase_event.view"
 include: "customers_info_facts.view"
@@ -396,6 +408,12 @@ explore: http_api_purchase_event
   join: redshift_pixel_api_email_opened{
     type: left_outer
     sql_on: ${http_api_purchase_event.user_id} = ${redshift_pixel_api_email_opened.user_id};;
+    relationship: many_to_many
+  }
+
+  join: redshift_get_mailchimp_campaigns{
+    type: left_outer
+    sql_on: ${http_api_purchase_event.email}=${redshift_get_mailchimp_campaigns.email} ;;
     relationship: many_to_many
   }
 
