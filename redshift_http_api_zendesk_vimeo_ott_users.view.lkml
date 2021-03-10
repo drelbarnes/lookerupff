@@ -1,6 +1,6 @@
 view: redshift_http_api_zendesk_vimeo_ott_users {
   derived_table: {
-    sql: SELECT distinct MAX(date(u.received_at)) AS received_at, u.id,e.user_id, u.email, e.topic, e.platform, e.moptin,e.subscription_frequency, e.subscription_price, e.subscription_status  FROM zendesk.users AS u LEFT JOIN http_api.purchase_event AS e ON u.email = e.email WHERE (user_id IS NOT NULL AND subscription_frequency IS NOT NULL AND subscription_price IS NOT NULL) GROUP BY 2,3,4,5,6,7,8,9, 10
+    sql: SELECT distinct MAX(date(e.status_date)) AS received_at, u.id,e.user_id, u.email, Max(e.topic) as topic, e.platform, e.moptin,e.subscription_frequency, e.subscription_price, e.subscription_status  FROM zendesk.users AS u LEFT JOIN http_api.purchase_event AS e ON u.email = e.email WHERE (user_id IS NOT NULL AND subscription_frequency IS NOT NULL AND subscription_price IS NOT NULL) GROUP BY 2,3,4,6,7,8,9, 10
       ;;
   }
 
@@ -42,7 +42,22 @@ view: redshift_http_api_zendesk_vimeo_ott_users {
 
   dimension: topic {
     type: string
-    sql: ${TABLE}.topic ;;
+    sql: CASE
+    WHEN ${TABLE}.topic = 'customer.product.created' THEN 'product created'
+    WHEN ${TABLE}.topic = 'customer.product.charge_failed' THEN 'charge failed'
+    WHEN ${TABLE}.topic = 'customer.product.paused_created' THEN 'paused created'
+    WHEN ${TABLE}.topic = 'customer.product.free_trial_converted' THEN 'free trial converted'
+    WHEN ${TABLE}.topic = 'customer.product.free_trial_created' THEN 'free trial created'
+    WHEN ${TABLE}.topic = 'customer.product.renewed' THEN 'renewed'
+    WHEN ${TABLE}.topic = 'customer.product.set_cancellation' THEN 'set cancellation'
+    WHEN ${TABLE}.topic = 'customer.product.set_paused' THEN 'set paused'
+    WHEN ${TABLE}.topic = 'customer.product.undo_set_cancellation' THEN 'undo set cancellation'
+    WHEN ${TABLE}.topic = 'customer.product.undo_set_paused' THEN 'undo set paused'
+    WHEN ${TABLE}.topic = 'customer.product.updated' THEN 'product updated'
+    WHEN ${TABLE}.topic = 'customer.updated' THEN 'account updated'
+    WHEN ${TABLE}.topic = 'customer.created' THEN 'account created'
+    ELSE ${TABLE}.topic
+    END ;;
   }
 
   dimension: platform {
