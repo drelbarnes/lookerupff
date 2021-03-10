@@ -120,6 +120,33 @@ include: "customer_frequency.view.lkml"
 include: "bigquery_video_content_playing_by_source.view.lkml"
 include: "users.view.lkml"
 include: "annual_kpis.view.lkml"
+include: "bigquery_ribbon.view.lkml"
+include: "bigquery_ribbon_plays.view.lkml"
+include: "bigquery_utm_web_visits.view.lkml"
+
+explore: bigquery_utm_web_visits {
+  join: bigquery_javascript_conversion {
+    type: left_outer
+    sql_on: ${bigquery_utm_web_visits.anonymous_id}=${bigquery_javascript_conversion.anonymous_id} and ${bigquery_utm_web_visits.timestamp_date}=${bigquery_javascript_conversion.timestamp_date};;
+    relationship: many_to_many
+  }
+
+  join: bigquery_http_api_purchase_event {
+    type: left_outer
+    sql_on: ${bigquery_javascript_conversion.user_id}=${bigquery_http_api_purchase_event.user_id} ;;
+    relationship: many_to_many
+  }
+
+  join: bigquery_timeupdate {
+    type: left_outer
+    sql_on: ${bigquery_http_api_purchase_event.user_id}=${bigquery_timeupdate.user_id} ;;
+    relationship: many_to_many
+  }
+}
+
+explore: bigquery_ribbon_plays {}
+
+explore: bigquery_ribbon {}
 
 explore: annual_kpis {}
 
@@ -541,6 +568,12 @@ explore: bigquery_allfirstplay {
     type: left_outer
     sql_on: ${bigquery_allfirstplay.video_id}=${promos.video_id} ;;
     relationship: many_to_one
+  }
+
+  join: bigquery_ribbon {
+    type: left_outer
+    sql_on: ${bigquery_ribbon.collection}=${bigquery_allfirstplay.collection};;
+    relationship: many_to_many
   }
 
 }
