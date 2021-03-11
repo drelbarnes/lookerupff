@@ -123,6 +123,9 @@ include: "annual_kpis.view.lkml"
 include: "bigquery_ribbon.view.lkml"
 include: "bigquery_ribbon_plays.view.lkml"
 include: "bigquery_utm_web_visits.view.lkml"
+include: "bigquery_monthly_to_annual_conversions.view.lkml"
+
+explore: bigquery_monthly_to_annual_conversions {}
 
 explore: bigquery_utm_web_visits {
   join: bigquery_javascript_conversion {
