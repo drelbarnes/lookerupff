@@ -124,6 +124,15 @@ include: "bigquery_ribbon.view.lkml"
 include: "bigquery_ribbon_plays.view.lkml"
 include: "bigquery_utm_web_visits.view.lkml"
 include: "bigquery_monthly_to_annual_conversions.view.lkml"
+include: "bigquery_email_churn.view.lkml"
+
+explore: bigquery_email_churn {
+  join: bigquery_analytics {
+    type: inner
+    sql_on: ${bigquery_email_churn.status_date_date}=${bigquery_analytics.timestamp_date};;
+    relationship: many_to_one
+  }
+}
 
 explore: bigquery_monthly_to_annual_conversions {}
 
@@ -378,6 +387,11 @@ explore: bigquery_analytics {
   join: bigquery_allfirstplay {
     type: inner
     sql_on: ${bigquery_allfirstplay.timestamp_date}=${bigquery_analytics.timestamp_date} ;;
+    relationship: one_to_one
+  }
+  join: bigquery_email_churn {
+    type: inner
+    sql_on: ${bigquery_email_churn.status_date_date}=${bigquery_analytics.timestamp_date} ;;
     relationship: one_to_one
   }
 }
