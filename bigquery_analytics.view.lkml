@@ -12,7 +12,7 @@ view: bigquery_analytics {
        total_free_trials,
        total_paying
 from php.get_analytics
-where date(sent_at)=current_date())
+where date(sent_at)='2021-03-11')
  ;;
   }
 
@@ -23,6 +23,18 @@ where date(sent_at)=current_date())
 
   dimension_group: timestamp {
     type: time
+    timeframes: [
+      raw,
+      time,
+      hour_of_day,
+      date,
+      day_of_week_index,
+      day_of_week,
+      week,
+      month,
+      quarter,
+      year
+    ]
     sql: ${TABLE}.timestamp ;;
   }
 
