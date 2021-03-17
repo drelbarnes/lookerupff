@@ -16,23 +16,23 @@ view: mysql_email_campaigns {
 
   dimension: action {
     type: string
-    sql: ${TABLE}.action ;;
+    sql: trim(${TABLE}.action);;
   }
 
   dimension: campaign_id {
     type: string
-    sql: ${TABLE}.campaign_id ;;
+    sql: trim(${TABLE}.campaign_id) ;;
   }
 
   dimension: email {
     type: string
     tags: ["email"]
-    sql: ${TABLE}.email ;;
+    sql: trim(${TABLE}.email) ;;
   }
 
   dimension: ip {
     type: string
-    sql: ${TABLE}.ip ;;
+    sql: trim(${TABLE}.ip);;
   }
 
   dimension_group: timestamp {
