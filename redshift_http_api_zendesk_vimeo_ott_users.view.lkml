@@ -1,6 +1,6 @@
 view: redshift_http_api_zendesk_vimeo_ott_users {
   derived_table: {
-    sql: SELECT distinct MAX(date(e.status_date)) AS received_at, u.id,e.user_id, u.email, Max(e.topic) as topic, e.platform, e.moptin,e.subscription_frequency, e.subscription_price, e.subscription_status  FROM zendesk.users AS u LEFT JOIN http_api.purchase_event AS e ON u.email = e.email WHERE (user_id IS NOT NULL AND subscription_frequency IS NOT NULL AND subscription_price IS NOT NULL) GROUP BY 2,3,4,6,7,8,9, 10
+    sql: SELECT distinct MAX(date(e.status_date)) AS received_at, e.created_at, u.id,e.user_id, u.email, Max(e.topic) as topic, e.platform, e.moptin,e.subscription_frequency, e.subscription_price, e.subscription_status  FROM zendesk.users AS u LEFT JOIN http_api.purchase_event AS e ON u.email = e.email WHERE (user_id IS NOT NULL AND subscription_frequency IS NOT NULL AND subscription_price IS NOT NULL) GROUP BY 2,3,4,6,7,8,9,10,11
       ;;
   }
 
@@ -21,6 +21,20 @@ view: redshift_http_api_zendesk_vimeo_ott_users {
       year
     ]
     sql: ${TABLE}.received_at ;;
+  }
+
+  dimension_group: created_at {
+    type: time
+    timeframes: [
+      raw,
+      time,
+      date,
+      week,
+      month,
+      quarter,
+      year
+    ]
+    sql: ${TABLE}.created_at ;;
   }
 
   dimension: id {
