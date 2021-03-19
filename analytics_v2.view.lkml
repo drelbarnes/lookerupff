@@ -12,7 +12,7 @@ view: analytics_v2 {
        total_free_trials,
        total_paying
 from php.get_analytics
-where date(sent_at)='2021-03-18'),
+where date(sent_at)=current_date),
 
     a as (select a.timestamp, ROW_NUMBER() OVER(ORDER BY a.timestamp desc) AS Row
            from customers_analytics as a),
