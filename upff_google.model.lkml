@@ -125,6 +125,10 @@ include: "bigquery_ribbon_plays.view.lkml"
 include: "bigquery_utm_web_visits.view.lkml"
 include: "bigquery_monthly_to_annual_conversions.view.lkml"
 include: "bigquery_email_churn.view.lkml"
+include: "bigquery_get_mailchimp_campaigns.view.lkml"
+include: "bigquery_tickets.view.lkml"
+
+explore: bigquery_tickets {}
 
 explore: bigquery_email_churn {
   join: bigquery_analytics {
@@ -151,7 +155,7 @@ explore: bigquery_utm_web_visits {
 
   join: bigquery_timeupdate {
     type: left_outer
-    sql_on: ${bigquery_http_api_purchase_event.user_id}=${bigquery_timeupdate.user_id} ;;
+    sql_on: ${bigquery_http_api_purchase_event.user_id}=${bigquery_timeupdate.user_id} and ${bigquery_timeupdate.timestamp_date}=${bigquery_utm_web_visits.timestamp_date} ;;
     relationship: many_to_many
   }
 }
@@ -315,6 +319,12 @@ explore: bigquery_http_api_purchase_event {
   join: op_uplift {
     type: left_outer
     sql_on: ${op_uplift.email}=${bigquery_http_api_purchase_event.email} and ${bigquery_http_api_purchase_event.status_date}>=${op_uplift.entry_date};;
+    relationship: one_to_one
+  }
+
+  join: bigquery_get_mailchimp_campaigns {
+    type: left_outer
+    sql_on: ${bigquery_http_api_purchase_event.email}=${bigquery_get_mailchimp_campaigns.email} and date_diff(${bigquery_http_api_purchase_event.status_date},${bigquery_get_mailchimp_campaigns.timestamp_date},day)<31;;
     relationship: one_to_one
   }
 }

@@ -13,6 +13,13 @@ union all
        split(split(referrer,"utm_campaign=")[safe_ordinal(2)],"&")[safe_ordinal(1)] as utm
 from javascript.view
 where date(timestamp)>'2019-09-15')
+union all
+(select anonymous_id,
+       referrer,
+       timestamp,
+       split(split(referrer,"utm_campaign=")[safe_ordinal(2)],"&")[safe_ordinal(1)] as utm
+from javascript.pages
+where date(timestamp)>'2019-09-15')
  ;;
   }
 
