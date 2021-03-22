@@ -107,6 +107,18 @@ union all
                       user_id,
                       'Android' as source
                from android.video_content_playing as a left join titles_id_mapping as b on safe_cast(a.video_id as int64) = b.id
+               union all
+select sent_at as timestamp,
+                      b.date as release_date,
+                      1 as status_1,
+                      collection,
+                      case when series is null and upper(collection)=upper(title) then 'movie'
+                           when series is not null then 'series' else 'other' end as type,
+                      cast(a.video_id as int64) as video_id,
+                      trim((title)) as title1,
+                      user_id,
+                      'FireTV' as source
+               from amazon_fire_tv.video_content_playing as a left join titles_id_mapping as b on safe_cast(a.video_id as int64) = b.id
 
                union all
                select sent_at as timestamp,
