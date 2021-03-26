@@ -127,6 +127,24 @@ include: "bigquery_monthly_to_annual_conversions.view.lkml"
 include: "bigquery_email_churn.view.lkml"
 include: "bigquery_get_mailchimp_campaigns.view.lkml"
 include: "bigquery_tickets.view.lkml"
+include: "bigquery_push.view.lkml"
+include: "bigquery_get_mailchimp_campaigns.view.lkml"
+
+explore: bigquery_push {
+  join: bigquery_http_api_purchase_event {
+    type: left_outer
+    sql_on:${bigquery_push.user_id}=${bigquery_http_api_purchase_event.user_id} and
+            date_diff(${bigquery_http_api_purchase_event.status_date},${bigquery_push.timestamp_date},day)<31;;
+    relationship: many_to_many
+  }
+  join: bigquery_allfirstplay {
+    type: inner
+    sql_on: ${bigquery_allfirstplay.user_id}=${bigquery_push.user_id} and
+            ${bigquery_push.timestamp_date}<=${bigquery_allfirstplay.timestamp_date} and
+            ${bigquery_push.timestamp_date}>=date_sub(${bigquery_allfirstplay.timestamp_date},interval 30 day);;
+    relationship: many_to_many
+  }
+}
 
 explore: bigquery_tickets {}
 
@@ -327,6 +345,12 @@ explore: bigquery_http_api_purchase_event {
     sql_on: ${bigquery_http_api_purchase_event.email}=${bigquery_get_mailchimp_campaigns.email} and date_diff(${bigquery_http_api_purchase_event.status_date},${bigquery_get_mailchimp_campaigns.timestamp_date},day)<31;;
     relationship: one_to_one
   }
+
+  join: bigquery_push {
+    type: left_outer
+    sql_on: ${bigquery_push.user_id}=${bigquery_http_api_purchase_event.user_id} and
+            date_diff(${bigquery_http_api_purchase_event.status_date},${bigquery_push.timestamp_date},day)<31;;
+    relationship: one_to_one  }
 }
 
 explore: survey_file{
