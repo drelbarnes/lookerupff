@@ -26,6 +26,7 @@ view: bigquery_annual_subs {
              date(status_date) as status_date,
              a11.topic,
              plan,
+             a11.email,
              LAG(date(status_date)) OVER (PARTITION BY a11.user_id ORDER BY date(status_date) ASC) as prior_status_date,
              case when LAG(a11.topic) OVER (PARTITION BY a11.user_id ORDER BY date(status_date) ASC) in ('customer.product.renewed','customer.created','customer.product.created','customer.product.free_trial_created') and date_diff(date(status_date),date(LAG(date(status_date)) OVER (PARTITION BY a11.user_id ORDER BY date(status_date) ASC)),day)>45 and
              LAG(plan) OVER (PARTITION BY a11.user_id ORDER BY date(status_date) ASC)='standard' then 1 else 0 end as sub_1,
@@ -79,6 +80,11 @@ dimension_group: created_date_ {
     ]
     sql: timestamp(${TABLE}.created_date) ;;
   }
+
+dimension: email {
+  type: string
+  sql: ${TABLE}.email ;;
+}
 
   dimension: status_date {
     type: date

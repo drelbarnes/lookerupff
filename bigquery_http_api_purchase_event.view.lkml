@@ -312,7 +312,13 @@ view: bigquery_http_api_purchase_event {
 
   measure: recent_status {
     type: string
-    sql: MAX(${topic} = 'customer.product.cancelled' OR ${topic} = 'customer.product.expired') ;;
+    sql: MAX(${topic} = 'customer.product.cancelled' OR ${topic} = 'customer.product.expired' or ${topic}='customer.product.disabled') ;;
+
+  }
+
+  measure: churn_status {
+    type: count_distinct
+    sql: case when ${topic} = 'customer.product.cancelled' OR ${topic} = 'customer.product.expired' or ${topic}='customer.product.disabled' then ${email} else null end ;;
 
   }
 
