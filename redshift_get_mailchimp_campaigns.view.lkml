@@ -204,4 +204,9 @@ measure: click_rate {
     type: count
     drill_fields: [id, context_app_name, context_library_name,email]
   }
+
+  measure: count_distinct {
+    type: count_distinct
+    sql:  ${email} ;;
+  }
 }

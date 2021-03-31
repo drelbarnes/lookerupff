@@ -194,6 +194,7 @@ view: bigquery_get_mailchimp_campaigns {
     drill_fields: [id, context_app_name, context_library_name]
   }
 
+
   measure: user_count {
     type: count_distinct
     sql: ${email} ;;
