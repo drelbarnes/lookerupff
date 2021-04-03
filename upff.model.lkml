@@ -417,6 +417,12 @@ explore: http_api_purchase_event
     relationship: many_to_many
   }
 
+  join: redshift_php_get_email_campaigns{
+    type:  left_outer
+    sql_on:  ${redshift_php_get_email_campaigns.timestamp_date} = ${redshift_get_mailchimp_campaigns.timestamp_date} ;;
+    relationship: many_to_many
+  }
+
   join: delighted_survey_question_answered {
     type: left_outer
     view_label: "Delighted: No Surveyed"
@@ -449,6 +455,7 @@ explore: http_api_purchase_event
   }
 
 }
+
 explore: customers_info_facts{}
 
 include: "analytics_v2.view"

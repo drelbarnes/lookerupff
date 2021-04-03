@@ -376,6 +376,12 @@ view: redshift_php_get_email_campaigns {
     sql: ${opens_open_rate} * 100 ;;
   }
 
+  measure: open_rate {
+    type: average
+    value_format: "0\%"
+    sql: (${opens_open_rate} * 100) ;;
+  }
+
   measure: list_open_rate {
     type: number
     value_format: "0\%"
