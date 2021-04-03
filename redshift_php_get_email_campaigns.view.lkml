@@ -5,6 +5,7 @@ view: redshift_php_get_email_campaigns {
   dimension: id {
     primary_key: yes
     type: string
+    tags: ["user_id"]
     sql: ${TABLE}.id ;;
   }
 
