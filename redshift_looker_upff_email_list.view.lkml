@@ -132,6 +132,12 @@ view: redshift_looker_upff_email_list {
     sql: ${TABLE}.sent_at ;;
   }
 
+  measure: open_rate {
+    type: average
+    value_format: "0\%"
+    sql: (${redshift_php_get_email_campaigns_open_rate} * 100) ;;
+  }
+
   set: detail {
     fields: [
       id,
