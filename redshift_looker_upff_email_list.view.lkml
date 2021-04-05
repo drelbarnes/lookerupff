@@ -1,6 +1,7 @@
 view: redshift_looker_upff_email_list {
   derived_table: {
-    sql: SELECT * FROM looker.get_upff_email_list
+    sql: SELECT * FROM looker.get_upff_email_list WHERE ((( redshift_php_get_email_campaigns_timestamp_date  ) >= ((DATEADD(week,-4, DATE_TRUNC('week', DATE_TRUNC('day',GETDATE())) ))) AND ( redshift_php_get_email_campaigns_timestamp_date  ) <
+((DATEADD(week,5, DATEADD(week,-4, DATE_TRUNC('week', DATE_TRUNC('day',GETDATE())) ) )))))
       ;;
   }
 
@@ -10,6 +11,7 @@ view: redshift_looker_upff_email_list {
   }
 
   dimension: id {
+    primary_key: yes
     type: string
     sql: ${TABLE}.id ;;
   }
@@ -132,11 +134,7 @@ view: redshift_looker_upff_email_list {
     sql: ${TABLE}.sent_at ;;
   }
 
-  measure: open_rate {
-    type: average
-    value_format: "0\%"
-    sql: (${redshift_php_get_email_campaigns_open_rate} * 100) ;;
-  }
+
 
   set: detail {
     fields: [
@@ -162,4 +160,13 @@ view: redshift_looker_upff_email_list {
       sent_at_time
     ]
   }
+
+
+  measure: list_open_rate {
+    type: average
+    value_format: "0\%"
+    sql: (${redshift_php_get_email_campaigns_open_rate} * 100) ;;
+  }
+
+
 }
