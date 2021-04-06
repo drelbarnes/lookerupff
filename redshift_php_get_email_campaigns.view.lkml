@@ -381,7 +381,13 @@ view: redshift_php_get_email_campaigns {
     type: average
     value_format: "0\%"
     sql: (${opens_open_rate} * 100) ;;
+    filters: {
+      field: redshift_php_get_email_campaigns.list_id
+      value: "fc061462da"
+    }
   }
+
+
 
   measure: list_open_rate {
     type: number

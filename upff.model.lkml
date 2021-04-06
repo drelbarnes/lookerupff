@@ -415,7 +415,7 @@ explore: http_api_purchase_event
   join: redshift_get_mailchimp_campaigns{
     type: left_outer
     sql_on: ${http_api_purchase_event.email}=${redshift_get_mailchimp_campaigns.email} ;;
-    relationship: many_to_many
+    relationship: one_to_one
   }
 
   join: redshift_php_get_email_campaigns{
