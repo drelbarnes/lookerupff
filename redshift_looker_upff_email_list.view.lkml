@@ -1,7 +1,6 @@
 view: redshift_looker_upff_email_list {
   derived_table: {
-    sql: SELECT * FROM looker.get_upff_email_list WHERE ((( redshift_php_get_email_campaigns_timestamp_date  ) >= ((DATEADD(week,-19, DATE_TRUNC('week', DATE_TRUNC('day',GETDATE())) ))) AND ( redshift_php_get_email_campaigns_timestamp_date  ) <
-((DATEADD(week,20, DATEADD(week,-19, DATE_TRUNC('week', DATE_TRUNC('day',GETDATE())) ) )))))
+    sql: SELECT * FROM looker.get_upff_email_list
       ;;
   }
 
