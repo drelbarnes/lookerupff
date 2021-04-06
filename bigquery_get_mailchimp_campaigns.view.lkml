@@ -54,8 +54,8 @@ view: bigquery_get_mailchimp_campaigns {
   }
 
   measure: open_count {
-    type: sum
-    sql: case when ${mysql_email_campaigns_action}='open' then 1 else 0 end ;;
+    type: count_distinct
+    sql: case when ${mysql_email_campaigns_action}='open' then ${email} end ;;
   }
 
   measure: click_count {

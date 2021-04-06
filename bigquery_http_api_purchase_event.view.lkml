@@ -322,6 +322,15 @@ view: bigquery_http_api_purchase_event {
 
   }
 
+  measure: set_cancelled_subs {
+    type: count_distinct
+    sql: ${TABLE}.user_id ;;
+    filters: {
+      field: bigquery_http_api_purchase_event.topic
+      value: "customer.product.set_cancellation"
+    }
+  }
+
   measure: distinct_count {
     type: count_distinct
     sql: ${user_id} ;;
