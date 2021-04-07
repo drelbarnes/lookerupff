@@ -61,6 +61,12 @@ include: "redshift_looker_upff_email_list.view.lkml"
 
 explore: redshift_http_api_zendesk_vimeo_ott_users {
   label: "Zendesk Vimeo OTT Users"
+
+  join: redshift_php_get_trialist_survey {
+    type: left_outer
+    sql_on: ${redshift_php_get_trialist_survey.user_id}=${redshift_http_api_zendesk_vimeo_ott_users.user_id};;
+    relationship: many_to_many
+  }
 }
 
 explore: video_content_playing_by_source {
