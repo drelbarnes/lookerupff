@@ -9,6 +9,7 @@ view: churn_training_input {
   derived_table: {
     explore_source: bigquery_churn_model {
       column: customer_id {}
+      column: email_open {}
       column: marketing_optin {}
       column: num {}
       column: state {}
@@ -63,6 +64,7 @@ view: churn_training_input {
   dimension: marketing_optin {type:number}
   dimension: num {type:number}
   dimension: state {type:string}
+  dimension: email_open {type:number}
 #   dimension: addwatchlist {type:number}
   dimension: bates_duration {type:number}
 #   dimension: bates_plays {type:number}
@@ -102,6 +104,7 @@ view: churn_testing_input {
       column: marketing_optin {}
       column: num {}
       column: state {}
+      column: email_open {}
 #       column: addwatchlist {}
       column: bates_duration {}
 #       column: bates_plays {}
@@ -153,6 +156,7 @@ view: churn_testing_input {
   dimension: marketing_optin {type:number}
   dimension: num {type:number}
   dimension: state {type:string}
+  dimension: email_open {type:number}
 #   dimension: addwatchlist {type:number}
   dimension: bates_duration {type:number}
 #   dimension: bates_plays {type:number}
@@ -360,6 +364,7 @@ view: churn_future_input {
       column: set_cancel {}
       column: undo_cancel {}
       column: charge_failed {}
+      column: email_open {}
 #       derived_column: bates_plays_num {sql:bates_plays*(num);;}
 #       derived_column: bates_duration_num {sql:bates_duration*(num);;}
 #       derived_column: heartland_plays_num {sql:heartland_plays*(num);;}
@@ -398,6 +403,7 @@ view: churn_future_input {
 #   dimension: bates_plays {type:number}
   dimension: churn_status {type:number}
   dimension: error {type:number}
+  dimension: email_open {type:number}
   dimension: heartland_duration {type:number}
 #   dimension: heartland_plays {type:number}
   dimension: other_duration {type:number}
