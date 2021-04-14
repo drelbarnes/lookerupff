@@ -144,13 +144,13 @@ explore: bigquery_zendesk {
   join: bigquery_http_api_purchase_event {
     type: left_outer
     sql_on: ${bigquery_http_api_purchase_event.email}=${bigquery_zendesk.email}
-    AND DATE_DIFF(${bigquery_zendesk.created_at_date},${bigquery_http_api_purchase_event.status_date},DAY)<31 ;;
+      AND DATE_DIFF(${bigquery_zendesk.created_at_date},${bigquery_http_api_purchase_event.status_date},DAY)<31 ;;
     relationship: many_to_many
   }
   join: bigquery_annual_subs {
     type: left_outer
     sql_on: ${bigquery_zendesk.email}=${bigquery_annual_subs.email}
-    AND DATE_DIFF(${bigquery_zendesk.created_at_date},${bigquery_annual_subs.status_date__date},DAY)<31;;
+      AND DATE_DIFF(${bigquery_zendesk.created_at_date},${bigquery_annual_subs.status_date__date},DAY)<31;;
     relationship: many_to_many
   }
 }
@@ -159,7 +159,7 @@ explore: bigquery_push {
   join: bigquery_http_api_purchase_event {
     type: left_outer
     sql_on:${bigquery_push.user_id}=${bigquery_http_api_purchase_event.user_id} and
-            date_diff(${bigquery_http_api_purchase_event.status_date},${bigquery_push.timestamp_date},day)<31;;
+      date_diff(${bigquery_http_api_purchase_event.status_date},${bigquery_push.timestamp_date},day)<31;;
     relationship: many_to_many
   }
   join: bigquery_allfirstplay {
@@ -374,7 +374,7 @@ explore: bigquery_http_api_purchase_event {
   join: bigquery_push {
     type: left_outer
     sql_on: ${bigquery_push.user_id}=${bigquery_http_api_purchase_event.user_id} and
-            date_diff(${bigquery_http_api_purchase_event.status_date},${bigquery_push.timestamp_date},day)<31;;
+      date_diff(${bigquery_http_api_purchase_event.status_date},${bigquery_push.timestamp_date},day)<31;;
     relationship: one_to_one  }
 
   join: bigquery_zendesk {
@@ -564,7 +564,7 @@ explore: bigquery_subscribers_v2 {
   }
 }
 
-  explore: bigquery_subscribers {
+explore: bigquery_subscribers {
   label: "Subscribers"
 
   join: bigquery_android_view {

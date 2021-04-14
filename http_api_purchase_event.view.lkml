@@ -518,6 +518,15 @@ dimension: churn_type {
     }
   }
 
+  measure: set_cancelled_subs {
+    type: count_distinct
+    sql: ${TABLE}.user_id ;;
+    filters: {
+      field: http_api_purchase_event.topic
+      value: "customer.product.set_cancellation"
+    }
+  }
+
 
   # ----- Sets of fields for drilling ------
   set: detail {
