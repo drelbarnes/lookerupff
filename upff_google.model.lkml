@@ -1,4 +1,6 @@
 connection: "google_bigquery_db"
+
+
 include: "bigquery_subscribers_timeupdate.view.lkml"
 include: "bigquery_derived_timeupdate.view.lkml"
 include: "bigquery_derived_views.view.lkml"

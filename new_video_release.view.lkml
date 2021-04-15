@@ -10,9 +10,12 @@ view: new_video_release {
       (select user_id,
              topic,
              email,
-             max(status_date) as status_date
+             max(status_date) as status_date,
+             platform,
+            subscription_frequency,
+            name
       from http_api.purchase_event
-      group by 1,2,3),
+      group by 1,2,3,5,6,7),
 
       c as
       (select distinct user_id,
@@ -24,6 +27,9 @@ view: new_video_release {
                        created_at,
                        date(b.status_date) as most_recent_status_date,
                        topic,
+                       platform,
+                       subscription_frequency,
+                       name,
                        case when date(b.status_date)=created_at then 'free trial' else 'paid sub' end as status,
       from a inner join b on a.user_id=b.user_id and a.status_date=b.status_date left join c on a.user_id=c.user_id
       where topic not in ('customer.product.disabled','customer.product.paused','customer.product.cancelled','customer.product.expired','customer.product.charge_failed','customer.created'))
@@ -38,6 +44,11 @@ view: new_video_release {
   dimension: user_id {
     type: string
     sql: ${TABLE}.user_id ;;
+  }
+
+  dimension: name{
+    type: string
+    sql: ${TABLE}.name;;
   }
 
   dimension: email {
@@ -55,9 +66,20 @@ view: new_video_release {
     sql: ${TABLE}.most_recent_status_date ;;
   }
 
+
   dimension: topic {
     type: string
     sql: ${TABLE}.topic ;;
+  }
+
+  dimension: platform {
+    type: string
+    sql: ${TABLE}.platform ;;
+  }
+
+  dimension: subscription_frequency {
+    type: string
+    sql: ${TABLE}.subscription_frequency ;;
   }
 
   dimension: status {
