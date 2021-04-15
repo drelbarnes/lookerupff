@@ -137,7 +137,7 @@ explore: bigquery_get_mailchimp_campaigns {
   join: bigquery_http_api_purchase_event {
     type: left_outer
     sql_on: ${bigquery_http_api_purchase_event.email}=${bigquery_get_mailchimp_campaigns.email}
-      AND DATE_DIFF(${bigquery_http_api_purchase_event.status_date},${bigquery_get_mailchimp_campaigns.mysql_email_campaigns_timestamp_date},DAY)<31 ;;
+       ;;
     relationship: many_to_many
   }
 }

@@ -5,7 +5,7 @@ view: bigquery_churn_model {
 (select user_id,
         min(date(status_date)) as conversion_date
  from http_api.purchase_event
- where ((topic='customer.product.renewed' or status='renewed') and date(created_at)>'2018-10-31') or (topic='customer.product.created' and date_diff(date(status_date),date(created_at),day)>14 and date(created_at)>'2018-10-31')
+ where ((topic in ('customer.product.renewed','customer.product.free_trial_converted') or status='renewed') and date(created_at)>'2018-10-31') or (topic in ('customer.product.created','customer.product.free_trial_converted') and date_diff(date(status_date),date(created_at),day)>=14 and date(created_at)>'2018-10-31')
  group by 1),
 
 e1 as
@@ -32,9 +32,9 @@ e as
        extract(day from date(b.status_date)) as month_day,
        date_diff(date(b.status_date),(conversion_date),month) as num,
        case when moptin=true then 1 else 0 end as marketing_optin,
-       case when topic = "customer.product.renewed" or status="renewed" then 0 else 1 end as churn_status
+       case when topic in ( "customer.product.renewed","customer.product.free_trial_converted") or status="renewed" then 0 else 1 end as churn_status
 from http_api.purchase_event as b inner join a on a.user_id=b.user_id
-where (topic in ('customer.product.expired','customer.product.disabled','customer.product.cancelled','customer.product.renewed'))
+where (topic in ('customer.product.expired','customer.product.disabled','customer.product.cancelled','customer.product.renewed','customer.product.free_trial_converted','customer.product.created'))
 and (country='United States' or country is null)
 and (conversion_date)<=date(b.status_date)),
 
@@ -78,6 +78,32 @@ and (conversion_date)<=date(b.status_date)),
              sum(error) as error
       from g
       group by 1,2),
+
+      email as
+(select distinct b.user_id,
+        date(mysql_email_campaigns_timestamp_date) as timestamp,
+        1 as email
+from looker.get_mailchimp_campaigns as a inner join http_api.purchase_event as b on a.email=b.email
+where mysql_email_campaigns_action='open'),
+
+g1 as
+(select e.user_id,
+        num,
+        case when email.email is null then 0 else 1 end as email
+from e left join email on e.user_id=email.user_id and date(timestamp) between start_date and end_date),
+
+email11 as
+      (select user_id,
+             num,
+             sum(email) as email_open
+      from g1
+      group by 1,2),
+
+email1 as
+(select user_id,
+        num,
+        case when email_open>4 then 4 else email_open end as email_open
+ from email11),
 
 /*      rwl as
       (SELECT user_id,timestamp, 1 as removewatchlist FROM javascript.removewatchlist where user_id is not null
@@ -303,6 +329,7 @@ m as
 (select e.*,
 --              addwatchlist,
              error,
+             email_open,
 --              removewatchlist,
              view,
 --              bates_plays,
@@ -329,12 +356,14 @@ m as
              left join view1 on e.user_id=view1.user_id and e.num=view1.num
              left join fp1 on e.user_id=fp1.user_id and e.num=fp1.num
              left join m0 on e.user_id=m0.user_id and e.num=m0.num
+             left join email1 on e.user_id=email1.user_id and e.num=email1.num
       where e.user_id <>'0'),
 
 n as
 (select num,
 --        min(addwatchlist) as awl_min,
        min(error) as error_min,
+       min(email_open) as email_min,
 --        min(removewatchlist) as rwl_min,
        min(view) as view_min,
 --        min(bates_plays) as bp_min,
@@ -359,6 +388,7 @@ n as
        max(two_week_duration) as twd_max,
        max(three_week_duration) as thwd_max,
        max(four_week_duration) as fwd_max,
+       max(email_open) as email_max,
 --        max(addwatchlist) as awl_max,
        max(error) as error_max,
 --        max(removewatchlist) as rwl_max,
@@ -404,6 +434,7 @@ select m.user_id,
        (four_week_duration-fwd_min)/(fwd_max-fwd_min) as four_week_duration,
 --        (addwatchlist-awl_min)/(awl_max-awl_min) as addwatchlist,
        (error-error_min)/(error_max-error_min) as error,
+      (email_open-email_min)/(email_max-email_min) as email_open,
 --        (removewatchlist-rwl_min)/(rwl_max-rwl_min) as removewatchlist,
        (view-view_min)/(view_max-view_min) as view,
 --        (bates_plays-bp_min)/(bp_max-bp_min) as bates_plays,
@@ -659,10 +690,16 @@ od_min<>od_max);;
     sql: ${TABLE}.other_duration ;;
   }
 
+  dimension: email_open {
+    type: number
+    sql: ${TABLE}.email_open ;;
+  }
+
   set: detail {
     fields: [
       customer_id,
       email,
+      email_open,
       first_name,
       last_name,
       state,
