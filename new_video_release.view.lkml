@@ -51,6 +51,19 @@ view: new_video_release {
     sql: ${TABLE}.name;;
   }
 
+  dimension: split_email{
+    type: string
+    sql: SPLIT(email,'@')[SAFE_OFFSET(0)];;
+  }
+
+  dimension: user_name{
+    type: string
+    sql: CASE
+      WHEN ${name} is not null THEN ${name}
+      ELSE ${split_email}
+    END;;
+  }
+
   dimension: email {
     type: string
     sql: ${TABLE}.email ;;
