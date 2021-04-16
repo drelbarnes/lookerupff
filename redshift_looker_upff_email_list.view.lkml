@@ -110,7 +110,10 @@ view: redshift_looker_upff_email_list {
 
   dimension: redshift_php_get_email_campaigns_open_rate {
     type: number
-    sql: ${TABLE}.redshift_php_get_email_campaigns_opens_open_rate ;;
+    sql:  CASE
+    WHEN ${redshift_php_get_email_campaigns_campaign_title} like '%_Subs%' THEN ( ${TABLE}.redshift_php_get_email_campaigns_opens_open_rate)
+    WHEN ${redshift_php_get_email_campaigns_campaign_title} like '%_Trials%' THEN ( ${TABLE}.redshift_php_get_email_campaigns_opens_open_rate)
+    END ;;
   }
 
   dimension_group: uuid_ts {
@@ -164,7 +167,10 @@ view: redshift_looker_upff_email_list {
   measure: list_open_rate {
     type: average
     value_format: "0\%"
-    sql: (${redshift_php_get_email_campaigns_open_rate} * 100) ;;
+    sql:  CASE
+  WHEN ${redshift_php_get_email_campaigns_campaign_title} like '%_Subs%' THEN (${redshift_php_get_email_campaigns_open_rate} * 100)
+  WHEN ${redshift_php_get_email_campaigns_campaign_title} like '%_Trials%' THEN (${redshift_php_get_email_campaigns_open_rate} * 100)
+  END ;;
   }
 
 
