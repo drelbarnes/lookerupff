@@ -467,6 +467,12 @@ explore: http_api_purchase_event
     relationship: one_to_one
   }
 
+  join: analytics_v2 {
+    type: left_outer
+    sql_on: ${analytics_v2.timestamp_date} = ${http_api_purchase_event.timestamp_date} ;;
+    relationship: one_to_one
+  }
+
 }
 
 explore: customers_info_facts{}
