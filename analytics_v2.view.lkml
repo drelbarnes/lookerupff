@@ -1,6 +1,7 @@
 view: analytics_v2 {
   derived_table: {
     sql: with customers_analytics as (select analytics_timestamp as timestamp,
+       id,
        existing_free_trials,
        existing_paying,
        free_trial_churn,
@@ -85,6 +86,13 @@ dimension: paying_30_days_prior {
   type: number
   sql: ${TABLE}.paying_30_days_prior ;;
 }
+
+  dimension: id {
+    type: string
+    primary_key: yes
+    sql: ${TABLE}.id ;;
+  }
+
 
   dimension: user_id {
     type: number
