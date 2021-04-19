@@ -130,6 +130,9 @@ include: "bigquery_tickets.view.lkml"
 include: "bigquery_push.view.lkml"
 include: "bigquery_get_mailchimp_campaigns.view.lkml"
 include: "bigquery_zendesk.view.lkml"
+include: "bigquery_email_opens_set_cancels.view.lkml"
+
+explore: bigquery_email_opens_set_cancels {}
 
 explore: bigquery_get_mailchimp_campaigns {
   join: bigquery_http_api_purchase_event {

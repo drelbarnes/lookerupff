@@ -79,6 +79,27 @@ and (conversion_date)<=date(b.status_date)),
       from g
       group by 1,2),
 
+      push as
+      (SELECT distinct
+              user_id,
+              date(cast(left(event_date,4) as int64),cast(right(left(event_date,6),2) as int64),cast(right(event_date,2)as int64)) as timestamp,
+              1 as push
+      FROM `up-faith-and-family.analytics_164012552.events_*` LEFT join unnest(event_params) as e
+      WHERE _TABLE_SUFFIX>= '20210101'  AND event_name = 'notification_open' AND e.key = 'message_id' ),
+
+      g2 as
+      (select e.user_id,
+              num,
+              case when push is null then 0 else 1 end as push
+      from e left join push on e.user_id=push.user_id and date(timestamp) between start_date and end_date),
+
+      push1 as
+      (select user_id,
+              num,
+              sum(push) as push
+       from g2
+       group by 1,2),
+
       email as
 (select distinct b.user_id,
         date(mysql_email_campaigns_timestamp_date) as timestamp,
@@ -330,6 +351,7 @@ m as
 --              addwatchlist,
              error,
              email_open,
+             push,
 --              removewatchlist,
              view,
 --              bates_plays,
@@ -357,6 +379,7 @@ m as
              left join fp1 on e.user_id=fp1.user_id and e.num=fp1.num
              left join m0 on e.user_id=m0.user_id and e.num=m0.num
              left join email1 on e.user_id=email1.user_id and e.num=email1.num
+             left join push1 on e.user_id=push1.user_id and e.num=push1.num
       where e.user_id <>'0'),
 
 n as
@@ -364,6 +387,7 @@ n as
 --        min(addwatchlist) as awl_min,
        min(error) as error_min,
        min(email_open) as email_min,
+       min(push) as push_min,
 --        min(removewatchlist) as rwl_min,
        min(view) as view_min,
 --        min(bates_plays) as bp_min,
@@ -389,6 +413,7 @@ n as
        max(three_week_duration) as thwd_max,
        max(four_week_duration) as fwd_max,
        max(email_open) as email_max,
+       max(push) as push_max,
 --        max(addwatchlist) as awl_max,
        max(error) as error_max,
 --        max(removewatchlist) as rwl_max,
@@ -434,6 +459,8 @@ select m.user_id,
        (four_week_duration-fwd_min)/(fwd_max-fwd_min) as four_week_duration,
 --        (addwatchlist-awl_min)/(awl_max-awl_min) as addwatchlist,
        (error-error_min)/(error_max-error_min) as error,
+       (push-push_min)/(push_max-push_min) as push,
+       ((email_open-email_min)*(push-push_min))/((email_max-email_min)*(push_max-push_min)) as push_to_email,
       (email_open-email_min)/(email_max-email_min) as email_open,
 --        (removewatchlist-rwl_min)/(rwl_max-rwl_min) as removewatchlist,
        (view-view_min)/(view_max-view_min) as view,
@@ -695,11 +722,23 @@ od_min<>od_max);;
     sql: ${TABLE}.email_open ;;
   }
 
+  dimension: push {
+    type: number
+    sql: ${TABLE}.push ;;
+  }
+
+  dimension: push_to_email {
+    type: number
+    sql: ${TABLE}.push_to_email ;;
+  }
+
   set: detail {
     fields: [
       customer_id,
       email,
       email_open,
+      push,
+      push_to_email,
       first_name,
       last_name,
       state,
