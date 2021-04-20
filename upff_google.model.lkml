@@ -145,7 +145,7 @@ explore: bigquery_get_mailchimp_campaigns {
   join: bigquery_http_api_purchase_event {
     type: left_outer
     sql_on: ${bigquery_http_api_purchase_event.email}=${bigquery_get_mailchimp_campaigns.email}
-       ;;
+      ;;
     relationship: many_to_many
   }
 }
@@ -392,6 +392,12 @@ explore: bigquery_http_api_purchase_event {
     sql_on: ${bigquery_zendesk.email}=${bigquery_http_api_purchase_event.email} and
       date_diff(${bigquery_http_api_purchase_event.status_date},${bigquery_zendesk.created_at_date},day)<31;;
     relationship: one_to_one  }
+
+  join: bigquery_email_sends {
+    type: left_outer
+    sql_on: ${bigquery_http_api_purchase_event.email}=${bigquery_email_sends.email};;
+    relationship: many_to_many
+  }
 }
 
 explore: survey_file{
@@ -414,6 +420,12 @@ explore: survey_file{
     type: inner
     sql_on: cast(${survey_file.customer_id} as string)=cast(${bigquery_allfirstplay.user_id} as string);;
     relationship: one_to_many
+  }
+
+  join: bigquery_email_sends {
+    type: left_outer
+    sql_on: ${bigquery_http_api_purchase_event.email}=${bigquery_email_sends.email};;
+    relationship: many_to_many
   }
 }
 

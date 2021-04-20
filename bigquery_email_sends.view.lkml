@@ -9,6 +9,7 @@ view: bigquery_email_sends {
     drill_fields: [detail*]
   }
 
+
   dimension: email {
     type: string
     sql: ${TABLE}.email ;;
@@ -23,6 +24,11 @@ view: bigquery_email_sends {
     type: time
     sql: ${TABLE}.campaign_send_time ;;
   }
+
+  measure: distinct_count {
+    type: count_distinct
+    sql:  ${email};;
+}
 
   set: detail {
     fields: [email, campaign_id, campaign_send_time_time]
