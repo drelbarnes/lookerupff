@@ -133,6 +133,11 @@ include: "bigquery_push.view.lkml"
 include: "bigquery_get_mailchimp_campaigns.view.lkml"
 include: "bigquery_zendesk.view.lkml"
 include: "bigquery_email_opens_set_cancels.view.lkml"
+include: "bigquery_email_sends.view.lkml"
+
+explore: bigquery_email_sends {
+  label: "MailChimp Email Sends (User-level)"
+}
 
 explore: bigquery_email_opens_set_cancels {}
 
