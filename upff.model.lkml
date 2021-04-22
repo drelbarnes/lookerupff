@@ -58,6 +58,11 @@ include: "video_content_playing_by_source.view.lkml"
 include: "redshift_get_mailchimp_campaigns.view.lkml"
 include: "redshift_http_api_zendesk_vimeo_ott_users.view.lkml"
 include: "redshift_looker_upff_email_list.view.lkml"
+include: "redshift_looker_get_titles.view.lkml"
+
+explore: redshift_looker_get_titles {
+  label: "Get Titles"
+}
 
 explore: redshift_http_api_zendesk_vimeo_ott_users {
   label: "Zendesk Vimeo OTT Users"
