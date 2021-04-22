@@ -79,7 +79,7 @@ and (conversion_date)<=date(b.status_date)),
       from g
       group by 1,2),
 
-      push as
+/*      push as
       (SELECT distinct
               user_id,
               date(cast(left(event_date,4) as int64),cast(right(left(event_date,6),2) as int64),cast(right(event_date,2)as int64)) as timestamp,
@@ -99,7 +99,7 @@ and (conversion_date)<=date(b.status_date)),
               sum(push) as push
        from g2
        group by 1,2),
-
+*/
       email as
 (select distinct b.user_id,
         date(mysql_email_campaigns_timestamp_date) as timestamp,
@@ -351,7 +351,7 @@ m as
 --              addwatchlist,
              error,
              email_open,
-             push,
+--             push,
 --              removewatchlist,
              view,
 --              bates_plays,
@@ -379,7 +379,7 @@ m as
              left join fp1 on e.user_id=fp1.user_id and e.num=fp1.num
              left join m0 on e.user_id=m0.user_id and e.num=m0.num
              left join email1 on e.user_id=email1.user_id and e.num=email1.num
-             left join push1 on e.user_id=push1.user_id and e.num=push1.num
+--             left join push1 on e.user_id=push1.user_id and e.num=push1.num
       where e.user_id <>'0'),
 
 n as
@@ -387,7 +387,7 @@ n as
 --        min(addwatchlist) as awl_min,
        min(error) as error_min,
        min(email_open) as email_min,
-       min(push) as push_min,
+--       min(push) as push_min,
 --        min(removewatchlist) as rwl_min,
        min(view) as view_min,
 --        min(bates_plays) as bp_min,
@@ -413,7 +413,7 @@ n as
        max(three_week_duration) as thwd_max,
        max(four_week_duration) as fwd_max,
        max(email_open) as email_max,
-       max(push) as push_max,
+--       max(push) as push_max,
 --        max(addwatchlist) as awl_max,
        max(error) as error_max,
 --        max(removewatchlist) as rwl_max,
@@ -459,8 +459,8 @@ select m.user_id,
        (four_week_duration-fwd_min)/(fwd_max-fwd_min) as four_week_duration,
 --        (addwatchlist-awl_min)/(awl_max-awl_min) as addwatchlist,
        (error-error_min)/(error_max-error_min) as error,
-       (push-push_min)/(push_max-push_min) as push,
-       ((email_open-email_min)*(push-push_min))/((email_max-email_min)*(push_max-push_min)) as push_to_email,
+--       (push-push_min)/(push_max-push_min) as push,
+--       ((email_open-email_min)*(push-push_min))/((email_max-email_min)*(push_max-push_min)) as push_to_email,
       (email_open-email_min)/(email_max-email_min) as email_open,
 --        (removewatchlist-rwl_min)/(rwl_max-rwl_min) as removewatchlist,
        (view-view_min)/(view_max-view_min) as view,

@@ -133,6 +133,9 @@ include: "bigquery_push.view.lkml"
 include: "bigquery_get_mailchimp_campaigns.view.lkml"
 include: "bigquery_zendesk.view.lkml"
 include: "bigquery_email_opens_set_cancels.view.lkml"
+include: "bigquery_push_notification.view.lkml"
+
+explore: bigquery_push_notification {}
 
 explore: bigquery_email_opens_set_cancels {}
 
@@ -373,6 +376,12 @@ explore: bigquery_http_api_purchase_event {
   join: bigquery_get_mailchimp_campaigns {
     type: left_outer
     sql_on: ${bigquery_http_api_purchase_event.email}=${bigquery_get_mailchimp_campaigns.email} and date_diff(${bigquery_http_api_purchase_event.status_date},${bigquery_get_mailchimp_campaigns.timestamp_date},day)<31;;
+    relationship: one_to_one
+  }
+
+  join: bigquery_push_notification {
+    type: left_outer
+    sql_on: ${bigquery_http_api_purchase_event.user_id}=${bigquery_push_notification.user_id} ;;
     relationship: one_to_one
   }
 

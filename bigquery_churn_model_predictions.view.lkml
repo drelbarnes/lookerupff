@@ -10,8 +10,8 @@ view: churn_training_input {
     explore_source: bigquery_churn_model {
       column: customer_id {}
       column: email_open {}
-      column: push {}
-      column: push_to_email {}
+#      column: push {}
+#      column: push_to_email {}
       column: marketing_optin {}
       column: num {}
       column: state {}
@@ -57,7 +57,7 @@ view: churn_training_input {
 #       derived_column: two_week_duration_num {sql:two_week_duration*num;;}
 #       derived_column: three_week_duration_num {sql:three_week_duration*num;;}
 #       derived_column: four_week_duration_num {sql:four_week_duration*num;;}
-      expression_custom_filter: (${bigquery_churn_model.event_created_at_date}< add_days(-21,now()) AND ${bigquery_churn_model.event_created_at_date} >= add_days(-51,now())) AND ${bigquery_churn_model.random}<=0.7;;
+      expression_custom_filter: (${bigquery_churn_model.event_created_at_date}< add_days(-1,now()) AND ${bigquery_churn_model.event_created_at_date} >= add_days(-30,now())) AND ${bigquery_churn_model.random}<=0.7;;
     }
   }
   dimension: customer_id {
@@ -67,8 +67,8 @@ view: churn_training_input {
   dimension: num {type:number}
   dimension: state {type:string}
   dimension: email_open {type:number}
-  dimension: push {type:number}
-  dimension: push_to_email {type:number}
+#  dimension: push {type:number}
+#  dimension: push_to_email {type:number}
 #   dimension: addwatchlist {type:number}
   dimension: bates_duration {type:number}
 #   dimension: bates_plays {type:number}
@@ -109,8 +109,8 @@ view: churn_testing_input {
       column: num {}
       column: state {}
       column: email_open {}
-      column: push_to_email {}
-      column: push {}
+#      column: push_to_email {}
+#      column: push {}
 #       column: addwatchlist {}
       column: bates_duration {}
 #       column: bates_plays {}
@@ -153,7 +153,7 @@ view: churn_testing_input {
 #       derived_column: two_week_duration_num {sql:two_week_duration*num;;}
 #       derived_column: three_week_duration_num {sql:three_week_duration*num;;}
 #       derived_column: four_week_duration_num {sql:four_week_duration*num;;}
-      expression_custom_filter: (${bigquery_churn_model.event_created_at_date}< add_days(-21,now()) AND ${bigquery_churn_model.event_created_at_date} >= add_days(-51,now()))  AND ${bigquery_churn_model.random}>0.7;;
+      expression_custom_filter: (${bigquery_churn_model.event_created_at_date}< add_days(-1,now()) AND ${bigquery_churn_model.event_created_at_date} >= add_days(-31,now()))  AND ${bigquery_churn_model.random}>0.7;;
     }
   }
   dimension: customer_id {
@@ -163,8 +163,8 @@ view: churn_testing_input {
   dimension: num {type:number}
   dimension: state {type:string}
   dimension: email_open {type:number}
-  dimension: push {type:number}
-  dimension: push_to_email {type:number}
+#  dimension: push {type:number}
+#  dimension: push_to_email {type:number}
 #   dimension: addwatchlist {type:number}
   dimension: bates_duration {type:number}
 #   dimension: bates_plays {type:number}
@@ -373,8 +373,8 @@ view: churn_future_input {
       column: undo_cancel {}
       column: charge_failed {}
       column: email_open {}
-      column: push_to_email {}
-      column: push {}
+#      column: push_to_email {}
+#      column: push {}
 #       derived_column: bates_plays_num {sql:bates_plays*(num);;}
 #       derived_column: bates_duration_num {sql:bates_duration*(num);;}
 #       derived_column: heartland_plays_num {sql:heartland_plays*(num);;}
@@ -408,8 +408,8 @@ view: churn_future_input {
   dimension: marketing_optin {type:number}
   dimension: num {type:number}
   dimension: state {type:string}
-  dimension: push {type:number}
-  dimension: push_to_email {type:number}
+#  dimension: push {type:number}
+#  dimension: push_to_email {type:number}
 #   dimension: addwatchlist {type:number}
   dimension: bates_duration {type:number}
 #   dimension: bates_plays {type:number}
