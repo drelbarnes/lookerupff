@@ -220,6 +220,11 @@ view: bigquery_http_api_purchase_event {
     sql: ${TABLE}.topic ;;
   }
 
+  dimension: subscription_status {
+    type: string
+    sql: ${TABLE}.subscription_status ;;
+  }
+
   dimension: recent_topic {
     type:  string
     sql:  MAX(${topic}) ;;
