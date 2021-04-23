@@ -45,6 +45,16 @@ from zendesk.tickets as a inner join zendesk.users as b on a.requester_id=cast(b
     sql:round(${reply_time_in_minutes_calendar}/60);;
   }
 
+  measure: reply_time_in_minutes_calendar_ {
+    type: sum
+    sql: ${TABLE}.reply_time_in_minutes_calendar ;;
+  }
+
+  measure: reply_time_in_hours_ {
+    type: sum
+    sql: ${reply_time_in_hours};;
+  }
+
   dimension: full_resolution_time_in_minutes_calendar {
     type: number
     sql: ${TABLE}.full_resolution_time_in_minutes_calendar ;;
@@ -55,10 +65,22 @@ from zendesk.tickets as a inner join zendesk.users as b on a.requester_id=cast(b
     sql: round(${TABLE}.full_resolution_time_in_minutes_calendar/60) ;;
   }
 
+  measure: full_resolution_time_in_minutes_calendar_ {
+    type: sum
+    sql: ${TABLE}.full_resolution_time_in_minutes_calendar ;;
+  }
+
+  measure: full_resolution_time_in_hours_calendar_ {
+    type: sum
+    sql: ${full_resolution_time_in_hours_calendar} ;;
+  }
+
   dimension: satisfaction_rating_score {
     type: string
     sql: ${TABLE}.satisfaction_rating_score ;;
   }
+
+
 
   set: detail {
     fields: [
