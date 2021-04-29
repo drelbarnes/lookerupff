@@ -136,6 +136,10 @@ include: "bigquery_email_opens_set_cancels.view.lkml"
 
 include: "bigquery_push_notification.view.lkml"
 
+include: "promos1q21.view.lkml"
+
+explore: promos1q21 {}
+
 explore: bigquery_push_notification {}
 
 include: "bigquery_email_sends.view.lkml"
@@ -647,6 +651,12 @@ explore: bigquery_allfirstplay {
     type:  left_outer
     sql_on:  ${bigquery_allfirstplay.anonymousId} = ${bigquery_python_users.id};;
     relationship: one_to_one
+  }
+
+  join: promos1q21 {
+    type: inner
+    sql_on: upper(${bigquery_allfirstplay.collection})=upper(${promos1q21.collection}) and date_diff(${bigquery_allfirstplay.timestamp_date},${promos1q21.date},day)<=7 and date_diff(${bigquery_allfirstplay.timestamp_date},${promos1q21.date},day)>=0;;
+    relationship: many_to_one
   }
 
   join: bigquery_http_api_purchase_event {
