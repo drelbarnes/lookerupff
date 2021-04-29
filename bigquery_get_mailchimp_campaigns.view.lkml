@@ -163,6 +163,8 @@ view: bigquery_get_mailchimp_campaigns {
     sql: ${TABLE}.user_id ;;
   }
 
+
+
   dimension: userid {
     type: number
     value_format_name: id

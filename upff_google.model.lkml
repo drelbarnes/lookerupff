@@ -702,6 +702,12 @@ explore: bigquery_allfirstplay {
     relationship: many_to_many
   }
 
+  join: bigquery_get_mailchimp_campaigns {
+    type: left_outer
+    sql_on: ${bigquery_http_api_purchase_event.email}=${bigquery_get_mailchimp_campaigns.email};;
+    relationship: one_to_many
+  }
+
 }
 
 explore: bigquery_ribbow_audiences {}

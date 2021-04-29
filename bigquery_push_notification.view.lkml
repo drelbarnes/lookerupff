@@ -17,11 +17,12 @@ a1 as
 a2 as
 (SELECT distinct
               a.user_id,
-              date(cast(left(event_date,4) as int64),cast(right(left(event_date,6),2) as int64),cast(right(event_date,2)as int64)) as timestamp,
+              TIMESTAMP(TIMESTAMP_MICROS(event_timestamp)) AS timestamp,
               a1.user_id as user_id2,
               1 as push
-      FROM `up-faith-and-family.analytics_164012552.events_*` as a LEFT join unnest(event_params) as e left join a1 on device.advertising_id=context_device_advertising_id
-      WHERE _TABLE_SUFFIX>= '20210101'  AND event_name = 'notification_open' AND e.key = 'message_id'),
+      FROM `up-faith-and-family.analytics_164012552.events_*` as a LEFT join unnest(user_properties) as e left join a1 on device.advertising_id=context_device_advertising_id
+      WHERE _TABLE_SUFFIX>= '20210101'  AND event_name = 'view'
+AND device.operating_system in ('Android', 'iOS') AND e.key = 'firebase_last_notification'),
 
 a3 as
 (select distinct case when user_id is null then user_id2 else user_id end as user_id,
