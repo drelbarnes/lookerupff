@@ -1,5 +1,23 @@
 view: bigquery_http_api_purchase_event {
-  sql_table_name: http_api.purchase_event ;;
+derived_table: {
+  sql: with a1 as
+(select email,
+       max(status_date) as status_date
+from http_api.purchase_event
+group by 1),
+
+a2 as
+(select distinct a1.email,
+       a1.status_date,
+       topic as latest_status
+from a1 inner join http_api.purchase_event as a2 on a1.email=a2.email and a1.status_date=a2.status_date
+where topic not in ('customer.product.charge_failed','customer.created')
+order by 1)
+
+select a3.*,
+       latest_status
+from http_api.purchase_event as a3 left join a2 on a2.email=a3.email;;}
+
 
   dimension: id {
     type: string
@@ -196,6 +214,11 @@ view: bigquery_http_api_purchase_event {
     sql: ${TABLE}.status_date ;;
   }
 
+  dimension: latest_status {
+    type: string
+    sql: ${TABLE}.latest_status;;
+  }
+
   dimension: team {
     type: string
     sql: ${TABLE}.team ;;
@@ -284,6 +307,8 @@ view: bigquery_http_api_purchase_event {
     type: number
     sql: DATE_DIFF(${current_date}, ${status_date}, DAY) = 14;;
   }
+
+
 
   dimension_group: uuid_ts {
     type: time
