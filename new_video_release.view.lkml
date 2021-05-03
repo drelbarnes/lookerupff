@@ -32,7 +32,7 @@ view: new_video_release {
                        name,
                        case when date(b.status_date)=created_at then 'free trial' else 'paid sub' end as status,
       from a inner join b on a.user_id=b.user_id and a.status_date=b.status_date left join c on a.user_id=c.user_id
-      where topic not in ('customer.product.disabled','customer.product.paused','customer.product.cancelled','customer.product.expired','customer.product.charge_failed','customer.created'))
+      where topic not in ('customer.product.disabled','customer.product.paused','customer.product.cancelled','customer.product.expired','customer.product.charge_failed','customer.created','customer.product.free_trial_expired'))
        ;;
   }
 
