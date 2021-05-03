@@ -2,11 +2,13 @@ view: bigquery_push_notification {
   derived_table: {
     sql: with mobile as
 ((select distinct b.user_id,
-                context_device_advertising_id
+                context_device_advertising_id,
+                b.subscription_status
 from ios.users as a inner join http_api.purchase_event as b on a.email=b.email)
 union all
 (select distinct context_traits_user_id as user_id,
-                 context_device_advertising_id
+                 context_device_advertising_id,
+                '' as subscription_status
  from android.users)),
 
 a1 as
@@ -19,7 +21,8 @@ a2 as
               a.user_id,
               TIMESTAMP(TIMESTAMP_MICROS(event_timestamp)) AS timestamp,
               a1.user_id as user_id2,
-              1 as push
+              1 as push,
+              a1.subscription_status
       FROM `up-faith-and-family.analytics_164012552.events_*` as a LEFT join unnest(user_properties) as e left join a1 on device.advertising_id=context_device_advertising_id
       WHERE _TABLE_SUFFIX>= '20210101'  AND event_name = 'view'
 AND device.operating_system in ('Android', 'iOS') AND e.key = 'firebase_last_notification'),
@@ -27,7 +30,8 @@ AND device.operating_system in ('Android', 'iOS') AND e.key = 'firebase_last_not
 a3 as
 (select distinct case when user_id is null then user_id2 else user_id end as user_id,
        timestamp,
-       push
+       push,
+      subscription_status
 from a2)
 
 select *
@@ -44,6 +48,11 @@ where user_id is not null
   dimension: user_id {
     type: string
     sql: ${TABLE}.user_id ;;
+  }
+
+  dimension: subscription_status {
+    type: string
+    sql: ${TABLE}.subscription_status ;;
   }
 
   dimension: timestamp {
