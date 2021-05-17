@@ -1,9 +1,10 @@
 view: customer_frequency {
   derived_table: {
     sql: select  date(status_date) as status_date,
-       count(distinct user_id) as annual_signups
+                 count(distinct case when subscription_frequency='yearly' then user_id end) as annual_signups,
+                 count(distinct case when subscription_frequency='monthly' then user_id end) as monthly_signups
 from http_api.purchase_event
-where subscription_frequency='yearly' and topic in ('customer.created','customer.product.free_trial_created')
+where topic in ('customer.created','customer.product.free_trial_created')
 group by 1
  ;;
   }
@@ -37,8 +38,18 @@ group by 1
     sql: ${annual_signups} ;;
   }
 
+  dimension: monthly_signups {
+    type: number
+    sql: ${TABLE}.monthly_signups ;;
+  }
+
+  measure: monthly_signups_ {
+    type: sum
+    sql: ${monthly_signups} ;;
+  }
+
 
   set: detail {
-    fields: [ annual_signups]
+    fields: [ annual_signups, monthly_signups]
   }
 }
