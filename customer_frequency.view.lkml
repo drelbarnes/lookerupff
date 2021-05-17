@@ -1,6 +1,6 @@
 view: customer_frequency {
   derived_table: {
-    sql: select  status_date,
+    sql: select  date(status_date) as status_date,
        count(distinct user_id) as annual_signups
 from http_api.purchase_event
 where subscription_frequency='yearly' and topic in ('customer.created','customer.product.free_trial_created')
@@ -24,7 +24,7 @@ group by 1
       quarter,
       year
     ]
-    sql: ${TABLE}.status_date ;;
+    sql: timestamp(${TABLE}.status_date) ;;
   }
 
   dimension: annual_signups {
@@ -42,5 +42,3 @@ group by 1
     fields: [ annual_signups]
   }
 }
-
-

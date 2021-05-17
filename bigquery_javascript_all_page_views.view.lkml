@@ -9,6 +9,7 @@ with a as
        context_campaign_content,
        context_campaign_term,
        context_page_referrer,
+       replace(split(split(context_page_referrer, 'utm_campaign=')[safe_ordinal(2)],'&')[safe_ordinal(1)],'+',' ') as campaign_name,
        timestamp
 from javascript.view
 where date(timestamp)>'2019-09-15'
@@ -20,13 +21,14 @@ select anonymous_id,
        context_campaign_content,
        context_campaign_term,
        context_page_referrer,
+       replace(split(split(context_page_referrer, 'utm_campaign=')[safe_ordinal(2)],'&')[safe_ordinal(1)],'+',' ') as campaign_name,
        timestamp
 from javascript_upff_home.pages
 where date(timestamp)>'2019-09-15')
 
 (select a.*,
        case when name is null then 'organic' else 'paid' end as type
-from a left join facebook_ads.campaigns as b on a.context_campaign_name=name)
+from a left join facebook_ads.campaigns as b on upper(a.campaign_name)=upper(name))
  ;;
   }
 

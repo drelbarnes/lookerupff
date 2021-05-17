@@ -148,6 +148,15 @@ explore: bigquery_email_sends {
   label: "MailChimp Email Sends (User-level)"
 }
 
+include: "bigquery_titles.view.lkml"
+explore: bigquery_titles {}
+
+include: "bigquery_mvpd_subs.view.lkml"
+explore: bigquery_mvpd_subs {}
+
+include: "svod_monthly_v2_dashboard.dashboard"
+
+
 
 explore: bigquery_email_opens_set_cancels {}
 
