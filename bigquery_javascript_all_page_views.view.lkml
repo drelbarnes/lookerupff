@@ -27,8 +27,9 @@ from javascript_upff_home.pages
 where date(timestamp)>'2019-09-15')
 
 (select a.*,
-       case when name is null then 'organic' else 'paid' end as type
-from a left join facebook_ads.campaigns as b on upper(a.campaign_name)=upper(name))
+       case when b.name is null and c.name is null then 'organic' else 'paid' end as type
+from a left join facebook_ads.campaigns as b on upper(a.campaign_name)=upper(b.name)
+       left join adwords.campaigns as c on upper(a.campaign_name)=upper(c.name))
  ;;
   }
 
