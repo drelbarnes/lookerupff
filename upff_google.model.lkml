@@ -137,6 +137,9 @@ include: "bigquery_email_opens_set_cancels.view.lkml"
 include: "bigquery_push_notification.view.lkml"
 
 include: "promos1q21.view.lkml"
+include: "bigquery_mobile_installs.view.lkml"
+
+explore: bigquery_mobile_installs {}
 
 explore: promos1q21 {}
 
