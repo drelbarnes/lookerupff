@@ -73,6 +73,11 @@ from a left join facebook_ads.campaigns as b on upper(a.campaign_name)=upper(b.n
     sql:  ${TABLE}.context_campaign_content;;
   }
 
+  dimension: campaign_name {
+    type: string
+    sql: ${TABLE}.campaign_name ;;
+  }
+
   dimension_group: timestamp {
     type: time
     sql: ${TABLE}.timestamp ;;

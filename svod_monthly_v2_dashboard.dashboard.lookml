@@ -87,7 +87,7 @@
     filters:
       bigquery_titles.platform: "-NULL,-App"
       bigquery_titles.total_views: NOT NULL
-    sorts: [bigquery_titles.timestamp_month desc, bigquery_titles.platform_]
+    sorts: [bigquery_titles.timestamp_month, bigquery_titles.platform_ desc]
     limit: 500
     trellis: ''
     stacking: normal
@@ -118,7 +118,7 @@
     x_axis_datetime_label: "%b' %y"
     x_axis_scale: auto
     y_axis_scale_mode: linear
-    x_axis_reversed: true
+    x_axis_reversed: false
     y_axis_reversed: false
     plot_size_by_field: false
     ordering: desc

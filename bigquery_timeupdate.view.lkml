@@ -57,7 +57,7 @@ a4 as
     max(timecode) as timecode,
    'Web' AS source
   FROM
-    javascript.durationchange as a inner join a3 on safe_cast(a.video_id as int64)=a3.id inner join http_api.purchase_event as p on a.user_id=p.user_id
+    javascript.durationchange as a left join a3 on safe_cast(a.video_id as int64)=a3.id inner join http_api.purchase_event as p on a.user_id=p.user_id
   WHERE
     a.user_id IS NOT NULL /*and safe_cast(a.user_id as string)!='0'*/ and a3.duration>0
   GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12)
@@ -81,7 +81,7 @@ union all
     max(timecode) as timecode,
    'iOS' AS source
   FROM
-    ios.timeupdate as a inner join a3 on safe_cast(a.video_id as int64)=a3.id inner join http_api.purchase_event as p on a.user_id=p.user_id
+    ios.timeupdate as a left join a3 on safe_cast(a.video_id as int64)=a3.id inner join http_api.purchase_event as p on a.user_id=p.user_id
   WHERE
     a.user_id IS NOT NULL /*and safe_cast(a.user_id as string)!='0'*/ and a3.duration>0
   GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12)
@@ -105,7 +105,7 @@ union all
     max(timecode) as timecode,
    'iOS' AS source
   FROM
-    ios.video_content_playing as a inner join a3 on safe_cast(a.video_id as int64)=a3.id inner join http_api.purchase_event as p on a.user_id=p.user_id
+    ios.video_content_playing as a left join a3 on safe_cast(a.video_id as int64)=a3.id inner join http_api.purchase_event as p on a.user_id=p.user_id
   WHERE
     a.user_id IS NOT NULL /*and safe_cast(a.user_id as string)!='0'*/ and a3.duration>0
   GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12)
@@ -129,7 +129,7 @@ union all
     max(timecode) as timecode,
    'Roku' AS source
   FROM
-    roku.video_content_playing as a inner join a3 on safe_cast(a.video_id as int64)=a3.id inner join http_api.purchase_event as p on a.user_id=p.user_id
+    roku.video_content_playing as a left join a3 on safe_cast(a.video_id as int64)=a3.id inner join http_api.purchase_event as p on a.user_id=p.user_id
   WHERE
     a.user_id IS NOT NULL /*and safe_cast(a.user_id as string)!='0'*/ and a3.duration>0
   GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12)
@@ -153,7 +153,7 @@ union all
     max(timecode) as timecode,
    'Android' AS source
   FROM
-    android.video_content_playing as a inner join a3 on safe_cast(a.video_id as int64)=a3.id inner join http_api.purchase_event as p on a.user_id=p.user_id
+    android.video_content_playing as a left join a3 on safe_cast(a.video_id as int64)=a3.id inner join http_api.purchase_event as p on a.user_id=p.user_id
   WHERE
     a.user_id IS NOT NULL /*and safe_cast(a.user_id as string)!='0'*/ and a3.duration>0
   GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12)
@@ -177,7 +177,7 @@ union all
     max(timecode) as timecode,
    'FireTV' AS source
   FROM
-    amazon_fire_tv.video_content_playing as a inner join a3 on safe_cast(a.video_id as int64)=a3.id inner join http_api.purchase_event as p on a.user_id=p.user_id
+    amazon_fire_tv.video_content_playing as a left join a3 on safe_cast(a.video_id as int64)=a3.id inner join http_api.purchase_event as p on a.user_id=p.user_id
   WHERE
     a.user_id IS NOT NULL /*and safe_cast(a.user_id as string)!='0'*/ and a3.duration>0
   GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12)
@@ -201,7 +201,7 @@ union all
     max(timecode) as timecode,
    'Web' AS source
   FROM
-    javascript.video_content_playing as a inner join a3 on safe_cast(a.video_id as int64)=a3.id inner join http_api.purchase_event as p on a.user_id=p.user_id
+    javascript.video_content_playing as a left join a3 on safe_cast(a.video_id as int64)=a3.id inner join http_api.purchase_event as p on a.user_id=p.user_id
   WHERE
     a.user_id IS NOT NULL /*and safe_cast(a.user_id as string)!='0'*/ and a3.duration>0
   GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12)
@@ -225,7 +225,7 @@ union all
     max(timecode) as timecode,
    'Roku' AS source
   FROM
-    roku.timeupdate as a inner join a3 on safe_cast(a.video_id as int64)=a3.id inner join http_api.purchase_event as p on a.user_id=p.user_id
+    roku.timeupdate as a left join a3 on safe_cast(a.video_id as int64)=a3.id inner join http_api.purchase_event as p on a.user_id=p.user_id
   WHERE
     a.user_id IS NOT NULL /*and safe_cast(a.user_id as string)!='0'*/ and a3.duration>0
   GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12)
@@ -249,7 +249,7 @@ union all
     max(timecode) as timecode,
    'Android' AS source
   FROM
-    android.timeupdate as a inner join a3 on a.video_id=a3.id inner join http_api.purchase_event as p on a.user_id=p.user_id
+    android.timeupdate as a left join a3 on a.video_id=a3.id inner join http_api.purchase_event as p on a.user_id=p.user_id
   WHERE
     a.user_id IS NOT NULL /*and safe_cast(a.user_id as string)!='0'*/ and a3.duration>0
   GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12)
