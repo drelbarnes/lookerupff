@@ -1,6 +1,8 @@
 view: bigquery_annual_subs {
   derived_table: {
-    sql: (with a0 as
+    sql:
+    /*pull most recent customer status*/
+    (with a0 as
       (select user_id,
               max((status_date)) as max_date
       from http_api.purchase_event

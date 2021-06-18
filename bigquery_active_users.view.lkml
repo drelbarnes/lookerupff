@@ -1,6 +1,8 @@
 view: bigquery_active_users {
   derived_table: {
-    sql: with plays as
+    sql:
+  /*Pull most recent analytics table ingestion in order to get the total number of subs on service by week*/
+    with plays as
 (with a0 as
 (select date(analytics_timestamp) as timestamp,
        date_sub(date(analytics_timestamp),interval 7 day) week_ago,
@@ -8,7 +10,7 @@ view: bigquery_active_users {
 from php.get_analytics
 where date(sent_at)=current_date()
 order by 1 desc),
-
+/*Build engagement data pull, including early firstplay tables. Video Content Playing tables provide more recent engagement data.*/
 allfirstplay as
 (with a1 as
 (select sent_at as timestamp,
@@ -22,7 +24,7 @@ a2 as
         title[safe_ordinal(1)] as title,
         concat(title[safe_ordinal(2)]," - ",title[safe_ordinal(3)]) as collection
  from a1 order by 1),
-
+/*Generate title id mapping table to map video id to title name for older firstplay tables*/
 titles_id_mapping as
 (select *
 from svod_titles.titles_id_mapping
@@ -58,6 +60,7 @@ where collection not in ('Romance - OLD',
 'UP Original Series'
 )),
 
+/*append all of the firstplay (for old dates) and video_content_playing (for more recent dates) tables*/
 a as
         (select sent_at as timestamp,
                 b.date as release_date,
@@ -179,7 +182,7 @@ a as
                 episode
          from roku.video_content_playing as a left join titles_id_mapping as b on safe_cast(a.video_id as string) = safe_cast(b.id as string))
 
-
+/*Create Current, Prior, and YAGO quarter benchmarks*/
 select *,
        case when date(a.timestamp) between DATE_SUB(date(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), QUARTER)), INTERVAL 0 QUARTER) and
             DATE_SUB(date(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY)), INTERVAL 0 QUARTER) then "Current Quarter"
@@ -204,6 +207,7 @@ select cast(week_ago as timestamp) as timestamp,
 from audience inner join a0 on week=cast(week_ago as string)
 order by 1 desc),
 
+/*Join Roku firstplay table to finished product*/
 a32 as
 (select distinct mysql_roku_firstplays_firstplay_date_date,
                 mysql_roku_firstplays_video_id,

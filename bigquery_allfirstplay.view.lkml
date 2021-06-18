@@ -1,6 +1,8 @@
 view: bigquery_allfirstplay {
   derived_table: {
-    sql: with aa as
+    sql:
+/*Begin by building out queries to segment new customer views and winback views*/
+    with aa as
 (select user_id,email,status_date as churn_date
 from http_api.purchase_event
 where topic in ('customer.product.cancelled','customer.product.disabled','customer.product.expired')),
@@ -11,10 +13,12 @@ from http_api.purchase_event
 where topic in ('customer.product.created','customer.product.renewed','customer.created','customer.product.free_trial_created')
 group by 1,2),
 
+/*Create table with customers who have a status data after churning*/
 cc as
 (select distinct bb.user_id, bb.email
 from aa inner join bb on aa.user_id=bb.user_id and status_date>churn_date),
 
+/*For older dates, we leverage firstplay tables.*/
 a1 as
 (select sent_at as timestamp,
         user_id,
@@ -28,6 +32,7 @@ a2 as
         concat(title[safe_ordinal(2)]," - ",title[safe_ordinal(3)]) as collection
  from a1 order by 1),
 
+/*Use php.get_titles table to create title id mapping table that maps video id to title of any given asset*/
 a30 as
 (select video_id,
        max(loaded_at) as loaded_at
@@ -49,7 +54,7 @@ titles_id_mapping as
        round(duration_seconds/60) as duration,
        promotion
 from php.get_titles as a left join svod_titles.titles_id_mapping as b on a.video_id=b.id inner join a30 on a30.video_id=a.video_id and a30.loaded_at=a.loaded_at),
-
+/*call legacy roku firstplay table for old dates*/
 a32 as
 (select distinct mysql_roku_firstplays_firstplay_date_date as timestamp,
                 mysql_roku_firstplays_video_id,
@@ -59,7 +64,8 @@ a32 as
                 UNIX_SECONDS(mysql_roku_firstplays_firstplay_date_date) as EPOCH_TIMESTAMP,
                 CAST('1111' AS int64) as platform_id
 from looker.roku_firstplays),
-
+/*build master dataset for engagement using firstplay tables for older dates and the current video_content_playing tables for
+current engagement ingestion source*/
 a as
         (select sent_at as timestamp,
                 b.date as release_date,
@@ -339,7 +345,7 @@ select sent_at as timestamp,
                 null as tv_cast,
                 promotion
          from a2 as a left join titles_id_mapping as b on trim(upper(b.title)) = trim(upper(a.title)))
-
+/*join master dataset with winback and first time customers table to finish query*/
 select a.user_id,
        a.anonymous_id,
        a.event_type,

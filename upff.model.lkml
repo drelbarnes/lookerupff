@@ -305,88 +305,23 @@ explore: javascript_uptv_pages {
   }
 }
 
-include: "analytics.view"
-explore: analytics{}
+
+
 
 include: "php_get_customers.view"
 explore: php_get_customers{
   label: "Mktg Opt-In Subscribers"
   description: "Marketing Opt-In Subs"
-  join: analytics {
-    type: inner
-    sql_on: ${analytics.timestamp_date} = ${php_get_customers.created_date};;
-    relationship: one_to_one
-  }
 }
 
-include: "customers.view"
-include: "all_firstplay.view"
 include: "delighted_survey_question_answered.view"
 include: "mailchimp_email_campaigns.view"
-include: "customers_customers.view"
-explore: customers{
 
-  join: javascript_users {
-    type:  left_outer
-    sql_on: ${customers.customer_id} = ${javascript_users.id};;
-    relationship: one_to_one
-  }
-
-  join: android_users {
-    type:  left_outer
-    sql_on: ${customers.customer_id} = ${android_users.id};;
-    relationship: one_to_one
-  }
-
-  join: ios_users {
-    type:  left_outer
-    sql_on: ${customers.customer_id} = ${ios_users.id};;
-    relationship: one_to_one
-  }
-
-  join: http_api_purchase_event {
-    type: left_outer
-    sql_on: ${customers.customer_id} = ${http_api_purchase_event.user_id};;
-    relationship: one_to_one
-  }
-
-  join: redshift_pixel_api_email_opened {
-    type: left_outer
-    sql_on: ${customers.customer_id} = ${redshift_pixel_api_email_opened.user_id};;
-    relationship: one_to_one
-  }
-
-  join: all_firstplay {
-    type: left_outer
-    sql_on:  ${customers.customer_id} = ${all_firstplay.user_id} ;;
-    relationship: one_to_many
-  }
-
-  join: delighted_survey_question_answered {
-    type: left_outer
-    sql_on: ${customers.customer_id} = ${delighted_survey_question_answered.user_id};;
-    relationship: one_to_many
-  }
-
-  join: mailchimp_email_campaigns {
-    type:  inner
-    sql_on: ${mailchimp_email_campaigns.campaign_date} = ${delighted_survey_question_answered.timestamp_date};;
-    relationship: one_to_one
-  }
-
-  join: customers_v2 {
-    type: inner
-    sql_on: ${delighted_survey_question_answered.user_id} = ${customers_v2.customer_id};;
-    relationship: one_to_one
-  }
-
-}
 
 explore: mailchimp_email_campaigns {}
 
 include: "javascript_subscribed.view"
 include: "http_api_purchase_event.view"
-include: "customers_info_facts.view"
 explore: subscribed {}
 explore: http_api_purchase_event
 {
@@ -480,7 +415,6 @@ explore: http_api_purchase_event
 
 }
 
-explore: customers_info_facts{}
 
 include: "analytics_v2.view"
 #Delighted.com // Feedback Survey Responses
@@ -529,17 +463,10 @@ explore: ios_users_firstplay {
 }
 
 include: "android_users.view"
-include: "android_play.view"
 #Android // get user plays
 explore: android_users_play {
   label: "Android Subscribers Play"
   from:  android_users
-
-  join: android_play {
-    type: inner
-    sql_on: ${android_users_play.id} = ${android_play.user_id};;
-    relationship: one_to_one
-  }
 }
 
 include: "javascript_pages.view"

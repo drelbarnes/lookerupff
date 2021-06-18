@@ -1,19 +1,21 @@
 view: annual_kpis {
   derived_table: {
-    sql: with a as
-      (select date(status_date) as created_at,
+    sql:
+       /*Segment trial starts by monthly and yearly plans*/
+    with a as
+      (select date(created_at) as created_at,
              count(distinct case when subscription_frequency='monthly' then user_id else null end) as monthly_starts,
              count(distinct case when subscription_frequency='yearly' then user_id else null end) as yearly_starts
       from http_api.purchase_event
       where subscription_frequency in ('monthly','yearly') and date(status_date)=date(created_at)
       group by 1),
-
+/*Aggregate both monthly and yearly starts on date*/
       b as
       (select date(status_date) as status_date,
-             count(distinct case when subscription_frequency='monthly' and ( topic='customer.product.free_trial_converted') then user_id else null end) as monthly_conversions,
-             count(distinct case when subscription_frequency='yearly' and (topic='customer.product.free_trial_converted') then user_id else null end) as yearly_conversions
+             count(distinct case when subscription_frequency='monthly' then user_id else null end) as monthly_conversions,
+             count(distinct case when subscription_frequency='yearly'  then user_id else null end) as yearly_conversions
       from http_api.purchase_event
-      where subscription_frequency in ('monthly','yearly')
+      where subscription_frequency in ('monthly','yearly') and topic='customer.product.free_trial_converted'
       group by 1)
 
       select status_date,
@@ -21,7 +23,8 @@ view: annual_kpis {
              monthly_conversions,
              yearly_starts,
              yearly_conversions
-      from a inner join b on a.created_at=b.status_date
+      from a, b
+      where date_diff(status_date,a.created_at,day) = 14
       order by 1 desc
        ;;
   }

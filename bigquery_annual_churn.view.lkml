@@ -1,6 +1,8 @@
 view: bigquery_annual_churn {
   derived_table: {
-    sql:  with a0 as
+    sql:
+    /*pull out most recent customer status*/
+    with a0 as
       (select user_id,
               max((status_date)) as max_date
       from http_api.purchase_event
@@ -19,7 +21,7 @@ view: bigquery_annual_churn {
        from http_api.purchase_event
        group by 1,2
        order by 1),
-
+/*join most recent status with webhook datasource to get associated fields of interest for customer's most recent date*/
       b as
       (select a11.user_id,
              date(created_at) as created_date,
@@ -33,14 +35,14 @@ view: bigquery_annual_churn {
              LAG(plan) OVER (PARTITION BY a11.user_id ORDER BY date(status_date) ASC)='standard' then 1 else 0 end as sub_1,
              case when frequency='yearly' and a111.status='enabled' then 1 else 0 end as sub_2
       from http_api.purchase_event as a11 inner join a12 on a11.user_id=a12.user_id and a11.status_date=max_date2 left join a1 on a11.user_id=a1.user_id left join svod_titles.customer_frequency as a111 on a11.user_id=cast(a111.customer_id as string) and date(event_created_at)=date(status_date)),
-
+/*Webhook began ingesting subscription frequency on 1/6/21*/
       c as
       (select *,
              case when status_date<'2021-01-06' then case when sub_1=1 or sub_2=1 then 'yearly' else 'monthly' end
                   when status_date>='2021-01-06' and subscription_status='enabled' then subscription_frequency end as sub_plan
       from b
       order by user_id,prior_status_date),
-
+/*segment out yearly subs*/
       d as
       (select distinct user_id,
                        created_date,
@@ -48,27 +50,27 @@ view: bigquery_annual_churn {
                        sub_plan
       from c
       where (plan<>'none' and topic not in('customer.created','customer.product.free_trial_created','customer.product.free_trial_expired')) and sub_plan='yearly'),
-
+/*pull out all churn statuses from webhook*/
       e as
       (select distinct user_id,
        date(status_date) as status_date
 from http_api.purchase_event
 where topic in ('customer.product.cancelled','customer.product.disabled','customer.product.expired')),
-
+/*refer to manually uploaded dataset for list of all customers whose annual subs date is before 1/6/21*/
 e11 as
 (select event_created_at,
        count(distinct customer_id) as annual_churn
 from svod_titles.customer_frequency
 where (frequency='yearly' and status in ('disabled','cancelled','expired'))
 group by 1),
-
+/*pull out all churn events for yearly customers*/
 e12 as
 (select date(status_date) as status_date,
        count(distinct user_id) as annual_churn
 from http_api.purchase_event
 where subscription_frequency='yearly' and subscription_status in ('disabled','cancelled','expired')
 group by 1),
-
+/*Define annual churn for yearly customers*/
 e1 as
 (select case when status_date is not null then status_date else event_created_at end as event_created_at,
         case when e12.annual_churn is not null then e12.annual_churn else e11.annual_churn end as annual_churn
@@ -82,7 +84,7 @@ f as
 
 from d left join e on d.user_id=e.user_id and (d.status_date<e.status_date and date_add(d.status_date,interval 395 day)>e.status_date)
        left join svod_titles.customer_frequency as f on d.user_id=cast(customer_id as string) and date(d.status_date)=date(event_created_at)),
-
+/*aggregate churn on date*/
 f1 as
 (select status_date,
        sum(churn) as churn,

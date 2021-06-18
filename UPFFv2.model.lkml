@@ -123,21 +123,10 @@ explore: application_installed{
   }
 }
 
-include: "analytics.view"
-explore: analytics{}
+
 explore: analytics_v2 {
 
-  join: customers_v2{
-    type:  inner
-    sql_on: ${analytics_v2.timestamp_date} = ${customers_v2.creation_timestamp_date};;
-    relationship: one_to_many
-  }
 
-  join: all_firstplay {
-    type:  inner
-    sql_on: ${all_firstplay.timestamp_date} = ${analytics_v2.timestamp_date};;
-    relationship: one_to_one
-  }
 
   join: mailchimp_email_campaigns {
     type:  inner
@@ -157,151 +146,47 @@ explore: subscribed {}
 
 include: "customers.view"
 include: "customers_analytics.view"
-explore: customers {
 
-  join: customers_analytics {
-    type:  inner
-    sql_on: ${customers.customer_created_at} = ${customers_analytics.timestamp_date};;
-    relationship: many_to_one
-  }
 
-  join: android_users {
-    type:  inner
-    sql_on: ${customers.customer_id} = ${android_users.id};;
-    relationship: one_to_one
-  }
 
-  join: ios_users {
-    type:  inner
-    sql_on: ${customers.customer_id} = ${ios_users.id};;
-    relationship: one_to_one
-  }
 
-  join: all_play {
-    type:  inner
-    sql_on: ${all_play.user_id} = ${customers.customer_id};;
-    relationship: one_to_one
-  }
 
-}
-
-explore: customers_v2 {
-  label: "Subscribers"
-
-  join: analytics_v2 {
-    type:  inner
-    sql_on: ${customers_v2.event_created_at} = ${analytics_v2.timestamp_date};;
-    relationship: many_to_one
-  }
-
-  join: all_firstplay {
-    type:  inner
-    sql_on: ${all_firstplay.user_id} = ${customers_v2.customer_id};;
-    relationship: one_to_one
-  }
-
-  join: all_play {
-    type:  inner
-    sql_on: ${all_play.user_id} = ${customers_v2.customer_id};;
-    relationship: one_to_one
-  }
-
-  join: mailchimp_email_campaigns {
-    type:  inner
-    sql_on: ${mailchimp_email_campaigns.userid} = ${customers_v2.customer_id};;
-    relationship: one_to_one
-  }
-
-}
 
 include: "customers_churn_reasons_aggregated.view"
 include: "customers_churn_custom_reasons.view"
-include: "afinn_lexicon.view"
 include: "http_api_purchase_event.view"
 include: "http_api_users.view"
 include: "heartlandia.view"
-include: "Viewership.view"
-include: "ads_compare.view"
 include: "Lifetime_Value.view"
 include: "churn_texts.view"
 include: "LTV_CPA.view"
 include: "customer_churn_percent.view"
-include: "android_play.view"
 include:  "ios_play.view"
 
 explore: churn_reasons_aggregated {}
 explore: churn_custom_reasons {}
-explore: afinn_lexicon {}
+
 explore: http_api_purchase_event {}
 explore: http_api_users {}
 explore: ios_identifies {}
 explore: heartlandia {}
-explore: viewership {}
-explore: ads_compare {}
+
 explore: lifetime_value {}
 explore: churn_texts {}
 explore: ltv_cpa {}
 explore: customer_churn_percent {}
-explore: android_play {}
+
 explore: ios_play {}
 explore: javascript_play {}
-explore: all_play {
 
-  join: analytics {
-    type:  inner
-    sql_on: ${analytics.timestamp_date} = ${all_play.timestamp_date} ;;
-    relationship: one_to_one
-  }
 
-}
 
-include: "all_firstplay.view"
-include: "customers_customers.view"
 include: "analytics_v2.view"
 include: "mailchimp_email_campaigns.view"
 include: "delighted_survey_question_answered.view"
-explore: all_firstplay {
 
-  join: http_api_purchase_event {
-    type: left_outer
-    sql_on: ${all_firstplay.user_id} = ${http_api_purchase_event.user_id};;
-    relationship: one_to_one
-  }
-
-  join: redshift_pixel_api_email_opened {
-    type: left_outer
-    sql_on: ${all_firstplay.user_id} = ${redshift_pixel_api_email_opened.user_id};;
-    relationship: one_to_one
-  }
-
-  join: customers_v2 {
-    type:  inner
-    sql_on: ${customers_v2.customer_id} = ${all_firstplay.user_id} ;;
-    relationship: one_to_many
-  }
-
-  join: analytics_v2 {
-    type:  inner
-    sql_on: ${customers_v2.event_created_at} = ${analytics_v2.timestamp_date};;
-    relationship: many_to_one
-  }
-
-  join: mailchimp_email_campaigns {
-    type: left_outer
-    sql_on: ${mailchimp_email_campaigns.userid} = ${customers_v2.customer_id};;
-    relationship: one_to_one
-  }
-
-  join: delighted_survey_question_answered {
-    type: inner
-    sql_on: ${delighted_survey_question_answered.user_id} = ${customers_v2.customer_id};;
-    relationship: one_to_one
-  }
-
-}
 
 include: "javascript_users.view"
-include: "all_play.view"
 # Web Suscriber Plays
 explore: javascript_users {
   label: "Web Subscriber Video ID"
@@ -309,12 +194,6 @@ explore: javascript_users {
   join: javascript_play {
     type:  inner
     sql_on: ${javascript_users.id} = ${javascript_play.user_id} ;;
-    relationship: one_to_one
-  }
-
-  join: all_play {
-    type:  inner
-    sql_on: ${all_play.user_id} = ${javascript_users.id} ;;
     relationship: one_to_one
   }
 

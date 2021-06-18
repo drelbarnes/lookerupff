@@ -5,7 +5,8 @@ view: bigquery_utm_web_visits {
        timestamp,
        split(split(referrer,"utm_campaign=")[safe_ordinal(2)],"&")[safe_ordinal(1)] as utm_campaign,
        split(split(referrer,"utm_source=")[safe_ordinal(2)],"&")[safe_ordinal(1)] as utm_source,
-       split(split(referrer,"utm_medium=")[safe_ordinal(2)],"&")[safe_ordinal(1)] as utm_medium
+       split(split(referrer,"utm_medium=")[safe_ordinal(2)],"&")[safe_ordinal(1)] as utm_medium,
+       split(split(referrer,"utm_content=")[safe_ordinal(2)],"&")[safe_ordinal(1)] as utm_content
 from javascript_upff_home.pages
 where date(timestamp)>'2019-09-15')
 union all
@@ -14,7 +15,8 @@ union all
        timestamp,
        split(split(referrer,"utm_campaign=")[safe_ordinal(2)],"&")[safe_ordinal(1)] as utm_campaign,
        split(split(referrer,"utm_source=")[safe_ordinal(2)],"&")[safe_ordinal(1)] as utm_source,
-       split(split(referrer,"utm_medium=")[safe_ordinal(2)],"&")[safe_ordinal(1)] as utm_medium
+       split(split(referrer,"utm_medium=")[safe_ordinal(2)],"&")[safe_ordinal(1)] as utm_medium,
+       split(split(referrer,"utm_content=")[safe_ordinal(2)],"&")[safe_ordinal(1)] as utm_content
 from javascript.view
 where date(timestamp)>'2019-09-15')
 union all
@@ -23,7 +25,8 @@ union all
        timestamp,
        split(split(referrer,"utm_campaign=")[safe_ordinal(2)],"&")[safe_ordinal(1)] as utm_campaign,
        split(split(referrer,"utm_source=")[safe_ordinal(2)],"&")[safe_ordinal(1)] as utm_source,
-       split(split(referrer,"utm_medium=")[safe_ordinal(2)],"&")[safe_ordinal(1)] as utm_medium
+       split(split(referrer,"utm_medium=")[safe_ordinal(2)],"&")[safe_ordinal(1)] as utm_medium,
+       split(split(referrer,"utm_content=")[safe_ordinal(2)],"&")[safe_ordinal(1)] as utm_content
 from javascript.pages
 where date(timestamp)>'2019-09-15')
  ;;
@@ -37,6 +40,11 @@ where date(timestamp)>'2019-09-15')
   measure: web_visits {
     type: count_distinct
     sql: ${TABLE}.anonymous_id ;;
+  }
+
+  dimension: utm_content {
+    type: string
+    sql: ${TABLE}.utm_content ;;
   }
 
   dimension: anonymous_id {
@@ -79,6 +87,6 @@ where date(timestamp)>'2019-09-15')
   }
 
   set: detail {
-    fields: [anonymous_id, referrer, timestamp_time, utm_campaign, utm_medium,utm_source]
+    fields: [anonymous_id, referrer, timestamp_time, utm_campaign, utm_medium,utm_source,utm_content]
   }
 }

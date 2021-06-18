@@ -7,9 +7,7 @@ include: "bigquery_derived_views.view.lkml"
 include: "bigquery_derived_all_firstplay.view.lkml"
 include: "bigquery_derived_addwatchlist.view.lkml"
 include: "bigquery_delighted_survey_question_answered.view.lkml"
-include: "bigquery_android_firstplay.view.lkml"
 include: "bigquery_subscribers.view.lkml"
-include: "bigquery_android_firstplay.view.lkml"
 include: "predictions.view.lkml"
 include: "bigquery_derived_signin.view.lkml"
 include: "bigquery_views.view.lkml"
@@ -83,7 +81,6 @@ include: "bigquery_get_title_categories.view.lkml"
 include: "survey_file.view.lkml"
 include: "get_churn_survey.view.lkml"
 include: "gender.view.lkml"
-include: "appletv.view.lkml"
 include: "facebook.view.lkml"
 include: "marketing_site_pages.view.lkml"
 include: "bigquery_marketing_installs.view.lkml"
@@ -93,7 +90,6 @@ include: "bigquery_get_user_on_email_list.view.lkml"
 include: "gender.view.lkml"
 include: "bigquery_heartland_viewer.view.lkml"
 include: "bigquery_promoted_titles.view.lkml"
-include: "bigquery_14_day_churn_list.view.lkml"
 include: "bigquery_vimeott_webinar_ads.view.lkml"
 include: "derived_redshift_add_watchlist.view.lkml"
 include: "bigquery_wicket_marketing_cost.view.lkml"
@@ -342,8 +338,6 @@ explore: derived_redshift_add_watchlist {}
 explore: bigquery_vimeott_webinar_ads{}
 
 
-explore: bigquery_14_day_churn_list {}
-
 explore: bigquery_heartland_viewer {}
 
 
@@ -375,7 +369,6 @@ explore: marketing_site_pages {}
 
 explore: facebook {}
 
-explore: appletv {}
 
 explore: bigquery_http_api_purchase_event {
 
@@ -770,9 +763,7 @@ explore: bigquery_derived_all_firstplay {
     sql_on: ${bigquery_derived_all_firstplay.user_id} = ${future_purchase_prediction.user_id} ;;
   }
 }
-explore: bigquery_android_firstplay {
-  label: "First Play"
-}
+
 
 explore: bigquery_conversion_model_firstplay {
 

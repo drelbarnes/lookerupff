@@ -1,6 +1,7 @@
 view: ltv_cpa{
     derived_table: {
       sql:
+/*Pull most recent ingestion from analytics table*/
         with customers_analytics as (select analytics_timestamp as timestamp,
        existing_free_trials,
        existing_paying,
@@ -15,6 +16,7 @@ view: ltv_cpa{
 from php.get_analytics
 where date(sent_at)=current_date),
 
+/*Pull FB and Google Spend*/
       fb_perf as (select
                 i.date_start,
                 sum(i.spend) as spend
@@ -34,6 +36,7 @@ where date(sent_at)=current_date),
   group by date_Start) as b on apr.date_start=b.date_start
           group by  1
       ),
+/*Input manual spend for earlier dates*/
         t1 as (select date_start,
 case when TO_CHAR(DATE_TRUNC('month', date_start), 'YYYY-MM') = '2018-07' then spend+(1440/31)
      when TO_CHAR(DATE_TRUNC('month', date_start), 'YYYY-MM') = '2018-06' then spend+(19000/30)
@@ -51,9 +54,9 @@ case when TO_CHAR(DATE_TRUNC('month', date_start), 'YYYY-MM') = '2018-07' then s
         select  date_start,
                 spend
         from fb_perf),
-
+/*Aggregate spend by date*/
        t2 as (select date_start as timestamp, sum(spend) as spend from t1 group by date_start),
-
+/*Create rolling 30 day spend*/
        t3 as (select a1.timestamp, a1.spend+sum(coalesce(a2.spend,0)) as spend_30_days
 from t2 as a1
 left join t2 as a2 on datediff(day,a2.timestamp,a1.timestamp)<=30 and datediff(day,a2.timestamp,a1.timestamp)>0
@@ -68,10 +71,11 @@ from customers_analytics as a1
 left join customers_analytics as a2 on datediff(day,a2.timestamp,a1.timestamp)<=30 and datediff(day,a2.timestamp,a1.timestamp)>0
 group by a1.timestamp,a1.free_trial_converted),
 
+/*Calculate CPA as rolling 30 day spend divided by trial to paid conversions over last 30 days*/
 t6 as (select t5.timestamp,
 spend_30_days, conversions_30_days,cast(spend_30_days as decimal)/cast(conversions_30_days as decimal) as CPA
 from t4 inner join t5 on t4.row=t5.row),
-
+/*Calculate LTV as ration between gross margin and churn %. Be sure to update manually as new gross margin arises*/
 t7 as (select a.*,prior_31_days_subs, case when date(a.timestamp)>'2020-08-18' then 4.1/(cast(churn_30_days as decimal)/cast(prior_31_days_subs as decimal)) else 3.69/(cast(churn_30_days as decimal)/cast(prior_31_days_subs as decimal)) end as LTV
 from
 (select a1.timestamp, a1.paying_churn+sum(coalesce(a2.paying_churn,0)) as churn_30_days
@@ -86,7 +90,7 @@ inner join
 (select a.timestamp,total_paying, ROW_NUMBER() OVER(ORDER BY a.timestamp desc) AS Row from customers_analytics as a where (a.timestamp  < (DATEADD(day,-32, DATE_TRUNC('day',GETDATE()) )))) as b
 on a.row=b.row) as b
 on a.timestamp=b.timestamp),
-
+/*Manually update the LTV/CPA ratio target*/
 t8 as (select t6.timestamp, CPA, LTV, cast(LTV as decimal)/cast(CPA as decimal) as LTV_CPA_Ratio, 2.3 as LTV_CPA_Ratio_Target,  ROW_NUMBER() OVER(ORDER BY t6.timestamp desc) AS Row
 from t6 inner join t7 on t6.timestamp=t7.timestamp),
 

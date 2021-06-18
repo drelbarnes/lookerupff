@@ -163,14 +163,6 @@ view: php_get_customers {
     drill_fields: [user_id, fname, email, platform, context_library_name, ]
   }
 
-  measure: new_trials{
-    type: number
-    sql:  ${analytics.new_trials} ;;
-  }
 
-  measure: mktg_conversion_rate {
-    type: number
-    value_format: ".0#\%"
-    sql: 100.0*${count}/${new_trials} ;;
-  }
+
 }
