@@ -394,7 +394,8 @@ view: churn_future_input {
 #       derived_column: three_week_duration_num {sql:three_week_duration*num;;}
 #       derived_column: four_week_duration_num {sql:four_week_duration*num;;}
 
-      expression_custom_filter: ${bigquery_churn_model.end_date2}>=now();;
+      expression_custom_filter: ${bigquery_churn_model.end_date2} >= now();;
+      #expression_custom_filter: ${bigquery_churn_model.end_date2}>=now();;
     }
   }
   dimension: customer_id {
