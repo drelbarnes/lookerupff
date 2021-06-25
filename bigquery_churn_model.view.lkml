@@ -515,6 +515,7 @@ od_min<>od_max);;
 
   dimension: end_date2 {
     type: date
+    datatype: date
     sql: ${TABLE}.end_date2 ;;
   }
 
