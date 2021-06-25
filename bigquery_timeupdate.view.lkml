@@ -318,7 +318,7 @@ from a4 as a;;
 
   dimension: current_date {
     type: date
-    sql: current_date() ;;
+    sql: now() ;;
   }
 
   dimension: title {

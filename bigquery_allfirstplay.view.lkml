@@ -539,6 +539,7 @@ dimension: promotion_date {
 
   dimension: release_date {
     type: date
+    datatype: date
     sql: ${TABLE}.release_date ;;
   }
 
