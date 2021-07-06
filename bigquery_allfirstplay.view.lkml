@@ -282,7 +282,7 @@ select sent_at as timestamp,
 
          union all
 
-         select sent_at as timestamp,
+        select sent_at as timestamp,
                 b.date as release_date,
                 end_date,
                 case when collection in ('Season 1','Season 2','Season 3') then concat(series,' ',collection) else collection end as collection,
@@ -294,7 +294,7 @@ select sent_at as timestamp,
                 user_id,
                 null as anonymous_id,
                 'firstplay' as event_type,
-                'Xbox' as source,
+                'Tizen' as source,
                 UNIX_SECONDS(sent_at) as EPOCH_TIMESTAMP,
                 null as platform_id,
                 episode,
