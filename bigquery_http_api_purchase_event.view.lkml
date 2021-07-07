@@ -362,8 +362,7 @@ from http_api.purchase_event as a3 left join a2 on a2.email=a3.email;;}
   }
 
   measure: tenure_after_first_month {
-    type: count_distinct
-    sql: ${TABLE}.user_id ;;
+    type: count
     filters: {
       field: bigquery_http_api_purchase_event.topic
       value: "customer.product.renewed"
