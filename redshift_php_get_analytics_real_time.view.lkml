@@ -1,6 +1,6 @@
 view: redshift_php_get_analytics_real_time {
   derived_table: {
-    sql: SELECT * FROM php.get_analytics_real_time
+    sql: SELECT * FROM php.get_analytics_real_time ORDER BY timestamp DESC LIMIT 1
       ;;
   }
 
