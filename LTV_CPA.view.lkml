@@ -15,6 +15,10 @@ view: ltv_cpa{
        total_paying
 from php.get_analytics
 where date(sent_at)=current_date),
+ apple_perf as (select start_date as date_start,
+                            sum(total_local_spend_amount) as spend
+                     from php.get_apple_search_ads_campaigns
+                     group by 1),
 
 /*Pull FB and Google Spend*/
       fb_perf as (select
@@ -53,7 +57,11 @@ case when TO_CHAR(DATE_TRUNC('month', date_start), 'YYYY-MM') = '2018-07' then s
       union all
         select  date_start,
                 spend
-        from fb_perf),
+        from fb_perf
+        union all
+        select date_start,
+               spend
+        from apple_perf),
 /*Aggregate spend by date*/
        t2 as (select date_start as timestamp, sum(spend) as spend from t1 group by date_start),
 /*Create rolling 30 day spend*/

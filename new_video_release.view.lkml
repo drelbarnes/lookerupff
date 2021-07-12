@@ -116,6 +116,7 @@ view: new_video_release {
 
 
 
+
   set: detail {
     fields: [
       user_id,

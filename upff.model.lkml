@@ -61,6 +61,7 @@ include: "redshift_looker_upff_email_list.view.lkml"
 include: "redshift_looker_get_titles.view.lkml"
 include: "redshift_custom_cross_platform_logins.view"
 
+
 explore: redshift_custom_cross_platform_logins  {
   label: "Logins"
 }

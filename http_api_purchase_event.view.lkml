@@ -491,6 +491,14 @@ dimension: churn_type {
     }
   }
 
+  measure: tenure_after_first_month {
+    type: count
+    filters: {
+      field: http_api_purchase_event.topic
+      value: "customer.product.renewed"
+    }
+  }
+
   measure: moption_conversion_rate {
     type: number
     value_format: ".0#\%"
