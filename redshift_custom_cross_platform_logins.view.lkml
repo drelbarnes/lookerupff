@@ -46,6 +46,7 @@ view: redshift_custom_cross_platform_logins {
 
   dimension: user_id {
     type: string
+    primary_key: yes
     sql: ${TABLE}.user_id ;;
   }
 
@@ -54,9 +55,19 @@ view: redshift_custom_cross_platform_logins {
     sql: ${TABLE}.platform ;;
   }
 
+  dimension: user_count {
+    type: number
+    sql: count(${user_id}) ;;
+  }
+
   dimension_group: timestamp {
     type: time
     sql: ${TABLE}.timestamp ;;
+  }
+
+  measure: avg_logins {
+    type: average
+    sql:  ${user_id} ;;
   }
 
   set: detail {

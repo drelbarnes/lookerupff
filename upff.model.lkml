@@ -60,6 +60,11 @@ include: "redshift_http_api_zendesk_vimeo_ott_users.view.lkml"
 include: "redshift_looker_upff_email_list.view.lkml"
 include: "redshift_looker_get_titles.view.lkml"
 include: "redshift_custom_cross_platform_logins.view"
+include: "redshift_php_get_analytics_real_time.view"
+
+explore:redshift_php_get_analytics_real_time{
+  label: "Real-Time Analytics"
+}
 
 
 explore: redshift_custom_cross_platform_logins  {
