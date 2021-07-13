@@ -61,6 +61,11 @@ include: "redshift_looker_upff_email_list.view.lkml"
 include: "redshift_looker_get_titles.view.lkml"
 include: "redshift_custom_cross_platform_logins.view"
 include: "redshift_php_get_analytics_real_time.view"
+include: "redshift_javascript_search_executed.view"
+
+explore: redshift_javascript_search_executed {
+  label: "Web Search Executed"
+}
 
 explore:redshift_php_get_analytics_real_time{
   label: "Real-Time Analytics"
