@@ -39,6 +39,22 @@ a32 as
 from looker.roku_firstplays as a inner join a31 on a.loaded_at=maxloaded and mysql_roku_firstplays_firstplay_date_date=a31.timestamp and a31.mysql_roku_firstplays_video_id=a.mysql_roku_firstplays_video_id and a.user_id=a31.user_id
 group by 1,2,3),
 
+a3b as
+(select        report_date as timestamp,
+               video_id,
+               user_id,
+               sum(safe_cast(total_minutes_watched as INT64)) as total_minutes_watched
+from php.get_xbox_views
+group by 1,2,3),
+
+a3c as
+(select        report_date as timestamp,
+               video_id,
+               user_id,
+               sum(safe_cast(total_minutes_watched as INT64)) as total_minutes_watched
+from php.get_tizen_views
+group by 1,2,3),
+
 a4 as
 ((SELECT
     a3.title,
@@ -254,7 +270,61 @@ union all
     a.user_id IS NOT NULL /*and safe_cast(a.user_id as string)!='0'*/ and a3.duration>0
   GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12)
 
+
+     union all
+
+    (SELECT
+    distinct
+    a3.title,
+    a3.date as release,
+    a.user_id,
+    email,
+    safe_cast(a.video_id as int64) as video_id,
+    case when collection in ('Season 1','Season 2','Season 3') then concat(series,' ',collection) else collection end as collection,
+    series,
+    season,
+    episode,
+    case when series is null and upper(collection)=upper(title) then 'movie'
+                     when series is not null then 'series' else 'other' end as type,
+    a.timestamp,
+    a3.duration*60 as duration,
+    a.total_minutes_watched*60 as timecode,
+   'Xbox' AS source
+  FROM
+    a3b as a inner join a3 on safe_cast(a.video_id as int64)=a3.id inner join http_api.purchase_event as p on a.user_id=p.user_id
+  WHERE
+    a.user_id IS NOT NULL /*and a.user_id<>'0'*/ and a3.duration>0)
+
+    union all
+
+    (SELECT
+    distinct
+    a3.title,
+    a3.date as release,
+    a.user_id,
+    email,
+    safe_cast(a.video_id as int64) as video_id,
+    case when collection in ('Season 1','Season 2','Season 3') then concat(series,' ',collection) else collection end as collection,
+    series,
+    season,
+    episode,
+    case when series is null and upper(collection)=upper(title) then 'movie'
+                     when series is not null then 'series' else 'other' end as type,
+    a.timestamp,
+    a3.duration*60 as duration,
+    a.total_minutes_watched*60 as timecode,
+   'Tizen' AS source
+  FROM
+    a3c as a inner join a3 on safe_cast(a.video_id as int64)=a3.id inner join http_api.purchase_event as p on a.user_id=p.user_id
+  WHERE
+    a.user_id IS NOT NULL /*and a.user_id<>'0'*/ and a3.duration>0)
+
+
+
   union all
+
+
+
 
   (SELECT
     distinct
