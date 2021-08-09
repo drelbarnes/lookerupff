@@ -134,6 +134,12 @@ include: "bigquery_push_notification.view.lkml"
 
 include: "promos1q21.view.lkml"
 include: "bigquery_mobile_installs.view.lkml"
+include: "bigquery_php_get_email_campaigns.view.lkml"
+
+explore: bigquery_php_get_email_campaigns {
+  label: "Email Campaigns (BigQuery)"
+}
+
 
 explore: bigquery_mobile_installs {}
 
