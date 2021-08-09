@@ -402,6 +402,12 @@ explore: bigquery_http_api_purchase_event {
     relationship: one_to_one
   }
 
+  join: bigquery_php_get_email_campaigns{
+    type:  left_outer
+    sql_on:  ${bigquery_php_get_email_campaigns.timestamp_date} = ${bigquery_get_mailchimp_campaigns.timestamp_date} ;;
+    relationship: many_to_many
+  }
+
   join: bigquery_push_notification {
     type: left_outer
     sql_on: ${bigquery_http_api_purchase_event.user_id}=${bigquery_push_notification.user_id} ;;

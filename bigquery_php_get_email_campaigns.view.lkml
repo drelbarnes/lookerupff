@@ -281,6 +281,59 @@ view: bigquery_php_get_email_campaigns {
     sql: ${TABLE}.source ;;
   }
 
+  measure: unique_email_opens {
+    type: sum
+    sql: ${opens_unique} ;;
+  }
+
+  measure: campaign_open_rate {
+    type: average
+    value_format: "0\%"
+    sql: ${opens_open_rate} * 100 ;;
+  }
+
+  measure: open_rate {
+    type: average
+    value_format: "0\%"
+    sql: (${opens_open_rate} * 100) ;;
+    filters: {
+      field: list_id
+      value: "fc061462da"
+    }
+  }
+
+  measure: list_open_rate {
+    type: number
+    value_format: "0\%"
+    sql: ${list_stats_open_rate} ;;
+  }
+
+  measure: industry_open_rate {
+    type: number
+    value_format: "0\%"
+    sql: ${industry_stats_open_rate} * 100 ;;
+  }
+
+  measure: unique_email_clicks {
+    type: sum
+    sql: ${clicks_unique} ;;
+  }
+
+  measure:  bounces_total {
+    type: sum
+    sql: ${bounces_hard} + ${bounces_soft} ;;
+  }
+
+  measure: unsubscribed_total {
+    type: sum
+    sql:  ${campaign_unsubscribed};;
+  }
+
+  measure:  email_send_count {
+    type: number
+    sql: ${campaign_email_sent} ;;
+  }
+
   set: detail {
     fields: [
       abuse_reports,
