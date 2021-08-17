@@ -295,11 +295,8 @@ view: bigquery_php_get_email_campaigns {
   measure: open_rate {
     type: average
     value_format: "0\%"
-    sql: (${opens_open_rate} * 100) ;;
-    filters: {
-      field: list_id
-      value: "fc061462da"
-    }
+    sql: (${opens_open_rate} * 100);;
+    filters: [list_id: "fc061462da"]
   }
 
   measure: list_open_rate {
