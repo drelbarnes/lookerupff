@@ -149,6 +149,12 @@ from t8 inner join t9 on t8.timestamp=t9.timestamp
     sql:30835905;;
   }
 
+  dimension: anonymous_id{
+    type: string
+    tags: ["anonymous_id"]
+    sql: "123-ABC" ;;
+  }
+
   dimension: CPA_4_week_avg{
     type: number
     sql: ${TABLE}.CPA_4_week_avg ;;
