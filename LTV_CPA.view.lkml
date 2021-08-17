@@ -144,7 +144,7 @@ from t8 inner join t9 on t8.timestamp=t9.timestamp
 
 
   dimension: user_id{
-    type: number
+    type: string
     tags: ["user_id"]
     sql: 1 ;;
   }
