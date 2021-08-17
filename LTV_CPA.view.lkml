@@ -146,13 +146,7 @@ from t8 inner join t9 on t8.timestamp=t9.timestamp
   dimension: user_id{
     type: number
     tags: ["user_id"]
-    sql:30835905;;
-  }
-
-  dimension: anonymous_id{
-    type: string
-    tags: ["anonymous_id"]
-    sql: "123-ABC" ;;
+    sql:1;;
   }
 
   dimension: CPA_4_week_avg{
