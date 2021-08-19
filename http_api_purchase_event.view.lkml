@@ -535,6 +535,34 @@ dimension: churn_type {
     }
   }
 
+  measure: cancelled {
+    type: count_distinct
+    sql: ${TABLE}.user_id ;;
+    filters: {
+      field: http_api_purchase_event.topic
+      value: "customer.product.cancelled"
+    }
+  }
+
+  measure: expired {
+    type: count_distinct
+    sql: ${TABLE}.user_id ;;
+    filters: {
+      field: http_api_purchase_event.topic
+      value: "customer.product.expired"
+    }
+  }
+
+  measure: free_trial_expired {
+    type: count_distinct
+    sql: ${TABLE}.user_id ;;
+    filters: {
+      field: http_api_purchase_event.topic
+      value: "customer.product.free_trial_expired"
+    }
+  }
+
+
 
   # ----- Sets of fields for drilling ------
   set: detail {
