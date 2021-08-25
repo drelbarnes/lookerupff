@@ -611,6 +611,33 @@ view: bigquery_flight29 {
     sql: {% condition collections_a %} ${collection} {% endcondition %};;
   }
 
+  # ------
+  # Ad Hoc Work
+  # ------
+
+  dimension: ftnd_eps_flags {
+     sql: CASE
+    WHEN ${TABLE}.episode = 1 THEN 1
+    WHEN ${TABLE}.episode = 2 THEN 1
+    WHEN ${TABLE}.episode = 3 THEN 1
+    ELSE 0
+    END ;;
+  }
+
+  dimension: ftnd_engagement_tier {
+    sql: CASE
+          WHEN ${ftnd_eps_flags} = 1 THEN '1 view only'
+          WHEN ${ftnd_eps_flags} > 1 and ftnd_eps_total < 5 then '2-4 views'
+          WHEN ${ftnd_eps_flags} >= 5 then '5 or more views'
+          WHEN ${ftnd_eps_flags} = 13 then 'completed series'
+          ELSE 'missing'
+          END ;;
+  }
+   measure: ftnd_eps_total {
+     type: sum
+    sql: ${ftnd_eps_flags} ;;
+   }
+
   measure: user_count_collections_a {
     type: count_distinct
     filters: {
@@ -639,6 +666,7 @@ view: bigquery_flight29 {
     type: yesno
     sql: {% condition collections_b %} ${type}{% endcondition %};;
   }
+
 
 
   measure: user_count_collections_b {
