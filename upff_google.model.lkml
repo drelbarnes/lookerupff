@@ -135,6 +135,11 @@ include: "bigquery_push_notification.view.lkml"
 include: "promos1q21.view.lkml"
 include: "bigquery_mobile_installs.view.lkml"
 include: "bigquery_php_get_email_campaigns.view.lkml"
+include: "bigquery_flight29.view.lkml"
+
+explore: bigquery_flight29 {
+  label: "Ad Hoc Request 8-25-21"
+}
 
 explore: bigquery_php_get_email_campaigns {
   label: "Email Campaigns (BigQuery)"
