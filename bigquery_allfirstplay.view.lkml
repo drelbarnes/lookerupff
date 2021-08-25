@@ -600,6 +600,7 @@ dimension: promotion_date {
 # Filters
 # ------
 
+
 filter: collections_a {
   type: string
 }
