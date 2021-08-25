@@ -553,6 +553,15 @@ dimension: churn_type {
     }
   }
 
+  measure: charge_failed {
+    type: count_distinct
+    sql: ${TABLE}.user_id ;;
+    filters: {
+      field: http_api_purchase_event.topic
+      value: "customer.product.charge_failed"
+    }
+  }
+
   measure: free_trial_expired {
     type: count_distinct
     sql: ${TABLE}.user_id ;;
