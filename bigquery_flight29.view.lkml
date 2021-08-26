@@ -402,7 +402,8 @@ eps_flags as(
 
 master2 as(
   select a.*, b.*
-  from master left join eps_flags
+  from master
+  left join eps_flags
   on a.user_id=b.user_id)
 
 master3 as(
