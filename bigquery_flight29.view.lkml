@@ -411,6 +411,11 @@ on a.user_id = b.user_id
     /* where a.user_id<>'0' */ ;;
 }
 
+  dimension: total_eps {
+    type: number
+    sql: {TABLE}.total_eps ;;
+  }
+
   dimension: winback {
     type: string
     sql: ${TABLE}.winback ;;
