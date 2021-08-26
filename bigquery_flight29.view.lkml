@@ -377,7 +377,7 @@ master as
                 DATE_SUB(date(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY)), INTERVAL 4 QUARTER) then "YAGO Quarter"
                 else "NA"
                 end as Quarter
-    from a left join cc on a.user_id=cc.user_id left join svod_titles.promos as c on a.video_id=c.video_id),
+    from a left join cc on a.user_id=cc.user_id left join svod_titles.promos as c on a.video_id=c.video_id)
 
   /* creates viewership flags for each episode per user_id */
 
