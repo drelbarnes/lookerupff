@@ -398,8 +398,10 @@ master as
     case when master.episode=13 then 1 else 0 end as ep13_flag,
     ep01_flag+ep02_flag+ep03_flag+ep04_flag+ep05_flag+ep06_flag+ep07_flag+ep08_flag+ep09_flag+ep10_flag+ep11_flag+ep12_flag+ep13_flag as total_eps
   from master
+
+
   group by user_id
-    /* where a.user_id<>'0' */ ;;
+  /* where a.user_id<>'0' */ ;;
 }
 
   dimension: total_eps {
