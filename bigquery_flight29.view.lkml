@@ -396,7 +396,7 @@ view: bigquery_flight29 {
     case when episode=12 then 1 else 0 end as ep12_flag,
     case when episode=13 then 1 else 0 end as ep13_flag
   from master
-  group by user_id
+  group by user_id, collection, title, episode
 
   ;;
 }
