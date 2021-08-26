@@ -627,6 +627,9 @@ view: bigquery_flight29 {
     WHEN ${TABLE}.episode = 8 THEN 1
     WHEN ${TABLE}.episode = 9 THEN 1
     WHEN ${TABLE}.episode = 10 THEN 1
+    WHEN ${TABLE}.episode = 11 THEN 1
+    WHEN ${TABLE}.episode = 12 THEN 1
+    WHEN ${TABLE}.episode = 13 THEN 1
     ELSE 0
     END ;;
   }
