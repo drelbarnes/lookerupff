@@ -345,7 +345,7 @@ view: bigquery_flight29 {
                     episode,
                     null as tv_cast,
                     promotion
-             from a2 as a left join titles_id_mapping as b on trim(upper(b.title)) = trim(upper(a.title)))
+             from a2 as a left join titles_id_mapping as b on trim(upper(b.title)) = trim(upper(a.title))),
     /*join master dataset with winback and first time customers table to finish query*/
 
 master as
