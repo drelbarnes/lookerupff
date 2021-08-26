@@ -380,7 +380,8 @@ master as(
     from a left join cc on a.user_id=cc.user_id left join svod_titles.promos as c on a.video_id=c.video_id)
 
   /* creates viewership flags for each episode per user_id */
-eps_flags as(
+
+flags as(
   select
     bigquery_allfirstplay.user_id as user_id,
     case when bigquery_allfirstplay.episode=1 then 1 else 0 end as ep01_flag,
@@ -395,33 +396,20 @@ eps_flags as(
     case when bigquery_allfirstplay.episode=10 then 1 else 0 end as ep10_flag,
     case when bigquery_allfirstplay.episode=11 then 1 else 0 end as ep11_flag,
     case when bigquery_allfirstplay.episode=12 then 1 else 0 end as ep12_flag,
-    case when bigquery_allfirstplay.episode=13 then 1 else 0 end as ep13_flag
+    case when bigquery_allfirstplay.episode=13 then 1 else 0 end as ep13_flag,
+    ep01_flag+ep02_flag+ep03_flag+ep04_flag+ep05_flag+ep06_flag+ep07_flag+ep08_flag+ep09_flag+ep10_flag+ep11_flag+ep12_flag+ep13_flag as total_eps
   from master
-  group by user_id
-)
-
-master2 as(
-  select a.*, b.*
-  from master
-  left join eps_flags
-  on a.user_id=b.user_id)
-
-master3 as(
-  select *,
-  ep01_flag+ep02_flag+ep03_flag+ep04_flag+ep05_flag+ep06_flag+ep07_flag+ep08_flag+ep09_flag+ep10_flag+ep11_flag+ep12_flag+ep13_flag as total_eps
-  from master2
   group by user_id)
 
-
+select
+  a.*, b.*
+from flags as a
+left join master as b
+on a.user_id = b.user_id
 
 
     /* where a.user_id<>'0' */ ;;
-  }
-
-  dimension: total_eps {
-    type: number
-    sql: ${TABLE}.total_eps ;;
-  }
+}
 
   dimension: winback {
     type: string
