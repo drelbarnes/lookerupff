@@ -348,8 +348,8 @@ view: bigquery_flight29 {
              from a2 as a left join titles_id_mapping as b on trim(upper(b.title)) = trim(upper(a.title)))
     /*join master dataset with winback and first time customers table to finish query*/
 
-master as(
-    select a.user_id,
+master as
+    (select a.user_id,
            a.anonymous_id,
            a.event_type,
            timestamp_sub(a.timestamp,interval 4 hour) as timestamp,
@@ -377,7 +377,7 @@ master as(
                 DATE_SUB(date(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY)), INTERVAL 4 QUARTER) then "YAGO Quarter"
                 else "NA"
                 end as Quarter
-    from a left join cc on a.user_id=cc.user_id left join svod_titles.promos as c on a.video_id=c.video_id)
+    from a left join cc on a.user_id=cc.user_id left join svod_titles.promos as c on a.video_id=c.video_id),
 
   /* creates viewership flags for each episode per user_id */
 
