@@ -405,24 +405,6 @@ from flags
   ;;
 }
 
-  dimension: total_eps {
-    type: number
-    sql: ${TABLE}.total_eps ;;
-  }
-
-  dimension: ep01_flag {
-    type: number
-    sql: ${TABLE}.ep01_flag ;;
-  }
-  dimension: ep02_flag {
-    type: number
-    sql: ${TABLE}.ep02_flag ;;
-  }
-  dimension: ep03_flag {
-    type: number
-    sql: ${TABLE}.ep03_flag ;;
-  }
-
 
   dimension: winback {
     type: string
