@@ -674,10 +674,44 @@ view: bigquery_flight29 {
           END ;;
   }
 
+  dimension: eps9_flags {
+    sql: CASE
+          WHEN ${TABLE}.episode = 9 THEN 1
+          ELSE 0
+          END ;;
+  }
 
-  measure: ftnd_eps_total {
+  dimension: eps10_flags {
+    sql: CASE
+          WHEN ${TABLE}.episode = 10 THEN 1
+          ELSE 0
+          END ;;
+  }
+
+  dimension: eps11_flags {
+    sql: CASE
+          WHEN ${TABLE}.episode = 11 THEN 1
+          ELSE 0
+          END ;;
+  }
+
+  dimension: eps12_flags {
+    sql: CASE
+          WHEN ${TABLE}.episode = 12 THEN 1
+          ELSE 0
+          END ;;
+  }
+
+  dimension: eps13_flags {
+    sql: CASE
+          WHEN ${TABLE}.episode = 13 THEN 1
+          ELSE 0
+          END ;;
+  }
+
+  measure: eps_total {
      type: sum
-  sql: ${eps1_flags} + ${eps2_flags} + ${eps3_flags};;
+  sql: ${eps1_flags} + ${eps2_flags} + ${eps3_flags} + ${eps4_flags};;
    }
 
 
