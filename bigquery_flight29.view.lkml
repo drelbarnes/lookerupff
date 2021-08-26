@@ -347,6 +347,7 @@ view: bigquery_flight29 {
              from a2 as a left join titles_id_mapping as b on trim(upper(b.title)) = trim(upper(a.title)))
     /*join master dataset with winback and first time customers table to finish query*/
 
+master as(
     select a.user_id,
            a.anonymous_id,
            a.event_type,
@@ -375,10 +376,49 @@ view: bigquery_flight29 {
                 DATE_SUB(date(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY)), INTERVAL 4 QUARTER) then "YAGO Quarter"
                 else "NA"
                 end as Quarter
-    from a left join cc on a.user_id=cc.user_id left join svod_titles.promos as c on a.video_id=c.video_id
+    from a left join cc on a.user_id=cc.user_id left join svod_titles.promos as c on a.video_id=c.video_id)
+
+  /* creates viewership flags for each episode per user_id */
+eps_flags as(
+  select
+    bigquery_allfirstplay.user_id as user_id,
+    case when bigquery_allfirstplay.episode=1 then 1 else 0 end as ep01_flag,
+    case when bigquery_allfirstplay.episode=2 then 1 else 0 end as ep02_flag,
+    case when bigquery_allfirstplay.episode=3 then 1 else 0 end as ep03_flag,
+    case when bigquery_allfirstplay.episode=4 then 1 else 0 end as ep04_flag,
+    case when bigquery_allfirstplay.episode=5 then 1 else 0 end as ep05_flag,
+    case when bigquery_allfirstplay.episode=6 then 1 else 0 end as ep06_flag,
+    case when bigquery_allfirstplay.episode=7 then 1 else 0 end as ep07_flag,
+    case when bigquery_allfirstplay.episode=8 then 1 else 0 end as ep08_flag,
+    case when bigquery_allfirstplay.episode=9 then 1 else 0 end as ep09_flag,
+    case when bigquery_allfirstplay.episode=10 then 1 else 0 end as ep10_flag,
+    case when bigquery_allfirstplay.episode=11 then 1 else 0 end as ep11_flag,
+    case when bigquery_allfirstplay.episode=12 then 1 else 0 end as ep12_flag,
+    case when bigquery_allfirstplay.episode=13 then 1 else 0 end as ep13_flag
+  from master
+  group by user_id
+)
+
+master2 as(
+  select a.*, b.*,
+  from master left join eps_flags
+  on a.user_id=b.user_id)
+
+master3 as(
+  select *,
+  ep01_flag+ep02_flag+ep03_flag+ep04_flag+ep05_flag+ep06_flag+ep07_flag+ep08_flag+ep09_flag+ep10_flag+ep11_flag+ep12_flag+ep13_flag as total_eps
+  from master2
+  group by user_id)
+
+
 
 
     /* where a.user_id<>'0' */ ;;
+  }
+
+  dimension: total_eps {
+    type: number
+    sql: ${TABLE}.total_eps ;;
   }
 
   dimension: winback {
@@ -618,101 +658,98 @@ view: bigquery_flight29 {
   # Ad Hoc Work
   # ------
 
-  dimension: eps1_flags {
+  dimension: eps1 {
      sql: CASE
     WHEN ${TABLE}.episode = 1 THEN 1
     ELSE 0
     END ;;
   }
 
-  dimension: eps2_flags {
+  dimension: eps2 {
     sql: CASE
           WHEN ${TABLE}.episode = 2 THEN 1
           ELSE 0
           END ;;
   }
 
-  dimension: eps3_flags {
+  dimension: eps3 {
     sql: CASE
           WHEN ${TABLE}.episode = 3 THEN 1
           ELSE 0
           END ;;
   }
 
-  dimension: eps4_flags {
+  dimension: eps4 {
     sql: CASE
           WHEN ${TABLE}.episode = 4 THEN 1
           ELSE 0
           END ;;
   }
 
-  dimension: eps5_flags {
+  dimension: eps5 {
     sql: CASE
           WHEN ${TABLE}.episode = 5 THEN 1
           ELSE 0
           END ;;
   }
 
-  dimension: eps6_flags {
+  dimension: eps6 {
     sql: CASE
           WHEN ${TABLE}.episode = 6 THEN 1
           ELSE 0
           END ;;
   }
 
-  dimension: eps7_flags {
+  dimension: eps7 {
     sql: CASE
           WHEN ${TABLE}.episode = 7 THEN 1
           ELSE 0
           END ;;
   }
 
-  dimension: eps8_flags {
+  dimension: eps8 {
     sql: CASE
           WHEN ${TABLE}.episode = 8 THEN 1
           ELSE 0
           END ;;
   }
 
-  dimension: eps9_flags {
+  dimension: eps9 {
     sql: CASE
           WHEN ${TABLE}.episode = 9 THEN 1
           ELSE 0
           END ;;
   }
 
-  dimension: eps10_flags {
+  dimension: eps10 {
     sql: CASE
           WHEN ${TABLE}.episode = 10 THEN 1
           ELSE 0
           END ;;
   }
 
-  dimension: eps11_flags {
+  dimension: eps11 {
     sql: CASE
           WHEN ${TABLE}.episode = 11 THEN 1
           ELSE 0
           END ;;
   }
 
-  dimension: eps12_flags {
+  dimension: eps12 {
     sql: CASE
           WHEN ${TABLE}.episode = 12 THEN 1
           ELSE 0
           END ;;
   }
 
-  dimension: eps13_flags {
+  dimension: eps13 {
     sql: CASE
           WHEN ${TABLE}.episode = 13 THEN 1
           ELSE 0
           END ;;
   }
 
-  measure: eps_total {
-     type: sum
-  sql: ${eps1_flags} + ${eps2_flags} + ${eps3_flags} + ${eps4_flags};;
-   }
+
 
 
   measure: user_count_collections_a {
