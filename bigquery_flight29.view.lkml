@@ -637,7 +637,7 @@ view: bigquery_flight29 {
   dimension: ftnd_engagement_tier {
     sql: CASE
           WHEN ${ftnd_eps_flags} = 1 THEN '1 view only'
-          WHEN ${ftnd_eps_flags} > 1 and ftnd_eps_total < 5 then '2-4 views'
+          WHEN ${ftnd_eps_flags} > 1 and ${ftnd_eps_flags} < 5 then '2-4 views'
           WHEN ${ftnd_eps_flags} >= 5 then '5 or more views'
           WHEN ${ftnd_eps_flags} = 13 then 'completed series'
           ELSE 'missing'
