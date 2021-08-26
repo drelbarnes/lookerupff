@@ -377,9 +377,10 @@ view: bigquery_flight29 {
                 DATE_SUB(date(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY)), INTERVAL 4 QUARTER) then "YAGO Quarter"
                 else "NA"
                 end as Quarter
-    from a left join cc on a.user_id=cc.user_id left join svod_titles.promos as c on a.video_id=c.video_id)
+    from a left join cc on a.user_id=cc.user_id left join svod_titles.promos as c on a.video_id=c.video_id),
 
   /* creates viewership flags for each episode per user_id */
+flags as(
   select
     user_id, collection, title, episode,
     case when episode=1 then 1 else 0 end as ep01_flag,
@@ -395,10 +396,12 @@ view: bigquery_flight29 {
     case when episode=11 then 1 else 0 end as ep11_flag,
     case when episode=12 then 1 else 0 end as ep12_flag,
     case when episode=13 then 1 else 0 end as ep13_flag,
-    ep01_flag+ep02_flag+ep03_flag+ep04_flag+ep05_flag+ep06_flag+ep07_flag+ep08_flag+ep09_flag+ep10_flag+ep11_flag+ep12_flag+ep13_flag as total_eps
-  from master
-  group by user_id, collection, title, episode
+    from master
+  group by user_id, collection, title, episode)
 
+select *,
+  ep01_flag+ep02_flag+ep03_flag+ep04_flag+ep05_flag+ep06_flag+ep07_flag+ep08_flag+ep09_flag+ep10_flag+ep11_flag+ep12_flag+ep13_flag as total_eps
+from flags
   ;;
 }
 
