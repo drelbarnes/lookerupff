@@ -348,7 +348,7 @@ view: bigquery_flight29 {
              from a2 as a left join titles_id_mapping as b on trim(upper(b.title)) = trim(upper(a.title))),
     /*join master dataset with winback and first time customers table to finish query*/
 
-master as
+    master as
     (select a.user_id,
            a.anonymous_id,
            a.event_type,
@@ -380,8 +380,8 @@ master as
     from a left join cc on a.user_id=cc.user_id left join svod_titles.promos as c on a.video_id=c.video_id),
 
   /* creates viewership flags for each episode per user_id */
-user as(
-  select
+    user as(
+    select
     user_id, collection, title, episode,
     case when episode=1 then 1 else 0 end as ep01_flag,
     case when episode=2 then 1 else 0 end as ep02_flag,
@@ -400,7 +400,7 @@ user as(
   from master
   group by user_id)
 
-select * from user
+    select * from user
   ;;
 }
 
