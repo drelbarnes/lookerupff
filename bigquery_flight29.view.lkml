@@ -2,7 +2,8 @@ view: bigquery_flight29 {
   derived_table: {
     sql:
     /*Begin by building out queries to segment new customer views and winback views*/
-        with aa as
+
+    with aa as
     (select user_id,email,status_date as churn_date
     from http_api.purchase_event
     where topic in ('customer.product.cancelled','customer.product.disabled','customer.product.expired')),
@@ -400,7 +401,7 @@ eps_flags as(
 )
 
 master2 as(
-  select a.*, b.*,
+  select a.*, b.*
   from master left join eps_flags
   on a.user_id=b.user_id)
 
