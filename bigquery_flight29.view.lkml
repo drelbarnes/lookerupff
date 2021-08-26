@@ -406,7 +406,7 @@ view: bigquery_flight29 {
 
   dimension: total_eps {
     type: number
-    sql: {TABLE}.total_eps ;;
+    sql: ${TABLE}.total_eps ;;
   }
 
   dimension: winback {
