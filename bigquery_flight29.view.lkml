@@ -346,6 +346,7 @@ view: bigquery_flight29 {
                     promotion
              from a2 as a left join titles_id_mapping as b on trim(upper(b.title)) = trim(upper(a.title)))
     /*join master dataset with winback and first time customers table to finish query*/
+
     select a.user_id,
            a.anonymous_id,
            a.event_type,
@@ -375,6 +376,8 @@ view: bigquery_flight29 {
                 else "NA"
                 end as Quarter
     from a left join cc on a.user_id=cc.user_id left join svod_titles.promos as c on a.video_id=c.video_id
+
+
     /* where a.user_id<>'0' */ ;;
   }
 
@@ -615,60 +618,68 @@ view: bigquery_flight29 {
   # Ad Hoc Work
   # ------
 
-  dimension: ftnd_eps_flags {
+  dimension: eps1_flags {
      sql: CASE
     WHEN ${TABLE}.episode = 1 THEN 1
-    WHEN ${TABLE}.episode = 2 THEN 1
-    WHEN ${TABLE}.episode = 3 THEN 1
-    WHEN ${TABLE}.episode = 4 THEN 1
-    WHEN ${TABLE}.episode = 5 THEN 1
-    WHEN ${TABLE}.episode = 6 THEN 1
-    WHEN ${TABLE}.episode = 7 THEN 1
-    WHEN ${TABLE}.episode = 8 THEN 1
-    WHEN ${TABLE}.episode = 9 THEN 1
-    WHEN ${TABLE}.episode = 10 THEN 1
-    WHEN ${TABLE}.episode = 11 THEN 1
-    WHEN ${TABLE}.episode = 12 THEN 1
-    WHEN ${TABLE}.episode = 13 THEN 1
     ELSE 0
     END ;;
   }
 
+  dimension: eps2_flags {
+    sql: CASE
+          WHEN ${TABLE}.episode = 2 THEN 1
+          ELSE 0
+          END ;;
+  }
+
+  dimension: eps3_flags {
+    sql: CASE
+          WHEN ${TABLE}.episode = 3 THEN 1
+          ELSE 0
+          END ;;
+  }
+
+  dimension: eps4_flags {
+    sql: CASE
+          WHEN ${TABLE}.episode = 4 THEN 1
+          ELSE 0
+          END ;;
+  }
+
+  dimension: eps5_flags {
+    sql: CASE
+          WHEN ${TABLE}.episode = 5 THEN 1
+          ELSE 0
+          END ;;
+  }
+
+  dimension: eps6_flags {
+    sql: CASE
+          WHEN ${TABLE}.episode = 6 THEN 1
+          ELSE 0
+          END ;;
+  }
+
+  dimension: eps7_flags {
+    sql: CASE
+          WHEN ${TABLE}.episode = 7 THEN 1
+          ELSE 0
+          END ;;
+  }
+
+  dimension: eps8_flags {
+    sql: CASE
+          WHEN ${TABLE}.episode = 8 THEN 1
+          ELSE 0
+          END ;;
+  }
+
+
   measure: ftnd_eps_total {
      type: sum
-    sql: ${ftnd_eps_flags} ;;
+  sql: ${eps1_flags} + ${eps2_flags} + ${eps3_flags};;
    }
 
-  dimension: ftnd_engagement_tier_low {
-    sql: CASE
-          WHEN ${ftnd_eps_flags} = 1 THEN '1 view only'
-          WHEN ${ftnd_eps_flags} > 1 and ${ftnd_eps_flags} < 5 then '2-4 views'
-          WHEN ${ftnd_eps_flags} >= 5 then '5 or more views'
-          WHEN ${ftnd_eps_flags} = 13 then 'completed series'
-          ELSE 'missing'
-          END ;;
-  }
-
-  dimension: ftnd_engagement_tier_med {
-    sql: CASE
-          WHEN ${ftnd_eps_flags} > 1 and ${ftnd_eps_flags} < 5 then '2-4 views'
-          ELSE 'missing'
-          END ;;
-  }
-
-  dimension: ftnd_engagement_tier_high {
-    sql: CASE
-          WHEN ${ftnd_eps_flags} >= 5 then '5 or more views'
-          ELSE 'missing'
-          END ;;
-  }
-
-  dimension: ftnd_engagement_tier_complete {
-    sql: CASE
-          WHEN ${ftnd_eps_flags} = 13 then 'completed series'
-          ELSE 'missing'
-          END ;;
-  }
 
   measure: user_count_collections_a {
     type: count_distinct
