@@ -634,7 +634,12 @@ view: bigquery_flight29 {
     END ;;
   }
 
-  dimension: ftnd_engagement_tier {
+  measure: ftnd_eps_total {
+     type: sum
+    sql: ${ftnd_eps_flags} ;;
+   }
+
+  dimension: ftnd_engagement_tier_low {
     sql: CASE
           WHEN ${ftnd_eps_flags} = 1 THEN '1 view only'
           WHEN ${ftnd_eps_flags} > 1 and ${ftnd_eps_flags} < 5 then '2-4 views'
@@ -643,10 +648,27 @@ view: bigquery_flight29 {
           ELSE 'missing'
           END ;;
   }
-  measure: ftnd_eps_total {
-     type: sum
-    sql: ${ftnd_eps_flags} ;;
-   }
+
+  dimension: ftnd_engagement_tier_med {
+    sql: CASE
+          WHEN ${ftnd_eps_flags} > 1 and ${ftnd_eps_flags} < 5 then '2-4 views'
+          ELSE 'missing'
+          END ;;
+  }
+
+  dimension: ftnd_engagement_tier_high {
+    sql: CASE
+          WHEN ${ftnd_eps_flags} >= 5 then '5 or more views'
+          ELSE 'missing'
+          END ;;
+  }
+
+  dimension: ftnd_engagement_tier_complete {
+    sql: CASE
+          WHEN ${ftnd_eps_flags} = 13 then 'completed series'
+          ELSE 'missing'
+          END ;;
+  }
 
   measure: user_count_collections_a {
     type: count_distinct
