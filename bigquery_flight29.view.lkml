@@ -620,6 +620,13 @@ view: bigquery_flight29 {
     WHEN ${TABLE}.episode = 1 THEN 1
     WHEN ${TABLE}.episode = 2 THEN 1
     WHEN ${TABLE}.episode = 3 THEN 1
+    WHEN ${TABLE}.episode = 4 THEN 1
+    WHEN ${TABLE}.episode = 5 THEN 1
+    WHEN ${TABLE}.episode = 6 THEN 1
+    WHEN ${TABLE}.episode = 7 THEN 1
+    WHEN ${TABLE}.episode = 8 THEN 1
+    WHEN ${TABLE}.episode = 9 THEN 1
+    WHEN ${TABLE}.episode = 10 THEN 1
     ELSE 0
     END ;;
   }
@@ -633,7 +640,7 @@ view: bigquery_flight29 {
           ELSE 'missing'
           END ;;
   }
-   measure: ftnd_eps_total {
+  measure: ftnd_eps_total {
      type: sum
     sql: ${ftnd_eps_flags} ;;
    }
