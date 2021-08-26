@@ -381,31 +381,25 @@ master as(
 
   /* creates viewership flags for each episode per user_id */
 
-flags as(
   select
-    bigquery_allfirstplay.user_id as user_id,
-    case when bigquery_allfirstplay.episode=1 then 1 else 0 end as ep01_flag,
-    case when bigquery_allfirstplay.episode=2 then 1 else 0 end as ep02_flag,
-    case when bigquery_allfirstplay.episode=3 then 1 else 0 end as ep03_flag,
-    case when bigquery_allfirstplay.episode=4 then 1 else 0 end as ep04_flag,
-    case when bigquery_allfirstplay.episode=5 then 1 else 0 end as ep05_flag,
-    case when bigquery_allfirstplay.episode=6 then 1 else 0 end as ep06_flag,
-    case when bigquery_allfirstplay.episode=7 then 1 else 0 end as ep07_flag,
-    case when bigquery_allfirstplay.episode=8 then 1 else 0 end as ep08_flag,
-    case when bigquery_allfirstplay.episode=9 then 1 else 0 end as ep09_flag,
-    case when bigquery_allfirstplay.episode=10 then 1 else 0 end as ep10_flag,
-    case when bigquery_allfirstplay.episode=11 then 1 else 0 end as ep11_flag,
-    case when bigquery_allfirstplay.episode=12 then 1 else 0 end as ep12_flag,
-    case when bigquery_allfirstplay.episode=13 then 1 else 0 end as ep13_flag,
+    master.user_id as user_id, master.collection, master.title, master.episode,
+    case when master.episode=1 then 1 else 0 end as ep01_flag,
+    case when master.episode=2 then 1 else 0 end as ep02_flag,
+    case when master.episode=3 then 1 else 0 end as ep03_flag,
+    case when master.episode=4 then 1 else 0 end as ep04_flag,
+    case when master.episode=5 then 1 else 0 end as ep05_flag,
+    case when master.episode=6 then 1 else 0 end as ep06_flag,
+    case when master.episode=7 then 1 else 0 end as ep07_flag,
+    case when master.episode=8 then 1 else 0 end as ep08_flag,
+    case when master.episode=9 then 1 else 0 end as ep09_flag,
+    case when master.episode=10 then 1 else 0 end as ep10_flag,
+    case when master.episode=11 then 1 else 0 end as ep11_flag,
+    case when master.episode=12 then 1 else 0 end as ep12_flag,
+    case when master.episode=13 then 1 else 0 end as ep13_flag,
     ep01_flag+ep02_flag+ep03_flag+ep04_flag+ep05_flag+ep06_flag+ep07_flag+ep08_flag+ep09_flag+ep10_flag+ep11_flag+ep12_flag+ep13_flag as total_eps
   from master
-  group by user_id)
+  group by user_id
 
-select
-  a.*, b.*
-from flags as a
-left join master as b
-on a.user_id = b.user_id
 
 
     /* where a.user_id<>'0' */ ;;
