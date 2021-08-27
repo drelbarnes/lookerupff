@@ -454,8 +454,8 @@ select
   collection,
   round((count(user_id)*100/(select count(*) from habits)),0) as user_count
 from habits
-group by 1, 2
-order by 1, 2
+group by 1, 2, 3
+order by 1, 2, 3
   ;;
 }
 
