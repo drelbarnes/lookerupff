@@ -452,7 +452,7 @@ order by 1,2,3)
 select
   viewing_habit,
   collection,
-  user_count
+  count(user_id) as user_count
 from habits
   ;;
 }
