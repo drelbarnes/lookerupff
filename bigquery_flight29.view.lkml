@@ -453,7 +453,7 @@ select
   user_id,
   viewing_habit,
   collection
-from habits
+from habits)
   ;;
 }
 
