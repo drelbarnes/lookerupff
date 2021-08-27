@@ -467,10 +467,6 @@ from habits
     sql: ${TABLE}.viewing_habit ;;
   }
 
-  measure: user_count {
-    type: number
-    sql: ${TABLE}.user_id ;;
-  }
 
 
 }
