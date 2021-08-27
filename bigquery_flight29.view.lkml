@@ -388,7 +388,7 @@ episodes as
   a.title,
   a.source,
   a.episode,
-from a left join cc on a.user_id=cc.user_id left join svod_titles.promos as c on a.video_id=c.video_id,
+from a left join cc on a.user_id=cc.user_id left join svod_titles.promos as c on a.video_id=c.video_id),
 
 flags as
 (select
