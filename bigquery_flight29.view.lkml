@@ -380,28 +380,82 @@ view: bigquery_flight29 {
     from a left join cc on a.user_id=cc.user_id left join svod_titles.promos as c on a.video_id=c.video_id),
 
   /* creates viewership flags for each episode per user_id */
-flags as(
-  select
-    user_id, collection, title, episode,
-    case when episode=1 then 1 else 0 end as ep01_flag,
-    case when episode=2 then 1 else 0 end as ep02_flag,
-    case when episode=3 then 1 else 0 end as ep03_flag,
-    case when episode=4 then 1 else 0 end as ep04_flag,
-    case when episode=5 then 1 else 0 end as ep05_flag,
-    case when episode=6 then 1 else 0 end as ep06_flag,
-    case when episode=7 then 1 else 0 end as ep07_flag,
-    case when episode=8 then 1 else 0 end as ep08_flag,
-    case when episode=9 then 1 else 0 end as ep09_flag,
-    case when episode=10 then 1 else 0 end as ep10_flag,
-    case when episode=11 then 1 else 0 end as ep11_flag,
-    case when episode=12 then 1 else 0 end as ep12_flag,
-    case when episode=13 then 1 else 0 end as ep13_flag,
-    from master
-  group by user_id, collection, title, episode)
 
-select *,
-  ep01_flag+ep02_flag+ep03_flag+ep04_flag+ep05_flag+ep06_flag+ep07_flag+ep08_flag+ep09_flag+ep10_flag+ep11_flag+ep12_flag+ep13_flag as total_eps
+episodes as
+(select a.user_id,
+  a.collection,
+  a.series,
+  a.title,
+  a.source,
+  a.episode,
+from a left join cc on a.user_id=cc.user_id left join svod_titles.promos as c on a.video_id=c.video_id,
+
+flags as
+(select
+  user_id, collection, episode,
+  case when episode=1 then 1 else 0 end as ep1,
+  case when episode=2 then 1 else 0 end as ep2,
+  case when episode=3 then 1 else 0 end as ep3,
+  case when episode=4 then 1 else 0 end as ep4,
+  case when episode=5 then 1 else 0 end as ep5,
+  case when episode=6 then 1 else 0 end as ep6,
+  case when episode=7 then 1 else 0 end as ep7,
+  case when episode=8 then 1 else 0 end as ep8,
+  case when episode=9 then 1 else 0 end as ep9,
+  case when episode=10 then 1 else 0 end as ep10,
+  case when episode=11 then 1 else 0 end as ep11,
+  case when episode=12 then 1 else 0 end as ep12,
+  case when episode=13 then 1 else 0 end as ep13
+from episodes
+group by 1,2,3,4
+order by 1,2,3,4),
+
+max as
+(select
+  user_id, collection,
+  max(ep1) as ep1,
+  max(ep2) as ep2,
+  max(ep3) as ep3,
+  max(ep4) as ep4,
+  max(ep5) as ep5,
+  max(ep6) as ep6,
+  max(ep7) as ep7,
+  max(ep8) as ep8,
+  max(ep9) as ep9,
+  max(ep10) as ep10,
+  max(ep11) as ep11,
+  max(ep12) as ep12,
+  max(ep13) as ep13
 from flags
+group by 1,2
+order by 1,2),
+
+sum as
+(select
+  user_id, collection, ep1, ep2, ep3, ep4, ep5, ep6, ep7, ep8, ep9, ep10, ep11, ep12, ep13,
+  ep1+ep2+ep3+ep4+ep5+ep6+ep7+ep8+ep9+ep10+ep11+ep12+ep13 as total_episodes
+from max
+group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15),
+
+habits as
+(select user_id, collection, total_episodes,
+  case
+    when total_episodes=1 then 'A: First episode only'
+    when total_episodes>1 and total_episodes<5 then 'B: 2-4 views'
+    when total_episodes>4 and total_episodes<13 then 'C: 5-12 views'
+    when total_episodes=13 then 'D: Series completer'
+  end as viewing_habit
+from sum
+group by 1,2,3
+order by 1,2,3)
+
+select
+  viewing_habit,
+  collection,
+  round((count(user_id)*100/(select count(*) from habits)),0) as user_count
+from habits
+group by 1, 2
+order by 1, 2
   ;;
 }
 
