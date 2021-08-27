@@ -453,6 +453,7 @@ select
   viewing_habit,
   collection,
   user_count
+from habits
   ;;
 }
 
