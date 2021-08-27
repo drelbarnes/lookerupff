@@ -453,7 +453,7 @@ select
   user_id,
   viewing_habit,
   collection
-from habits)
+from habits
   ;;
 }
 
@@ -469,6 +469,7 @@ from habits)
 
   measure: user_count {
     type: count_distinct
-    sql: {TABLE},user_id ;;
+    sql: {TABLE}.user_id ;;
   }
+
 }
