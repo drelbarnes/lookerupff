@@ -454,8 +454,6 @@ select
   collection,
   user_id
 from habits
-group by 1, 2, 3
-order by 1, 2, 3
   ;;
 }
 
