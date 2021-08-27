@@ -450,9 +450,9 @@ group by 1,2,3
 order by 1,2,3)
 
 select
+  user_id,
   viewing_habit,
-  collection,
-  user_id
+  collection
 from habits
   ;;
 }
@@ -467,6 +467,8 @@ from habits
     sql: ${TABLE}.viewing_habit ;;
   }
 
-
-
+  measure: user_count {
+    type: count_distinct
+    sql: {TABLE},user_id ;;
+  }
 }
