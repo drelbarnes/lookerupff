@@ -2,6 +2,8 @@ view: redshift_dunning {
   derived_table: {
     sql:
 
+/* associated explore name: "Dunning Renewal (8-30-21)"
+
 /*
 * Results: Get users in July whose last two topics or status events are charge failed and renewed.
 * This query will assist in revealing the recovery rate from the Vimeo OTT dunning process.
