@@ -468,7 +468,7 @@ group by 1,2
   }
 
   measure: user_count {
-    type: number
+    type: sum
     sql: ${TABLE}.user_count ;;
   }
 
