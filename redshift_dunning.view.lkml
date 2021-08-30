@@ -62,7 +62,7 @@ master as
     order by cf.user_id
 )
 
-/* final table for dashboard */
+/* final table for calculating recovery rates dashboard -- work in progress */
 select
     mc.charge_status,
     mc.plan,
