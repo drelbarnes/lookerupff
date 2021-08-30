@@ -427,8 +427,7 @@ max as
   max(ep12) as ep12,
   max(ep13) as ep13
 from flags
-group by 1,2
-order by 1,2),
+group by 1,2),
 
 sum as
 (select
@@ -454,6 +453,7 @@ select
   collection,
   count(user_id) as user_count
 from habits
+group by 1,2
   ;;
 }
 
