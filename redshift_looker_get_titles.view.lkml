@@ -1,6 +1,6 @@
 view: redshift_looker_get_titles {
   derived_table: {
-    sql: SELECT distinct title, video_id, max(timestamp) as timestamp, is_available, additional_images_aspect_ratio_1_1_medium FROM php.get_titles GROUP BY 1,2,4
+    sql: SELECT distinct title, video_id, max(timestamp) as timestamp, is_available, additional_images_aspect_ratio_1_1_medium FROM php.get_titles GROUP BY 1,2,4,5
       ;;
   }
 
