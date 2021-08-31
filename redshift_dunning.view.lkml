@@ -64,7 +64,6 @@ master as
     order by cf.user_id
 )
 
-/* final table for calculating recovery rates dashboard -- work in progress */
 select
     mc.charge_status,
     mc.plan,
@@ -80,6 +79,10 @@ from mc
 left join master
 on mc.user_id=master.user_id
 order by user_id
+
+
+/* what are attributes of people who are successful recoveries as opposed to those who allow expiration to continue? */
+
 
 ;;
 
