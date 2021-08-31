@@ -36,6 +36,12 @@ explore: redshift_exec_summary_metrics {
   label: "Exec Summary Metrics"
 }
 
+include: "redshift_dunning.view.lkml"
+
+explore: redshift_dunning {
+  label: "Dunning Renewal (8-30-21)"
+}
+
 explore: redshift_ribbow_agency_fee {}
 
 explore: redshift_marketing_installs {}
