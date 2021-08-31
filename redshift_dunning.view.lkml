@@ -11,7 +11,7 @@ view: redshift_dunning {
 * Convert topic events to numeric and loop on row number timestamp
 */
 
-/* selects web customers in month of july */
+/* selects web customers in month of Jul21 */
 with mc as
 (
     select *,
@@ -27,14 +27,15 @@ a as
     user_id,
 
     CASE
-    WHEN topic = 'customer.product.charge_failed' THEN 1
-    WHEN topic = 'customer.product.expired' THEN 2
-    WHEN topic = 'customer.product.free_trial_expired' THEN 3
-    WHEN topic = 'customer.product.renewed' THEN 4
-    ELSE 5
+      WHEN topic = 'customer.product.charge_failed' THEN 1
+      WHEN topic = 'customer.product.expired' THEN 2
+      WHEN topic = 'customer.product.free_trial_expired' THEN 3
+      WHEN topic = 'customer.product.renewed' THEN 4
+      ELSE 5
     END AS status,
 
     status_date,
+    created_at,
     subscription_status,
     seqnum
 
@@ -42,43 +43,47 @@ a as
     WHERE seqnum IN (1,2)
 ),
 
-/* selects all web customers whose payment method failed */
+/* selects all web customers who payment method failed */
 cf as
 (
     select * from a
     WHERE status = 1
 ),
 
+/*
+*  Fetch users with a topic or status event equal to 1 (charge failed) and JOIN with topic or status event equal to 4 (renewed)
+*/
 
-/* selects users whose charge failed and joins to records that renewed */
 master as
 (
-    select
-    datediff(day, cf.status_date, a.status_date) as DiffinDay,
-    cf.user_id,
-    cf.subscription_status
-    from cf
-    INNER JOIN a
-    ON cf.user_id = a.user_id
-    WHERE a.status = 4
-    order by cf.user_id
+select
+  datediff(day, cf.status_date, a.status_date) as DiffinDay,
+  datediff(day, cf.created_at, a.status_date) as Tenure,
+  cf.user_id,
+  cf.subscription_status
+from cf
+INNER JOIN a
+ON cf.user_id = a.user_id
+WHERE a.status = 4
+order by cf.user_id
 )
 
 select
-    mc.charge_status,
-    mc.plan,
-    mc.event_status,
-    mc.topic,
-    mc.subscription_price,
-    mc.subscription_frequency,
-    mc.seqnum,
-    master.DiffinDay,
-    master.user_id,
-    master.subscription_status
+  mc.charge_status,
+  mc.plan,
+  mc.event_status,
+  mc.topic,
+  mc.subscription_price,
+  mc.subscription_frequency,
+  mc.seqnum,
+  master.DiffinDay,
+  master.Tenure,
+  master.user_id,
+  master.subscription_status
 from mc
 left join master
 on mc.user_id=master.user_id
-order by user_id
+order by subscription_price
 
 
 /* what are attributes of people who are successful recoveries as opposed to those who allow expiration to continue? */
@@ -86,6 +91,13 @@ order by user_id
 
 ;;
 
+}
+dimension: subscriber_type {
+  sql: case
+  when ${TABLE}.tenure <= 14 then 'Trial'
+  when ${TABLE}.tenure > 14 then 'Paid'
+  else 'Missing'
+  end ;;
 }
 
 }
