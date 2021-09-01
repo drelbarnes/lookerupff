@@ -447,7 +447,7 @@ habits as
 from sum
 group by 1,2,3
 order by 1,2,3)
-
+/**/
 select
   viewing_habit,
   collection,
