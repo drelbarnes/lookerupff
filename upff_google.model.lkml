@@ -129,9 +129,7 @@ include: "bigquery_push.view.lkml"
 include: "bigquery_get_mailchimp_campaigns.view.lkml"
 include: "bigquery_zendesk.view.lkml"
 include: "bigquery_email_opens_set_cancels.view.lkml"
-
 include: "bigquery_push_notification.view.lkml"
-
 include: "promos1q21.view.lkml"
 include: "bigquery_mobile_installs.view.lkml"
 include: "bigquery_php_get_email_campaigns.view.lkml"
