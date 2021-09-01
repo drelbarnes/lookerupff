@@ -439,10 +439,10 @@ group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15),
 habits as
 (select user_id, collection, total_episodes,
   case
-    when total_episodes=1 then 'First episode only'
-    when total_episodes>1 and total_episodes<5 then '2-4 views'
-    when total_episodes>4 and total_episodes<13 then '5-12 views'
-    when total_episodes=13 then 'Series completer'
+    when total_episodes=1 then 'A: First episode only'
+    when total_episodes>1 and total_episodes<5 then 'B: 2-4 episodes'
+    when total_episodes>4 and total_episodes<13 then 'C: 5-12 episodes'
+    when total_episodes=13 then 'D: 13+ episodes'
   end as viewing_habit
 from sum
 group by 1,2,3
