@@ -84,14 +84,9 @@ from mc
 left join master
 on mc.user_id=master.user_id
 order by subscription_price
-
-
-/* what are attributes of people who are successful recoveries as opposed to those who allow expiration to continue? */
-
-
 ;;
-
 }
+
 dimension: subscriber_type {
   sql: case
   when ${TABLE}.tenure <= 14 then 'Trial'
@@ -99,5 +94,6 @@ dimension: subscriber_type {
   else 'Missing'
   end ;;
 }
+
 
 }

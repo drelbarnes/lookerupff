@@ -7,6 +7,36 @@ view: http_api_purchase_event {
     sql: ${TABLE}.id ;;
   }
 
+  dimension: renewal_status {
+    type: number
+    sql:
+    (
+    select ROW_NUMBER() OVER (ORDER BY timestamp DESC) row_num,
+    user_id,
+
+    CASE
+      WHEN topic = 'customer.product.charge_failed' THEN 1
+      WHEN topic = 'customer.product.expired' THEN 2
+      WHEN topic = 'customer.product.free_trial_expired' THEN 3
+      WHEN topic = 'customer.product.renewed' THEN 4
+      ELSE 5
+    END AS status,
+
+    status_date,
+    created_at,
+    subscription_status,
+    seqnum
+
+    from (
+          select *,
+          row_number() over (partition by user_id order by timestamp desc) seqnum
+          from http_api.purchase_event mc
+          WHERE date(timestamp) between '2021-07-01' AND '2021-07-31' AND platform = 'web'
+          WHERE seqnum IN (1,2)
+        )
+    ) ;;
+  }
+
   dimension: charge_status {
     type: string
     sql: ${TABLE}.charge_status ;;
