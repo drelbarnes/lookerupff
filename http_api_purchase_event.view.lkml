@@ -233,6 +233,13 @@ view: http_api_purchase_event {
     sql:  DATEDIFF('day', ${created_date}::timestamp, ${status_date}::timestamp);;
   }
 
+  dimension: customer_type {
+    sql: case
+        when DATEDIFF('day', ${created_date}::timestamp, ${status_date}::timestamp) <= 14 then 'Trial'
+        when DATEDIFF('day', ${created_date}::timestamp, ${status_date}::timestamp) > 14 then 'Paid'
+        else 'Missing'
+        end ;;
+  }
 
   dimension: days_after_status {
     type:  number
