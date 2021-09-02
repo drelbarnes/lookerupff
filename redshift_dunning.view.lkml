@@ -98,5 +98,4 @@ view: redshift_dunning {
       filters: [redshift_dunning.status: "4", redshift_dunning.seqnum_total: "2"]
     }
 
-
 }
