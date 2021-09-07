@@ -78,6 +78,37 @@ view: redshift_dunning {
       sql: ${TABLE}.customer_type ;;
     }
 
+  measure: count_charge_failed_subs{
+    type: count_distinct
+    label: "Charge Failed Subs"
+    sql:  CASE WHEN ${status} = 1
+         THEN ${user_id}
+       ELSE NULL
+       END ;;
+    filters: [redshift_dunning.seqnum: "1"]
+  }
+
+  measure: count_charge_failed_free_trial_expired_subs{
+    type: count_distinct
+    label: "Charge Failed & Free Trial Expired Subs"
+    sql:  CASE WHEN ${status} = 1 OR ${status} = 3
+         THEN ${user_id}
+       ELSE NULL
+       END ;;
+    filters: [redshift_dunning.seqnum: "1"]
+  }
+
+
+  measure: count_charge_failed_expired_subs{
+    type: count_distinct
+    label: "Charge Failed & Expired Subs"
+    sql:  CASE WHEN ${status} = 1 OR ${status} = 2
+         THEN ${user_id}
+       ELSE NULL
+       END ;;
+       filters: [redshift_dunning.seqnum: "1", redshift_dunning.customer_type: "Paid"]
+  }
+
   measure: count_expired_subs{
     type: count_distinct
     sql:
@@ -88,14 +119,28 @@ view: redshift_dunning {
     filters: [redshift_dunning.status: "2", redshift_dunning.seqnum_total: "2"]
   }
 
-    measure: count_renewed_subs{
-      type: count_distinct
-      sql:
-        CASE WHEN ${seqnum} = 1 OR 2
+
+  measure: count_trial_converted_subs{
+    type: count_distinct
+    label:  "Free Trial Converted Subs"
+    sql:
+        CASE WHEN ${seqnum} = 1 OR ${seqnum} = 2
          THEN ${user_id}
        ELSE NULL
        END ;;
-      filters: [redshift_dunning.status: "4", redshift_dunning.seqnum_total: "2"]
+    filters: [redshift_dunning.status: "5", redshift_dunning.customer_type: "Trialist", redshift_dunning.seqnum_total: "2"]
+  }
+
+
+    measure: count_renewed_subs{
+      type: count_distinct
+      label:  "Renewed Subs"
+      sql:
+        CASE WHEN ${seqnum} = 1 OR ${seqnum} = 2
+         THEN ${user_id}
+       ELSE NULL
+       END ;;
+      filters: [redshift_dunning.status: "4", redshift_dunning.customer_type: "Paid", redshift_dunning.seqnum_total: "2"]
     }
 
 }
