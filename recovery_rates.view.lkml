@@ -14,7 +14,7 @@ view: recovery_rates {
               WHEN datediff('day', created_at, status_date) <= 14 THEN 'Trialist'
               WHEN datediff('day', created_at, status_date) > 14 THEN 'Paid'
               END as customer_type, /*6*/
-              date(status_date) as failed_status,
+              date(status_date) as failed_status, /*7*/
           CASE
               WHEN topic = 'customer.product.charge_failed' THEN 1
               WHEN topic = 'customer.product.expired' THEN 2
@@ -22,7 +22,7 @@ view: recovery_rates {
               WHEN topic = 'customer.product.renewed' THEN 4
               WHEN topic = 'customer.product.free_trial_converted' THEN 5
               ELSE 6
-              END AS status
+              END AS status /*8*/
           FROM http_api.purchase_event
           GROUP BY 1,2,3,4,6,7,8
       ),
@@ -33,7 +33,7 @@ view: recovery_rates {
           pe.user_id,
           pe.topic,
           date(pe.status_date) as renewed_status,
-          aa.failed_status
+          aa.failed_status,
           aa.status
       FROM aa
       INNER JOIN http_api.purchase_event pe
