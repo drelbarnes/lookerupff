@@ -50,7 +50,7 @@ view: recovery_rates {
       FROM aa
       INNER JOIN pe
       ON aa.user_id = pe.user_id
-      group by pe.user_id, pe.topic, aa.status, pe.seqnum
+      group by pe.user_id, pe.topic, aa.status, pe.seqnum, pe_status_date
        ;;
   }
 
