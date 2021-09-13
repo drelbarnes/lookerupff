@@ -4,9 +4,9 @@ view: recovery_rates {
 
       a AS
       (
-          SELECT
+        SELECT
               user_id, /*1*/
-              email, /*2*/
+              mail, /*2*/
           CASE WHEN moptin THEN 'Yes' ELSE 'No' END AS marketing_optin, /*3*/
               platform, /*4*/
               max(topic) AS topic, /*5*/
@@ -23,20 +23,30 @@ view: recovery_rates {
               WHEN topic = 'customer.product.free_trial_converted' THEN 5
               ELSE 6
               END AS status /*8*/
-          FROM http_api.purchase_event
-          GROUP BY 1,2,3,4,6,7,8
+        FROM http_api.purchase_event
+        GROUP BY 1,2,3,4,6,7,8
       ),
 
-      aa AS (SELECT * FROM a WHERE topic IN ('customer.product.charge_failed', 'customer.product.expired') AND customer_type = 'Paid' and platform = 'web')
+      aa AS (SELECT * FROM a WHERE topic IN ('customer.product.charge_failed', 'customer.product.expired') AND customer_type = 'Paid' and platform = 'web'),
+
+      pe AS
+      (
+        SELECT
+              *,
+              row_number() over (partition by user_id order by timestamp desc) seqnum
+        FROM http_api.purchase_event
+      )
+
 
       SELECT
           pe.user_id,
           pe.topic,
+          pe.seqnum,
           date(pe.status_date) as renewed_status,
           aa.failed_status,
           aa.status
       FROM aa
-      INNER JOIN http_api.purchase_event pe
+      INNER JOIN pe
       ON aa.user_id = pe.user_id
       WHERE pe.topic = 'customer.product.renewed'
        ;;
