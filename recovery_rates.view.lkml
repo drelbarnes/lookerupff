@@ -50,7 +50,7 @@ view: recovery_rates {
       FROM aa
       INNER JOIN pe
       ON aa.user_id = pe.user_id
-      WHERE pe.topic = 'customer.product.renewed'
+      group by user_id, topic, status, seqnum
        ;;
   }
 
