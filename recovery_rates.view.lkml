@@ -10,13 +10,21 @@ view: recovery_rates {
           CASE WHEN moptin THEN 'Yes' ELSE 'No' END AS marketing_optin, /*3*/
               platform, /*4*/
               max(topic) AS topic, /*5*/
-              CASE
+          CASE
               WHEN datediff('day', created_at, status_date) <= 14 THEN 'Trialist'
               WHEN datediff('day', created_at, status_date) > 14 THEN 'Paid'
               END as customer_type, /*6*/
-              date(status_date) as failed_status
+              date(status_date) as failed_status,
+          CASE
+              WHEN topic = 'customer.product.charge_failed' THEN 1
+              WHEN topic = 'customer.product.expired' THEN 2
+              WHEN topic = 'customer.product.free_trial_expired' THEN 3
+              WHEN topic = 'customer.product.renewed' THEN 4
+              WHEN topic = 'customer.product.free_trial_converted' THEN 5
+              ELSE 6
+              END AS status
           FROM http_api.purchase_event
-          GROUP BY 1,2,3,4,6,7
+          GROUP BY 1,2,3,4,6,7,8
       ),
 
       aa AS (SELECT * FROM a WHERE topic IN ('customer.product.charge_failed', 'customer.product.expired') AND customer_type = 'Paid' and platform = 'web')
@@ -26,6 +34,7 @@ view: recovery_rates {
           pe.topic,
           date(pe.status_date) as renewed_status,
           aa.failed_status
+          aa.status
       FROM aa
       INNER JOIN http_api.purchase_event pe
       ON aa.user_id = pe.user_id
@@ -41,6 +50,11 @@ view: recovery_rates {
   dimension: user_id {
     type: string
     sql: ${TABLE}.user_id ;;
+  }
+
+  dimension: status {
+    type: number
+    sql:  ${TABLE}.status ;;
   }
 
   dimension: topic {
