@@ -44,6 +44,7 @@ view: recovery_rates {
           pe.seqnum,
           date(pe.status_date) as renewed_status,
           aa.failed_status,
+          aa.customer_type,
           aa.status
       FROM aa
       INNER JOIN pe
@@ -72,6 +73,16 @@ view: recovery_rates {
     sql: ${TABLE}.topic ;;
   }
 
+  dimension: seqnum {
+    type:  number
+    sql: ${TABLE}.seqnum ;;
+  }
+
+  dimension: seqnum_total {
+    type: number
+    sql: ${TABLE}.seqnum_total ;;
+  }
+
   dimension: renewed_status {
     type: date
     sql: ${TABLE}.renewed_status ;;
@@ -82,6 +93,11 @@ view: recovery_rates {
     sql: ${TABLE}.failed_status ;;
   }
 
+  dimension: customer_type {
+    type: string
+    sql: ${TABLE}.customer_type ;;
+  }
+
   measure: count_charge_failed_subs {
     type: count_distinct
     label: "Charge Failed Subs"
@@ -89,6 +105,17 @@ view: recovery_rates {
          THEN ${user_id}
        ELSE NULL
        END ;;
+  }
+
+  measure: count_renewed_subs{
+    type: count_distinct
+    label:  "Renewed Subs"
+    sql:
+        CASE WHEN ${seqnum} = 1 OR ${seqnum} = 2
+         THEN ${user_id}
+       ELSE NULL
+       END ;;
+    filters: [recovery_rates.status: "4", recovery_rates.customer_type: "Paid", recovery_rates.seqnum_total: "2"]
   }
 
   set: detail {
