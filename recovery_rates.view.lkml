@@ -6,7 +6,7 @@ view: recovery_rates {
       (
         SELECT
               user_id, /*1*/
-              mail, /*2*/
+              email, /*2*/
           CASE WHEN moptin THEN 'Yes' ELSE 'No' END AS marketing_optin, /*3*/
               platform, /*4*/
               max(topic) AS topic, /*5*/
