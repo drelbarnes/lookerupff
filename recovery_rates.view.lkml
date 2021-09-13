@@ -72,6 +72,15 @@ view: recovery_rates {
     sql: ${TABLE}.failed_status ;;
   }
 
+  measure: count_charge_failed_subs {
+    type: count_distinct
+    label: "Charge Failed Subs"
+    sql:  CASE WHEN ${status} = 1
+         THEN ${user_id}
+       ELSE NULL
+       END ;;
+  }
+
   set: detail {
     fields: [user_id, topic, renewed_status, failed_status]
   }
