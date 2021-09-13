@@ -42,6 +42,7 @@ view: recovery_rates {
           pe.user_id,
           pe.topic,
           pe.seqnum,
+          max(pe.seqnum) as seqnum_total,
           date(pe.status_date) as renewed_status,
           aa.failed_status,
           aa.customer_type,
