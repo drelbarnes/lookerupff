@@ -62,11 +62,18 @@ include: "redshift_looker_get_titles.view.lkml"
 include: "redshift_custom_cross_platform_logins.view"
 include: "redshift_php_get_analytics_real_time.view"
 include: "redshift_javascript_search_executed.view"
-include: "redshift_dunning.view"
 
+
+include: "redshift_dunning.view"
 explore: redshift_dunning{
   label: "Dunning Results"
 }
+
+include: "recovery_rates.view"
+explore: recovery_rates {
+  label: "Recovery Results"
+}
+
 
 explore: redshift_javascript_search_executed {
   label: "Web Search Executed"
