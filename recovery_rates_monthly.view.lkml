@@ -22,6 +22,7 @@ view: recovery_rates_monthly {
     status_date,
     subscription_status,
     seqnum,
+    date(timestamp) as datestamp,
     CASE
       WHEN datediff('day', created_at, status_date) <= 14 THEN 'Trialist'
       WHEN datediff('day', created_at, status_date) > 14 THEN 'Paid'
@@ -29,10 +30,10 @@ view: recovery_rates_monthly {
     max(seqnum) as seqnum_total
     from (select mc.*,
                  row_number() over (partition by user_id order by timestamp desc) seqnum
-          from http_api.purchase_event as mc WHERE date(timestamp) between '2021-07-01' AND '2021-07-31' AND platform = 'web'
+          from http_api.purchase_event as mc WHERE platform = 'web'
          ) mc
            WHERE seqnum IN (1,2)
-          GROUP BY user_id, topic,status_date,created_at,subscription_status,seqnum,timestamp
+          GROUP BY user_id, topic,status_date,created_at,subscription_status,seqnum,timestamp,datestamp
 
     )
 
@@ -76,6 +77,12 @@ view: recovery_rates_monthly {
     dimension: customer_type {
       type: string
       sql: ${TABLE}.customer_type ;;
+    }
+
+    dimension_group: datestamp {
+      type: time
+      timeframes: [date, week, month]
+      sql: ${TABLE}.datestamp ;;
     }
 
     measure: count_charge_failed_subs{
