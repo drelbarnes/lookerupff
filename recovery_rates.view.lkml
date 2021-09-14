@@ -33,7 +33,7 @@ view: recovery_rates {
       (
         SELECT
               *,
-              row_number() over (partition by user_id order by timestamp desc) seqnum
+              ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY timestamp DESC) AS seqnum
         FROM http_api.purchase_event
       )
 
@@ -42,15 +42,16 @@ view: recovery_rates {
           pe.user_id,
           pe.topic,
           pe.seqnum,
-          max(pe.seqnum) as seqnum_total,
-          date(pe.status_date) as renewed_status,
+          max(pe.seqnum) AS seqnum_total,
+          date(pe.status_date) AS renewed_status,
           aa.failed_status,
           aa.customer_type,
           aa.status
       FROM aa
       INNER JOIN pe
       ON aa.user_id = pe.user_id
-      group by pe.user_id, pe.topic, aa.status, pe.seqnum, pe.status_date
+      WHERE pe.seqnum in (1,2)
+      GROUP BY pe.user_id, pe.topic, aa.status, aa.failed_status, aa.customer_type, pe.seqnum, pe.status_date
        ;;
   }
 
