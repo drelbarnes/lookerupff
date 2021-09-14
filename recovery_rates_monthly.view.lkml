@@ -79,11 +79,7 @@ view: recovery_rates_monthly {
       sql: ${TABLE}.customer_type ;;
     }
 
-    dimension_group: datestamp {
-      type: time
-      timeframes: [date, week, month]
-      sql: ${TABLE}.datestamp ;;
-    }
+
 
     measure: count_charge_failed_subs{
       type: count_distinct
