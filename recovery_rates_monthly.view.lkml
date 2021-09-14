@@ -33,7 +33,7 @@ view: recovery_rates_monthly {
           from http_api.purchase_event as mc WHERE platform = 'web'
          ) mc
            WHERE seqnum IN (1,2)
-          GROUP BY user_id, topic,status_date,created_at,subscription_status,seqnum,timestamp,datestamp
+          GROUP BY user_id, topic,status_date,created_at,subscription_status,seqnum,timestamp
 
     )
 
@@ -79,7 +79,11 @@ view: recovery_rates_monthly {
       sql: ${TABLE}.customer_type ;;
     }
 
-
+    dimension_group: datestamp {
+      type: time
+      timeframes: [date, week, month]
+      sql: ${TABLE}.datestamp ;;
+    }
 
     measure: count_charge_failed_subs{
       type: count_distinct
