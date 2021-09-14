@@ -79,7 +79,6 @@ explore: recovery_rates_monthly {
   label: "Recovery Results Monthly"
 }
 
-
 explore: redshift_javascript_search_executed {
   label: "Web Search Executed"
 }
