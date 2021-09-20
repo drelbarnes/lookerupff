@@ -165,6 +165,10 @@ explore: bigquery_mvpd_subs {}
 include: "svod_monthly_v2_dashboard.dashboard"
 
 
+include: "mvpd_subs_gbc.view.lkml"
+explore: mvpd_subs_gbc {}
+
+
 
 explore: bigquery_email_opens_set_cancels {}
 
