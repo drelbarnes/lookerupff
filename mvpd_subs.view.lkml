@@ -4,7 +4,7 @@ view: mvpd_subs {
           amazon,
           comcast,
           d2c,
-          coalesce(dish_sling,0)+coalesce(cox,0)+coalesce(roku,0)+coalesce(appletv,0) as allothers,
+          coalesce("dish/sling",0)+coalesce(cox,0)+coalesce(roku,0)+coalesce(appletv,0) as allothers,
           date(date) as date
          from svod_titles.mvpd_subs;;
     }
