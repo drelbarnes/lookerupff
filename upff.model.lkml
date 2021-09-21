@@ -79,6 +79,11 @@ explore: recovery_rates_monthly {
   label: "Recovery Results Monthly"
 }
 
+include: "daily_churn.view"
+explore: daily_churn {
+  label: "Daily Churn"
+}
+
 explore: redshift_javascript_search_executed {
   label: "Web Search Executed"
 }
