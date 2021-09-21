@@ -105,17 +105,17 @@ view: daily_churn {
     sql: ${TABLE}.num_months ;;
   }
 
-  dimension: num_churners {
+  measure: num_churners {
     type: number
     sql: ${TABLE}.num_churners ;;
   }
 
-  dimension: total_pop {
+  measure: total_pop {
     type: number
     sql: ${TABLE}.total_pop ;;
   }
 
-  dimension: rate {
+  measure: rate {
     type: number
     sql: ${TABLE}.rate ;;
   }
