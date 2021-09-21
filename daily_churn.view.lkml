@@ -85,8 +85,8 @@ view: daily_churn {
               round(cast((num_churners*100.0)/(total_pop) as decimal(5,2)), 5) as rate
             from e
             where day_of_week is not null
-            group by 1,2
-            order by 1,2
+            group by 1,2,3,4
+            order by 1,2,3,4
              ;;
   }
 
