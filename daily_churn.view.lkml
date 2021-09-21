@@ -80,13 +80,11 @@ view: daily_churn {
             select
               day_of_week,
               num_months,
-              sum(churn_status) as num_churners,
-              count(*) as total_pop,
-              round(cast((num_churners*100.0)/(total_pop) as decimal(5,2)), 5) as rate
+              sum(churn_status) as num_churners
             from e
             where day_of_week is not null
-            group by 1,2,3
-            order by 1,2,3
+            group by 1,2
+            order by 1,2
              ;;
   }
 
