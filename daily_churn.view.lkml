@@ -83,8 +83,8 @@ view: daily_churn {
               sum(churn_status) as num_churners
             from e
             where day_of_week is not null
-            group by 1,2
-            order by 1,2
+            group by 1,2,3
+            order by 1,2,3
              ;;
   }
 
