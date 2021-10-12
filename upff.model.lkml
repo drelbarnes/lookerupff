@@ -62,10 +62,26 @@ include: "redshift_looker_get_titles.view.lkml"
 include: "redshift_custom_cross_platform_logins.view"
 include: "redshift_php_get_analytics_real_time.view"
 include: "redshift_javascript_search_executed.view"
-include: "redshift_dunning.view"
 
+
+include: "redshift_dunning.view"
 explore: redshift_dunning{
   label: "Dunning Results"
+}
+
+include: "recovery_rates.view"
+explore: recovery_rates {
+  label: "Recovery Results"
+}
+
+include: "recovery_rates_monthly.view"
+explore: recovery_rates_monthly {
+  label: "Recovery Results Monthly"
+}
+
+include: "daily_churn.view"
+explore: daily_churn {
+  label: "Daily Churn"
 }
 
 explore: redshift_javascript_search_executed {
