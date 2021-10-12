@@ -352,6 +352,12 @@ view: http_api_purchase_event {
     sql: ${TABLE}.topic ;;
   }
 
+
+  dimension: max_topic {
+    type: string
+    sql: max(${TABLE}.topic) ;;
+  }
+
   dimension: moptin {
     type: yesno
     sql: ${TABLE}.moptin ;;
