@@ -134,6 +134,10 @@ include: "promos1q21.view.lkml"
 include: "bigquery_mobile_installs.view.lkml"
 include: "bigquery_php_get_email_campaigns.view.lkml"
 include: "bigquery_flight29.view.lkml"
+include: "most_recent_purchase_events.view"
+
+explore:  most_recent_purchase_events {
+}
 
 explore: bigquery_flight29 {
   label: "Ad Hoc Request 8-25-21"
