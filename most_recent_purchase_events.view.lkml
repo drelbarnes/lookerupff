@@ -27,8 +27,6 @@ view: most_recent_purchase_events {
   }
 
 
-
-
   dimension: user_id {
     type: string
     tags: ["user_id"]

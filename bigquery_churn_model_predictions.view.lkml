@@ -444,6 +444,7 @@ view: churn_prediction {
     sql: SELECT * FROM ml.PREDICT(
           MODEL ${churn_model.SQL_TABLE_NAME},
           (SELECT * FROM ${churn_future_input.SQL_TABLE_NAME}),struct(0.17 as threshold));;
+    sql_trigger_value: SELECT FLOOR((TIMESTAMP_DIFF(CURRENT_TIMESTAMP(),'1970-01-01 00:00:00',SECOND)) / (48*60*60)) ;;
   }
 
   dimension: customer_id {
