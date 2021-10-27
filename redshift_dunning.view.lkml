@@ -17,7 +17,7 @@ view: redshift_dunning {
         WHEN topic = 'customer.product.free_trial_expired' THEN 3
         WHEN topic = 'customer.product.renewed' THEN 4
         WHEN topic = 'customer.product.free_trial_converted' THEN 5
-        ELSE 6
+       /* ELSE 6 */
       END AS status,
     status_date,
     subscription_status,
@@ -95,7 +95,7 @@ view: redshift_dunning {
          THEN ${user_id}
        ELSE NULL
        END ;;
-    filters: [redshift_dunning.seqnum: "1"]
+    filters: [redshift_dunning.seqnum: "1", redshift_dunning.customer_type: "Trialist"]
   }
 
 
