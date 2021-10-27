@@ -15,8 +15,8 @@ view: svod_titles_gbc {
                season,
                lf_sf,
                content_type,
-               datetime
-         from svod_titles.svod_titles)
+               date(datetime) as datetime
+         from svod_titles.titles)
 
         select *, case when platform_ = 'Comcast SVOD' then 'Comcast' else platform_ end as platform__ from a
 
