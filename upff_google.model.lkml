@@ -172,7 +172,6 @@ explore: bigquery_mvpd_subs {}
 
 include: "svod_monthly_v2_dashboard.dashboard"
 
-
 include: "mvpd_subs_gbc.view.lkml"
 explore: mvpd_subs_gbc {}
 
