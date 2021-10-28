@@ -10,10 +10,12 @@ view: most_recent_purchase_events {
       , referrer
       , subscription_frequency
       , subscription_status
+      , moptin as subscriber_marketing_opt_in
       FROM `up-faith-and-family-216419.http_api.purchase_event`
       WHERE ((( timestamp ) >= ((TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), HOUR), INTERVAL -2 HOUR))) AND ( timestamp ) < ((TIMESTAMP_ADD(TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), HOUR), INTERVAL -2 HOUR), INTERVAL 3 HOUR)))))
-      GROUP BY 2,3,4,5,6,7,8,9,10
+      GROUP BY 2,3,4,5,6,7,8,9,10,11
        ;;
+      sql_trigger_value: SELECT EXTRACT(HOUR FROM CURRENT_TIMESTAMP()) ;;
   }
 
   measure: count {
@@ -72,6 +74,11 @@ view: most_recent_purchase_events {
   dimension: subscription_status {
     type: string
     sql: ${TABLE}.subscription_status ;;
+  }
+
+  dimension: subscriber_marketing_opt_in {
+    type: yesno
+    sql: ${TABLE}.subscriber_marketing_opt_in ;;
   }
 
   set: detail {
