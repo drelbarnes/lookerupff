@@ -76,6 +76,11 @@ view: most_recent_purchase_events {
     sql: ${TABLE}.subscription_status ;;
   }
 
+  dimension: subscriber_marketing_opt_in {
+    type: yesno
+    sql: ${TABLE}.subscriber_marketing_opt_in ;;
+  }
+
   set: detail {
     fields: [
       topic,
