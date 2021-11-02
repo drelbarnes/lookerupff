@@ -1,9 +1,9 @@
 explore: app_installers {}
 view: app_installers {
   derived_table: {
-    sql: select anonymous_id, timestamp from android.application_installed
+    sql: select anonymous_id, timestamp from android.app_installed
       union all
-      select anonymous_id, timestamp from ios.application_installed
+      select anonymous_id, timestamp from ios.app_installed
        ;;
   }
 
