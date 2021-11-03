@@ -61,23 +61,13 @@ case when TO_CHAR(DATE_TRUNC('month', date_start), 'YYYY-MM') = '2018-07' then s
         select date_start,
                spend,
                channel
-        from apple_perf),
-
-trials as
-(select
-date(created_at - INTERVAL '5 hours') as created_at,
-/*hate(created_at - INTERVAL '5 hours') as created_at,*/
-count(distinct user_id) as free_trial_created
-from http_api.purchase_event
-where plan <> 'none'
-group by 1
-order by 1 desc)
+        from apple_perf)
 
 select date_start as timestamp,
        free_trial_created,
        sum(spend) as spend,
        sum(spend)/free_trial_created
-from t1 inner join trials on date(date_start)=created_at
+from t1 inner join customer_analytics on date(date_start)=timestamp
 group by 1,2
 order by 1 desc
  ;;
