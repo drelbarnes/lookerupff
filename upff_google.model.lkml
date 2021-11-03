@@ -170,6 +170,9 @@ explore: bigquery_titles {}
 include: "bigquery_mvpd_subs.view.lkml"
 explore: bigquery_mvpd_subs {}
 
+include: "bigquery_mvpd_titles.view.lkml"
+explore: bigquery_mvpd_titles {}
+
 include: "svod_monthly_v2_dashboard.dashboard"
 
 include: "mvpd_subs_gbc.view.lkml"
