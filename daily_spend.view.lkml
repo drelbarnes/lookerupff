@@ -67,7 +67,7 @@ select date_start as timestamp,
        free_trial_created,
        sum(spend) as spend,
        sum(spend)/free_trial_created
-from t1 inner join customer_analytics on date(date_start)=timestamp
+from t1 inner join customers_analytics on date(date_start)=timestamp
 group by 1,2
 order by 1 desc
  ;;
