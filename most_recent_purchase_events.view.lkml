@@ -78,7 +78,7 @@ view: most_recent_purchase_events {
 
   dimension: subscriber_marketing_opt_in {
     type: yesno
-    sql: ${TABLE}.subscriber_marketing_opt_in ;;
+    sql:  ${TABLE}.subscriber_marketing_opt_in ;;
   }
 
   set: detail {
