@@ -53,6 +53,11 @@ view: bigquery_mvpd_titles {
       sql: ${TABLE}.content_type ;;
     }
 
+    measure: num_views {
+      type: sum
+      sql: ${TABLE}.views ;;
+    }
+
     set: detail {
       fields: [platform2, content, views, content_type]
     }
