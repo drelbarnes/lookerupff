@@ -138,6 +138,7 @@ include: "most_recent_purchase_events.view"
 include: "max_churn_score.view"
 include: "/views/hubspot_email_campaigns.view.lkml"
 include: "/views/hubspot_email_events.view.lkml"
+include: "bigquery_hubspot_email_sends.view.lkml"
 
 explore:  max_churn_score {
 }
@@ -449,6 +450,24 @@ explore: bigquery_http_api_purchase_event {
   join: bigquery_email_sends {
     type: left_outer
     sql_on: ${bigquery_http_api_purchase_event.email}=${bigquery_email_sends.email};;
+    relationship: many_to_many
+  }
+
+  join: hubspot_email_events  {
+    type: left_outer
+    sql_on: ${bigquery_http_api_purchase_event.email}=${hubspot_email_events.recipient} and date_diff(${bigquery_http_api_purchase_event.status_date},${hubspot_email_events.uuid_ts_date},day)<31;;
+    relationship: one_to_one
+  }
+
+  join: hubspot_email_campaigns {
+    type: left_outer
+    sql_on: ${hubspot_email_campaigns.uuid_ts_date}=${hubspot_email_events.uuid_ts_date} ;;
+    relationship: many_to_many
+  }
+
+  join: bigquery_hubspot_email_sends {
+    type: left_outer
+    sql_on: ${bigquery_http_api_purchase_event.email}=${bigquery_email_sends.email} ;;
     relationship: many_to_many
   }
 }
