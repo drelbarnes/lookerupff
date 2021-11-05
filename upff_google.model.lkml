@@ -136,6 +136,8 @@ include: "bigquery_php_get_email_campaigns.view.lkml"
 include: "bigquery_flight29.view.lkml"
 include: "most_recent_purchase_events.view"
 include: "max_churn_score.view"
+include: "/views/hubspot_email_campaigns.view.lkml"
+include: "/views/hubspot_email_events.view.lkml"
 
 explore:  max_churn_score {
 }
