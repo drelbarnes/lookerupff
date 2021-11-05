@@ -2,8 +2,9 @@
 view: hubspot_email_campaigns {
   # The sql_table_name parameter indicates the underlying database table
   # to be used for all fields in this view.
-  sql_table_name: `up-faith-and-family-216419.hubspot.email_campaigns`
-    ;;
+  derived_table: {
+    sql: SELECT *, (counters_open/counters_delivered) as open_rate FROM `up-faith-and-family-216419.hubspot.email_campaigns` ;;
+  }
   drill_fields: [id]
   # This primary key is the unique key for this table in the underlying database.
   # You need to define a primary key in a view in order to join to other views.
@@ -268,10 +269,9 @@ view: hubspot_email_campaigns {
     sql: ${TABLE}.uuid_ts ;;
   }
 
-  measure: open_rate {
-    type: average
-    value_format: "0\%"
-    sql: (${counters_open} / ${counters_delivered})*100;;
+  dimension: open_rate {
+    type: number
+    sql: ${TABLE}.open_rate ;;
   }
 
   measure: count {
