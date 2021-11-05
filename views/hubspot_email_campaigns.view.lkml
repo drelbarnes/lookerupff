@@ -268,6 +268,12 @@ view: hubspot_email_campaigns {
     sql: ${TABLE}.uuid_ts ;;
   }
 
+  measure: open_rate {
+    type: average
+    value_format: "0\%"
+    sql: (${counters_open} / ${counters_delivered})*100;;
+  }
+
   measure: count {
     type: count
     drill_fields: [id, app_name, name, email_events.count]

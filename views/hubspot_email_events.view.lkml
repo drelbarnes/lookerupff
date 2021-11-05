@@ -404,6 +404,11 @@ view: hubspot_email_events {
     drill_fields: [detail*]
   }
 
+  measure: user_count {
+    type: count_distinct
+    sql: ${recipient} ;;
+  }
+
   # ----- Sets of fields for drilling ------
   set: detail {
     fields: [
