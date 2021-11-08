@@ -276,7 +276,8 @@ view: hubspot_email_campaigns {
 
   measure: avg_open_rate {
     type: average
-    sql: ${TABLE}.open_rate ;;
+    value_format: "0\%"
+    sql: (${TABLE}.open_rate * 100);;
   }
 
   measure: count {
