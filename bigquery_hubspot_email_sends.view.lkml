@@ -6,6 +6,12 @@ view: bigquery_hubspot_email_sends {
     LEFT JOIN hubspot.email_campaigns as campaigns ON CAST(events.email_campaign_id AS string)=CAST(campaigns.id AS string) ;;
   }
 
+  dimension: id {
+    primary_key: yes
+    type: string
+    sql: ${TABLE}.id ;;
+  }
+
   measure: count {
     type: count
     drill_fields: [detail*]
