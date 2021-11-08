@@ -269,9 +269,10 @@ view: hubspot_email_campaigns {
     sql: ${TABLE}.uuid_ts ;;
   }
 
-  dimension: open_rate {
-    type: number
-    sql: ${TABLE}.open_rate ;;
+  measure: open_rate {
+    type: average
+    value_format: "0\%"
+    sql: (${TABLE}.open_rate} * 100);;
   }
 
   measure: count {
