@@ -462,6 +462,11 @@ explore: customer_product_set_cancellation {
     sql_on: ${customer_product_set_cancellation.email}=${hubspot_email_events.recipient} and date_diff(${customer_product_set_cancellation.timestamp_date},${hubspot_email_events.sent_by_created_date},day)<31;;
     relationship: one_to_one
   }
+  join: bigquery_hubspot_email_sends {
+    type: left_outer
+    sql_on: ${customer_product_set_cancellation.email}=${bigquery_hubspot_email_sends.email};;
+    relationship: many_to_many
+  }
 }
 
 explore: survey_file{
