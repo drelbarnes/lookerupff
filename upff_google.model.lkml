@@ -469,7 +469,7 @@ explore: customer_product_set_cancellation {
   }
   join: hubspot_email_campaigns{
     type:  left_outer
-    sql_on:  ${hubspot_email_campaigns.uuid_ts_date} = ${hubspot_email_events.uuid_ts_date} ;;
+    sql_on:  ${hubspot_email_campaigns.last_processing_state_change_date} = ${hubspot_email_events.sent_by_created_date} ;;
     relationship: many_to_many
   }
 }
