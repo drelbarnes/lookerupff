@@ -3,16 +3,18 @@ view: hubspot_email_campaigns {
   # The sql_table_name parameter indicates the underlying database table
   # to be used for all fields in this view.
   derived_table: {
-    sql: SELECT *, (counters_open/counters_delivered) as open_rate FROM `up-faith-and-family-216419.hubspot.email_campaigns` ;;
+    sql: SELECT *
+    , row_number() OVER(ORDER BY created_at) AS prim_key,
+    , (counters_open/counters_delivered) as open_rate FROM `up-faith-and-family-216419.hubspot.email_campaigns` ;;
   }
-  drill_fields: [id]
+  drill_fields: [prim_key]
   # This primary key is the unique key for this table in the underlying database.
   # You need to define a primary key in a view in order to join to other views.
 
-  dimension: id {
+  dimension: prim_key {
+    type: number
     primary_key: yes
-    type: string
-    sql: ${TABLE}.id ;;
+    sql: ${TABLE}.prim_key ;;
   }
 
   # Dates and timestamps can be represented in Looker using a dimension group of type: time.
@@ -282,6 +284,6 @@ view: hubspot_email_campaigns {
 
   measure: count {
     type: count
-    drill_fields: [id, app_name, name, email_events.count]
+    drill_fields: [prim_key, app_name, name, email_events.count]
   }
 }
