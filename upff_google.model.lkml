@@ -467,6 +467,11 @@ explore: customer_product_set_cancellation {
     sql_on: ${customer_product_set_cancellation.email}=${bigquery_hubspot_email_sends.email};;
     relationship: many_to_many
   }
+  join: hubspot_email_campaigns{
+    type:  left_outer
+    sql_on:  ${hubspot_email_campaigns.uuid_ts_date} = ${hubspot_email_events.uuid_ts_date} ;;
+    relationship: many_to_many
+  }
 }
 
 explore: survey_file{
