@@ -4,7 +4,7 @@ view: hubspot_email_campaigns {
   # to be used for all fields in this view.
   derived_table: {
     sql: SELECT *
-    , row_number() OVER(ORDER BY created_at) AS prim_key,
+    , row_number() OVER(ORDER BY created_at) AS prim_key
     , (counters_open/counters_delivered) as open_rate FROM `up-faith-and-family-216419.hubspot.email_campaigns` ;;
   }
   drill_fields: [prim_key]
