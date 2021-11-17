@@ -37,7 +37,7 @@ view: most_recent_purchase_events {
 
   dimension: email {
     type: string
-    tags: ["emails"]
+    tags: ["email"]
     sql: ${TABLE}.email ;;
   }
 
