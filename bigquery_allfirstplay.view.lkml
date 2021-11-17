@@ -847,6 +847,7 @@ dimension: collections_type_group {
     sql: ${collection} ;;
   }
 
+
   filter:  promotional_collection_a{
     type: string
   }
@@ -894,10 +895,14 @@ dimension: collections_type_group {
     sql: concat(safe_cast(${video_id} as string),${user_id},cast(${timestamp_date} as string))  ;;
   }
 
+  filter:  promotional_collection_c{
+    type: string
+  }
+
   dimension: promotional_collection_c_{
     hidden: no
     type: yesno
-    sql: {%condition promotional_collection_a%} ${collection} {%endcondition%};;
+    sql: {%condition promotional_collection_c%} ${collection} {%endcondition%};;
   }
 
   measure: promotional_collection_plays_c {
@@ -913,6 +918,15 @@ dimension: collections_type_group {
     type: count_distinct
     filters: {
       field: promotional_collection_b_
+      value: "yes"
+    }
+    sql: ${video_id} ;;
+  }
+
+  measure: promotional_collection_title_count_c {
+    type: count_distinct
+    filters: {
+      field: promotional_collection_c_
       value: "yes"
     }
     sql: ${video_id} ;;
