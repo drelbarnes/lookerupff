@@ -611,44 +611,65 @@ dimension: collections_group_a {
   sql: {% condition collections_a %} ${collection} {% endcondition %};;
 }
 
-  measure: user_count_collections_a {
+measure: user_count_collections_a {
+  type: count_distinct
+  filters: {
+  field: collections_group_a
+  value: "yes"
+  }
+  sql: ${user_id} ;;
+}
+
+filter: collections_b {
+  type: string
+}
+
+dimension: collections_group_b {
+  hidden: no
+  type: yesno
+  sql: {% condition collections_b %} ${collection} {% endcondition %};;
+}
+
+measure: user_count_collections_b {
+  type: count_distinct
+  filters: {
+  field: collections_group_b
+  value: "yes"
+  }
+  sql: ${user_id} ;;
+}
+
+  filter: collections_c {
+    type: string
+  }
+
+  dimension: collections_group_c {
+    hidden: no
+    type: yesno
+    sql: {% condition collections_c %} ${collection} {% endcondition %};;
+  }
+
+  measure: user_count_collections_c {
     type: count_distinct
     filters: {
-      field: collections_group_a
+      field: collections_group_c
       value: "yes"
     }
     sql: ${user_id} ;;
   }
 
-  filter: collections_b {
-    type: string
-  }
+filter: collection_type {
+  type: string
+}
 
-  dimension: collections_group_b {
-    hidden: no
-    type: yesno
-    sql: {% condition collections_b %} ${collection} {% endcondition %};;
-  }
-
-  filter: collection_type {
-    type: string
-  }
-
-  dimension: collections_type_group {
-    hidden: no
-    type: yesno
-    sql: {% condition collections_b %} ${type}{% endcondition %};;
-  }
+dimension: collections_type_group {
+  hidden: no
+  type: yesno
+  sql: {% condition collections_b %} ${type}{% endcondition %};;
+}
 
 
-  measure: user_count_collections_b {
-    type: count_distinct
-    filters: {
-      field: collections_group_b
-      value: "yes"
-    }
-    sql: ${user_id} ;;
-  }
+
 
 
 ## filter determining time range for all "A" measures
