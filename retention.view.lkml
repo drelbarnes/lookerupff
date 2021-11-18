@@ -411,12 +411,12 @@ view: retention {
       sql: ${TABLE}.subscription_frequency ;;
     }
 
-    dimension: num_churners {
+    measure: num_churners {
       type: number
       sql: ${TABLE}.num_churners ;;
     }
 
-    dimension: total_pop {
+    measure: total_pop {
       type: number
       sql: ${TABLE}.total_pop ;;
     }
