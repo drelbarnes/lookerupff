@@ -403,11 +403,6 @@ view: retention {
       sql: ${TABLE}.num_churners ;;
     }
 
-    measure: total_pop {
-      type: number
-      sql: ${TABLE}.total_pop ;;
-    }
-
     dimension: quarter {
       type: string
       sql: ${TABLE}.quarter ;;
@@ -436,7 +431,6 @@ view: retention {
         platform,
         subscription_frequency,
         num_churners,
-        total_pop,
         quarter,
         month,
         topic,
