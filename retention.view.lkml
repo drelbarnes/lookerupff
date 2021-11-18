@@ -390,6 +390,18 @@ view: retention {
 
     dimension: platform {
       type: string
+
+      case: {
+        when: {
+          sql: ${TABLE}.platform = 'roku' ;;
+          label: "Roku"
+        }
+        when: {
+          sql: ${TABLE}.web = 'web' ;;
+          label: "Web"
+        }
+        else: "Other"
+      }
       sql: ${TABLE}.platform ;;
     }
 
