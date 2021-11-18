@@ -9,7 +9,7 @@ view: retention {
                 anonymous_id,
                 context_ip
               from javascript_upff_home.pages
-              where context_campaign_source in ('fb','bing_ads','ig','{{site.source.name}}')
+              where context_campaign_source in ('fb','bing_ads','ig','\{\{site.source.name\}\}')
               ),
 
               order_completed as (

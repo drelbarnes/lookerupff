@@ -136,6 +136,7 @@ include: "bigquery_php_get_email_campaigns.view.lkml"
 include: "bigquery_flight29.view.lkml"
 include: "most_recent_purchase_events.view"
 include: "max_churn_score.view"
+include: "retention.view.lkml"
 
 explore:  max_churn_score {
 }
@@ -145,6 +146,10 @@ explore:  most_recent_purchase_events {
 
 explore: bigquery_flight29 {
   label: "Ad Hoc Request 8-25-21"
+}
+
+explore: retention {
+  label: "Retention 11-18-21"
 }
 
 explore: bigquery_php_get_email_campaigns {
