@@ -260,22 +260,9 @@ view: retention {
               ),
 
               aggregate as (
-              select /*** final query calculates churn rate and aggregates by days of week ***/
-                trial_day,
-                num_months,
-                case when paid_sub = 1 then 1 else 0 end as paid_sub_indicator,
-                platform,
-                subscription_frequency,
-                sum(churn_status) as num_churners,
-                count(*) as total_pop,
-                quarter,
-                month,
-                topic,
-                first_play
+              select *
               from post_flags
               where create_day is not null
-              group by 1,2,3,4,5,8,9,10,11
-              order by 1,2
               ),
 
               counts as (
