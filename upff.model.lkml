@@ -84,11 +84,6 @@ explore: daily_churn {
   label: "Daily Churn"
 }
 
-include: "retention.view"
-explore: retention {
-  label: "Retention"
-}
-
 explore: redshift_javascript_search_executed {
   label: "Web Search Executed"
 }
