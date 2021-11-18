@@ -398,11 +398,6 @@ view: retention {
       sql: ${TABLE}.subscription_frequency ;;
     }
 
-    measure: num_churners {
-      type: number
-      sql: ${TABLE}.num_churners ;;
-    }
-
     dimension: quarter {
       type: string
       sql: ${TABLE}.quarter ;;
@@ -430,7 +425,6 @@ view: retention {
         paid_sub_indicator,
         platform,
         subscription_frequency,
-        num_churners,
         quarter,
         month,
         topic,
