@@ -418,6 +418,12 @@ view: retention {
       sql: ${TABLE}.first_play ;;
     }
 
+  measure: num_churned {
+    type: sum
+    sql: ${TABLE}.churn_status ;;
+  }
+
+
     set: detail {
       fields: [
         trial_day,
