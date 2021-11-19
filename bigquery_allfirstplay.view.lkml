@@ -611,44 +611,65 @@ dimension: collections_group_a {
   sql: {% condition collections_a %} ${collection} {% endcondition %};;
 }
 
-  measure: user_count_collections_a {
+measure: user_count_collections_a {
+  type: count_distinct
+  filters: {
+  field: collections_group_a
+  value: "yes"
+  }
+  sql: ${user_id} ;;
+}
+
+filter: collections_b {
+  type: string
+}
+
+dimension: collections_group_b {
+  hidden: no
+  type: yesno
+  sql: {% condition collections_b %} ${collection} {% endcondition %};;
+}
+
+measure: user_count_collections_b {
+  type: count_distinct
+  filters: {
+  field: collections_group_b
+  value: "yes"
+  }
+  sql: ${user_id} ;;
+}
+
+  filter: collections_c {
+    type: string
+  }
+
+  dimension: collections_group_c {
+    hidden: no
+    type: yesno
+    sql: {% condition collections_c %} ${collection} {% endcondition %};;
+  }
+
+  measure: user_count_collections_c {
     type: count_distinct
     filters: {
-      field: collections_group_a
+      field: collections_group_c
       value: "yes"
     }
     sql: ${user_id} ;;
   }
 
-  filter: collections_b {
-    type: string
-  }
+filter: collection_type {
+  type: string
+}
 
-  dimension: collections_group_b {
-    hidden: no
-    type: yesno
-    sql: {% condition collections_b %} ${collection} {% endcondition %};;
-  }
-
-  filter: collection_type {
-    type: string
-  }
-
-  dimension: collections_type_group {
-    hidden: no
-    type: yesno
-    sql: {% condition collections_b %} ${type}{% endcondition %};;
-  }
+dimension: collections_type_group {
+  hidden: no
+  type: yesno
+  sql: {% condition collections_b %} ${type}{% endcondition %};;
+}
 
 
-  measure: user_count_collections_b {
-    type: count_distinct
-    filters: {
-      field: collections_group_b
-      value: "yes"
-    }
-    sql: ${user_id} ;;
-  }
+
 
 
 ## filter determining time range for all "A" measures
@@ -826,6 +847,7 @@ dimension: collections_group_a {
     sql: ${collection} ;;
   }
 
+
   filter:  promotional_collection_a{
     type: string
   }
@@ -873,10 +895,14 @@ dimension: collections_group_a {
     sql: concat(safe_cast(${video_id} as string),${user_id},cast(${timestamp_date} as string))  ;;
   }
 
+  filter:  promotional_collection_c{
+    type: string
+  }
+
   dimension: promotional_collection_c_{
     hidden: no
     type: yesno
-    sql: {%condition promotional_collection_a%} ${collection} {%endcondition%};;
+    sql: {%condition promotional_collection_c%} ${collection} {%endcondition%};;
   }
 
   measure: promotional_collection_plays_c {
@@ -892,6 +918,15 @@ dimension: collections_group_a {
     type: count_distinct
     filters: {
       field: promotional_collection_b_
+      value: "yes"
+    }
+    sql: ${video_id} ;;
+  }
+
+  measure: promotional_collection_title_count_c {
+    type: count_distinct
+    filters: {
+      field: promotional_collection_c_
       value: "yes"
     }
     sql: ${video_id} ;;
