@@ -59,10 +59,6 @@ view: gilmore_the_merrier {
     sql: ${TABLE}.fname ;;
   }
 
-  dimension: hashed_password {
-    type: string
-    sql: ${TABLE}.hashed_password ;;
-  }
 
   dimension: ip {
     type: string
@@ -88,10 +84,6 @@ view: gilmore_the_merrier {
     sql: ${TABLE}.lname ;;
   }
 
-  dimension: password {
-    type: string
-    sql: ${TABLE}.password ;;
-  }
 
   dimension: receive_email {
     type: string
