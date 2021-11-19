@@ -1,12 +1,12 @@
-connection: "upff_mysql"
+connection: "upff"
 
-include: "mysql_roku_firstplays.view"
-include: "mysql_email_campaigns.view"
-include: "mysql_upff_category_items.view"
-
-
-# include all views in this project
+include: "uptv_gilmore_the_merrier.view.lkml"
+#include: "/views/*.view.lkml"
+# include all views in the views/ folder in this project
+# include: "/**/*.view.lkml"                 # include all views in this project
 # include: "my_dashboard.dashboard.lookml"   # include a LookML dashboard called my_dashboard
+
+explore: uptv_gilmore_the_merrier {}
 
 # # Select the views that should be a part of this model,
 # # and define the joins that connect them together.
@@ -22,17 +22,3 @@ include: "mysql_upff_category_items.view"
 #     sql_on: ${users.id} = ${orders.user_id} ;;
 #   }
 # }
-
-
-explore: mysql_upff_category_items {
-  label: "Category Items"
-}
-
-
-explore: mysql_roku_firstplays {
-  label: "Roku Firstplays"
-}
-
-explore: mysql_email_campaigns {
-
-}
