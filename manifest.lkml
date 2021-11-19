@@ -6,7 +6,3 @@ project_name: "upff"
 # local_dependency: {
 #   project: "name_of_other_project"
 # }
-constant: brand {
-  value: "UPtv"
-  export: none
-}

@@ -7,6 +7,12 @@ include: "/views/*.view.lkml"
 
 explore: uptv_gtm_users {
   label: "GilMORE The Merrier - Users"
+
+  join: gtm_entries {
+    type: left_outer
+    relationship: one_to_many
+    sql_on: ${uptv_gtm_users.id}=${gtm_entries.user_id} ;;
+  }
 }
 
 # # Select the views that should be a part of this model,
