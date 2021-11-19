@@ -13,6 +13,12 @@ explore: uptv_gtm_users {
     relationship: one_to_many
     sql_on: ${uptv_gtm_users.id}=${gtm_entries.user_id} ;;
   }
+
+  join: gtm_entries_used {
+    type: left_outer
+    relationship: one_to_many
+    sql: ${uptv_gtm_users.id}=${gtm_entries_used.id} ;;
+  }
 }
 
 # # Select the views that should be a part of this model,
