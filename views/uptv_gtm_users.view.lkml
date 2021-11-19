@@ -1,5 +1,5 @@
 # The name of this view in Looker is "Gtm Users"
-view: gilmore_the_merrier {
+view: uptv_gtm_users {
   # The sql_table_name parameter indicates the underlying database table
   # to be used for all fields in this view.
   sql_table_name: gilmore_the_merrier.gtm_users ;;

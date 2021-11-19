@@ -5,8 +5,8 @@ include: "/views/*.view.lkml"
 # include: "/**/*.view.lkml"                 # include all views in this project
 # include: "my_dashboard.dashboard.lookml"   # include a LookML dashboard called my_dashboard
 
-explore: gilmore_the_merrier {
-  label: "GilMORE The Merrier"
+explore: uptv_gtm_users {
+  label: "GilMORE The Merrier - Users"
 }
 
 # # Select the views that should be a part of this model,
