@@ -17,7 +17,7 @@ explore: uptv_gtm_users {
   join: gtm_entries_used {
     type: left_outer
     relationship: one_to_many
-    sql: ${uptv_gtm_users.id}=${gtm_entries_used.id} ;;
+    sql: ${uptv_gtm_users.id}=${gtm_entries_used.user_id} ;;
   }
 }
 
