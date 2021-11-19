@@ -1,4 +1,4 @@
-view: uptv_gilmore_the_merrier {
+view: uptv_gilmore {
   derived_table: {
     sql: SELECT * FROM gilmore_the_merrier.gtm_users
       ;;
@@ -11,6 +11,7 @@ view: uptv_gilmore_the_merrier {
 
   dimension: id {
     type: number
+    primary_key: yes
     sql: ${TABLE}.id ;;
   }
 
