@@ -52,6 +52,7 @@ view: uptv_gtm_users {
   dimension: email {
     type: string
     sql: ${TABLE}.email ;;
+    tags: ["email"]
   }
 
   dimension: fname {
