@@ -87,7 +87,7 @@ view: uptv_gtm_users {
 
 
   dimension: receive_email {
-    type: string
+    type: yesno
     sql: ${TABLE}.receive_email ;;
   }
 
