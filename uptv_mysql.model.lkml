@@ -8,7 +8,7 @@ include: "/views/*.view.lkml"
 datagroup: gtm_user_list {
   label: "GTM User List data updated"
   description: "Triggered when GTM User List data is updated"
-  max_cache_age: "5 minutes"
+  max_cache_age: "15 minutes"
   sql_trigger: SELECT max(date)
     FROM
     (
@@ -18,9 +18,6 @@ datagroup: gtm_user_list {
     SELECT date
     FROM
     gilmore_the_merrier.gtm_entries_used
-    UNION
-    SELECT date
-    FROM gilmore_the_merrier.gtm_entries
 ) max_date ;;
 }
 
