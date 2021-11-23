@@ -138,6 +138,16 @@ include: "most_recent_purchase_events.view"
 include: "max_churn_score.view"
 include: "retention.view.lkml"
 
+include: "bigquery_http_api_purchase_event_hubspot.view.lkml"
+
+include: "/views/customer_product_set_cancellation.view.lkml"
+
+include: "/views/hubspot_email_campaigns.view.lkml"
+
+include: "/views/hubspot_email_events.view.lkml"
+
+include: "bigquery_hubspot_email_sends.view.lkml"
+
 explore:  max_churn_score {
 }
 
@@ -452,6 +462,24 @@ explore: bigquery_http_api_purchase_event {
   join: bigquery_email_sends {
     type: left_outer
     sql_on: ${bigquery_http_api_purchase_event.email}=${bigquery_email_sends.email};;
+    relationship: many_to_many
+  }
+}
+
+explore: customer_product_set_cancellation {
+  join: hubspot_email_events {
+    type: left_outer
+    sql_on: ${customer_product_set_cancellation.email}=${hubspot_email_events.recipient} and date_diff(${customer_product_set_cancellation.timestamp_date},${hubspot_email_events.sent_by_created_date},day)<31;;
+    relationship: one_to_one
+  }
+  join: bigquery_hubspot_email_sends {
+    type: left_outer
+    sql_on: ${customer_product_set_cancellation.email}=${bigquery_hubspot_email_sends.email};;
+    relationship: many_to_many
+  }
+  join: hubspot_email_campaigns{
+    type:  left_outer
+    sql_on:  ${hubspot_email_campaigns.last_processing_state_change_date} = ${hubspot_email_events.sent_by_created_date} ;;
     relationship: many_to_many
   }
 }
