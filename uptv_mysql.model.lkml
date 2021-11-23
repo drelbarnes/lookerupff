@@ -5,8 +5,29 @@ include: "/views/*.view.lkml"
 # include: "/**/*.view.lkml"                 # include all views in this project
 # include: "my_dashboard.dashboard.lookml"   # include a LookML dashboard called my_dashboard
 
+datagroup: gtm_user_list {
+  label: "GTM User List data updated"
+  description: "Triggered when GTM User List data is updated"
+  max_cache_age: "5 minutes"
+  sql_trigger: SELECT max(date)
+    FROM
+    (
+    SELECT date
+    FROM gilmore_the_merrier.gtm_users
+    UNION
+    SELECT date
+    FROM
+    gilmore_the_merrier.gtm_entries_used
+    UNION
+    SELECT date
+    FROM gilmore_the_merrier.gtm_entries
+) max_date ;;
+}
+
+
 explore: uptv_gtm_users {
   label: "GilMORE The Merrier - Users"
+  persist_with: gtm_user_list
 
   join: gtm_entries {
     type: left_outer
