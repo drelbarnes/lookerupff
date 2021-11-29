@@ -468,6 +468,22 @@ explore: bigquery_http_api_purchase_event {
     sql_on: ${bigquery_http_api_purchase_event.email}=${bigquery_email_sends.email};;
     relationship: many_to_many
   }
+
+  join: hubspot_email_events {
+    type: left_outer
+    sql_on: ${bigquery_http_api_purchase_event.email}=${hubspot_email_events.recipient} and date_diff(${bigquery_http_api_purchase_event.status_date},${hubspot_email_events.sent_by_created_date},day)<31;;
+    relationship: one_to_one
+  }
+  join: bigquery_hubspot_email_sends {
+    type: left_outer
+    sql_on: ${bigquery_http_api_purchase_event.email}=${bigquery_hubspot_email_sends.email};;
+    relationship: many_to_many
+  }
+  join: hubspot_email_campaigns{
+    type:  left_outer
+    sql_on:  ${hubspot_email_campaigns.last_processing_state_change_date} = ${hubspot_email_events.sent_by_created_date} ;;
+    relationship: many_to_many
+  }
 }
 
 explore: customer_product_set_cancellation {
