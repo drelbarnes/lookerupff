@@ -385,7 +385,7 @@ view: bigquery_allfirstplay_v2 {
              a.title,
              a.source,
              a.episode,
-             a.production_studios
+             a.production_studios,
             email,
             tv_cast,
             c.promotion,
