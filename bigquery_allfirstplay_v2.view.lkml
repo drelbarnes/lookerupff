@@ -402,6 +402,11 @@ view: bigquery_allfirstplay_v2 {
       /* where a.user_id<>'0' */ ;;
     }
 
+  dimension: production_studios {
+    type: string
+    sql: ${TABLE}.production_studios ;;
+  }
+
     dimension: winback {
       type: string
       sql: ${TABLE}.winback ;;
