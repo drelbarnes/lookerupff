@@ -167,6 +167,9 @@ explore: bigquery_php_get_email_campaigns {
   label: "Email Campaigns (BigQuery)"
 }
 
+explore: bigquery_allfirstplay_v2 {
+  label: "All First Play V2"
+}
 
 explore: bigquery_mobile_installs {}
 
