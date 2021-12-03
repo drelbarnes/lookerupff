@@ -11,9 +11,10 @@ view: most_recent_purchase_events {
       , subscription_frequency
       , subscription_status
       , moptin as subscriber_marketing_opt_in
+      , uuid_ts as status_ts
       FROM `up-faith-and-family-216419.http_api.purchase_event`
       WHERE ((( timestamp ) >= ((TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), HOUR), INTERVAL -2 HOUR))) AND ( timestamp ) < ((TIMESTAMP_ADD(TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), HOUR), INTERVAL -2 HOUR), INTERVAL 3 HOUR)))))
-      GROUP BY 2,3,4,5,6,7,8,9,10,11
+      GROUP BY 2,3,4,5,6,7,8,9,10,11,12
        ;;
       sql_trigger_value: SELECT EXTRACT(HOUR FROM CURRENT_TIMESTAMP()) ;;
   }
