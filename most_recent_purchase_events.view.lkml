@@ -90,9 +90,9 @@ FROM filter WHERE col = 1
     sql: ${TABLE}.referrer ;;
   }
 
-  dimension: frequency {
+  dimension: subscription_frequency {
     type: string
-    sql: ${TABLE}.frequency ;;
+    sql: ${TABLE}.subscription_frequency ;;
   }
 
   dimension: subscription_status {
@@ -118,8 +118,9 @@ FROM filter WHERE col = 1
       first_name,
       last_name,
       platform,
-      frequency,
-      subscription_status
+      subscription_frequency,
+      subscription_status,
+      subscriber_marketing_opt_in
     ]
   }
 }
