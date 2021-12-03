@@ -27,7 +27,7 @@ view: most_recent_purchase_events {
       , referrer
       , subscription_frequency
       , subscription_status
-      , moptin as subscriber_marketing_opt_in
+      , subscriber_marketing_opt_in
       , timestamp as ts
     , ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY ts) as col
 FROM most_recent_purchase_events
@@ -100,9 +100,9 @@ FROM filter WHERE col = 1
     sql: ${TABLE}.subscription_status ;;
   }
 
-  dimension: moptin {
+  dimension: subscriber_marketing_opt_in {
     type: yesno
-    sql:  ${TABLE}.moptin ;;
+    sql:  ${TABLE}.subscriber_marketing_opt_in ;;
   }
 
   dimension: brand {
