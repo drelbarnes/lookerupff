@@ -29,7 +29,7 @@ view: most_recent_purchase_events {
       , subscription_status
       , subscriber_marketing_opt_in
       , ts
-    , ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY ts) as col
+    , ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY ts DESC) as col
 FROM most_recent_purchase_events
 GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12
 ORDER BY 1
