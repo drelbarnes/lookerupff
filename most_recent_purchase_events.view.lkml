@@ -35,9 +35,7 @@ GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12
 ORDER BY 1
 )
 /* only returns rows that have the most recent topic, as flagged by the filter table. Add brand column with constant as "upff" */
-SELECT *
-, "upff" as brand
-FROM filter WHERE col = 1
+SELECT * FROM filter WHERE col = 1
        ;;
       sql_trigger_value: SELECT EXTRACT(HOUR FROM CURRENT_TIMESTAMP()) ;;
   }
@@ -50,6 +48,7 @@ FROM filter WHERE col = 1
   dimension: user_id {
     type: string
     tags: ["user_id"]
+    primary_key: yes
     sql: ${TABLE}.user_id ;;
   }
 
@@ -104,10 +103,6 @@ FROM filter WHERE col = 1
     sql:  ${TABLE}.subscriber_marketing_opt_in ;;
   }
 
-  dimension: brand {
-    type: string
-    sql:  ${TABLE}.brand ;;
-  }
 
   set: detail {
     fields: [
