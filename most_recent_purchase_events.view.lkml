@@ -45,12 +45,6 @@ SELECT * FROM filter WHERE col = 1
     drill_fields: [detail*]
   }
 
-  dimension: topic {
-    type: string
-    sql: ${TABLE}.topic ;;
-  }
-
-
   dimension: user_id {
     type: string
     tags: ["user_id"]
@@ -72,6 +66,11 @@ SELECT * FROM filter WHERE col = 1
   dimension: last_name {
     type: string
     sql: ${TABLE}.last_name ;;
+  }
+
+  dimension: topic {
+    type: string
+    sql: ${TABLE}.topic ;;
   }
 
   dimension: platform {
@@ -100,7 +99,7 @@ SELECT * FROM filter WHERE col = 1
   }
 
   dimension: subscriber_marketing_opt_in {
-    type: string
+    type: yesno
     sql:  ${TABLE}.subscriber_marketing_opt_in ;;
   }
 
