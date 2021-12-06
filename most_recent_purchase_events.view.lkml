@@ -100,7 +100,7 @@ FROM filter WHERE col = 1
   }
 
   dimension: subscriber_marketing_opt_in {
-    type: string
+    type: yesno
     sql:  ${TABLE}.subscriber_marketing_opt_in ;;
   }
 
