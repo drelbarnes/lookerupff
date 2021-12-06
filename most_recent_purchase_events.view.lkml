@@ -49,6 +49,7 @@ FROM filter WHERE col = 1
 
   dimension: topic {
     type: string
+    tags: ["topic"]
     sql: ${TABLE}.topic ;;
   }
 
@@ -67,16 +68,19 @@ FROM filter WHERE col = 1
 
   dimension: first_name {
     type: string
+    tags: ["first_name"]
     sql: ${TABLE}.first_name ;;
   }
 
   dimension: last_name {
     type: string
+    tags: ["last_name"]
     sql: ${TABLE}.last_name ;;
   }
 
   dimension: platform {
     type: string
+    tags: ["platform"]
     sql: ${TABLE}.platform ;;
   }
 
@@ -91,22 +95,25 @@ FROM filter WHERE col = 1
   }
 
   dimension: subscription_frequency {
-    label: "frequency"
     type: string
+    tags: ["frequency"]
     sql: ${TABLE}.subscription_frequency ;;
   }
 
   dimension: subscription_status {
     type: string
+    tags: ["subscription_status"]
     sql: ${TABLE}.subscription_status ;;
   }
 
   dimension: subscriber_marketing_opt_in {
     type: string
+    tags: ["moptin"]
     sql:  ${TABLE}.subscriber_marketing_opt_in ;;
   }
 
   dimension: brand {
+    tags: ["vod_brand"]
     type: string
     sql:  ${TABLE}.brand ;;
   }
