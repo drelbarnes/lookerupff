@@ -90,7 +90,8 @@ FROM filter WHERE col = 1
     sql: ${TABLE}.referrer ;;
   }
 
-  dimension: frequency {
+  dimension: subscription_frequency {
+    label: "frequency"
     type: string
     sql: ${TABLE}.subscription_frequency ;;
   }
@@ -100,12 +101,12 @@ FROM filter WHERE col = 1
     sql: ${TABLE}.subscription_status ;;
   }
 
-  dimension: moptin {
+  dimension: subscriber_marketing_opt_in {
     type: string
     sql:  ${TABLE}.subscriber_marketing_opt_in ;;
   }
 
-  dimension: vod_brand {
+  dimension: brand {
     type: string
     sql:  ${TABLE}.brand ;;
   }
@@ -118,9 +119,9 @@ FROM filter WHERE col = 1
       first_name,
       last_name,
       platform,
-      frequency,
+      subscription_frequency,
       subscription_status,
-      moptin
+      subscriber_marketing_opt_in
     ]
   }
 }
