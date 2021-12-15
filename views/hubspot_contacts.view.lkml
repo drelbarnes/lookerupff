@@ -152,7 +152,7 @@ view: hubspot_contacts {
       quarter,
       year
     ]
-    sql: ${TABLE}.properties_lastmodifieddate_value as INTEGER;;
+    sql: CAST(${TABLE}.properties_lastmodifieddate_value as INTEGER);;
   }
 
   dimension: properties_lastname_value {
