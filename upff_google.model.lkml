@@ -151,6 +151,9 @@ include: "bigquery_hubspot_email_sends.view.lkml"
 
 include: "/views/hubspot_contacts.view.lkml"
 
+explore: hubspot_contacts {
+}
+
 explore:  max_churn_score {
 }
 
