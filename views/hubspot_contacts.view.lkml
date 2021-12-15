@@ -152,7 +152,7 @@ view: hubspot_contacts {
       quarter,
       year
     ]
-    sql: CAST(${TABLE}.properties_lastmodifieddate_value as INTEGER);;
+    sql: TIMESTAMP_MILLIS(CAST(properties_lastmodifieddate_value as INTEGER));;
   }
 
   dimension: properties_lastname_value {
