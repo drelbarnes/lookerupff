@@ -149,6 +149,8 @@ include: "/views/hubspot_email_events.view.lkml"
 
 include: "bigquery_hubspot_email_sends.view.lkml"
 
+include: "/views/hubspot_contacts.view.lkml"
+
 explore:  max_churn_score {
 }
 
