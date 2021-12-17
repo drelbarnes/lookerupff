@@ -14,7 +14,6 @@ view: validate_dunning {
       , properties_vod_brand_value
       , ROW_NUMBER() OVER (PARTITION BY email ORDER BY TIMESTAMP_MILLIS(cast(properties_lastmodifieddate_value as int)) DESC) as n
       FROM `up-faith-and-family-216419.hubspot.contacts`
-      where email is not null and properties_topic_value = "customer.product.charge_failed" and properties_subscription_status_value = "enabled"
       )
       , c as (SELECT email
       , properties_firstname_value
@@ -62,19 +61,24 @@ view: validate_dunning {
       )
       SELECT user_id
       , f.email
+      , f.timestamp
+      , c.last_modified
       , first_name
       , last_name
       , topic
+      , c.properties_topic_value as hubspot_topic
       , platform
       , plan
       , subscription_frequency
       , subscription_status
+      , c.properties_subscription_status_value as hubspot_status
       , subscriber_marketing_opt_in
       FROM f LEFT JOIN c ON f.email = c.email
       WHERE f.timestamp <= c.last_modified
       AND
-      f.topic not in (c.properties_topic_value) and f.subscription_status not in (c.properties_subscription_status_value)
-       ;;
+      c.properties_topic_value = "customer.product.charge_failed" and c.properties_subscription_status_value = "enabled"
+      AND
+      f.topic not in (c.properties_topic_value) and f.subscription_status not in (c.properties_subscription_status_value);;
   }
 
   measure: count {
