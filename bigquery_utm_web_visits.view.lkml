@@ -66,7 +66,8 @@ where date(timestamp)>'2019-09-15')
       week,
       month,
       quarter,
-      year
+      year,
+      minute10
     ]
     sql: ${TABLE}.timestamp ;;
   }
