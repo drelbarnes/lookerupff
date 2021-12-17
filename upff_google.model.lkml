@@ -140,16 +140,13 @@ include: "max_churn_score.view"
 include: "retention.view.lkml"
 
 include: "bigquery_http_api_purchase_event_hubspot.view.lkml"
-
 include: "/views/customer_product_set_cancellation.view.lkml"
-
 include: "/views/hubspot_email_campaigns.view.lkml"
-
 include: "/views/hubspot_email_events.view.lkml"
-
 include: "bigquery_hubspot_email_sends.view.lkml"
 
 include: "/views/hubspot_contacts.view.lkml"
+
 
 explore: hubspot_contacts {
 }
