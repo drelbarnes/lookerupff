@@ -9,6 +9,11 @@ view: svod_titles_general {
       drill_fields: [detail*]
     }
 
+    measure: number_views {
+      type: number
+      sql: ${TABLE}.views ;;
+    }
+
     dimension: month {
       type: number
       sql: ${TABLE}.month ;;
