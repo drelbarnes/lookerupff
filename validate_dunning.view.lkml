@@ -1,6 +1,7 @@
 view: validate_dunning {
   derived_table: {
     sql: with customers as (
+    -- this table contains historical records of all key hubspot contact properties, ranked by descending last_modified date
       SELECT
       TIMESTAMP_MILLIS(cast(properties_lastmodifieddate_value as int)) as last_modified
       , email
@@ -15,7 +16,9 @@ view: validate_dunning {
       , ROW_NUMBER() OVER (PARTITION BY email ORDER BY TIMESTAMP_MILLIS(cast(properties_lastmodifieddate_value as int)) DESC) as n
       FROM `up-faith-and-family-216419.hubspot.contacts`
       )
-      , c as (SELECT email
+      , c as (
+      -- this table contains the most recent record for each distinct user in the customers table
+      SELECT email
       , properties_firstname_value
       , properties_lastname_value
       , properties_moptin_value
@@ -28,40 +31,47 @@ view: validate_dunning {
       FROM customers
       WHERE n = 1
       )
-      , purchase_events as (SELECT
-            user_id
-            , email
-            , first_name
-            , last_name
-            , platform
-            , plan
-            , subscription_frequency
-            , topic
-            , subscription_status
-            , moptin as subscriber_marketing_opt_in
-            , timestamp
-            , ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY timestamp DESC) as n2
-            FROM `up-faith-and-family-216419.http_api.purchase_event`
-            WHERE email in (select email from c)
-      ) /* most_recent_purchase_events gets the most recent topic for each distinct email address, along with all other fields related to HubSpot contact */
-      /* filter table flags any users with multiple topics and orders their records by descending time stamp */
-      , f as (SELECT user_id
-            , email
-            , first_name
-            , last_name
-            , topic
-            , platform
-            , plan
-            , subscription_frequency
-            , subscription_status
-            , subscriber_marketing_opt_in
-            , timestamp
+      , purchase_events as (
+      -- this table contains all pertinant purchase event data from the webhook, ranked by descending timestamp
+      SELECT user_id
+        , email
+        , first_name
+        , last_name
+        , platform
+        , plan
+        , subscription_frequency
+        , topic
+        , subscription_status
+        , moptin as subscriber_marketing_opt_in
+        , timestamp
+        , ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY timestamp DESC) as n2
+      FROM `up-faith-and-family-216419.http_api.purchase_event`
+      WHERE email in (select email from c)
+      )
+      , p as (
+      -- this table contains the most recent purchase event for each distinct user in the purchase_events table
+      SELECT user_id
+      , email
+      , first_name
+      , last_name
+      , topic
+      , platform
+      , plan
+      , subscription_frequency
+      , subscription_status
+      , subscriber_marketing_opt_in
+        , timestamp
       FROM purchase_events
       WHERE n2 = 1
       )
+      -- we join c and p, select the relevant columns and filter out
+      -- 1) purchase events that come after the latest record in c (this is to account for the delay in syncing HubSpot data with our warehouses
+      -- 2) records in c that meet the dunning workflow enrollment criteria
+      -- 3) records in p that do not match records in c, which is to say that the record's HubSpot contact data does not align with the latest webhook event
+      -- we are left with a table of users that need to have their HubSpot properties updated.
       SELECT user_id
-      , f.email
-      , f.timestamp
+      , p.email
+      , p.timestamp
       , c.last_modified
       , first_name
       , last_name
@@ -73,12 +83,12 @@ view: validate_dunning {
       , subscription_status
       , c.properties_subscription_status_value as hubspot_status
       , subscriber_marketing_opt_in
-      FROM f LEFT JOIN c ON f.email = c.email
-      WHERE f.timestamp <= c.last_modified
+      FROM f LEFT JOIN c ON p.email = c.email
+      WHERE p.timestamp <= c.last_modified
       AND
       c.properties_topic_value = "customer.product.charge_failed" and c.properties_subscription_status_value = "enabled"
       AND
-      f.topic not in (c.properties_topic_value) and f.subscription_status not in (c.properties_subscription_status_value);;
+      p.topic not in (c.properties_topic_value) and p.subscription_status not in (c.properties_subscription_status_value);;
   }
 
   measure: count {
