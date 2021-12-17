@@ -83,7 +83,7 @@ view: validate_dunning {
       , subscription_status
       , c.properties_subscription_status_value as hubspot_status
       , subscriber_marketing_opt_in
-      FROM f LEFT JOIN c ON p.email = c.email
+      FROM p LEFT JOIN c ON p.email = c.email
       WHERE p.timestamp <= c.last_modified
       AND
       c.properties_topic_value = "customer.product.charge_failed" and c.properties_subscription_status_value = "enabled"
