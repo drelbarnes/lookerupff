@@ -148,12 +148,14 @@ include: "bigquery_hubspot_email_sends.view.lkml"
 include: "/views/hubspot_contacts.view.lkml"
 include: "/views/identifies.view.lkml"
 include: "validate_dunning.view.lkml"
+include: "update_topic_hubspot.view.lkml"
 
 
 explore: hubspot_contacts {
 }
 
 explore: validate_dunning {}
+explore: update_topic_hubspot {}
 
 explore:  max_churn_score {
 }
