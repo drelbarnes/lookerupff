@@ -43,8 +43,8 @@ view: validate_dunning {
         , topic
         , subscription_status
         , moptin as subscriber_marketing_opt_in
-        , timestamp
-        , ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY timestamp DESC) as n2
+        , status_date
+        , ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY status_date DESC) as n2
       FROM `up-faith-and-family-216419.http_api.purchase_event`
       WHERE email in (select email from c)
       )
@@ -60,7 +60,7 @@ view: validate_dunning {
       , subscription_frequency
       , subscription_status
       , subscriber_marketing_opt_in
-        , timestamp
+        , status_date
       FROM purchase_events
       WHERE n2 = 1
       )
@@ -71,7 +71,7 @@ view: validate_dunning {
       -- we are left with a table of users that need to have their HubSpot properties updated.
       SELECT user_id
       , p.email
-      , p.timestamp
+      , p.status_date
       , c.last_modified
       , first_name
       , last_name
@@ -84,7 +84,7 @@ view: validate_dunning {
       , c.properties_subscription_status_value as hubspot_status
       , subscriber_marketing_opt_in
       FROM p LEFT JOIN c ON p.email = c.email
-      WHERE p.timestamp <= c.last_modified
+      WHERE p.status_date <= c.last_modified
       AND
       c.properties_topic_value = "customer.product.charge_failed" and c.properties_subscription_status_value = "enabled"
       AND

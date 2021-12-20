@@ -43,8 +43,8 @@ view: update_topic_hubspot {
       , topic
       , subscription_status
       , moptin as subscriber_marketing_opt_in
-      , timestamp
-      , ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY timestamp DESC) as n2
+      , status_date
+      , ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY status_date DESC) as n2
       FROM `up-faith-and-family-216419.http_api.purchase_event`
       WHERE email in (select email from c)
       )
@@ -60,7 +60,7 @@ view: update_topic_hubspot {
       , subscription_frequency
       , subscription_status
       , subscriber_marketing_opt_in
-      , timestamp
+      , status_date
       FROM purchase_events
       WHERE n2 = 1
       )
@@ -71,7 +71,7 @@ view: update_topic_hubspot {
       -- we are left with a table of users that need to have their HubSpot properties updated.
       SELECT user_id
       , p.email
-      , p.timestamp
+      , p.status_date
       , c.last_modified
       , first_name
       , last_name
@@ -84,7 +84,7 @@ view: update_topic_hubspot {
       , c.properties_subscription_status_value as hubspot_status
       , subscriber_marketing_opt_in
       FROM p LEFT JOIN c ON p.email = c.email
-      WHERE p.timestamp <= c.last_modified
+      WHERE p.status_date <= c.last_modified
       -- AND
       -- c.properties_topic_value = "customer.product.charge_failed" and c.properties_subscription_status_value = "enabled"
       -- AND
@@ -109,9 +109,9 @@ view: update_topic_hubspot {
     sql: ${TABLE}.email ;;
   }
 
-  dimension_group: timestamp {
+  dimension_group: status_date {
     type: time
-    sql: ${TABLE}.timestamp ;;
+    sql: ${TABLE}.status_date ;;
   }
 
   dimension_group: last_modified {
@@ -173,7 +173,7 @@ view: update_topic_hubspot {
     fields: [
       user_id,
       email,
-      timestamp_time,
+      status_date_time,
       last_modified_time,
       first_name,
       last_name,
