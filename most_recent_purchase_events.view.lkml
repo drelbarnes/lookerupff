@@ -1,42 +1,26 @@
 view: most_recent_purchase_events {
   derived_table: {
-    sql: with most_recent_purchase_events as (SELECT max(topic) topic
-      , user_id
+    sql: with purchase_events as (
+      SELECT user_id
       , email
       , first_name
       , last_name
       , platform
-      , plan
-      , referrer
+      , topic
       , subscription_frequency
       , subscription_status
       , moptin as subscriber_marketing_opt_in
-      , timestamp as ts
+      , status_date
       FROM `up-faith-and-family-216419.http_api.purchase_event`
-      WHERE ((( timestamp ) >= ((TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), HOUR), INTERVAL -2 HOUR))) AND ( timestamp ) < ((TIMESTAMP_ADD(TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), HOUR), INTERVAL -2 HOUR), INTERVAL 3 HOUR)))))
-      GROUP BY 2,3,4,5,6,7,8,9,10,11,12
-) /* most_recent_purchase_events gets the most recent topic for each distinct email address, along with all other fields related to HubSpot contact */
-/* filter table flags any users with multiple topics and orders their records by descending time stamp */
-, filter as (SELECT user_id
-      , email
-      , first_name
-      , last_name
-      , topic
-      , platform
-      , plan
-      , referrer
-      , subscription_frequency
-      , subscription_status
-      , subscriber_marketing_opt_in
-      , ts
-    , ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY ts DESC) as col
-FROM most_recent_purchase_events
-GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12
-ORDER BY 1
-)
-/* only returns rows that have the most recent topic, as flagged by the filter table. Add brand column with constant as "upff" */
-SELECT * FROM filter WHERE col = 1
-       ;;
+      WHERE ( status_date ) < ((TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), MINUTE), INTERVAL 0 MINUTE))) AND ( status_date ) >= ((TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), HOUR), INTERVAL -3 HOUR)))
+      )
+      , filter as (
+      SELECT *
+      , ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY status_date DESC) as n
+      FROM purchase_events
+      )
+      -- only returns rows that have the most recent topic, as flagged by the filter table.
+      SELECT * FROM filter WHERE n = 1;;
       sql_trigger_value: SELECT EXTRACT(HOUR FROM CURRENT_TIMESTAMP()) ;;
   }
 
@@ -78,15 +62,15 @@ SELECT * FROM filter WHERE col = 1
     sql: ${TABLE}.platform ;;
   }
 
-  dimension: plan {
-    type: string
-    sql: ${TABLE}.plan ;;
-  }
+  # dimension: plan {
+  #   type: string
+  #   sql: ${TABLE}.plan ;;
+  # }
 
-  dimension: referrer {
-    type: string
-    sql: ${TABLE}.referrer ;;
-  }
+  # dimension: referrer {
+  #   type: string
+  #   sql: ${TABLE}.referrer ;;
+  # }
 
   dimension: subscription_frequency {
     type: string
@@ -103,6 +87,19 @@ SELECT * FROM filter WHERE col = 1
     sql:  ${TABLE}.subscriber_marketing_opt_in ;;
   }
 
+  dimension_group: status_date {
+    type: time
+    timeframes: [
+      raw,
+      time,
+      date,
+      week,
+      month,
+      quarter,
+      year
+    ]
+    sql: ${TABLE}.status_date ;;
+  }
 
   set: detail {
     fields: [
