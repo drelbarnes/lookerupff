@@ -1,6 +1,6 @@
 view: redshift_active_customers {
   derived_table: {
-    sql: SELECT *, 'abc-123' as anonymous_id FROM customers.active_customers
+    sql: SELECT * FROM customers.active_customers
       ;;
   }
 
