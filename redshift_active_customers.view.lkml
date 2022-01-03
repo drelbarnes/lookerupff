@@ -1,6 +1,6 @@
 view: redshift_active_customers {
   derived_table: {
-    sql: SELECT * FROM customers.active_customers
+    sql: SELECT *, 'abc-123' as anonymous_id FROM customers.active_customers
       ;;
   }
 
@@ -17,7 +17,7 @@ view: redshift_active_customers {
   dimension: anonymous_id {
     type: string
     tags: ["anonymous_id"]
-    sql: "abc-123" ;;
+    sql: ${TABLE}.anonymous_id ;;
   }
 
   dimension: user_id {
