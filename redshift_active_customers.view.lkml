@@ -16,7 +16,7 @@ view: redshift_active_customers {
 
   dimension: anonymous_id {
     type: string
-    tags: ["anonymous_id"]
+    tags: ["segment_anonymous_id"]
     sql: 1 ;;
   }
 
