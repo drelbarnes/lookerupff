@@ -140,14 +140,22 @@ include: "max_churn_score.view"
 include: "retention.view.lkml"
 
 include: "bigquery_http_api_purchase_event_hubspot.view.lkml"
-
 include: "/views/customer_product_set_cancellation.view.lkml"
-
 include: "/views/hubspot_email_campaigns.view.lkml"
-
 include: "/views/hubspot_email_events.view.lkml"
-
 include: "bigquery_hubspot_email_sends.view.lkml"
+
+include: "/views/hubspot_contacts.view.lkml"
+include: "/views/identifies.view.lkml"
+include: "validate_dunning.view.lkml"
+include: "update_topic_hubspot.view.lkml"
+
+
+explore: hubspot_contacts {
+}
+
+explore: validate_dunning {}
+explore: update_topic_hubspot {}
 
 explore:  max_churn_score {
 }
@@ -199,6 +207,9 @@ explore: mvpd_subs_gbc {}
 
 include: "svod_titles_gbc.view.lkml"
 explore: svod_titles_gbc {}
+
+include: "svod_titles_general.view.lkml"
+explore: svod_titles_general {}
 
 explore: bigquery_email_opens_set_cancels {}
 
