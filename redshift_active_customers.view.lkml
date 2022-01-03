@@ -14,6 +14,12 @@ view: redshift_active_customers {
     sql: ${TABLE}.email ;;
   }
 
+  dimension: anonymous_id {
+    type: string
+    tags: ["anonymous_id"]
+    sql: "abc-123" ;;
+  }
+
   dimension: user_id {
     type: number
     primary_key: yes
