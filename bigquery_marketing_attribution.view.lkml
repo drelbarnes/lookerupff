@@ -22,6 +22,8 @@ view: bigquery_marketing_attribution{
       , 'site_matches' as event
       , p.view
       , p.context_page_referrer as referrer
+      , 'web' as platform
+      , '' as context_revenue
       , j.received_at
       , p.timestamp
         FROM javascript_upff_home.pages AS j
@@ -45,6 +47,8 @@ view: bigquery_marketing_attribution{
       , 'converisons' as event
       , p.view
       , p.referrer
+      , p.platform
+      , p.context_revenue as revenue
       , j.received_at
       , p.timestamp
         FROM  joined_sites AS j
@@ -124,6 +128,23 @@ view: bigquery_marketing_attribution{
       type: string
       sql: ${TABLE}.context_traits_cross_domain_id ;;
     }
+
+    dimension: platform {
+      type: string
+      sql: ${TABLE}.platform ;;
+    }
+
+    dimension: revenue {
+      type: string
+      sql: ${TABLE}.revenue ;;
+    }
+
+   dimension: plan_type {
+    sql: CASE
+              WHEN ${TABLE}.revenue = 53.99 then 'yearly'
+              WHEN ${TABLE}.revenue = 5.99 then 'monthly'
+          END ;;
+  }
 
     dimension: utm_source {
       type: string

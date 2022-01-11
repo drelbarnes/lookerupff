@@ -22,8 +22,10 @@ view: bigquery_identity_resolution {
       , context_user_agent as user_agent
       , received_at
       , timestamp
-      FROM javascript_upff_home.pages),
-
+      FROM javascript_upff_home.pages
+     WHERE ((( timestamp ) >= ((TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter attribution_window %} - 1) DAY))) AND
+( timestamp ) < ((TIMESTAMP_ADD(TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter attribution_window %} - 1) DAY), INTERVAL {% parameter attribution_window %} DAY)))))
+      ),
       /*
       /*
       /* UP Faith & Family Seller Site
@@ -46,8 +48,10 @@ view: bigquery_identity_resolution {
       , context_user_agent as user_agent
       , received_at
       , timestamp
-      FROM javascript.pages),
-
+      FROM javascript.pages
+      WHERE ((( timestamp ) >= ((TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter attribution_window %} - 1) DAY))) AND
+( timestamp ) < ((TIMESTAMP_ADD(TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter attribution_window %} - 1) DAY), INTERVAL {% parameter attribution_window %} DAY)))))
+      ),
       /*
       /*
       /* UP Faith & Family Seller Site Order Completed Event
@@ -70,7 +74,10 @@ view: bigquery_identity_resolution {
       , context_user_agent as user_agent
       , received_at
       , timestamp
-      FROM javascript.order_completed),
+      FROM javascript.order_completed
+      WHERE ((( timestamp ) >= ((TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter attribution_window %} - 1) DAY))) AND
+( timestamp ) < ((TIMESTAMP_ADD(TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter attribution_window %} - 1) DAY), INTERVAL {% parameter attribution_window %} DAY)))))
+      ),
 
       together as (
       SELECT * FROM upff_home_page
@@ -100,6 +107,23 @@ view: bigquery_identity_resolution {
     allowed_value: {
       label: "Last Touch Attribution"
       value: "desc"
+    }
+  }
+
+  parameter: attribution_window {
+    type: unquoted
+    label: "Attribution Window"
+    allowed_value: {
+      label: "30 days"
+      value: "30"
+    }
+    allowed_value: {
+      label: "60 days"
+      value: "60"
+    }
+    allowed_value: {
+      label: "90 days"
+      value: "90"
     }
   }
 
@@ -194,6 +218,12 @@ view: bigquery_identity_resolution {
   dimension_group: timestamp {
     type: time
     sql: ${TABLE}.timestamp ;;
+  }
+
+  measure: distinct_count {
+    type: count_distinct
+    sql:${anonymous_id} ;;
+    drill_fields: [detail*]
   }
 
   set: detail {
