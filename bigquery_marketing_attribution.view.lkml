@@ -29,8 +29,7 @@ view: bigquery_marketing_attribution{
         FROM javascript_upff_home.pages AS j
         INNER JOIN  javascript.pages AS p
         ON j.context_ip = p.context_ip
-        WHERE ((( p.timestamp ) >= ((TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter attribution_window %} - 1) DAY))) AND
-( p.timestamp ) < ((TIMESTAMP_ADD(TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter attribution_window %} - 1) DAY), INTERVAL {% parameter attribution_window %} DAY)))))
+
       ),
 
       joined_sites_conversion as (
@@ -54,8 +53,8 @@ view: bigquery_marketing_attribution{
         FROM  joined_sites AS j
         INNER JOIN javascript.order_completed AS p
         ON j.context_ip = p.context_ip
-        WHERE ((( p.timestamp ) >= ((TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter attribution_window %} - 1) DAY))) AND
-( p.timestamp ) < ((TIMESTAMP_ADD(TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter attribution_window %} - 1) DAY), INTERVAL {% parameter attribution_window %} DAY)))))
+
+
       ),
 
       a as (
