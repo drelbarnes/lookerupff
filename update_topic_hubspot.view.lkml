@@ -99,6 +99,7 @@ view: update_topic_hubspot {
 
   dimension: user_id {
     type: string
+    primary_key: yes
     tags: ["user_id"]
     sql: ${TABLE}.user_id ;;
   }
@@ -165,7 +166,7 @@ view: update_topic_hubspot {
   }
 
   dimension: subscriber_marketing_opt_in {
-    type: string
+    type: yesno
     sql: ${TABLE}.subscriber_marketing_opt_in ;;
   }
 
