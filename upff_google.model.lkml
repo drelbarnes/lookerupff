@@ -149,6 +149,18 @@ include: "/views/hubspot_contacts.view.lkml"
 include: "/views/identifies.view.lkml"
 include: "validate_dunning.view.lkml"
 include: "update_topic_hubspot.view.lkml"
+include: "bigquery_identity_resolution.view.lkml"
+include: "bigquery_marketing_attribution.view.lkml"
+
+explore:  bigquery_identity_resolution {
+  label: "Marketing Attribution"
+  join: bigquery_marketing_attribution {
+    type: inner
+    sql_on: ${bigquery_identity_resolution.user_id} = ${bigquery_marketing_attribution.user_id}
+      ;;
+    relationship: many_to_many
+  }
+}
 
 
 explore: hubspot_contacts {
