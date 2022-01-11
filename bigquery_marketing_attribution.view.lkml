@@ -99,10 +99,7 @@ view: bigquery_marketing_attribution{
     }
 
 
-    measure: count {
-      type: count
-      drill_fields: [detail*]
-    }
+
 
     dimension: anonymous_id {
       type: string
@@ -190,6 +187,16 @@ view: bigquery_marketing_attribution{
       type: time
       sql: ${TABLE}.timestamp ;;
     }
+
+  measure: count {
+    type: count
+    drill_fields: [detail*]
+  }
+
+  measure: distinct_count {
+    type: count_distinct
+    sql: ${user_id};;
+  }
 
     set: detail {
       fields: [
