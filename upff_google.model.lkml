@@ -153,7 +153,7 @@ include: "bigquery_identity_resolution.view.lkml"
 include: "bigquery_marketing_attribution.view.lkml"
 
 explore:  bigquery_identity_resolution {
-  label: "Marketing Attribution"
+  label: "Marketing Attribution 2.0"
   join: bigquery_marketing_attribution {
     type: inner
     sql_on: ${bigquery_identity_resolution.user_id} = ${bigquery_marketing_attribution.user_id}
