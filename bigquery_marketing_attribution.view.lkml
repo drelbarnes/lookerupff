@@ -5,7 +5,7 @@ view: bigquery_marketing_attribution{
 
       /*
       /* Established initial query match between UP Faith & Family Marketing & Seller Site
-      /*
+      /*d
       */
 
      with joined_sites as (
@@ -98,9 +98,6 @@ view: bigquery_marketing_attribution{
       }
     }
 
-
-
-
     dimension: anonymous_id {
       type: string
       sql: ${TABLE}.anonymous_id ;;
@@ -133,15 +130,7 @@ view: bigquery_marketing_attribution{
       sql: ${TABLE}.utm_source ;;
     }
 
-    dimension: campaign_source {
-     type: string
-      sql: CASE
-          WHEN ${TABLE}.utm_source IS NULL then 'direct'
-          WHEN ${TABLE}.utm_source = '{{site.source.name}}' then 'fb'
-          WHEN ${TABLE}.utm_source = '{{site_source_name}}' then 'fb'
-          else ${TABLE}.utm_source
-          END ;;
-    }
+
 
     dimension: utm_medium {
       type: string
@@ -192,6 +181,8 @@ view: bigquery_marketing_attribution{
       type: number
       sql: ${TABLE}.row;;
 
+    }
+
     dimension_group: timestamp {
       type: time
       sql: ${TABLE}.timestamp ;;
@@ -227,4 +218,5 @@ view: bigquery_marketing_attribution{
         timestamp_time
       ]
     }
+
   }
