@@ -130,6 +130,14 @@ view: bigquery_marketing_attribution{
       sql: ${TABLE}.utm_source ;;
     }
 
+     dimension: campaign_source {
+      sql: CASE
+              WHEN ${TABLE}.utm_source IS NULL then 'direct'
+              WHEN ${TABLE}.utm_source LIKE '%site.source.name%' then 'fb'
+              WHEN ${TABLE}.utm_source LIKE '%site_source_name%' then 'fb'
+              else ${TABLE}.utm_source
+            END ;;
+      }
 
 
     dimension: utm_medium {
