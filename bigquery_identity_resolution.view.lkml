@@ -23,8 +23,6 @@ view: bigquery_identity_resolution {
       , received_at
       , timestamp
       FROM javascript_upff_home.pages
-     WHERE ((( timestamp ) >= ((TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter attribution_window %} - 1) DAY))) AND
-( timestamp ) < ((TIMESTAMP_ADD(TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter attribution_window %} - 1) DAY), INTERVAL {% parameter attribution_window %} DAY)))))
       ),
       /*
       /*
@@ -49,8 +47,6 @@ view: bigquery_identity_resolution {
       , received_at
       , timestamp
       FROM javascript.pages
-      WHERE ((( timestamp ) >= ((TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter attribution_window %} - 1) DAY))) AND
-( timestamp ) < ((TIMESTAMP_ADD(TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter attribution_window %} - 1) DAY), INTERVAL {% parameter attribution_window %} DAY)))))
       ),
       /*
       /*
@@ -75,8 +71,6 @@ view: bigquery_identity_resolution {
       , received_at
       , timestamp
       FROM javascript.order_completed
-      WHERE ((( timestamp ) >= ((TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter attribution_window %} - 1) DAY))) AND
-( timestamp ) < ((TIMESTAMP_ADD(TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter attribution_window %} - 1) DAY), INTERVAL {% parameter attribution_window %} DAY)))))
       ),
 
       together as (
@@ -110,22 +104,6 @@ view: bigquery_identity_resolution {
     }
   }
 
-  parameter: attribution_window {
-    type: unquoted
-    label: "Attribution Window"
-    allowed_value: {
-      label: "30 days"
-      value: "30"
-    }
-    allowed_value: {
-      label: "60 days"
-      value: "60"
-    }
-    allowed_value: {
-      label: "90 days"
-      value: "90"
-    }
-  }
 
 
   measure: count {
