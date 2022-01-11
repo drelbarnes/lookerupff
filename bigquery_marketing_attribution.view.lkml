@@ -133,6 +133,16 @@ view: bigquery_marketing_attribution{
       sql: ${TABLE}.utm_source ;;
     }
 
+    dimension: campaign_source {
+     type: string
+      sql: CASE
+          WHEN ${TABLE}.utm_source IS NULL then 'direct'
+          WHEN ${TABLE}.utm_source = '{{site.source.name}}' then 'fb'
+          WHEN ${TABLE}.utm_source = '{{site_source_name}}' then 'fb'
+          else ${TABLE}.utm_source
+          END ;;
+    }
+
     dimension: utm_medium {
       type: string
       sql: ${TABLE}.utm_medium ;;
@@ -181,7 +191,6 @@ view: bigquery_marketing_attribution{
     dimension: row {
       type: number
       sql: ${TABLE}.row;;
-    }
 
     dimension_group: timestamp {
       type: time
