@@ -92,8 +92,20 @@ view: bigquery_marketing_attribution{
       type: unquoted
       label: "Attribution Window"
       allowed_value: {
+        label: "7 days"
+        value: "7"
+      }
+      allowed_value: {
+        label: "14 days"
+        value: "14"
+      }
+      allowed_value: {
         label: "30 days"
         value: "30"
+      }
+      allowed_value: {
+        label: "28 days"
+        value: "28"
       }
       allowed_value: {
         label: "60 days"
