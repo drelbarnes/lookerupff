@@ -143,6 +143,20 @@ view: bigquery_identity_resolution {
     sql: ${TABLE}.utm_source ;;
   }
 
+  dimension: campaign_source {
+    sql: CASE
+              WHEN ${TABLE}.utm_source IS NULL then 'Organic'
+              WHEN ${TABLE}.utm_source LIKE '%site.source.name%' then 'Facebook Ads'
+              WHEN ${TABLE}.utm_source LIKE '%site_source_name%' then 'Facebook Ads'
+              WHEN ${TABLE}.utm_source = 'google_ads' then 'Google Ads'
+              WHEN ${TABLE}.utm_source = 'GoogleAds' then 'Google Ads'
+              WHEN ${TABLE}.utm_source = 'fb' then 'Facebook Ads'
+              WHEN ${TABLE}.utm_source = 'ig' then 'Facebook Ads'
+              WHEN ${TABLE}.utm_source = 'bing_ads' then 'Bing Ads'
+              else ${TABLE}.utm_source
+            END ;;
+  }
+
   dimension: utm_medium {
     type: string
     sql: ${TABLE}.utm_medium ;;

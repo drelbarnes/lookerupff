@@ -156,7 +156,7 @@ explore:  bigquery_identity_resolution {
   label: "Marketing Attribution 2.0"
   join: bigquery_marketing_attribution {
     type: left_outer
-    sql_on: ${bigquery_identity_resolution.user_id} = ${bigquery_marketing_attribution.user_id}
+    sql_on: ${bigquery_identity_resolution.anonymous_id} = ${bigquery_marketing_attribution.anonymous_id}
       ;;
     relationship: many_to_many
   }
