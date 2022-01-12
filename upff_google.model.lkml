@@ -151,6 +151,11 @@ include: "validate_dunning.view.lkml"
 include: "update_topic_hubspot.view.lkml"
 include: "bigquery_identity_resolution.view.lkml"
 include: "bigquery_marketing_attribution.view.lkml"
+include: "bigquery_order_completed.view.lkml"
+
+explore: bigquery_order_completed {
+  label: "Order Completed"
+}
 
 explore:  bigquery_identity_resolution {
   label: "Marketing Attribution 2.0"

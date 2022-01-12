@@ -154,19 +154,19 @@ view: bigquery_marketing_attribution{
       sql: ${TABLE}.revenue ;;
     }
 
-   dimension: plan_type {
-    sql: CASE
+    dimension: plan_type {
+      sql: CASE
               WHEN ${TABLE}.revenue = 53.99 then 'yearly'
               WHEN ${TABLE}.revenue = 5.99 then 'monthly'
           END ;;
-  }
+    }
 
     dimension: utm_source {
       type: string
       sql: ${TABLE}.utm_source ;;
     }
 
-     dimension: campaign_source {
+    dimension: campaign_source {
       sql: CASE
               WHEN ${TABLE}.utm_source IS NULL then 'Organic'
               WHEN ${TABLE}.utm_source LIKE '%site.source.name%' then 'Facebook Ads'
@@ -178,7 +178,7 @@ view: bigquery_marketing_attribution{
               WHEN ${TABLE}.utm_source = 'bing_ads' then 'Bing Ads'
               else ${TABLE}.utm_source
             END ;;
-      }
+    }
 
 
     dimension: utm_medium {
@@ -237,44 +237,44 @@ view: bigquery_marketing_attribution{
       sql: ${TABLE}.timestamp ;;
     }
 
-  measure: count {
-    type: count
-    drill_fields: [detail*]
-  }
+    measure: count {
+      type: count
+      drill_fields: [detail*]
+    }
 
-  measure: distinct_count {
-    type: count_distinct
-    sql: ${user_id};;
-  }
+    measure: distinct_count {
+      type: count_distinct
+      sql: ${user_id};;
+    }
 
-  measure: distinct_facebook_count {
-    type: count_distinct
-    sql:CASE
+    measure: distinct_facebook_count {
+      type: count_distinct
+      sql:CASE
           WHEN ${TABLE}.utm_source = 'fb' THEN ${user_id}
           WHEN ${TABLE}.utm_source = 'ig' THEN ${user_id}
           WHEN ${TABLE}.utm_source LIKE '%site.source.name%' then ${user_id}
           WHEN ${TABLE}.utm_source LIKE '%site_source_name%' then ${user_id}
     END ;;
-  }
+    }
 
-  measure: distinct_google_count {
-    type: count_distinct
-    sql: ${user_id};;
-    filters: [utm_source: "google_ads"]
-  }
+    measure: distinct_google_count {
+      type: count_distinct
+      sql: ${user_id};;
+      filters: [utm_source: "google_ads"]
+    }
 
-  measure: distinct_bing_count {
-    type: count_distinct
-    sql: ${user_id};;
-    filters: [utm_source: "bing_ads"]
-  }
+    measure: distinct_bing_count {
+      type: count_distinct
+      sql: ${user_id};;
+      filters: [utm_source: "bing_ads"]
+    }
 
-  measure: distinct_organic_count {
-    type: count_distinct
-    sql:CASE
+    measure: distinct_organic_count {
+      type: count_distinct
+      sql:CASE
           WHEN ${TABLE}.utm_source IS NULL THEN ${user_id}
        END ;;
-  }
+    }
 
     set: detail {
       fields: [
