@@ -100,12 +100,12 @@ view: bigquery_marketing_attribution{
         value: "14"
       }
       allowed_value: {
-        label: "30 days"
-        value: "30"
-      }
-      allowed_value: {
         label: "28 days"
         value: "28"
+      }
+      allowed_value: {
+        label: "30 days"
+        value: "30"
       }
       allowed_value: {
         label: "60 days"
