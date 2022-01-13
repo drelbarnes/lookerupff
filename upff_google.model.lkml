@@ -149,19 +149,17 @@ include: "/views/hubspot_contacts.view.lkml"
 include: "/views/identifies.view.lkml"
 include: "validate_dunning.view.lkml"
 include: "update_topic_hubspot.view.lkml"
+include: "/views/purchase_event.view.lkml"
 
-
-explore: hubspot_contacts {
-}
+explore: purchase_event {}
+explore: hubspot_contacts {}
 
 explore: validate_dunning {}
 explore: update_topic_hubspot {}
 
-explore:  max_churn_score {
-}
+explore:  max_churn_score {}
 
-explore:  most_recent_purchase_events {
-}
+explore:  most_recent_purchase_events {}
 
 explore: bigquery_flight29 {
   label: "Ad Hoc Request 8-25-21"
