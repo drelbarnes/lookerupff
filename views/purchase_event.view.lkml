@@ -1,9 +1,15 @@
 # The name of this view in Looker is "Purchase Event"
 view: purchase_event {
-  # The sql_table_name parameter indicates the underlying database table
-  # to be used for all fields in this view.
-  sql_table_name: `up-faith-and-family-216419.http_api.purchase_event`
+  derived_table: {
+    sql: WITH p AS
+    (SELECT * FROM `up-faith-and-family-216419.http_api.purchase_event`)
+    SELECT *
+    , RANK() OVER (PARTITION BY user_id ORDER BY status_date DESC) AS rank
+    FROM p
     ;;
+  }
+  # sql_table_name: `up-faith-and-family-216419.http_api.purchase_event`
+  #   ;;
   drill_fields: [id]
   # This primary key is the unique key for this table in the underlying database.
   # You need to define a primary key in a view in order to join to other views.
@@ -243,7 +249,7 @@ view: purchase_event {
 
   dimension: rank {
     type: number
-    sql: RANK() OVER (PARTITION BY ${TABLE}.user_id ORDER BY ${TABLE}.status_date DESC) ;;
+    sql: ${TABLE}.rank  ;;
   }
 
   dimension_group: received {
