@@ -1,7 +1,7 @@
-view: validate_dunning {
+view: update_topic_hubspot {
   derived_table: {
     sql: with customers as (
-    -- this table contains historical records of all key hubspot contact properties, ranked by descending last_modified date
+      -- this table contains historical records of all key hubspot contact properties, ranked by descending last_modified date
       SELECT
       TIMESTAMP_MILLIS(cast(properties_lastmodifieddate_value as int)) as last_modified
       , email
@@ -34,17 +34,17 @@ view: validate_dunning {
       , purchase_events as (
       -- this table contains all pertinant purchase event data from the webhook, ranked by descending timestamp
       SELECT user_id
-        , email
-        , first_name
-        , last_name
-        , platform
-        , plan
-        , subscription_frequency
-        , topic
-        , subscription_status
-        , moptin as subscriber_marketing_opt_in
-        , status_date
-        , ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY status_date DESC) as n2
+      , email
+      , first_name
+      , last_name
+      , platform
+      , plan
+      , subscription_frequency
+      , topic
+      , subscription_status
+      , moptin as subscriber_marketing_opt_in
+      , status_date
+      , ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY status_date DESC) as n2
       FROM `up-faith-and-family-216419.http_api.purchase_event`
       WHERE email in (select email from c)
       )
@@ -60,7 +60,7 @@ view: validate_dunning {
       , subscription_frequency
       , subscription_status
       , subscriber_marketing_opt_in
-        , status_date
+      , status_date
       FROM purchase_events
       WHERE n2 = 1
       )
@@ -85,10 +85,11 @@ view: validate_dunning {
       , subscriber_marketing_opt_in
       FROM p LEFT JOIN c ON p.email = c.email
       WHERE p.status_date <= c.last_modified
-      AND
-      c.properties_topic_value = "customer.product.charge_failed" and c.properties_subscription_status_value = "enabled"
-      AND
-      p.topic not in (c.properties_topic_value) and p.subscription_status not in (c.properties_subscription_status_value);;
+      -- AND
+      -- c.properties_topic_value = "customer.product.charge_failed" and c.properties_subscription_status_value = "enabled"
+      -- AND
+      -- p.topic not in (c.properties_topic_value) and p.subscription_status not in (c.properties_subscription_status_value)
+       ;;
   }
 
   measure: count {
@@ -98,6 +99,7 @@ view: validate_dunning {
 
   dimension: user_id {
     type: string
+    primary_key: yes
     tags: ["user_id"]
     sql: ${TABLE}.user_id ;;
   }
@@ -106,6 +108,16 @@ view: validate_dunning {
     type: string
     tags: ["email"]
     sql: ${TABLE}.email ;;
+  }
+
+  dimension_group: status_date {
+    type: time
+    sql: ${TABLE}.status_date ;;
+  }
+
+  dimension_group: last_modified {
+    type: time
+    sql: ${TABLE}.last_modified ;;
   }
 
   dimension: first_name {
@@ -121,6 +133,11 @@ view: validate_dunning {
   dimension: topic {
     type: string
     sql: ${TABLE}.topic ;;
+  }
+
+  dimension: hubspot_topic {
+    type: string
+    sql: ${TABLE}.hubspot_topic ;;
   }
 
   dimension: platform {
@@ -143,6 +160,11 @@ view: validate_dunning {
     sql: ${TABLE}.subscription_status ;;
   }
 
+  dimension: hubspot_status {
+    type: string
+    sql: ${TABLE}.hubspot_status ;;
+  }
+
   dimension: subscriber_marketing_opt_in {
     type: yesno
     sql: ${TABLE}.subscriber_marketing_opt_in ;;
@@ -152,13 +174,17 @@ view: validate_dunning {
     fields: [
       user_id,
       email,
+      status_date_time,
+      last_modified_time,
       first_name,
       last_name,
       topic,
+      hubspot_topic,
       platform,
       plan,
       subscription_frequency,
       subscription_status,
+      hubspot_status,
       subscriber_marketing_opt_in
     ]
   }

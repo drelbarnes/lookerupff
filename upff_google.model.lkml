@@ -148,12 +148,31 @@ include: "bigquery_hubspot_email_sends.view.lkml"
 include: "/views/hubspot_contacts.view.lkml"
 include: "/views/identifies.view.lkml"
 include: "validate_dunning.view.lkml"
+include: "update_topic_hubspot.view.lkml"
+include: "bigquery_identity_resolution.view.lkml"
+include: "bigquery_marketing_attribution.view.lkml"
+include: "bigquery_order_completed.view.lkml"
+
+explore: bigquery_order_completed {
+  label: "Order Completed"
+}
+
+explore:  bigquery_identity_resolution {
+  label: "Marketing Attribution 2.0"
+  join: bigquery_marketing_attribution {
+    type: left_outer
+    sql_on: ${bigquery_identity_resolution.anonymous_id} = ${bigquery_marketing_attribution.anonymous_id}
+      ;;
+    relationship: many_to_many
+  }
+}
 
 
 explore: hubspot_contacts {
 }
 
 explore: validate_dunning {}
+explore: update_topic_hubspot {}
 
 explore:  max_churn_score {
 }

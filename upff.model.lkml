@@ -62,7 +62,11 @@ include: "redshift_looker_get_titles.view.lkml"
 include: "redshift_custom_cross_platform_logins.view"
 include: "redshift_php_get_analytics_real_time.view"
 include: "redshift_javascript_search_executed.view"
+include: "redshift_active_customers.view"
 
+explore: redshift_active_customers {
+  label: "Active Customers"
+}
 
 include: "redshift_dunning.view"
 explore: redshift_dunning{
