@@ -149,6 +149,7 @@ include: "/views/hubspot_contacts.view.lkml"
 include: "/views/identifies.view.lkml"
 include: "validate_dunning.view.lkml"
 include: "update_topic_hubspot.view.lkml"
+include: "/views/purchase_event.view.lkml"
 
 include: "bigquery_identity_resolution.view.lkml"
 include: "bigquery_marketing_attribution.view.lkml"
