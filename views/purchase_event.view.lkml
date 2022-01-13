@@ -243,7 +243,7 @@ view: purchase_event {
 
   dimension: rank {
     type: number
-    sql: RANK() OVER PARTITION(${TABLE}.user_id ORDER BY ${TABLE}.status_date DESC) ;;
+    sql: RANK() OVER (PARTITION BY ${TABLE}.user_id ORDER BY ${TABLE}.status_date DESC) ;;
   }
 
   dimension_group: received {
