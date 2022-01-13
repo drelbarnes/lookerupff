@@ -241,6 +241,11 @@ view: purchase_event {
     sql: ${TABLE}.promotion_code ;;
   }
 
+  dimension: rank {
+    type: number
+    sql: RANK() OVER PARTITION(${TABLE}.user_id ORDER BY ${TABLE}.status_date DESC) ;;
+  }
+
   dimension_group: received {
     type: time
     timeframes: [
