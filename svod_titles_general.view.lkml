@@ -10,7 +10,7 @@ view: svod_titles_general {
     }
 
     measure: number_views {
-      type: number
+      type: sum
       sql: ${TABLE}.views ;;
     }
 
