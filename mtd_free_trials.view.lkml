@@ -25,7 +25,7 @@ a as
        SUM(paying_churn) OVER (PARTITION by cast(datepart(month,date(timestamp)) as varchar) order by timestamp asc rows between unbounded preceding and current row) AS Running_paid_churn
 
 from customers_analytics as a
-where extract(year from timestamp)=2021
+where extract(year from timestamp)=2022
 group by 1,
          free_trial_created,
          free_trial_converted,
@@ -37,18 +37,18 @@ order by timestamp desc),
 
 b as
 (select a1.timestamp,
-       case when cast(date_part('month',date(a1.timestamp)) as integer)=1 then (19500*(cast(date_part('day',date(a1.timestamp)) as integer))/30.44)
-            when cast(date_part('month',date(a1.timestamp)) as integer)=2 then (19500*(cast(date_part('day',date(a1.timestamp)) as integer))/30.44)
-            when cast(date_part('month',date(a1.timestamp)) as integer)=3 then (19500*(cast(date_part('day',date(a1.timestamp)) as integer))/30.44)
-            when cast(date_part('month',date(a1.timestamp)) as integer)=4 then (19500*(cast(date_part('day',date(a1.timestamp)) as integer))/30.44)
-            when cast(date_part('month',date(a1.timestamp)) as integer)=5 then (19500*(cast(date_part('day',date(a1.timestamp)) as integer))/30.44)
-            when cast(date_part('month',date(a1.timestamp)) as integer)=6 then (19500*(cast(date_part('day',date(a1.timestamp)) as integer))/30.44)
-            when cast(date_part('month',date(a1.timestamp)) as integer)=7 then (19500*(cast(date_part('day',date(a1.timestamp)) as integer))/30.44)
-            when cast(date_part('month',date(a1.timestamp)) as integer)=8 then (19500*(cast(date_part('day',date(a1.timestamp)) as integer))/30.44)
-            when cast(date_part('month',date(a1.timestamp)) as integer)=9 then (19500*(cast(date_part('day',date(a1.timestamp)) as integer))/30.44)
-            when cast(date_part('month',date(a1.timestamp)) as integer)=10 then (19500*(cast(date_part('day',date(a1.timestamp)) as integer))/30.44)
-            when cast(date_part('month',date(a1.timestamp)) as integer)=11 then (19500*(cast(date_part('day',date(a1.timestamp)) as integer))/30.44)
-            when cast(date_part('month',date(a1.timestamp)) as integer)=12 then (19500*(cast(date_part('day',date(a1.timestamp)) as integer))/30.44)
+       case when cast(date_part('month',date(a1.timestamp)) as integer)=1 then (28250*(cast(date_part('day',date(a1.timestamp)) as integer))/30.44)
+            when cast(date_part('month',date(a1.timestamp)) as integer)=2 then (28250*(cast(date_part('day',date(a1.timestamp)) as integer))/30.44)
+            when cast(date_part('month',date(a1.timestamp)) as integer)=3 then (28250*(cast(date_part('day',date(a1.timestamp)) as integer))/30.44)
+            when cast(date_part('month',date(a1.timestamp)) as integer)=4 then (28250*(cast(date_part('day',date(a1.timestamp)) as integer))/30.44)
+            when cast(date_part('month',date(a1.timestamp)) as integer)=5 then (28250*(cast(date_part('day',date(a1.timestamp)) as integer))/30.44)
+            when cast(date_part('month',date(a1.timestamp)) as integer)=6 then (28250*(cast(date_part('day',date(a1.timestamp)) as integer))/30.44)
+            when cast(date_part('month',date(a1.timestamp)) as integer)=7 then (28250*(cast(date_part('day',date(a1.timestamp)) as integer))/30.44)
+            when cast(date_part('month',date(a1.timestamp)) as integer)=8 then (28250*(cast(date_part('day',date(a1.timestamp)) as integer))/30.44)
+            when cast(date_part('month',date(a1.timestamp)) as integer)=9 then (28250*(cast(date_part('day',date(a1.timestamp)) as integer))/30.44)
+            when cast(date_part('month',date(a1.timestamp)) as integer)=10 then (28250*(cast(date_part('day',date(a1.timestamp)) as integer))/30.44)
+            when cast(date_part('month',date(a1.timestamp)) as integer)=11 then (28250*(cast(date_part('day',date(a1.timestamp)) as integer))/30.44)
+            when cast(date_part('month',date(a1.timestamp)) as integer)=12 then (28250*(cast(date_part('day',date(a1.timestamp)) as integer))/30.44)
             end as mtd_running_trials_target
 from customers_analytics as a1
 order by 1 desc)
