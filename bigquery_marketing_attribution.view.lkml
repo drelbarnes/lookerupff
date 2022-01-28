@@ -61,13 +61,130 @@ view: bigquery_marketing_attribution{
 
       ),
 
-      a as (
-      select *, row_number() over
-        (partition by user_id order by received_at {% parameter attribution_method %}) as row FROM joined_sites_conversion
-      )
+      joined_sites_anonymous as (
+        SELECT  j.anonymous_id
+      , j.uuid_ts
+      , p.user_id
+      , p.context_ip
+      , p.context_traits_cross_domain_id
+      , j.context_campaign_source as utm_source
+      , j.context_campaign_medium as utm_medium
+      , j.context_campaign_name as utm_name
+      , '' as utm_id
+      , j.context_campaign_content as utm_content
+      , 'site_matches' as event
+      , p.view
+      , p.context_page_referrer as referrer
+      , 'web' as platform
+      , '' as context_revenue
+      , j.received_at
+      , p.timestamp
+        FROM javascript_upff_home.pages AS j
+        INNER JOIN  javascript.pages AS p
+        ON j.anonymous_id = p.anonymous_id
+        WHERE ((( p.timestamp ) >= ((TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter attribution_window %} - 1) DAY))) AND
+( p.timestamp ) < ((TIMESTAMP_ADD(TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter attribution_window %} - 1) DAY), INTERVAL {% parameter attribution_window %} DAY)))))
+
+      ),
+
+      joined_sites_conversion_anonymous as (
+        SELECT j.anonymous_id
+      , j.uuid_ts
+      , p.user_id
+      , p.context_ip
+      , p.context_traits_cross_domain_id
+      , j.utm_source
+      , j.utm_medium
+      , j.utm_name
+      , '' as utm_id
+      , j.utm_content
+      , 'converisons' as event
+      , p.view
+      , p.referrer
+      , p.platform
+      , p.context_revenue as revenue
+      , j.received_at
+      , p.timestamp
+        FROM  joined_sites_anonymous AS j
+        INNER JOIN javascript.order_completed AS p
+        ON j.anonymous_id = p.anonymous_id
+        WHERE ((( p.timestamp ) >= ((TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter attribution_window %} - 1) DAY))) AND
+( p.timestamp ) < ((TIMESTAMP_ADD(TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter attribution_window %} - 1) DAY), INTERVAL {% parameter attribution_window %} DAY)))))
+
+      ),
+
+      joined_sites_cross_domain_id as (
+        SELECT  j.anonymous_id
+      , j.uuid_ts
+      , p.user_id
+      , p.context_ip
+      , p.context_traits_cross_domain_id
+      , j.context_campaign_source as utm_source
+      , j.context_campaign_medium as utm_medium
+      , j.context_campaign_name as utm_name
+      , '' as utm_id
+      , j.context_campaign_content as utm_content
+      , 'site_matches' as event
+      , p.view
+      , p.context_page_referrer as referrer
+      , 'web' as platform
+      , '' as context_revenue
+      , j.received_at
+      , p.timestamp
+        FROM javascript_upff_home.pages AS j
+        INNER JOIN  javascript.pages AS p
+        ON j.context_traits_cross_domain_id = p.context_traits_cross_domain_id
+        WHERE ((( p.timestamp ) >= ((TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter attribution_window %} - 1) DAY))) AND
+( p.timestamp ) < ((TIMESTAMP_ADD(TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter attribution_window %} - 1) DAY), INTERVAL {% parameter attribution_window %} DAY)))))
+
+      ),
+
+      joined_sites_conversion_cross_domain as (
+        SELECT j.anonymous_id
+      , j.uuid_ts
+      , p.user_id
+      , p.context_ip
+      , p.context_traits_cross_domain_id
+      , j.utm_source
+      , j.utm_medium
+      , j.utm_name
+      , '' as utm_id
+      , j.utm_content
+      , 'converisons' as event
+      , p.view
+      , p.referrer
+      , p.platform
+      , p.context_revenue as revenue
+      , j.received_at
+      , p.timestamp
+        FROM  joined_sites_cross_domain_id AS j
+        INNER JOIN javascript.order_completed AS p
+        ON j.context_traits_cross_domain_id = p.context_traits_cross_domain_id
+        WHERE ((( p.timestamp ) >= ((TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter attribution_window %} - 1) DAY))) AND
+( p.timestamp ) < ((TIMESTAMP_ADD(TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter attribution_window %} - 1) DAY), INTERVAL {% parameter attribution_window %} DAY)))))
+
+      ),
+
+      join_all_sources as (
+
+        SELECT * FROM joined_sites_conversion
+        UNION ALL
+        SELECT * FROM joined_sites_conversion_anonymous
+        UNION ALL
+        SELECT * FROM joined_sites_conversion_cross_domain
+
+      ),
 
 
-      select distinct *  FROM a
+      distinct_conversions as (
+      select distinct * FROM join_all_sources
+      ),
+
+      all_conversions as (select *, row_number() over
+        (partition by user_id order by received_at {% parameter attribution_method %}) as row FROM distinct_conversions)
+
+
+      select distinct *  FROM all_conversions
        ;;
 
 
