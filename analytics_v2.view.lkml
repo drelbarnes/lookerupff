@@ -47,8 +47,8 @@ group by a1.timestamp,a1.paying_churn)),
                      when extract(YEAR from a.timestamp)='2019' then 24268+((55000-24268)*(cast(datepart(dayofyear,date(a.timestamp)) as integer)-1)/365)
                      when extract(YEAR from a.timestamp)='2020' then 70039+((125000-70039)*(cast(datepart(dayofyear,date(a.timestamp)) as integer)-1)/365)
                      when extract(YEAR from a.timestamp)='2021' then 157586+((190000-157586)*(cast(datepart(dayofyear,date(a.timestamp)) as integer)-1)/365)
-                     when extract(YEAR from a.timestamp)='2022' then 243181+((339000-243181)*(cast(datepart(dayofyear,date(a.timestamp)) as integer)-1)/365) end as total_target, -- Edit this baseline
-                229371+((339000-229371)*(cast(datepart(dayofyear,date(a.timestamp)) as integer)+14)/365) as target_14_days_future, -- Edit this number to match total_target baseline
+                     when extract(YEAR from a.timestamp)='2022' then 243181+((339000-243181)*(cast(datepart(dayofyear,date(a.timestamp)) as integer)-1)/365) end as total_target, -- this baseline is paid subs + free trial
+                229371+((339000-229371)*(cast(datepart(dayofyear,date(a.timestamp)) as integer)+14)/365) as target_14_days_future, -- this baseline matches total_target baseline
                 cast(datepart(dayofyear,date(a.timestamp)) as integer)-1 as day_of_year,
                 cast(datepart(dayofyear,date(a.timestamp)) as integer)+14 as day_of_year_14_days,
                 case when extract(YEAR from a.timestamp)='2018' then 49000
