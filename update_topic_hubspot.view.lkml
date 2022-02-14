@@ -422,6 +422,7 @@ view: update_topic_hubspot {
       WHERE topic != hubspot_topic OR subscription_status != hubspot_status
       GROUP BY 1,2,3,4,5,6,7,8
       ORDER BY status_date ;;
+    sql_trigger_value: SELECT EXTRACT(HOUR FROM CURRENT_TIMESTAMP()) ;;
   }
 
   measure: count {
