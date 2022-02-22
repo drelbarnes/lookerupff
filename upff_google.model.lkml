@@ -177,7 +177,7 @@ explore:  bigquery_identity_resolution {
 
   join: bigquery_custom_marketing_spend {
     type: left_outer
-    sql_on: ${bigquery_identity_resolution.timestamp_date} = {$bigquery_custom_marketing_spend.timestamp_date} ;;
+    sql_on: ${bigquery_identity_resolution.timestamp_date} = ${bigquery_custom_marketing_spend.timestamp_date} ;;
     relationship: many_to_one
   }
 }
