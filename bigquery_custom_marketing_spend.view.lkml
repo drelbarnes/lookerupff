@@ -54,8 +54,10 @@ select * from m1
     drill_fields: [detail*]
   }
 
-  dimension_group: timestamp {
-    type: time
+
+
+  dimension: timestamp {
+    type: date
     sql: ${TABLE}.timestamp ;;
   }
 
@@ -101,6 +103,7 @@ select * from m1
 
   set: detail {
     fields: [
+      timestamp,
       source,
       ad_id,
       campaign_name,
