@@ -1,19 +1,129 @@
 view: analytics_v2 {
   derived_table: {
-    sql: with customers_analytics as (select analytics_timestamp as timestamp,
-       id,
-       existing_free_trials,
-       existing_paying,
-       free_trial_churn,
-       free_trial_converted,
-       free_trial_created,
-       paused_created,
-       paying_churn,
-       paying_created,
-       total_free_trials,
-       total_paying
-from php.get_analytics
-where date(sent_at)=current_date),
+    sql:
+      with get_analytics as (
+        select analytics_timestamp as timestamp,
+        id,
+        existing_free_trials, -- not used in derived table calcs
+        existing_paying,
+        free_trial_churn, -- not used in derived table calcs
+        free_trial_converted, -- not used in derived table calcs
+        free_trial_created,
+        paused_created, -- not used in derived table calcs
+        paying_churn,
+        paying_created,
+        total_free_trials, -- not used in derived table calcs
+        total_paying
+        from php.get_analytics
+        where date(sent_at)=current_date
+      ),
+      -- Bolting on Vimeo OTT active customer report as of 2021-12-23 to try to get more accurate sub counts
+      active_customer_report as (
+        -- The active_customers table only has accurate data from 2021-12-23 onwards.
+        with customers as (
+            select
+            trunc(report_date) as r_date
+            , user_id
+            , email
+            , subscriptions_in_free_trial
+            , RANK() over (PARTITION BY user_id ORDER BY trunc(report_date) ASC)
+            , tickets_is_subscriptions
+            , ticket_status
+            , tickets_subscription_frequency
+            , customer_video_notifications
+            from customers.active_customers
+            where trunc(report_date) >= '2021-12-23'
+        )
+        , trialists as (
+            select *
+            from customers
+            where subscriptions_in_free_trial = 'Yes' and tickets_is_subscriptions = 'Yes' and ticket_status = 'enabled'
+        )
+        , new_trials as (
+            select
+            count(user_id) as free_trial_created,
+            r_date
+            from trialists
+            where rank = 1 AND r_date > '2021-12-23'
+            group by r_date
+            order by r_date desc
+        )
+        , t as (
+            select
+            count(user_id) as free_trials,
+            r_date
+            from trialists
+            group by r_date
+            order by r_date desc
+        )
+        , paying as (
+            select *
+            from customers
+            where subscriptions_in_free_trial = 'No' and tickets_is_subscriptions = 'Yes' and ticket_status = 'enabled'
+        )
+        , set_cancellations as (
+            select * from trialists
+            intersect distinct
+            select * from paying
+        )
+        , bug_fix as (
+            select * from paying
+            EXCEPT DISTINCT
+            select * from set_cancellations
+        )
+        , p as (
+            select
+            count(user_id) as paying_subs,
+            r_date
+            from bug_fix
+            where subscriptions_in_free_trial = 'No' and tickets_is_subscriptions = 'Yes' and ticket_status = 'enabled'
+            group by r_date
+            order by r_date desc
+        )
+        select p.r_date,
+          lag(free_trials, 1) OVER(ORDER BY t.r_date asc) AS existing_free_trials,
+          lag(paying_subs, 1) OVER(ORDER BY p.r_date asc) AS existing_paying,
+          new_trials.free_trial_created,
+          t.free_trials,
+          p.paying_subs
+        from p
+        inner join t
+        on t.r_date = p.r_date
+        inner join new_trials
+        on new_trials.r_date = p.r_date
+      ),
+      customers_analytics as (
+        select get_analytics.timestamp,
+        get_analytics.id,
+        CASE
+          when get_analytics.timestamp < '2021-12-23' then get_analytics.existing_free_trials
+          else active_customer_report.existing_free_trials
+          end as existing_free_trials,
+        CASE
+          when get_analytics.timestamp < '2021-12-23' then get_analytics.existing_paying
+          else active_customer_report.existing_paying
+          end as existing_paying,
+        get_analytics.free_trial_churn, -- not used in derived table calcs
+        get_analytics.free_trial_converted, -- not used in derived table calcs
+        CASE
+          when get_analytics.timestamp < '2021-12-23' then get_analytics.free_trial_created
+          else active_customer_report.free_trial_created
+          end as free_trial_created,
+        get_analytics.paused_created, -- not used in derived table calcs
+        get_analytics.paying_churn,
+        get_analytics.paying_created,
+        CASE
+          when get_analytics.timestamp < '2021-12-23' then get_analytics.total_free_trials
+          else active_customer_report.free_trials
+          end as total_free_trials,
+        CASE
+          when get_analytics.timestamp < '2021-12-23' then get_analytics.total_paying
+          else active_customer_report.paying_subs
+          end as total_paying
+        from get_analytics
+        inner join active_customer_report
+        on active_customer_report.r_date = get_analytics.timestamp
+      ),
 
     a as (select a.timestamp, ROW_NUMBER() OVER(ORDER BY a.timestamp desc) AS Row
            from customers_analytics as a),
