@@ -174,6 +174,12 @@ explore:  bigquery_identity_resolution {
       ;;
     relationship: many_to_many
   }
+
+  join: bigquery_custom_marketing_spend {
+    type: left_outer
+    sql_on: ${bigquery_identity_resolution.timestamp_date} = {$bigquery_custom_marketing_spend.timestamp_date} ;;
+    relationship: many_to_one
+  }
 }
 
 explore: purchase_event {}
