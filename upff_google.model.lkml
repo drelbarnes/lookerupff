@@ -154,6 +154,13 @@ include: "/views/purchase_event.view.lkml"
 include: "bigquery_identity_resolution.view.lkml"
 include: "bigquery_marketing_attribution.view.lkml"
 include: "bigquery_order_completed.view.lkml"
+include: "bigquery_custom_marketing_spend.view.lkml"
+
+
+explore: bigquery_custom_marketing_spend
+{
+  label: "Marketing Spend"
+}
 
 explore: bigquery_order_completed {
   label: "Order Completed"
@@ -166,6 +173,12 @@ explore:  bigquery_identity_resolution {
     sql_on: ${bigquery_identity_resolution.anonymous_id} = ${bigquery_marketing_attribution.anonymous_id}
       ;;
     relationship: many_to_many
+  }
+
+  join: bigquery_custom_marketing_spend {
+    type: left_outer
+    sql_on: ${bigquery_identity_resolution.timestamp_date} = ${bigquery_custom_marketing_spend.timestamp} ;;
+    relationship: many_to_one
   }
 }
 
