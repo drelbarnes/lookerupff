@@ -2,7 +2,8 @@ view: ltv_cpa{
     derived_table: {
       sql:
 /*Pull most recent ingestion from analytics table*/
-        with get_analytics as (select analytics_timestamp as timestamp,
+        with get_analytics as (
+        select analytics_timestamp as timestamp,
        existing_free_trials,
        existing_paying,
        free_trial_churn,
@@ -92,7 +93,6 @@ where date(sent_at)=current_date),
       ),
       customers_analytics as (
         select get_analytics.timestamp,
-        get_analytics.id,
         CASE
           when get_analytics.timestamp < '2021-12-23' then get_analytics.existing_free_trials
           else active_customer_report.existing_free_trials
