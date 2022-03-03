@@ -182,6 +182,13 @@ explore:  bigquery_identity_resolution {
   }
 }
 
+datagroup: purchase_event_datagroup {
+  sql_trigger: SELECT MAX(status_date) FROM `up-faith-and-family-216419.http_api.purchase_event` ;;
+  max_cache_age: "1 hours"
+  label: "New Purchase Event"
+  description: "Triggered when new purchase event is added to purchase event table"
+}
+
 explore: purchase_event {}
 explore: hubspot_contacts {}
 

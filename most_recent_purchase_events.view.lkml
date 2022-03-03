@@ -1,5 +1,6 @@
 view: most_recent_purchase_events {
   derived_table: {
+    datagroup_trigger: purchase_event_datagroup
     sql: with purchase_events as (
       SELECT user_id
       , email
@@ -21,7 +22,7 @@ view: most_recent_purchase_events {
       )
       -- only returns rows that have the most recent topic, as flagged by the filter table.
       SELECT * FROM filter WHERE n = 1;;
-      sql_trigger_value: SELECT EXTRACT(HOUR FROM CURRENT_TIMESTAMP()) ;;
+      # sql_trigger_value: SELECT EXTRACT(HOUR FROM CURRENT_TIMESTAMP()) ;;
   }
 
   measure: count {
