@@ -13,7 +13,7 @@ view: most_recent_purchase_events {
       , moptin as subscriber_marketing_opt_in
       , status_date
       FROM `up-faith-and-family-216419.http_api.purchase_event`
-      WHERE ( status_date ) < ((TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), MINUTE), INTERVAL 0 MINUTE))) AND ( status_date ) >= ((TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), HOUR), INTERVAL -3 HOUR)))
+      WHERE status_date >= ((TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), MINUTE), INTERVAL -180 MINUTE)))
       )
       , filter as (
       SELECT *
