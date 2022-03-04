@@ -183,7 +183,7 @@ explore:  bigquery_identity_resolution {
 }
 
 datagroup: purchase_event_datagroup {
-  sql_trigger: SELECT EXTRACT(HOUR FROM CURRENT_TIMESTAMP()) ;;
+  sql_trigger: SELECT max(status_date) FROM `up-faith-and-family-216419.http_api.purchase_event` ;;
   max_cache_age: "5 minutes"
   label: "New Purchase Event"
   description: "Triggered every hour, on the hour"
@@ -197,7 +197,9 @@ explore: update_topic_hubspot {}
 
 explore:  max_churn_score {}
 
-explore:  most_recent_purchase_events {}
+explore:  most_recent_purchase_events {
+  persist_with: purchase_event_datagroup
+}
 
 explore: bigquery_flight29 {
   label: "Ad Hoc Request 8-25-21"
