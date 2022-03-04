@@ -184,7 +184,7 @@ explore:  bigquery_identity_resolution {
 
 datagroup: purchase_event_datagroup {
   sql_trigger: SELECT EXTRACT(HOUR FROM CURRENT_TIMESTAMP()) ;;
-  max_cache_age: "1 hours"
+  max_cache_age: "5 minutes"
   label: "New Purchase Event"
   description: "Triggered every hour, on the hour"
 }
