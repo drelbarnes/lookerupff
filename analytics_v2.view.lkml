@@ -20,79 +20,70 @@ view: analytics_v2 {
       -- Bolting on Vimeo OTT active customer report as of 2021-12-23 to try to get more accurate sub counts
       active_customer_report as (
         -- The active_customers table only has accurate data from 2021-12-23 onwards.
-        with customers as (
-            select
-            trunc(report_date) as r_date
-            , user_id
-            , email
-            , subscriptions_in_free_trial
-            , RANK() over (PARTITION BY user_id ORDER BY trunc(report_date) ASC)
-            , tickets_is_subscriptions
-            , ticket_status
-            , tickets_subscription_frequency
-            , customer_video_notifications
-            from customers.active_customers
-            where trunc(report_date) >= '2021-12-23'
-        )
-        , trialists as (
-            select *
-            from customers
-            where subscriptions_in_free_trial = 'Yes' and tickets_is_subscriptions = 'Yes' and ticket_status = 'enabled'
-        )
-        , new_trials as (
-            select
-            count(user_id) as free_trial_created,
-            r_date
-            from trialists
-            where rank = 1 AND r_date > '2021-12-23'
-            group by r_date
-            order by r_date desc
-        )
-        , t as (
-            select
-            count(user_id) as free_trials,
-            r_date
-            from trialists
-            group by r_date
-            order by r_date desc
-        )
-        , paying as (
-            select *
-            from customers
-            where subscriptions_in_free_trial = 'No' and tickets_is_subscriptions = 'Yes' and ticket_status = 'enabled'
-        )
-        , set_cancellations as (
-            select * from trialists
-            intersect distinct
-            select * from paying
-        )
-        , bug_fix as (
-            select * from paying
-            EXCEPT DISTINCT
-            select * from set_cancellations
-        )
-        , p as (
-            select
-            count(user_id) as paying_subs,
-            r_date
-            from bug_fix
-            where subscriptions_in_free_trial = 'No' and tickets_is_subscriptions = 'Yes' and ticket_status = 'enabled'
-            group by r_date
-            order by r_date desc
-        )
-        select p.r_date,
-          lag(free_trials, 1) OVER(ORDER BY t.r_date asc) AS existing_free_trials,
-          lag(paying_subs, 1) OVER(ORDER BY p.r_date asc) AS existing_paying,
-          new_trials.free_trial_created,
-          t.free_trials,
-          p.paying_subs
-        from p
-        inner join t
-        on t.r_date = p.r_date
-        inner join new_trials
-        on new_trials.r_date = p.r_date
-      ),
-      customers_analytics as (
+      with customers as (
+      select
+      trunc(report_date) as r_date
+      , trunc(dateadd(day,-1,trunc(report_date))) as date_offset
+      , user_id
+      , email
+      , subscriptions_in_free_trial
+      , RANK() over (PARTITION BY user_id ORDER BY trunc(report_date) ASC)
+      , tickets_is_subscriptions
+      , ticket_status
+      , tickets_subscription_frequency
+      , customer_video_notifications
+      from customers.active_customers
+      where trunc(report_date) >= '2021-12-23'
+      )
+      , trialists as (
+      select *
+      from customers
+      where subscriptions_in_free_trial = 'Yes' and tickets_is_subscriptions = 'Yes' and ticket_status = 'enabled'
+      )
+      , new_trials as (
+      select
+      count(user_id) as free_trial_created,
+      date_offset
+      from trialists
+      where rank = 1 AND date_offset > '2021-12-24'
+      group by date_offset
+      order by date_offset desc
+      )
+      , t as (
+      select
+      count(user_id) as free_trials,
+      date_offset
+      from trialists
+      group by date_offset
+      order by date_offset desc
+      )
+      , paying as (
+      select *
+      from customers
+      where subscriptions_in_free_trial = 'No' and tickets_is_subscriptions = 'Yes' and ticket_status = 'enabled'
+      )
+      , p as (
+      select
+      count(user_id) as paying_subs,
+      date_offset
+      from paying
+      where subscriptions_in_free_trial = 'No' and tickets_is_subscriptions = 'Yes' and ticket_status = 'enabled'
+      group by date_offset
+      order by date_offset desc
+      )
+      select p.date_offset,
+      lag(free_trials, 1) OVER(ORDER BY t.date_offset asc) AS existing_free_trials,
+      lag(paying_subs, 1) OVER(ORDER BY p.date_offset asc) AS existing_paying,
+      new_trials.free_trial_created,
+      t.free_trials,
+      p.paying_subs
+      from p
+      inner join t
+      on t.date_offset = p.date_offset
+      inner join new_trials
+      on new_trials.date_offset = p.date_offset
+      )
+      , customers_analytics as (
         select get_analytics.timestamp,
         get_analytics.id,
         CASE
@@ -122,7 +113,7 @@ view: analytics_v2 {
           end as total_paying
         from get_analytics
         inner join active_customer_report
-        on active_customer_report.r_date = get_analytics.timestamp
+        on active_customer_report.date_offset = get_analytics.timestamp
       ),
 
     a as (select a.timestamp, ROW_NUMBER() OVER(ORDER BY a.timestamp desc) AS Row
