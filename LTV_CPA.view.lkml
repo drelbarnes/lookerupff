@@ -84,7 +84,6 @@ where date(sent_at)=current_date),
       )
       , customers_analytics as (
         select get_analytics.timestamp,
-        get_analytics.id,
         CASE
           when get_analytics.timestamp < '2021-12-23' then get_analytics.existing_free_trials
           else active_customer_report.existing_free_trials
