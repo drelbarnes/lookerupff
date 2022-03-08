@@ -42,7 +42,7 @@ view: daily_spend {
       select get_analytics.timestamp,
       get_analytics.existing_free_trials,
       CASE
-        when get_analytics.timestamp < '2021-12-23' then get_analytics.existing_paying
+        when get_analytics.timestamp < '2021-12-24' then get_analytics.existing_paying
         else p_agg.existing_paying
         end as existing_paying,
       get_analytics.free_trial_churn,
@@ -53,7 +53,7 @@ view: daily_spend {
       get_analytics.paying_created,
       get_analytics.total_free_trials,
       CASE
-        when get_analytics.timestamp < '2021-12-23' then get_analytics.total_paying
+        when get_analytics.timestamp < '2021-12-24' then get_analytics.total_paying
         else p_agg.paying_subs
         end as total_paying
       from get_analytics
