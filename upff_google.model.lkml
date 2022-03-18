@@ -201,6 +201,21 @@ explore:  most_recent_purchase_events {
   persist_with: purchase_event_datagroup
 }
 
+explore: cross_promotion {
+  view_name: bigquery_identity_resolution
+  join: bigquery_marketing_attribution {
+    type: left_outer
+    sql_on: ${bigquery_identity_resolution.anonymous_id} = ${bigquery_marketing_attribution.anonymous_id}
+      ;;
+    relationship: many_to_many
+  }
+  join: bigquery_custom_marketing_spend {
+    type: left_outer
+    sql_on: ${bigquery_identity_resolution.timestamp_date} = ${bigquery_custom_marketing_spend.timestamp} ;;
+    relationship: many_to_one
+  }
+}
+
 explore: bigquery_flight29 {
   label: "Ad Hoc Request 8-25-21"
 }
