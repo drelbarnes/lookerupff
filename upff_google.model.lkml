@@ -214,6 +214,11 @@ explore: cross_promotion {
     sql_on: ${bigquery_identity_resolution.timestamp_date} = ${bigquery_custom_marketing_spend.timestamp} ;;
     relationship: many_to_one
   }
+  join: purchase_event {
+    type:  left_outer
+    sql_on:  ${purchase_event.user_id} = ${bigquery_marketing_attribution.user_id};;
+    relationship: many_to_one
+  }
 }
 
 explore: bigquery_flight29 {
