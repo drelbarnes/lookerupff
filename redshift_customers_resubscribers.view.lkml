@@ -34,8 +34,17 @@ view: redshift_customers_resubscribers {
     sql: ${TABLE}.latest_ticket_id ;;
   }
 
-  dimension: latest_ticket_created {
-    type: string
+  dimension_group: latest_ticket_created {
+    type: time
+    timeframes: [
+      raw,
+      time,
+      date,
+      week,
+      month,
+      quarter,
+      year
+    ]
     sql: ${TABLE}.latest_ticket_created ;;
   }
 
@@ -46,7 +55,6 @@ view: redshift_customers_resubscribers {
       latest_ticket_status,
       total_ticket_count,
       latest_ticket_id,
-      latest_ticket_created
     ]
   }
 }
