@@ -11,11 +11,13 @@ view: redshift_customers_views_by_user {
 
   dimension: user_id {
     type: number
+    tags: ["user_id"]
     sql: ${TABLE}.user_id ;;
   }
 
   dimension: email {
     type: string
+    tags: ["email"]
     sql: ${TABLE}.email ;;
   }
 
