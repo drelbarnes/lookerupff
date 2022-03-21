@@ -1,20 +1,66 @@
 view: ltv_cpa{
     derived_table: {
-      sql:
-/*Pull most recent ingestion from analytics table*/
-        with customers_analytics as (select analytics_timestamp as timestamp,
-       existing_free_trials,
-       existing_paying,
-       free_trial_churn,
-       free_trial_converted,
-       free_trial_created,
-       paused_created,
-       paying_churn,
-       paying_created,
-       total_free_trials,
-       total_paying
-from php.get_analytics
-where date(sent_at)=current_date),
+    sql: with get_analytics as (
+      select analytics_timestamp as timestamp,
+      existing_free_trials,
+      existing_paying,
+      free_trial_churn,
+      free_trial_converted,
+      free_trial_created,
+      paused_created,
+      paying_churn,
+      paying_created,
+      total_free_trials,
+      total_paying
+      from php.get_analytics
+      where date(sent_at)=current_date
+      )
+      , active_customers as (
+      select trunc(report_date) as r_date
+      , user_id
+      , subscriptions_in_free_trial
+      , tickets_is_subscriptions
+      , ticket_status
+      from customers.active_customers
+      where trunc(report_date) >= '2021-12-23'
+      )
+      , p as (
+      select r_date,
+      user_id
+      from active_customers
+      where subscriptions_in_free_trial = 'No' and tickets_is_subscriptions = 'Yes' and ticket_status = 'enabled'
+      )
+      , p_agg as (
+      select
+      count(user_id) as paying_subs,
+      lag(paying_subs, 1) OVER(ORDER BY r_date asc) AS existing_paying,
+      r_date
+      from p
+      group by r_date
+      )
+      , customers_analytics as (
+      select get_analytics.timestamp,
+      get_analytics.existing_free_trials,
+      CASE
+        when get_analytics.timestamp < '2021-12-24' then get_analytics.existing_paying
+        else p_agg.existing_paying
+        end as existing_paying,
+      get_analytics.free_trial_churn,
+      get_analytics.free_trial_converted,
+      get_analytics.free_trial_created,
+      get_analytics.paused_created,
+      get_analytics.paying_churn,
+      get_analytics.paying_created,
+      get_analytics.total_free_trials,
+      CASE
+        when get_analytics.timestamp < '2021-12-24' then get_analytics.total_paying
+        else p_agg.paying_subs
+        end as total_paying
+      from get_analytics
+      full join p_agg
+      on p_agg.r_date = get_analytics.timestamp
+      ),
+
  apple_perf as (select start_date as date_start,
                             sum(total_local_spend_amount) as spend
                      from php.get_apple_search_ads_campaigns

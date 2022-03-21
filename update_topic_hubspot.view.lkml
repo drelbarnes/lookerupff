@@ -1,5 +1,6 @@
 view: update_topic_hubspot {
   derived_table: {
+    datagroup_trigger: purchase_event_datagroup
     sql: -- This table contains all records of events that were sent by the Vimeo OTT webhook but not by our webhook
       with missing_records as (
       -- the tables below (hn, wn and jn) serve to join the Vimeo OTT webhook tables with their respective records from the http_api table broken out by event
@@ -422,7 +423,7 @@ view: update_topic_hubspot {
       WHERE topic != hubspot_topic OR subscription_status != hubspot_status
       GROUP BY 1,2,3,4,5,6,7,8
       ORDER BY status_date ;;
-    sql_trigger_value: SELECT EXTRACT(HOUR FROM CURRENT_TIMESTAMP()) ;;
+    # sql_trigger_value: SELECT EXTRACT(HOUR FROM CURRENT_TIMESTAMP()) ;;
   }
 
   measure: count {

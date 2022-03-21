@@ -114,6 +114,7 @@ view: purchase_event {
 
   dimension: email {
     type: string
+    tags: ["email"]
     sql: ${TABLE}.email ;;
   }
 
@@ -378,6 +379,7 @@ view: purchase_event {
 
   dimension: user_id {
     type: string
+    tags: ["user_id"]
     sql: ${TABLE}.user_id ;;
   }
 
