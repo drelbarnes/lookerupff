@@ -15,6 +15,12 @@ view: other_marketing_spend {
     sql: ${TABLE}.date ;;
   }
 
+  dimension: user_id {
+    type: number
+    tags: ["user_id"]
+    sql: 1 ;;
+  }
+
   dimension: spend {
     type: number
     sql: ${TABLE}.spend ;;
