@@ -100,7 +100,7 @@ view: daily_spend {
       others_perf as (
         select date_start
         , sum(spend) as spend
-        , "others" as channel
+        , 'others' as channel
         from looker.get_other_marketing_spend
         group by 1,3
       ),
