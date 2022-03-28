@@ -155,7 +155,11 @@ include: "bigquery_identity_resolution.view.lkml"
 include: "bigquery_marketing_attribution.view.lkml"
 include: "bigquery_order_completed.view.lkml"
 include: "bigquery_custom_marketing_spend.view.lkml"
+include: "other_marketing_spend.view.lkml"
 
+explore: other_marketing_spend {
+  label:"Other Marketing Spend"
+}
 
 explore: bigquery_custom_marketing_spend
 {

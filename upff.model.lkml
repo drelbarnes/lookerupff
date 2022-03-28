@@ -63,6 +63,16 @@ include: "redshift_custom_cross_platform_logins.view"
 include: "redshift_php_get_analytics_real_time.view"
 include: "redshift_javascript_search_executed.view"
 include: "redshift_active_customers.view"
+include: "redshift_customers_resubscribers.view"
+include: "redshift_customers_views_by_user.view"
+
+explore: redshift_customers_views_by_user {
+  label: "Views By User"
+}
+
+explore: redshift_customers_resubscribers{
+  label: "Re-Subscribers"
+}
 
 explore: redshift_active_customers {
   label: "Active Customers"
