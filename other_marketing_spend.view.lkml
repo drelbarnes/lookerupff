@@ -23,7 +23,7 @@ view: other_marketing_spend {
 
   dimension: spend {
     type: number
-    sql: ${TABLE}.spend ;;
+    sql: CAST(${TABLE}.spend as FLOAT64) ;;
   }
 
   dimension: channel {
