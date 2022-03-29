@@ -95,10 +95,13 @@ view: ltv_cpa{
         group by 1
       ),
 
+      /* Adding other marketing spend provided by Ribbow */
       others_perf as (
         select date_start
         , sum(spend) as spend
         from looker.get_other_marketing_spend
+        where sent_at = (select max(sent_at) from looker.get_other_marketing_spend)
+        and date_start is not null
         group by 1
       ),
 
@@ -135,12 +138,14 @@ view: ltv_cpa{
         spend
         from others_perf
       ),
+
       /*Aggregate spend by date*/
       t2 as (
         select date_start as timestamp,
         sum(spend) as spend
         from t1 group by date_start
       ),
+
       /*Create rolling 30 day spend*/
       t3 as (
         select a1.timestamp,
@@ -151,6 +156,7 @@ view: ltv_cpa{
         group by a1.timestamp,a1.spend
       ),
 
+      /* add row numbers with a 14 day offset for CPA calculation */
       t4 as (
         select *,
         ROW_NUMBER() OVER(ORDER BY t3.timestamp desc) AS Row
@@ -159,7 +165,6 @@ view: ltv_cpa{
       ),
 
       /* trial to paid conversions over last 30 days */
-
       t5 as (
         select a1.timestamp,
         ROW_NUMBER() OVER(ORDER BY a1.timestamp desc) AS Row,
@@ -215,7 +220,6 @@ view: ltv_cpa{
       ),
 
       /*Manually update the LTV/CPA ratio target*/
-
       t8 as (
         select t6.timestamp,
         CPA,
