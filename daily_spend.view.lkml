@@ -99,10 +99,12 @@ view: daily_spend {
 
       others_perf as (
         select date_start
-        , sum(spend) as spend
         , 'others' as channel
+        , sum(spend) as spend
         from looker.get_other_marketing_spend
-        group by 1,3
+        where sent_at = (select max(sent_at) from looker.get_other_marketing_spend)
+        and date_start is not null
+        group by 1, 2
       ),
 
       t1 as (
