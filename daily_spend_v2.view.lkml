@@ -91,6 +91,8 @@ view: daily_spend_v2 {
         select date_start
         , sum(spend) as spend
         from looker.get_other_marketing_spend
+        where sent_at = (select max(sent_at) from looker.get_other_marketing_spend)
+        and date_start is not null
         group by 1
       ),
 
