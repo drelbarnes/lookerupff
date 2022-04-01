@@ -56,7 +56,7 @@ view: daily_spend_v2 {
       get_analytics.total_free_trials,
       CASE
         when get_analytics.timestamp < '2021-12-24'
-          or p_agg.existing_paying is null or p_agg.existing_paying = 0
+          or p_agg.paying_subs is null or p_agg.paying_subs = 0
           then get_analytics.total_paying
         else p_agg.paying_subs
         end as total_paying
