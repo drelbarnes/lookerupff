@@ -16,41 +16,24 @@ view: analytics_v2 {
       where date(sent_at)=current_date
     )
     , distinct_events as (
-      select distinct user_id, action, status, event_created_at
+      select distinct user_id, action, status, event_created_at, report_date
       from customers.all_customers
     )
-    , ranked_events as (
-      select *
-      , row_number() over (partition by user_id order by event_created_at desc) as rn
-      from distinct_events
-    )
     , paying as (
-      select *
-      from ranked_events
-      where rn = 1
-      and action = 'subscription'
+      select report_date
+      , count(distinct user_id) as total_paying
+      from distinct_events
+      where action = 'subscription'
       and status = 'enabled'
+      group by report_date
     )
     , trials as (
-      select *
-      from ranked_events
-      where rn = 1
-      and action = 'subscription'
+      select report_date
+      , count(distinct user_id) as total_free_trials
+      from distinct_events
+      where action = 'subscription'
       and status = 'free_trial'
-    )
-    , p_agg as (
-      select
-      count(user_id) as total_paying,
-      current_date as r_date
-      from paying
-      group by r_date
-    )
-    , t_agg as (
-      select
-      count(user_id) as total_free_trials,
-      current_date as r_date
-      from trials
-      group by r_date
+      group by report_date
     )
     , customers_analytics as (
     select get_analytics.timestamp,
@@ -62,13 +45,13 @@ view: analytics_v2 {
     get_analytics.paused_created,
     get_analytics.paying_churn,
     get_analytics.paying_created,
-    COALESCE(t_agg.total_free_trials, get_analytics.total_free_trials) as total_free_trials,
-    COALESCE(p_agg.total_paying, get_analytics.total_paying) as total_paying
+    COALESCE(trials.total_free_trials, get_analytics.total_free_trials) as total_free_trials,
+    COALESCE(paying.total_paying, get_analytics.total_paying) as total_paying
     from get_analytics
-    full join p_agg
-    on p_agg.r_date = get_analytics.timestamp
-    full join t_agg
-    on t_agg.r_date = get_analytics.timestamp
+    full join paying
+    on paying.report_date = trunc(get_analytics.timestamp)
+    full join trials
+    on trials.report_date = trunc(get_analytics.timestamp)
     ),
 
     a as (select a.timestamp, ROW_NUMBER() OVER(ORDER BY a.timestamp desc) AS Row
