@@ -15,54 +15,60 @@ view: analytics_v2 {
       from php.get_analytics
       where date(sent_at)=current_date
     )
-    , active_customers as (
-      select trunc(report_date) as r_date
-      , user_id
-      , subscriptions_in_free_trial
-      , tickets_is_subscriptions
-      , ticket_status
-      from customers.active_customers
-      where trunc(report_date) >= '2021-12-23'
+    , distinct_events as (
+      select distinct user_id, action, status, event_created_at
+      from customers.all_customers
     )
-    , p as (
-      select r_date,
-      user_id
-      from active_customers
-      where subscriptions_in_free_trial = 'No' and tickets_is_subscriptions = 'Yes' and ticket_status = 'enabled'
+    , ranked_events as (
+      select *
+      , row_number() over (partition by user_id order by event_created_at desc) as rn
+      from distinct_events
+    )
+    , paying as (
+      select *
+      from ranked_events
+      where rn = 1
+      and action = 'subscription'
+      and status = 'enabled'
+    )
+    , trials as (
+      select *
+      from ranked_events
+      where rn = 1
+      and action = 'subscription'
+      and status = 'free_trial'
     )
     , p_agg as (
       select
-      count(user_id) as paying_subs,
-      lag(paying_subs, 1) OVER(ORDER BY r_date asc) AS existing_paying,
-      r_date
-      from p
+      count(user_id) as total_paying,
+      current_date as r_date
+      from paying
+      group by r_date
+    )
+    , t_agg as (
+      select
+      count(user_id) as total_free_trials,
+      current_date as r_date
+      from trials
       group by r_date
     )
     , customers_analytics as (
     select get_analytics.timestamp,
     get_analytics.existing_free_trials,
-    CASE
-      when get_analytics.timestamp < '2021-12-24'
-        or p_agg.existing_paying is null or p_agg.existing_paying = 0
-        then get_analytics.existing_paying
-      else p_agg.existing_paying
-      end as existing_paying,
+    get_analytics.existing_paying,
     get_analytics.free_trial_churn,
     get_analytics.free_trial_converted,
     get_analytics.free_trial_created,
     get_analytics.paused_created,
     get_analytics.paying_churn,
     get_analytics.paying_created,
-    get_analytics.total_free_trials,
-    CASE
-      when get_analytics.timestamp < '2021-12-24'
-        or p_agg.paying_subs is null or p_agg.paying_subs = 0
-        then get_analytics.total_paying
-      else p_agg.paying_subs
-      end as total_paying
+    COALESCE(t_agg.total_free_trials, get_analytics.total_free_trials) as total_free_trials,
+    COALESCE(p_agg.total_paying, get_analytics.total_paying) as total_paying
     from get_analytics
     full join p_agg
     on p_agg.r_date = get_analytics.timestamp
+    full join t_agg
+    on t_agg.r_date = get_analytics.timestamp
     ),
 
     a as (select a.timestamp, ROW_NUMBER() OVER(ORDER BY a.timestamp desc) AS Row
