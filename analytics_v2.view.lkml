@@ -45,8 +45,8 @@ view: analytics_v2 {
     get_analytics.paused_created,
     get_analytics.paying_churn,
     get_analytics.paying_created,
-    COALESCE(trials.total_free_trials, get_analytics.total_free_trials) as total_free_trials,
-    COALESCE(paying.total_paying, get_analytics.total_paying) as total_paying
+    COALESCE(get_analytics.total_free_trials, get_analytics.total_free_trials) as total_free_trials,
+    COALESCE(get_analytics.total_paying, get_analytics.total_paying) as total_paying
     from get_analytics
     full join paying
     on paying.report_date = trunc(get_analytics.timestamp)
