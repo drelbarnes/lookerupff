@@ -158,6 +158,12 @@ include: "bigquery_custom_marketing_spend.view.lkml"
 include: "other_marketing_spend.view.lkml"
 include: "counties.view.lkml"
 
+include: "/views/multi_touch_attribution.view.lkml"
+
+explore: multi_touch_attribution {
+  label: "Multi-touch Attribution (Dev)"
+}
+
 explore: counties {
   label: "Geo Location"
 }
