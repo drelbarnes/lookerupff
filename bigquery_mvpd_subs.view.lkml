@@ -1,6 +1,15 @@
 view: bigquery_mvpd_subs {
   derived_table: {
-    sql: select amazon, comcast, d2c, ifnull(dish_sling,0)+ifnull(cox,0)+ifnull(roku,0)+ifnull(appletv,0) as allothers, date(date) as date from svod_titles.mvpd_subs;;
+    sql:
+      select
+        amazon,
+        comcast,
+        d2c,
+        ifnull(dish_sling,0)+ifnull(cox,0)+ifnull(roku,0)+ifnull(appletv,0) as allothers,
+        date(date) as date,
+        month,
+        year
+      from svod_titles.mvpd_subs;;
   }
 
   dimension: amazon {
@@ -26,6 +35,16 @@ view: bigquery_mvpd_subs {
   dimension: date {
     type: date
     sql: timestamp(${TABLE}.date) ;;
+  }
+
+  dimension: month {
+    type: number
+    sql: ${TABLE}.month ;;
+  }
+
+  dimension: year {
+    type: number
+    sql: ${TABLE}.year ;;
   }
 
   measure: amazon_ {
