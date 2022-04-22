@@ -1,5 +1,6 @@
 view: most_recent_purchase_events {
   derived_table: {
+    datagroup_trigger: purchase_event_datagroup
     sql: with purchase_events as (
       SELECT user_id
       , email
@@ -12,7 +13,7 @@ view: most_recent_purchase_events {
       , moptin as subscriber_marketing_opt_in
       , status_date
       FROM `up-faith-and-family-216419.http_api.purchase_event`
-      WHERE ( status_date ) < ((TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), MINUTE), INTERVAL 0 MINUTE))) AND ( status_date ) >= ((TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), HOUR), INTERVAL -3 HOUR)))
+      WHERE status_date >= ((TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), MINUTE), INTERVAL -180 MINUTE)))
       )
       , filter as (
       SELECT *
@@ -21,7 +22,7 @@ view: most_recent_purchase_events {
       )
       -- only returns rows that have the most recent topic, as flagged by the filter table.
       SELECT * FROM filter WHERE n = 1;;
-      sql_trigger_value: SELECT EXTRACT(HOUR FROM CURRENT_TIMESTAMP()) ;;
+      # sql_trigger_value: SELECT EXTRACT(HOUR FROM CURRENT_TIMESTAMP()) ;;
   }
 
   measure: count {

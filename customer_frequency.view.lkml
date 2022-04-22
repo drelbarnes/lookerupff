@@ -4,7 +4,7 @@ view: customer_frequency {
                  count(distinct case when subscription_frequency='yearly' then user_id end) as annual_signups,
                  count(distinct case when subscription_frequency='monthly' then user_id end) as monthly_signups
 from http_api.purchase_event
-where topic in ('customer.created','customer.product.free_trial_created')
+where topic in ('customer.product.free_trial_created')
 group by 1
  ;;
   }

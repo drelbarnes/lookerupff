@@ -154,6 +154,22 @@ include: "/views/purchase_event.view.lkml"
 include: "bigquery_identity_resolution.view.lkml"
 include: "bigquery_marketing_attribution.view.lkml"
 include: "bigquery_order_completed.view.lkml"
+include: "bigquery_custom_marketing_spend.view.lkml"
+include: "other_marketing_spend.view.lkml"
+include: "counties.view.lkml"
+
+explore: counties {
+  label: "Geo Location"
+}
+
+explore: other_marketing_spend {
+  label:"Other Marketing Spend"
+}
+
+explore: bigquery_custom_marketing_spend
+{
+  label: "Marketing Spend"
+}
 
 explore: bigquery_order_completed {
   label: "Order Completed"
@@ -167,6 +183,19 @@ explore:  bigquery_identity_resolution {
       ;;
     relationship: many_to_many
   }
+
+  join: bigquery_custom_marketing_spend {
+    type: left_outer
+    sql_on: ${bigquery_identity_resolution.timestamp_date} = ${bigquery_custom_marketing_spend.timestamp} ;;
+    relationship: many_to_one
+  }
+}
+
+datagroup: purchase_event_datagroup {
+  sql_trigger: SELECT max(status_date) FROM `up-faith-and-family-216419.http_api.purchase_event` ;;
+  max_cache_age: "5 minutes"
+  label: "New Purchase Event"
+  description: "Triggered every hour, on the hour"
 }
 
 explore: purchase_event {}
@@ -177,7 +206,29 @@ explore: update_topic_hubspot {}
 
 explore:  max_churn_score {}
 
-explore:  most_recent_purchase_events {}
+explore:  most_recent_purchase_events {
+  persist_with: purchase_event_datagroup
+}
+
+explore: cross_promotion {
+  view_name: bigquery_identity_resolution
+  join: bigquery_marketing_attribution {
+    type: left_outer
+    sql_on: ${bigquery_identity_resolution.anonymous_id} = ${bigquery_marketing_attribution.anonymous_id}
+      ;;
+    relationship: many_to_many
+  }
+  join: bigquery_custom_marketing_spend {
+    type: left_outer
+    sql_on: ${bigquery_identity_resolution.timestamp_date} = ${bigquery_custom_marketing_spend.timestamp} ;;
+    relationship: many_to_one
+  }
+  join: purchase_event {
+    type:  left_outer
+    sql_on:  ${purchase_event.user_id} = ${bigquery_marketing_attribution.user_id};;
+    relationship: many_to_one
+  }
+}
 
 explore: bigquery_flight29 {
   label: "Ad Hoc Request 8-25-21"
