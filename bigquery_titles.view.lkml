@@ -23,7 +23,7 @@ view: bigquery_titles {
           season,
           lf_sf,
           content_type,
-          datetime
+          date(datetime) as datetime
        from svod_titles.titles
       )
 
