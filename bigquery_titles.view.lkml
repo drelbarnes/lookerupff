@@ -57,6 +57,7 @@ view: bigquery_titles {
               when ${franchise} like '%Bates%' then 'Bates'
               when ${content_type} like '%Movie%' then 'Movie'
               when ${content_type} like '%Series%' and ${franchise} not like '%Heartland%' and ${franchise} not like '%Bates%' then 'Series'
+         else 'Other' end
     ;;
   }
 
