@@ -23,7 +23,14 @@ view: bigquery_titles {
           season,
           lf_sf,
           content_type,
-          date(datetime) as datetime
+          date(datetime) as datetime,
+          case
+            when month in (1,2,3) then 'Q1'
+            when month in (4,5,6) then 'Q2'
+            when month in (7,8,9) then 'Q3'
+            when month in (10,11,12) then 'Q4'
+            else 'missing'
+          end as quarter
        from svod_titles.titles
       )
 
@@ -89,6 +96,11 @@ view: bigquery_titles {
   dimension: year {
     type: number
     sql: ${TABLE}.year ;;
+  }
+
+  dimension: quarter {
+    type: string
+    sql:  ${TABLE}.quarter ;;
   }
 
   dimension: date {
