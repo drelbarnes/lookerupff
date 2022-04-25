@@ -51,6 +51,15 @@ view: bigquery_titles {
          else 'Other' end;;
   }
 
+  dimension: content_type2 {
+    type: string
+    sql: case when ${franchise} like '%Heartland%' then 'Heartland'
+              when ${franchise} like '%Bates%' then 'Bates'
+              when ${content_type} like '%Movie%' then 'Movie'
+              when ${content_type} like '%Series%' and ${franchise} not like '%Heartland%' and ${franchise} not like '%Bates%' then 'Series'
+    ;;
+  }
+
   dimension: category {
     type: string
     sql: ${TABLE}.category ;;
