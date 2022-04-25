@@ -137,7 +137,7 @@
     model: upff_google
     explore: bigquery_mvpd_subs
     type: looker_column
-    fields: [bigquery_mvpd_subs.date, bigquery_mvpd_subs.amazon_, bigquery_mvpd_subs.comcast_, bigquery_mvpd_subs.d2c_,
+    fields: [bigquery_mvpd_subs.date, bigquery_mvpd_subs.amazon_, bigquery_mvpd_subs.comcast_, bigquery_mvpd_subs.vimeo_,
       bigquery_mvpd_subs.all_others_]
     sorts: [bigquery_mvpd_subs.date]
     limit: 500
@@ -153,10 +153,10 @@
     show_view_names: false
     point_style: none
     series_colors:
-      bigquery_mvpd_subs.d2c_: "#b3a0dd"
+      bigquery_mvpd_subs.vimeo_: "#b3a0dd"
       bigquery_mvpd_subs.all_others_: "#1ea8df"
     series_labels:
-      bigquery_mvpd_subs.d2c_: Vimeo
+      bigquery_mvpd_subs.vimeo_: Vimeo
       bigquery_mvpd_subs.dish_: Dish_sling
     series_types: {}
     limit_displayed_rows: false
@@ -492,13 +492,13 @@
     model: upff_google
     explore: bigquery_mvpd_subs
     type: single_value
-    fields: [bigquery_mvpd_subs.comcast_, bigquery_mvpd_subs.amazon_, bigquery_mvpd_subs.all_others_, bigquery_mvpd_subs.d2c_]
+    fields: [bigquery_mvpd_subs.comcast_, bigquery_mvpd_subs.amazon_, bigquery_mvpd_subs.all_others_, bigquery_mvpd_subs.vimeo_]
     limit: 500
-    dynamic_fields: [{table_calculation: total_subs, label: Total Subs, expression: "${bigquery_mvpd_subs.comcast_}+${bigquery_mvpd_subs.amazon_}+${bigquery_mvpd_subs.all_others_}+${bigquery_mvpd_subs.d2c_}",
+    dynamic_fields: [{table_calculation: total_subs, label: Total Subs, expression: "${bigquery_mvpd_subs.comcast_}+${bigquery_mvpd_subs.amazon_}+${bigquery_mvpd_subs.all_others_}+${bigquery_mvpd_subs.vimeo_}",
         value_format: !!null '', value_format_name: decimal_0, _kind_hint: measure,
         _type_hint: number}]
     hidden_fields: [bigquery_mvpd_subs.all_others_, bigquery_mvpd_subs.comcast_, bigquery_mvpd_subs.amazon_,
-      bigquery_mvpd_subs.d2c_]
+      bigquery_mvpd_subs.vimeo_]
     listen:
       Time Period for Views: bigquery_mvpd_subs.date
     row: 2
