@@ -1,24 +1,46 @@
 view: bigquery_titles {
   derived_table: {
-    sql: with a as
-          (select month,
-             year,
-             case when platform = 'Comcast SVOD' then 'Comcast' else platform end as platform,
-             case when platform not in ('Amazon','Vimeo','Comcast SVOD') then 'All Others' else platform
-                  end as platform_,
-             up_title,
-             studio,
-             views,
-             type,
-             category,
-             franchise,
-             season,
-             lf_sf,
-             content_type,
-             datetime
-       from svod_titles.titles)
+    sql:
+      with a as
+      (
+        select
+          month,
+          year,
+          case
+            when platform = 'Comcast SVOD' then 'Comcast'
+            else platform
+          end as platform,
+          case
+            when platform not in ('Amazon','Vimeo','Comcast SVOD') then 'All Others'
+            else platform
+          end as platform_,
+          up_title,
+          studio,
+          views,
+          type,
+          category,
+          franchise,
+          season,
+          lf_sf,
+          content_type,
+          date(datetime) as datetime,
+          case
+            when month in (1,2,3) then 'Q1'
+            when month in (4,5,6) then 'Q2'
+            when month in (7,8,9) then 'Q3'
+            when month in (10,11,12) then 'Q4'
+            else 'missing'
+          end as quarter
+       from svod_titles.titles
+      )
 
-      select *, case when platform_ = 'Comcast SVOD' then 'Comcast' else platform_ end as platform__ from a
+      select
+        *,
+        case
+          when platform_ = 'Comcast SVOD' then 'Comcast'
+          else platform_
+        end as platform__
+        from a
 
       ;;
   }
@@ -34,6 +56,16 @@ view: bigquery_titles {
     sql: case when ${franchise} like '%Heartland%' then 'Heartland'
               when ${franchise} like '%Bates%' then 'Bates'
          else 'Other' end;;
+  }
+
+  dimension: content_type2 {
+    type: string
+    sql: case when ${franchise} like '%Heartland%' then 'Heartland'
+              when ${franchise} like '%Bates%' then 'Bates'
+              when ${content_type} like '%Movie%' then 'Movie'
+              when ${content_type} like '%Series%' and ${franchise} not like '%Heartland%' and ${franchise} not like '%Bates%' then 'Series'
+         else 'Other' end
+    ;;
   }
 
   dimension: category {
@@ -64,6 +96,11 @@ view: bigquery_titles {
   dimension: year {
     type: number
     sql: ${TABLE}.year ;;
+  }
+
+  dimension: quarter {
+    type: string
+    sql:  ${TABLE}.quarter ;;
   }
 
   dimension: date {

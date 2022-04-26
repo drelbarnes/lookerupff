@@ -1,6 +1,15 @@
 view: bigquery_mvpd_subs {
   derived_table: {
-    sql: select amazon, comcast, d2c, ifnull(dish_sling,0)+ifnull(cox,0)+ifnull(roku,0)+ifnull(appletv,0) as allothers, date(date) as date from svod_titles.mvpd_subs;;
+    sql:
+      select
+        amazon,
+        comcast,
+        d2c as vimeo,
+        ifnull(dish_sling,0)+ifnull(cox,0)+ifnull(roku,0)+ifnull(appletv,0) as allothers,
+        date(date) as date,
+        month,
+        year
+      from svod_titles.mvpd_subs;;
   }
 
   dimension: amazon {
@@ -13,9 +22,9 @@ view: bigquery_mvpd_subs {
     sql: ${TABLE}.comcast ;;
   }
 
-  dimension: d2c {
+  dimension: vimeo {
     type: number
-    sql: ${TABLE}.d2c ;;
+    sql: ${TABLE}.vimeo ;;
   }
 
   dimension: all_others {
@@ -28,6 +37,16 @@ view: bigquery_mvpd_subs {
     sql: timestamp(${TABLE}.date) ;;
   }
 
+  dimension: month {
+    type: number
+    sql: ${TABLE}.month ;;
+  }
+
+  dimension: year {
+    type: number
+    sql: ${TABLE}.year ;;
+  }
+
   measure: amazon_ {
     type: sum
     sql: ${TABLE}.amazon ;;
@@ -38,9 +57,9 @@ view: bigquery_mvpd_subs {
     sql: ${TABLE}.comcast ;;
   }
 
-  measure: d2c_ {
+  measure: vimeo_ {
     type: sum
-    sql: ${TABLE}.d2c ;;
+    sql: ${TABLE}.vimeo ;;
   }
 
   measure: all_others_ {

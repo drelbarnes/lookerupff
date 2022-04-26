@@ -20,7 +20,9 @@ view: bigquery_mvpd_titles {
                   when content_type = 'Movie' then 'Movies'
                 else 'Null' end as content,
                 views,
-                content_type
+                content_type,
+                year,
+                month
               from svod_titles.titles
               )
 
@@ -32,6 +34,16 @@ view: bigquery_mvpd_titles {
       type: count
       drill_fields: [detail*]
     }
+
+  dimension: month {
+    type: number
+    sql: ${TABLE}.month ;;
+  }
+
+  dimension: year {
+    type: number
+    sql: ${TABLE}.year ;;
+  }
 
     dimension: platform2 {
       type: string
