@@ -250,22 +250,22 @@ view: multi_touch_attribution {
         select * from web_pages_web_orders_ip
         union all
         select * from web_pages_web_orders_cross_domain
-        union all
-        select * from web_pages_fire_tv_orders_anon
-        union all
-        select * from web_pages_fire_tv_orders_ip
-        union all
-        select * from web_pages_android_orders_anon
-        union all
-        select * from web_pages_android_orders_ip
-        union all
-        select * from web_pages_ios_orders_anon
-        union all
-        select * from web_pages_ios_orders_ip
-        union all
-        select * from web_pages_roku_orders_anon
-        union all
-        select * from web_pages_roku_orders_ip
+        --union all
+        --select * from web_pages_fire_tv_orders_anon
+        --union all
+        --select * from web_pages_fire_tv_orders_ip
+        --union all
+        --select * from web_pages_android_orders_anon
+        --union all
+        --select * from web_pages_android_orders_ip
+        --union all
+        --select * from web_pages_ios_orders_anon
+        --union all
+        --select * from web_pages_ios_orders_ip
+        --union all
+        --select * from web_pages_roku_orders_anon
+        --union all
+        --select * from web_pages_roku_orders_ip
       )
       -- ATTRIBUITION MODELS
       -- Multitouch source attribution, channel decay
@@ -419,7 +419,7 @@ view: multi_touch_attribution {
         , a.referrer
         , a.source
         , a.conversion_event
-        , b.score as credit
+        , safe_cast(b.score as float64) as credit
         from conversion_attribution as a
         inner join {% parameter attribution_model %} as b
         on a.user_id = b.user_id and a.n = b.n
