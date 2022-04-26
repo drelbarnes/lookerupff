@@ -444,7 +444,7 @@ view: multi_touch_attribution {
         , referrer
         , "" as source
         , 1 as conversion_event
-        , "" as credit
+        , null as credit
         from all_orders
         where viewed_at is null
       )
