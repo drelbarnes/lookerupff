@@ -15,9 +15,9 @@ view: multi_touch_attribution {
         , platform
         from javascript.order_completed
         where
-        timestamp >= TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter traffic_window %} - 1) DAY)
+        timestamp >= TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter order_window %} - 1) DAY)
         and
-        timestamp < TIMESTAMP_ADD(TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter traffic_window %} - 1) DAY), INTERVAL {% parameter traffic_window %} DAY)
+        timestamp < TIMESTAMP_ADD(TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter order_window %} - 1) DAY), INTERVAL {% parameter order_window %} DAY)
       )
       , fire_tv_orders as (
         select
@@ -30,9 +30,9 @@ view: multi_touch_attribution {
         , platform
         from amazon_fire_tv.order_completed
         where
-        timestamp >= TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter traffic_window %} - 1) DAY)
+        timestamp >= TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter order_window %} - 1) DAY)
         and
-        timestamp < TIMESTAMP_ADD(TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter traffic_window %} - 1) DAY), INTERVAL {% parameter traffic_window %} DAY)
+        timestamp < TIMESTAMP_ADD(TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter order_window %} - 1) DAY), INTERVAL {% parameter order_window %} DAY)
       )
       , android_orders as (
         select
@@ -45,9 +45,9 @@ view: multi_touch_attribution {
         , platform
         from android.order_completed
         where
-        timestamp >= TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter traffic_window %} - 1) DAY)
+        timestamp >= TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter order_window %} - 1) DAY)
         and
-        timestamp < TIMESTAMP_ADD(TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter traffic_window %} - 1) DAY), INTERVAL {% parameter traffic_window %} DAY)
+        timestamp < TIMESTAMP_ADD(TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter order_window %} - 1) DAY), INTERVAL {% parameter order_window %} DAY)
       )
       , ios_orders as (
         select
@@ -60,9 +60,9 @@ view: multi_touch_attribution {
         , platform
         from ios.order_completed
         where
-        timestamp >= TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter traffic_window %} - 1) DAY)
+        timestamp >= TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter order_window %} - 1) DAY)
         and
-        timestamp < TIMESTAMP_ADD(TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter traffic_window %} - 1) DAY), INTERVAL {% parameter traffic_window %} DAY)
+        timestamp < TIMESTAMP_ADD(TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter order_window %} - 1) DAY), INTERVAL {% parameter order_window %} DAY)
       )
       , roku_orders as (
         select
@@ -75,9 +75,9 @@ view: multi_touch_attribution {
         , platform
         from roku.order_completed
         where
-        timestamp >= TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter traffic_window %} - 1) DAY)
+        timestamp >= TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter order_window %} - 1) DAY)
         and
-        timestamp < TIMESTAMP_ADD(TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter traffic_window %} - 1) DAY), INTERVAL {% parameter traffic_window %} DAY)
+        timestamp < TIMESTAMP_ADD(TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter order_window %} - 1) DAY), INTERVAL {% parameter order_window %} DAY)
       )
       , web_pages as (
        with seller_pages as (
@@ -513,9 +513,9 @@ view: multi_touch_attribution {
     }
   }
 
-  parameter: traffic_window {
+  parameter: order_window {
     type: unquoted
-    label: "Traffic Window"
+    label: "Order Completed Window"
     allowed_value: {
       label: "7 days"
       value: "7"
