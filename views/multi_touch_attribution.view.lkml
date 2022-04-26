@@ -2,169 +2,283 @@ view: multi_touch_attribution {
   derived_table: {
     sql:
       -- JOIN ORDERS ON PAGE VISITS
-      with orders as (
-        select orders.timestamp as ordered_at
-        , orders.user_id as user_id
-        , orders.anonymous_id
-        , orders.context_ip
-        , orders.context_traits_cross_domain_id
-        , orders.context_revenue as revenue
-        , orders.platform
-        from `up-faith-and-family-216419.javascript.order_completed` as orders
+      with web_orders as (
+        select timestamp as ordered_at
+        , user_id as user_id
+        , anonymous_id
+        , context_ip
+        , context_traits_cross_domain_id
+        , CASE
+            WHEN context_revenue = 53.99 then 'yearly'
+            WHEN context_revenue = 5.99 then 'monthly'
+          END as plan_type
+        , platform
+        from javascript.order_completed
         where
-        orders.timestamp >= TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter order_window %} - 1) DAY)
+        timestamp >= TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter traffic_window %} - 1) DAY)
         and
-        orders.timestamp < TIMESTAMP_ADD(TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter order_window %} - 1) DAY), INTERVAL {% parameter order_window %} DAY)
+        timestamp < TIMESTAMP_ADD(TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter traffic_window %} - 1) DAY), INTERVAL {% parameter traffic_window %} DAY)
       )
-      , app_pages as (
+      , fire_tv_orders as (
         select
-        timestamp as viewed_at
-      , anonymous_id
-      , context_ip
-      , context_traits_cross_domain_id
-      , context_campaign_content as utm_content
-      , context_campaign_medium as utm_medium
-      , context_campaign_name as utm_campaign
-      , context_campaign_source as utm_source
-      , context_campaign_term as utm_term
-      , context_page_referrer as referrer
-      , view
-      , context_user_agent as user_agent
-      from `up-faith-and-family-216419.javascript.pages`
+        timestamp as ordered_at
+        , user_id as user_id
+        , anonymous_id
+        , context_ip
+        , null as context_traits_cross_domain_id
+        , "" as plan_type
+        , platform
+        from amazon_fire_tv.order_completed
+        where
+        timestamp >= TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter traffic_window %} - 1) DAY)
+        and
+        timestamp < TIMESTAMP_ADD(TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter traffic_window %} - 1) DAY), INTERVAL {% parameter traffic_window %} DAY)
+      )
+      , android_orders as (
+        select
+        timestamp as ordered_at
+        , user_id as user_id
+        , anonymous_id
+        , context_ip
+        , null as context_traits_cross_domain_id
+        , context_transaction_product_sku as plan_type
+        , platform
+        from android.order_completed
+        where
+        timestamp >= TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter traffic_window %} - 1) DAY)
+        and
+        timestamp < TIMESTAMP_ADD(TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter traffic_window %} - 1) DAY), INTERVAL {% parameter traffic_window %} DAY)
+      )
+      , ios_orders as (
+        select
+        timestamp as ordered_at
+        , user_id as user_id
+        , anonymous_id
+        , context_ip
+        , null as context_traits_cross_domain_id
+        , context_transaction_product_sku as plan_type
+        , platform
+        from ios.order_completed
+        where
+        timestamp >= TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter traffic_window %} - 1) DAY)
+        and
+        timestamp < TIMESTAMP_ADD(TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter traffic_window %} - 1) DAY), INTERVAL {% parameter traffic_window %} DAY)
+      )
+      , roku_orders as (
+        select
+        timestamp as ordered_at
+        , user_id as user_id
+        , anonymous_id
+        , '' as context_ip
+        , null as context_traits_cross_domain_id
+        , context_transaction_product_sku as plan_type
+        , platform
+        from roku.order_completed
+        where
+        timestamp >= TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter traffic_window %} - 1) DAY)
+        and
+        timestamp < TIMESTAMP_ADD(TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter traffic_window %} - 1) DAY), INTERVAL {% parameter traffic_window %} DAY)
       )
       , web_pages as (
-        select
-        timestamp as viewed_at
-      , anonymous_id
-      , context_ip
-      , context_traits_cross_domain_id
-      , context_campaign_content as utm_content
-      , context_campaign_medium as utm_medium
-      , context_campaign_name as utm_campaign
-      , context_campaign_source as utm_source
-      , context_campaign_term as utm_term
-      , context_page_referrer as referrer
-      , title as view
-      , context_user_agent as user_agent
-      from `up-faith-and-family-216419.javascript_upff_home.pages`
-      )
-      , app_orders_anon as (
-        select
-        orders.ordered_at
-        , orders.user_id
-        , orders.revenue
-        , orders.platform
-        , app_pages.*
-        from orders
-        left join app_pages
-        on app_pages.anonymous_id = orders.anonymous_id
+       with seller_pages as (
+          select
+          timestamp as viewed_at
+        , anonymous_id
+        , context_ip
+        , context_traits_cross_domain_id
+        , context_campaign_content as utm_content
+        , context_campaign_medium as utm_medium
+        , context_campaign_name as utm_campaign
+        , context_campaign_source as utm_source
+        , context_campaign_term as utm_term
+        , context_page_referrer as referrer
+        , view
+        , context_user_agent as user_agent
+        from javascript.pages
+        )
+        , site_pages as (
+          select
+          timestamp as viewed_at
+        , anonymous_id
+        , context_ip
+        , context_traits_cross_domain_id
+        , context_campaign_content as utm_content
+        , context_campaign_medium as utm_medium
+        , context_campaign_name as utm_campaign
+        , context_campaign_source as utm_source
+        , context_campaign_term as utm_term
+        , context_page_referrer as referrer
+        , title as view
+        , context_user_agent as user_agent
+        from javascript_upff_home.pages
+        )
+        , pages_union as (
+          select * from seller_pages
+          union all
+          select * from site_pages
+        )
+        select *
+        from pages_union
         where
-        app_pages.viewed_at < orders.ordered_at
-        and
-        app_pages.viewed_at >= TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter attribution_window %} - 1) DAY)
+        viewed_at >= TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter attribution_window %} - 1) DAY)
+
       )
-      , web_orders_anon as (
+      , web_pages_web_orders_anon as (
         select
-        orders.ordered_at
-        , orders.user_id
-        , orders.revenue
-        , orders.platform
+        web_orders.ordered_at
+        , web_orders.user_id
+        , web_orders.plan_type
+        , web_orders.platform
         , web_pages.*
-        from orders
-        left join web_pages
-        on web_pages.anonymous_id = orders.anonymous_id
-        where
-        web_pages.viewed_at < orders.ordered_at
-        and
-        web_pages.viewed_at >= TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter attribution_window %} - 1) DAY)
+        from web_orders
+        full join web_pages
+        on web_pages.anonymous_id = web_orders.anonymous_id
       )
-      , app_orders_ip as (
+      , web_pages_web_orders_ip as (
         select
-        orders.ordered_at
-        , orders.user_id
-        , orders.revenue
-        , orders.platform
-        , app_pages.*
-        from orders
-        left join app_pages
-        on app_pages.context_ip = orders.context_ip
-        where
-        app_pages.viewed_at < orders.ordered_at
-        and
-        app_pages.viewed_at >= TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter attribution_window %} - 1) DAY)
-      )
-      , web_orders_ip as (
-        select
-        orders.ordered_at
-        , orders.user_id
-        , orders.revenue
-        , orders.platform
+        web_orders.ordered_at
+        , web_orders.user_id
+        , web_orders.plan_type
+        , web_orders.platform
         , web_pages.*
-        from orders
-        left join web_pages
-        on web_pages.context_ip = orders.context_ip
-        where
-        web_pages.viewed_at < orders.ordered_at
-        and
-        web_pages.viewed_at >= TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter attribution_window %} - 1) DAY)
+        from web_orders
+        full join web_pages
+        on web_pages.context_ip = web_orders.context_ip
       )
-      , app_orders_cross_domain as (
+      , web_pages_web_orders_cross_domain as (
         select
-        orders.ordered_at
-        , orders.user_id
-        , orders.revenue
-        , orders.platform
-        , app_pages.*
-        from orders
-        left join app_pages
-        on app_pages.context_traits_cross_domain_id = orders.context_traits_cross_domain_id
-        where
-        app_pages.viewed_at < orders.ordered_at
-        and
-        app_pages.viewed_at >= TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter attribution_window %} - 1) DAY)
-      )
-      , web_orders_cross_domain as (
-        select
-        orders.ordered_at
-        , orders.user_id
-        , orders.revenue
-        , orders.platform
+        web_orders.ordered_at
+        , web_orders.user_id
+        , web_orders.plan_type
+        , web_orders.platform
         , web_pages.*
-        from orders
-        left join web_pages
-        on web_pages.context_traits_cross_domain_id = orders.context_traits_cross_domain_id
-        where
-        web_pages.viewed_at < orders.ordered_at
-        and
-        web_pages.viewed_at >= TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter attribution_window %} - 1) DAY)
+        from web_orders
+        full join web_pages
+        on web_pages.context_traits_cross_domain_id = web_orders.context_traits_cross_domain_id
+      )
+      , web_pages_fire_tv_orders_anon as (
+        select
+        fire_tv_orders.ordered_at
+        , fire_tv_orders.user_id
+        , fire_tv_orders.plan_type
+        , fire_tv_orders.platform
+        , web_pages.*
+        from fire_tv_orders
+        full join web_pages
+        on web_pages.anonymous_id = fire_tv_orders.anonymous_id
+      )
+      , web_pages_fire_tv_orders_ip as (
+        select
+        fire_tv_orders.ordered_at
+        , fire_tv_orders.user_id
+        , fire_tv_orders.plan_type
+        , fire_tv_orders.platform
+        , web_pages.*
+        from fire_tv_orders
+        full join web_pages
+        on web_pages.context_ip = fire_tv_orders.context_ip
+      )
+      , web_pages_android_orders_anon as (
+        select
+        android_orders.ordered_at
+        , android_orders.user_id
+        , android_orders.plan_type
+        , android_orders.platform
+        , web_pages.*
+        from android_orders
+        full join web_pages
+        on web_pages.anonymous_id = android_orders.anonymous_id
+      )
+      , web_pages_android_orders_ip as (
+        select
+        android_orders.ordered_at
+        , android_orders.user_id
+        , android_orders.plan_type
+        , android_orders.platform
+        , web_pages.*
+        from android_orders
+        full join web_pages
+        on web_pages.context_ip = android_orders.context_ip
+      )
+      , web_pages_ios_orders_anon as (
+        select
+        ios_orders.ordered_at
+        , safe_cast(ios_orders.user_id as string)
+        , ios_orders.plan_type
+        , ios_orders.platform
+        , web_pages.*
+        from ios_orders
+        full join web_pages
+        on web_pages.anonymous_id = ios_orders.anonymous_id
+      )
+      , web_pages_ios_orders_ip as (
+        select
+        ios_orders.ordered_at
+        , safe_cast(ios_orders.user_id as string)
+        , ios_orders.plan_type
+        , ios_orders.platform
+        , web_pages.*
+        from ios_orders
+        full join web_pages
+        on web_pages.context_ip = ios_orders.context_ip
+      )
+      , web_pages_roku_orders_anon as (
+        select
+        roku_orders.ordered_at
+        , roku_orders.user_id
+        , roku_orders.plan_type
+        , roku_orders.platform
+        , web_pages.*
+        from roku_orders
+        full join web_pages
+        on web_pages.anonymous_id = roku_orders.anonymous_id
+      )
+      , web_pages_roku_orders_ip as (
+        select
+        roku_orders.ordered_at
+        , roku_orders.user_id
+        , roku_orders.plan_type
+        , roku_orders.platform
+        , web_pages.*
+        from roku_orders
+        full join web_pages
+        on web_pages.context_ip = roku_orders.context_ip
       )
       , all_orders as (
-        select * from app_orders_anon
+        select * from web_pages_web_orders_anon
         union all
-        select * from web_orders_anon
+        select * from web_pages_web_orders_ip
         union all
-        select * from app_orders_ip
+        select * from web_pages_web_orders_cross_domain
         union all
-        select * from web_orders_ip
+        select * from web_pages_fire_tv_orders_anon
         union all
-        select * from app_orders_cross_domain
+        select * from web_pages_fire_tv_orders_ip
         union all
-        select * from web_orders_cross_domain
+        select * from web_pages_android_orders_anon
+        union all
+        select * from web_pages_android_orders_ip
+        union all
+        select * from web_pages_ios_orders_anon
+        union all
+        select * from web_pages_ios_orders_ip
+        union all
+        select * from web_pages_roku_orders_anon
+        union all
+        select * from web_pages_roku_orders_ip
       )
-
       -- ATTRIBUITION MODELS
       -- Multitouch source attribution, channel decay
       --  create paid column with value = 0 if utm param null else 1
-
-      , flag_paid as (
+      , attributable_orders as (
       select
       ordered_at
-      , datetime_trunc(viewed_at, hour) as viewed_at
+      , viewed_at
       , user_id
       , anonymous_id
       , context_ip
       , context_traits_cross_domain_id
-      , revenue
+      , plan_type
       , platform
       , utm_content
       , utm_medium
@@ -179,6 +293,8 @@ view: multi_touch_attribution {
       else 1
       end as paid
       from all_orders
+      where viewed_at is not null
+      and viewed_at < ordered_at
       )
       --  by user_id, case when sum(paid) = 0, then source = organic
       --   else strip out null records and group utm sources
@@ -188,18 +304,18 @@ view: multi_touch_attribution {
       when sum(paid) over (partition by user_id) = 0 then "organic"
       else utm_source
       end as source
-      from flag_paid
+      from attributable_orders
       )
       , ranked as (
       with grouped as (
-      select
+      select distinct
       ordered_at
       , viewed_at
       , user_id
       , anonymous_id
       , context_ip
       , context_traits_cross_domain_id
-      , revenue
+      , plan_type
       , platform
       , utm_content
       , utm_medium
@@ -212,7 +328,6 @@ view: multi_touch_attribution {
       , source
       from sources
       where source is not null
-      group by 1,2,3,4,5,6,7,8,9,10,11,12
       )
       select *
       , row_number() over (partition by user_id order by viewed_at {% parameter attribution_method %}) as n
@@ -221,12 +336,12 @@ view: multi_touch_attribution {
       , conversion_attribution as (
       select
       ordered_at
-      , viewed_at
+      , datetime_trunc(viewed_at, hour) as viewed_at
       , user_id
       , anonymous_id
       , context_ip
       , context_traits_cross_domain_id
-      , revenue
+      , plan_type
       , platform
       , utm_content
       , utm_medium
@@ -237,8 +352,8 @@ view: multi_touch_attribution {
       , referrer
       , user_agent
       , source
-      , case when n = min(n) over (partition by user_id) then 1 else 0
-      end as event
+      , case when n = max(n) over (partition by user_id) then 1 else 0
+      end as conversion_event
       , n
       from ranked
       )
@@ -247,7 +362,7 @@ view: multi_touch_attribution {
       user_id
       , viewed_at
       , source
-      , event as score
+      , conversion_event as score
       , n
       from conversion_attribution
       )
@@ -266,13 +381,7 @@ view: multi_touch_attribution {
       user_id
       , viewed_at
       , source
-      , CASE
-      WHEN viewed_at = FIRST_VALUE(viewed_at) OVER (PARTITION BY user_id ORDER BY viewed_at) AND MAX(event) OVER (PARTITION BY user_id) = 1
-      THEN SAFE_CAST(1.1-ROW_NUMBER() OVER (PARTITION BY user_id) AS STRING)
-      WHEN viewed_at > LAG(viewed_at) OVER (PARTITION BY user_id ORDER BY viewed_at) AND MAX(event) OVER (PARTITION BY user_id) = 1
-      THEN SAFE_CAST(ROUND(1.1-1/ROW_NUMBER() OVER (PARTITION BY user_id), 4) AS STRING)
-      ELSE 'null'
-      END AS weights
+      , safe_cast(round(pow(2,-n/(max(n) over (partition by user_id)/2)), 4) as float64) as weights
       , n
       FROM conversion_attribution
       )
@@ -290,28 +399,58 @@ view: multi_touch_attribution {
       , n
       FROM weighted
       )
-      select
-      a.ordered_at
-      , a.viewed_at
-      , a.user_id
-      , a.anonymous_id
-      , a.context_ip
-      , a.context_traits_cross_domain_id
-      , a.revenue
-      , a.platform
-      , a.utm_content
-      , a.utm_medium
-      , a.utm_campaign
-      , a.utm_source
-      , a.utm_term
-      , a.user_agent
-      , a.view
-      , a.referrer
-      , a.source
-      , b.score as credit
-      from conversion_attribution as a
-      inner join {% parameter attribution_model %} as b
-      on a.user_id = b.user_id and a.n = b.n
+      , final as (
+        select
+        a.ordered_at
+        , a.viewed_at
+        , a.user_id
+        , a.anonymous_id
+        , a.context_ip
+        , a.context_traits_cross_domain_id
+        , a.plan_type
+        , a.platform
+        , a.utm_content
+        , a.utm_medium
+        , a.utm_campaign
+        , a.utm_source
+        , a.utm_term
+        , a.user_agent
+        , a.view
+        , a.referrer
+        , a.source
+        , a.conversion_event
+        , b.score as credit
+        from conversion_attribution as a
+        inner join {% parameter attribution_model %} as b
+        on a.user_id = b.user_id and a.n = b.n
+      )
+      , non_attributable_orders as (
+        select
+        ordered_at
+        , viewed_at
+        , user_id
+        , anonymous_id
+        , context_ip
+        , context_traits_cross_domain_id
+        , plan_type
+        , platform
+        , utm_content
+        , utm_medium
+        , utm_campaign
+        , utm_source
+        , utm_term
+        , user_agent
+        , view
+        , referrer
+        , "" as source
+        , 1 as conversion_event
+        , "" as credit
+        from all_orders
+        where viewed_at is null
+      )
+      select * from final
+      union all
+      select * from non_attributable_orders
       ;;
   }
 
@@ -320,11 +459,11 @@ view: multi_touch_attribution {
     label: "Attribution Method"
     allowed_value: {
       label: "First Interaction"
-      value: "asc"
+      value: "desc"
     }
     allowed_value: {
       label: "Last Interaction"
-      value: "desc"
+      value: "asc"
     }
   }
 
@@ -374,9 +513,9 @@ view: multi_touch_attribution {
     }
   }
 
-  parameter: order_window {
+  parameter: traffic_window {
     type: unquoted
-    label: "Order Window"
+    label: "Traffic Window"
     allowed_value: {
       label: "7 days"
       value: "7"
@@ -444,16 +583,9 @@ view: multi_touch_attribution {
     sql: ${TABLE}.platform ;;
   }
 
-  dimension: revenue {
-    type: string
-    sql: ${TABLE}.revenue ;;
-  }
-
   dimension: plan_type {
-    sql: CASE
-              WHEN ${TABLE}.revenue = 53.99 then 'yearly'
-              WHEN ${TABLE}.revenue = 5.99 then 'monthly'
-          END ;;
+    type: string
+    sql: ${TABLE}.plan_type ;;
   }
 
   dimension_group: viewed_at {
@@ -520,6 +652,11 @@ view: multi_touch_attribution {
     sql: ${TABLE}.referrer ;;
   }
 
+  dimension: conversion_event {
+    type: number
+    sql: ${TABLE}.conversion_event ;;
+  }
+
   dimension: credit {
     type: number
     sql: ${TABLE}.credit ;;
@@ -572,7 +709,7 @@ view: multi_touch_attribution {
       , anonymous_id
       , context_ip
       , context_traits_cross_domain_id
-      , revenue
+      , plan_type
       , platform
       , utm_content
       , utm_medium

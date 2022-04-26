@@ -159,9 +159,21 @@ include: "other_marketing_spend.view.lkml"
 include: "counties.view.lkml"
 
 include: "/views/multi_touch_attribution.view.lkml"
+include: "/views/identity_resolution.view.lkml"
 
 explore: multi_touch_attribution {
   label: "Multi-touch Attribution (Dev)"
+}
+
+explore: identity_resolution {
+  label: "Funnel Performance"
+
+  join: multi_touch_attribution {
+    type: full_outer
+    sql_on: ${identity_resolution.anonymous_id} = ${multi_touch_attribution.anonymous_id}
+      ;;
+    relationship: many_to_many
+  }
 }
 
 explore: counties {
