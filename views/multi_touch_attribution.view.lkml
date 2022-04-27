@@ -120,8 +120,7 @@ view: multi_touch_attribution {
         select *
         from pages_union
         where
-        viewed_at >= TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter attribution_window %} - 1) DAY)
-
+        viewed_at >= TIMESTAMP_ADD(TIMESTAMP_TRUNC(TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter order_window %} - 1) DAY), DAY, 'America/New_York'), INTERVAL -({% parameter attribution_window %} - 1) DAY)
       )
       , web_pages_web_orders_anon as (
         select
@@ -295,6 +294,8 @@ view: multi_touch_attribution {
       from all_orders
       where viewed_at is not null
       and viewed_at < ordered_at
+      and viewed_at >= TIMESTAMP_ADD(TIMESTAMP_TRUNC(ordered_at, DAY, 'America/New_York'), INTERVAL -({% parameter attribution_window %} - 1) DAY)
+
       )
       --  by user_id, case when sum(paid) = 0, then source = organic
       --   else strip out null records and group utm sources
@@ -670,6 +671,15 @@ view: multi_touch_attribution {
   measure: distinct_count {
     type: count_distinct
     sql: ${user_id};;
+  }
+
+  measure: distinct_count_attributed {
+    type:  count_distinct
+    sql:
+      CASE
+        WHEN (multi_touch_attribution.credit  > 0) AND NOT (multi_touch_attribution.credit  IS NULL) THEN multi_touch_attribution.user_id
+        ELSE NULL
+      END ;;
   }
 
   measure: distinct_facebook_count {

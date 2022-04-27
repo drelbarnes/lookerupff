@@ -174,6 +174,11 @@ explore: identity_resolution {
       ;;
     relationship: many_to_many
   }
+  join: purchase_event {
+    type:  left_outer
+    sql_on:  ${purchase_event.user_id} = ${multi_touch_attribution.user_id};;
+    relationship: many_to_one
+  }
 }
 
 explore: counties {

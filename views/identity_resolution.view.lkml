@@ -23,10 +23,6 @@ view: identity_resolution {
         , title as view
         , context_user_agent as user_agent
         from javascript_upff_home.pages
-        where
-        timestamp >= TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter traffic_window %} - 1) DAY)
-        and
-        timestamp < TIMESTAMP_ADD(TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter traffic_window %} - 1) DAY), INTERVAL {% parameter traffic_window %} DAY)
       ),
       /*
       /*
@@ -51,10 +47,6 @@ view: identity_resolution {
         , view
         , context_user_agent as user_agent
         from javascript.pages
-        where
-        timestamp >= TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter traffic_window %} - 1) DAY)
-        and
-        timestamp < TIMESTAMP_ADD(TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter traffic_window %} - 1) DAY), INTERVAL {% parameter traffic_window %} DAY)
       ),
       /*
       /*
@@ -79,10 +71,6 @@ view: identity_resolution {
         , view
         , context_user_agent as user_agent
         from javascript.order_completed
-        where
-        timestamp >= TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter traffic_window %} - 1) DAY)
-        and
-        timestamp < TIMESTAMP_ADD(TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'America/New_York'), INTERVAL -({% parameter traffic_window %} - 1) DAY), INTERVAL {% parameter traffic_window %} DAY)
       ),
 
       together as (
