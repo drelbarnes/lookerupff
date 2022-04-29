@@ -160,6 +160,7 @@ include: "counties.view.lkml"
 
 include: "/views/multi_touch_attribution.view.lkml"
 include: "/views/identity_resolution.view.lkml"
+include: "/views/identity_resolution_v2.view.lkml"
 
 explore: multi_touch_attribution {
   label: "Multi-touch Attribution (Dev)"
