@@ -160,10 +160,14 @@ include: "counties.view.lkml"
 
 include: "/views/multi_touch_attribution.view.lkml"
 include: "/views/identity_resolution.view.lkml"
-include: "/views/identity_resolution_v2.view.lkml"
+include: "/views/vimeo_user_identities.view.lkml"
 
 explore: multi_touch_attribution {
   label: "Multi-touch Attribution (Dev)"
+}
+
+explore: vimeo_user_identities {
+  label: "Vimeo User Identities"
 }
 
 explore: identity_resolution {
