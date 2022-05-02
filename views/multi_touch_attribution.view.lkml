@@ -449,9 +449,9 @@ view: multi_touch_attribution {
         from all_orders
         where viewed_at is null
       )
-      select * from final
+      select *, row_number() over (order by ordered_at) as row from final
       union all
-      select * from non_attributable_orders
+      select *, row_number() over (order by ordered_at) as row from non_attributable_orders
       ;;
   }
 
@@ -553,9 +553,14 @@ view: multi_touch_attribution {
     }
   }
 
+  dimension: row {
+    type: number
+    primary_key: yes
+    sql: ${TABLE}.row ;;
+  }
+
   dimension: user_id {
     type: string
-    primary_key: yes
     sql: ${TABLE}.user_id ;;
   }
 
@@ -709,6 +714,11 @@ view: multi_touch_attribution {
     sql:CASE
           WHEN ${TABLE}.utm_source IS NULL THEN ${user_id}
        END ;;
+  }
+
+  measure: total_credit {
+    type: sum
+    sql: ${credit} ;;
   }
 
   set: detail {
