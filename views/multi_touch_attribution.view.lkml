@@ -459,11 +459,11 @@ view: multi_touch_attribution {
     type: unquoted
     label: "Attribution Method"
     allowed_value: {
-      label: "First Interaction"
+      label: "First Event"
       value: "desc"
     }
     allowed_value: {
-      label: "Last Interaction"
+      label: "Last Event"
       value: "asc"
     }
   }
@@ -476,7 +476,7 @@ view: multi_touch_attribution {
       value: "single_touch"
     }
     allowed_value: {
-      label: "Linear"
+      label: "Equal Credit"
       value: "linear"
     }
     allowed_value: {
