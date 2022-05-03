@@ -719,6 +719,7 @@ view: multi_touch_attribution {
   measure: total_credit {
     type: sum
     sql: ${credit} ;;
+    value_format: "0.##"
   }
 
   set: detail {
