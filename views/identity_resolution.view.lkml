@@ -17,10 +17,18 @@ view: identity_resolution {
         , context_campaign_content as utm_content
         , context_campaign_medium as utm_medium
         , context_campaign_name as utm_campaign
-        , context_campaign_source as utm_source
+        , case
+            when context_page_path = "/stream/" and context_campaign_source is null
+              then "direct"
+            when context_page_path = "/getupff/" and context_campaign_source is null
+              then "direct"
+            else context_campaign_source
+            end as utm_source
         , context_campaign_term as utm_term
         , context_page_referrer as referrer
         , title as view
+        , context_page_url as url
+        , context_page_path as path
         , context_user_agent as user_agent
         from javascript_upff_home.pages
       ),
@@ -45,6 +53,8 @@ view: identity_resolution {
         , context_campaign_term as utm_term
         , context_page_referrer as referrer
         , view
+        , context_page_url as url
+        , context_page_path as path
         , context_user_agent as user_agent
         from javascript.pages
       ),
@@ -69,6 +79,8 @@ view: identity_resolution {
         , context_campaign_term as utm_term
         , context_page_referrer as referrer
         , view
+        , context_page_url as url
+        , context_page_path as path
         , context_user_agent as user_agent
         from javascript.order_completed
       ),
@@ -193,6 +205,11 @@ view: identity_resolution {
   dimension: view {
     type: string
     sql: ${TABLE}.view ;;
+  }
+
+  dimension: path {
+    type: string
+    sql: ${TABLE}.path ;;
   }
 
   dimension: referrer {
