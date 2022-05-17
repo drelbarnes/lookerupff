@@ -150,7 +150,7 @@ include: "/views/identifies.view.lkml"
 include: "validate_dunning.view.lkml"
 include: "update_topic_hubspot.view.lkml"
 include: "/views/purchase_event.view.lkml"
-
+include: "/views/form_submissions.view.lkml"
 include: "bigquery_identity_resolution.view.lkml"
 include: "bigquery_marketing_attribution.view.lkml"
 include: "bigquery_order_completed.view.lkml"
@@ -184,6 +184,17 @@ explore: identity_resolution {
     sql_on:  ${purchase_event.user_id} = ${multi_touch_attribution.user_id};;
     relationship: many_to_one
   }
+}
+
+explore: hubspot_contacts {
+  label: "Abandoned Cart Workflow"
+
+  join: form_submissions {
+    type: inner
+    sql_on: ${form_submissions.id} = ${hubspot_contacts.form_submissions} ;;
+    relationship: many_to_one
+  }
+
 }
 
 explore: counties {
@@ -227,7 +238,6 @@ datagroup: purchase_event_datagroup {
 }
 
 explore: purchase_event {}
-explore: hubspot_contacts {}
 
 explore: validate_dunning {}
 explore: update_topic_hubspot {}

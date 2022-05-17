@@ -71,50 +71,60 @@ view: hubspot_contacts {
   # A dimension is a groupable field that can be used to filter query results.
   # This dimension will be called "Canonical Vid" in Explore.
 
-  # dimension: canonical_vid {
-  #   type: number
-  #   value_format_name: id
-  #   sql: ${TABLE}.canonical_vid ;;
-  # }
+  dimension: canonical_vid {
+    type: number
+    value_format_name: id
+    sql: ${TABLE}.canonical_vid ;;
+  }
 
-  # dimension: form_submissions {
-  #   type: string
-  #   sql: ${TABLE}.form_submissions ;;
-  # }
+  dimension: form_submissions {
+    type: string
+    sql: ${TABLE}.form_submissions ;;
+  }
 
-  # dimension: is_contact {
-  #   type: yesno
-  #   sql: ${TABLE}.is_contact ;;
-  # }
+  dimension: is_contact {
+    type: yesno
+    sql: ${TABLE}.is_contact ;;
+  }
 
-  # dimension: lead_guid {
-  #   type: string
-  #   sql: ${TABLE}.lead_guid ;;
-  # }
+  dimension: lead_guid {
+    type: string
+    sql: ${TABLE}.lead_guid ;;
+  }
 
-  # dimension: list_memberships {
-  #   type: string
-  #   sql: ${TABLE}.list_memberships ;;
-  # }
+  dimension: list_memberships {
+    type: string
+    sql: ${TABLE}.list_memberships ;;
+  }
 
-  # dimension_group: loaded {
-  #   type: time
-  #   timeframes: [
-  #     raw,
-  #     time,
-  #     date,
-  #     week,
-  #     month,
-  #     quarter,
-  #     year
-  #   ]
-  #   sql: ${TABLE}.loaded_at ;;
-  # }
+  dimension_group: loaded {
+    type: time
+    timeframes: [
+      raw,
+      time,
+      date,
+      week,
+      month,
+      quarter,
+      year
+    ]
+    sql: ${TABLE}.loaded_at ;;
+  }
 
-  # dimension: portal_id {
-  #   type: number
-  #   sql: ${TABLE}.portal_id ;;
-  # }
+  dimension: portal_id {
+    type: number
+    sql: ${TABLE}.portal_id ;;
+  }
+
+  dimension: properties_abandoned_cart_recovered_value {
+    type: string
+    sql: ${TABLE}.properties_abandoned_cart_recovered_value ;;
+  }
+
+  dimension: properties_abandoned_cart_value {
+    type: string
+    sql: ${TABLE}.properties_abandoned_cart_recovered_value ;;
+  }
 
   dimension: properties_churn_score_value {
     type: string
@@ -125,6 +135,13 @@ view: hubspot_contacts {
     type: string
     sql: ${TABLE}.properties_company_value ;;
   }
+
+  dimension: propertiesp_phone_value {
+    type: string
+    tags: ["phone"]
+    sql: ${TABLE}.properties_phone_value ;;
+  }
+
 
   dimension: properties_firstname_value {
     type: string
