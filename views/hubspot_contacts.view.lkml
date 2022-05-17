@@ -126,6 +126,12 @@ view: hubspot_contacts {
     sql: ${TABLE}.properties_company_value ;;
   }
 
+  dimension: propertiesp_phone_value {
+    type: string
+    sql: ${TABLE}.properties_phone_value ;;
+  }
+
+
   dimension: properties_firstname_value {
     type: string
     sql: ${TABLE}.properties_firstname_value ;;
