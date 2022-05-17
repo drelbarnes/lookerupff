@@ -425,16 +425,25 @@ max as
   max(ep10) as ep10,
   max(ep11) as ep11,
   max(ep12) as ep12,
-  max(ep13) as ep13
+  max(ep13) as ep13,
+  max(ep14) as ep14,
+  max(ep15) as ep15,
+  max(ep16) as ep16,
+  max(ep17) as ep17,
+  max(ep18) as ep18,
+  max(ep19) as ep19,
+  max(ep20) as ep20
 from flags
 group by 1,2),
 
 sum as
 (select
-  user_id, collection, ep1, ep2, ep3, ep4, ep5, ep6, ep7, ep8, ep9, ep10, ep11, ep12, ep13,
-  ep1+ep2+ep3+ep4+ep5+ep6+ep7+ep8+ep9+ep10+ep11+ep12+ep13 as total_episodes
+  user_id, collection,
+  ep1, ep2, ep3, ep4, ep5, ep6, ep7, ep8, ep9, ep10,
+  ep11, ep12, ep13, ep14, ep15, ep16, ep17, ep18, ep19, ep20,
+  ep1+ep2+ep3+ep4+ep5+ep6+ep7+ep8+ep9+ep10+ep11+ep12+ep13+ep14+ep15+ep16+ep17+ep18+ep19+ep20 as total_episodes
 from max
-group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15),
+group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22),
 
 habits as
 (select user_id, collection, total_episodes,
