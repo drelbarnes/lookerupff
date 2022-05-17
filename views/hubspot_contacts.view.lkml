@@ -128,6 +128,7 @@ view: hubspot_contacts {
 
   dimension: propertiesp_phone_value {
     type: string
+    tags: ["undefined"]
     sql: ${TABLE}.properties_phone_value ;;
   }
 
