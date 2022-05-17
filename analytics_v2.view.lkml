@@ -16,7 +16,12 @@ view: analytics_v2 {
       where date(sent_at)=current_date
     )
     , distinct_events as (
-      select distinct user_id, action, status, event_created_at, report_date
+      select distinct user_id, action, status, event_created_at, report_date,
+      case
+        when frequency in ('yearly') then 'yearly'
+        when frequency in ('monthly','custom') then 'monthly'
+        else 'missing'
+      end as frequency_flag
       from customers.all_customers
     )
     , paying as (
@@ -25,6 +30,7 @@ view: analytics_v2 {
       from distinct_events
       where action = 'subscription'
       and status = 'enabled'
+      and frequency_flag = {% parameter frequency_parameter %}
       group by report_date
     )
     , trials as (
@@ -33,6 +39,7 @@ view: analytics_v2 {
       from distinct_events
       where action = 'subscription'
       and status = 'free_trial'
+      and frequency_flag = {% parameter frequency_parameter %}
       group by report_date
     )
     , customers_analytics as (
@@ -118,6 +125,19 @@ group by a1.timestamp,a1.paying_churn)),
       left join customers.churn_reasons_aggregated as b on a.timestamp=b.timestamp)) as a))
 
       select f.*,paying_30_days_prior,churn_30_days,churn_30_day_percent,winback_30_days from e inner join f on e.timestamp=f.timestamp ;;}
+
+parameter: frequency_parameter {
+  type: unquoted
+  label: "Subscription Type"
+  allowed_value: {
+    label: "Yearly"
+    value: "yearly"
+  }
+  allowed_value: {
+    label: "Monthly"
+    value: "monthly"
+  }
+}
 
 measure: winback_30_days {
   type: sum
