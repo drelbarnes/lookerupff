@@ -12,22 +12,22 @@ view: bigquery_mvpd_subs {
       from svod_titles.mvpd_subs;;
   }
 
-  dimension: amazon {
+  dimension: Amazon {
     type: number
     sql: ${TABLE}.amazon ;;
   }
 
-  dimension: comcast {
+  dimension: Comcast {
     type: number
     sql: ${TABLE}.comcast ;;
   }
 
-  dimension: vimeo {
+  dimension: Vimeo {
     type: number
     sql: ${TABLE}.vimeo ;;
   }
 
-  dimension: all_others {
+  dimension: Others {
     type: number
     sql: ${TABLE}.allothers ;;
   }

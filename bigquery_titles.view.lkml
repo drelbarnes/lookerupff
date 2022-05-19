@@ -11,7 +11,7 @@ view: bigquery_titles {
             else platform
           end as platform,
           case
-            when platform not in ('Amazon','Vimeo','Comcast SVOD') then 'All Others'
+            when platform not in ('Amazon','Vimeo','Comcast SVOD') then 'Others'
             else platform
           end as platform_,
           up_title,
