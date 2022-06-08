@@ -1,7 +1,7 @@
 view: analytics_v2 {
   derived_table: {
     sql: with get_analytics as (
-        select analytics_timestamp as timestamp,
+      select analytics_timestamp as timestamp,
         existing_free_trials,
         existing_paying,
         free_trial_churn,
@@ -26,146 +26,30 @@ view: analytics_v2 {
         from customers.all_customers
         where action = 'subscription'
       )
-      , distinct_events_monthly as (
-        select distinct user_id
-        , action
-        , status
-        , frequency
-        , to_timestamp(event_created_at, 'YYYY-MM-DD HH24:MI:SS') as event_created_at
-        , to_date(event_created_at, 'YYYY-MM-DD') as event_date
-        , to_date(report_date, 'YYYY-MM-DD') as report_date
-        from customers.all_customers
-        where action = 'subscription'
-        and
-        frequency in ('monthly', 'custom')
-      )
-      , distinct_events_yearly as (
-        select distinct user_id
-        , action
-        , status
-        , frequency
-        , to_timestamp(event_created_at, 'YYYY-MM-DD HH24:MI:SS') as event_created_at
-        , to_date(event_created_at, 'YYYY-MM-DD') as event_date
-        , to_date(report_date, 'YYYY-MM-DD') as report_date
-        from customers.all_customers
-        where action = 'subscription'
-        and
-        frequency in ('yearly')
-      )
-      , customer_journey as (
-        select *
-        , lag(status, 1) over (partition by user_id order by report_date) as last_status
-        from {% parameter subscription_frequency %}
-      )
-      , windowed_events as (
-        select
-        report_date
-        , event_date
-        , event_created_at
-        , user_id
-        , action
-        , status
-        , last_status
-        , frequency
-        from customer_journey
-      )
       , total_counts as (
         select report_date
         , count(distinct case when status = 'enabled' then user_id end) as total_paying
         , lag(total_paying, 1) over (order by report_date) as existing_paying
         , count(distinct case when status = 'free_trial' then user_id end) as total_free_trials
         , lag(total_free_trials, 1) over (order by report_date) as existing_free_trials
-        from windowed_events
+        from distinct_events
         group by 1
       )
-      , free_trial_created as (
-        select event_date
-        , count(distinct user_id) as free_trial_created
-        from windowed_events
-        where action = 'subscription'
-        and status = 'free_trial'
-        and (last_status != 'free_trial' or last_status is null)
-        group by event_date
-      )
-      , free_trial_converted as (
-        select event_date
-        , count(distinct user_id) as free_trial_converted
-        from windowed_events
-        where action = 'subscription'
-        and status = 'enabled'
-        and last_status = 'free_trial'
-        group by event_date
-      )
-      , free_trial_churn as (
-        select event_date
-        , count(distinct user_id) as free_trial_churn
-        from windowed_events
-        where action = 'subscription'
-        -- and status in ('paused', 'expired', 'cancelled')
-        and status not in ('free_trial', 'enabled')
-        and last_status = 'free_trial'
-        group by event_date
-      )
-      , paused_created as (
-        select event_date
-        , count(distinct user_id) as paused_created
-        from windowed_events
-        where action = 'subscription'
-        and status = 'paused'
-        group by event_date
-      )
-      , paying_churn as (
-        select event_date
-        , count(distinct user_id) as paying_churn
-        from windowed_events
-        where action = 'subscription'
-        -- and status in ('paused', 'expired', 'cancelled')
-        and status not in ('free_trial', 'enabled')
-        and last_status != 'free_trial'
-        group by event_date
-      )
-      , paying_created as (
-        select event_date
-        , count(distinct user_id) as paying_created
-        from windowed_events
-        where action = 'subscription'
-        and status = 'enabled'
-        and (last_status not in ('free_trial', 'enabled') or last_status is null)
-        group by event_date
-      )
-      , aggregate as (
-      select a.report_date
-      , existing_free_trials
-      , existing_paying
-      , free_trial_churn
-      , free_trial_created
-      , paused_created
-      , paying_churn
-      , total_free_trials
-      , total_paying
-      , (existing_free_trials - free_trial_churn + free_trial_created) - total_free_trials as free_trial_converted
-      , total_paying - (existing_paying - paying_churn - paused_created + free_trial_converted) as paying_created
-      from total_counts as a
-      left join free_trial_created as d on a.report_date = d.event_date
-      left join free_trial_churn as f on a.report_date = f.event_date
-      left join paused_created as h on a.report_date = h.event_date
-      left join paying_churn as i on a.report_date = i.event_date
-      )
       , customers_analytics as (
-      select get_analytics.timestamp,
-      COALESCE(get_analytics.existing_free_trials, aggregate.existing_free_trials) as existing_free_trials,
-      COALESCE(get_analytics.existing_paying, aggregate.existing_paying) as existing_paying,
-      COALESCE(get_analytics.free_trial_churn, aggregate.free_trial_churn) as free_trial_churn,
-      COALESCE(get_analytics.free_trial_converted, aggregate.free_trial_converted) as free_trial_converted,
-      COALESCE(get_analytics.free_trial_created, aggregate.free_trial_created) as free_trial_created,
-      COALESCE(get_analytics.paused_created, aggregate.paused_created) as paused_created,
-      COALESCE(get_analytics.paying_churn, aggregate.paying_churn) as paying_churn,
-      COALESCE(get_analytics.paying_created, aggregate.paying_created) as paying_created,
-      COALESCE(get_analytics.total_free_trials, aggregate.total_free_trials) as total_free_trials,
-      COALESCE(get_analytics.total_paying, aggregate.total_paying) as total_paying
-      from get_analytics
-      full join aggregate
-      on aggregate.report_date = trunc(get_analytics.timestamp)
+        select get_analytics.timestamp,
+        coalesce(total_counts.existing_free_trials, get_analytics.existing_free_trials) as existing_free_trials,
+        coalesce(total_counts.existing_paying, get_analytics.existing_paying) as existing_paying,
+        get_analytics.free_trial_churn,
+        get_analytics.free_trial_converted,
+        get_analytics.free_trial_created,
+        get_analytics.paused_created,
+        get_analytics.paying_churn,
+        get_analytics.paying_created,
+        coalesce(total_counts.total_free_trials, get_analytics.total_free_trials) as total_free_trials,
+        coalesce(total_counts.total_paying, get_analytics.total_paying) as total_paying
+        from get_analytics
+        full join total_counts
+        on total_counts.report_date = trunc(get_analytics.timestamp)
       ),
 
       a as (select a.timestamp, ROW_NUMBER() OVER(ORDER BY a.timestamp desc) AS Row
