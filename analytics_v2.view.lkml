@@ -2,57 +2,55 @@ view: analytics_v2 {
   derived_table: {
     sql: with get_analytics as (
       select analytics_timestamp as timestamp,
-      existing_free_trials,
-      existing_paying,
-      free_trial_churn,
-      free_trial_converted,
-      free_trial_created,
-      paused_created,
-      paying_churn,
-      paying_created,
-      total_free_trials,
-      total_paying
-      from php.get_analytics
-      where date(sent_at)=current_date
-    )
-    , distinct_events as (
-      select distinct user_id, action, status, event_created_at, report_date
-      from customers.all_customers
-    )
-    , paying as (
-      select report_date
-      , count(distinct user_id) as total_paying
-      from distinct_events
-      where action = 'subscription'
-      and status = 'enabled'
-      group by report_date
-    )
-    , trials as (
-      select report_date
-      , count(distinct user_id) as total_free_trials
-      from distinct_events
-      where action = 'subscription'
-      and status = 'free_trial'
-      group by report_date
-    )
-    , customers_analytics as (
-    select get_analytics.timestamp,
-    get_analytics.existing_free_trials,
-    get_analytics.existing_paying,
-    get_analytics.free_trial_churn,
-    get_analytics.free_trial_converted,
-    get_analytics.free_trial_created,
-    get_analytics.paused_created,
-    get_analytics.paying_churn,
-    get_analytics.paying_created,
-    COALESCE(trials.total_free_trials, get_analytics.total_free_trials) as total_free_trials,
-    COALESCE(paying.total_paying, get_analytics.total_paying) as total_paying
-    from get_analytics
-    full join paying
-    on paying.report_date = trunc(get_analytics.timestamp)
-    full join trials
-    on trials.report_date = trunc(get_analytics.timestamp)
-    ),
+        existing_free_trials,
+        existing_paying,
+        free_trial_churn,
+        free_trial_converted,
+        free_trial_created,
+        paused_created,
+        paying_churn,
+        paying_created,
+        total_free_trials,
+        total_paying
+        from php.get_analytics
+        where date(sent_at)=current_date
+      )
+      , distinct_events as (
+        select distinct user_id
+        , action
+        , status
+        , frequency
+        , to_timestamp(event_created_at, 'YYYY-MM-DD HH24:MI:SS') as event_created_at
+        , to_date(event_created_at, 'YYYY-MM-DD') as event_date
+        , to_date(report_date, 'YYYY-MM-DD') as report_date
+        from customers.all_customers
+        where action = 'subscription'
+      )
+      , total_counts as (
+        select report_date
+        , count(distinct case when status = 'enabled' then user_id end) as total_paying
+        , lag(total_paying, 1) over (order by report_date) as existing_paying
+        , count(distinct case when status = 'free_trial' then user_id end) as total_free_trials
+        , lag(total_free_trials, 1) over (order by report_date) as existing_free_trials
+        from distinct_events
+        group by 1
+      )
+      , customers_analytics as (
+        select get_analytics.timestamp,
+        coalesce(total_counts.existing_free_trials, get_analytics.existing_free_trials) as existing_free_trials,
+        coalesce(total_counts.existing_paying, get_analytics.existing_paying) as existing_paying,
+        get_analytics.free_trial_churn,
+        get_analytics.free_trial_converted,
+        get_analytics.free_trial_created,
+        get_analytics.paused_created,
+        get_analytics.paying_churn,
+        get_analytics.paying_created,
+        coalesce(total_counts.total_free_trials, get_analytics.total_free_trials) as total_free_trials,
+        coalesce(total_counts.total_paying, get_analytics.total_paying) as total_paying
+        from get_analytics
+        full join total_counts
+        on total_counts.report_date = trunc(get_analytics.timestamp)
+      ),
 
       a as (select a.timestamp, ROW_NUMBER() OVER(ORDER BY a.timestamp desc) AS Row
       from customers_analytics as a),
@@ -118,6 +116,15 @@ view: analytics_v2 {
       left join customers.churn_reasons_aggregated as b on a.timestamp=b.timestamp)) as a))
 
       select f.*,paying_30_days_prior,churn_30_days,churn_30_day_percent,winback_30_days from e inner join f on e.timestamp=f.timestamp ;;}
+
+  parameter: subscription_frequency {
+    label: "Subscription Frequency"
+    type: unquoted
+    default_value: "distinct_events"
+    allowed_value: {label: "All" value:"distinct_events"}
+    allowed_value: {label: "Monthly" value:"distinct_events_monthly"}
+    allowed_value: {label: "Yearly" value:"distinct_events_yearly"}
+  }
 
   measure: winback_30_days {
     type: sum
