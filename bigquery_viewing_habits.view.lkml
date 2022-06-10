@@ -518,7 +518,7 @@ view: bigquery_viewing_habits {
         when total_episodes = 1 then 'First episode only'
         when total_episodes > 1 and total_episodes < 13 then 'More than 1 but not completed'
         when total_episodes = 13 then 'Series completer'
-        else 'Other or missing'
+        else 'Other or missing incomplete series'
         end as viewing_habit
         from sum
         where collection = 'Hudson & Rex - Season 1'
@@ -558,6 +558,9 @@ view: bigquery_viewing_habits {
       type: string
       sql: ${TABLE}.collection ;;
     }
+
+
+
 
     set: detail {
       fields: [n, viewing_habit, collection]
