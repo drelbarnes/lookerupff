@@ -1,5 +1,9 @@
 connection: "google_bigquery_db"
 
+include: "bigquery_viewing_habits.view.lkml"
+explore: bigquery_viewing_habits {
+  label: "Viewing Habits"
+}
 
 include: "bigquery_subscribers_timeupdate.view.lkml"
 include: "bigquery_derived_timeupdate.view.lkml"
