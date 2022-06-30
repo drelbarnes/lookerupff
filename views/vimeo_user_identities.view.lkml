@@ -1,103 +1,162 @@
 view: vimeo_user_identities {
   derived_table: {
-    sql:
-      with active_users as (
-        with pe as (
-          select
-          user_id
-          , subscription_status as status
-          , timestamp
-          , platform
-          , row_number() over (partition by user_id order by timestamp desc) as rn
-          from http_api.purchase_event
-        )
+    sql: with web_identities as (
+      with web_app as (
         select
-        user_id
-        , status
-        , platform
-        , timestamp
-        from pe
-        where rn = 1
-        and status in ("free_trial", "enabled")
+        safe_cast(user_id as string) as user_id
+        , safe_cast(user_email as string) as email
+        , cast(null as string) as phone
+        , safe_cast(context_ip as string) as ip_address
+        , safe_cast(anonymous_id as string) as anonymous_id
+        , safe_cast(context_traits_cross_domain_id as string) as cross_domain_id
+        FROM javascript.sign_in_complete
+        group by 1,2,3,4,5,6
       )
-      , site_identifies as (
+      , web_site as (
         select
-        user_id
-        , email
-        , phone
-        , context_ip
-        , anonymous_id
-        , context_traits_cross_domain_id
-        , "web" as platform
+        safe_cast(user_id as string) as user_id
+        , safe_cast(email as string) as email
+        , safe_cast(phone as string) as phone
+        , safe_cast(context_ip as string) as ip_address
+        , safe_cast(anonymous_id as string) as anonymous_id
+        , safe_cast(context_traits_cross_domain_id as string) as cross_domain_id
         FROM javascript_upff_home.identifies
         group by 1,2,3,4,5,6
       )
-      , seller_identifies as (
-        select
-        user_id
-        , email
-        , '' as phone
-        , context_ip
-        , anonymous_id
-        , context_traits_cross_domain_id
-        , "web" as platform
-        FROM javascript.identifies
-        group by 1,2,3,4,5,6
-      )
-      , all_identifies as (
-        select * from site_identifies
+      , union_all as (
+        select * from web_app
         union all
-        select* from seller_identifies
+        select * from web_site
       )
-      , identity_resolution as (
+      , distinct_identities as (
+      select distinct * from union_all
+      )
+      , look_up_existing_user_id as (
+        select user_id, email, phone, anonymous_id, cross_domain_id from distinct_identities where (user_id is not null and email is not null)
+      )
+      , look_up_existing_email as (
+        select user_id, email, phone, anonymous_id, cross_domain_id from distinct_identities where (user_id is null and email is not null)
+      )
+      , distinct_identities_filled as (
         select
-        a.timestamp
-        , a.user_id
-        , a.status
-        , a.platform
-        , b.email
-        , b.phone
-        , b.context_ip
-        , b.anonymous_id
-        , b.context_traits_cross_domain_id
-        from active_users as a
-        full join all_identifies as b
-        on a.user_id = b.user_id
+        a.*
+        , b.user_id as user_id_b
+        , b.email as email_b
+        , b.phone as phone_b
+        , b.cross_domain_id as cross_domain_id_b
+        , c.user_id as user_id_c
+        , c.email as email_c
+        , c.phone as phone_c
+        , c.cross_domain_id as cross_domain_id_c
+        from distinct_identities as a
+        left join look_up_existing_user_id as b
+        on a.anonymous_id = b.anonymous_id
+        left join look_up_existing_email as c
+        on a.anonymous_id = c.anonymous_id
       )
-        select distinct * from identity_resolution
-        where user_id in (select user_id from active_users)
-    ;;
+      , unique_identities as (
+        with coalesce_columns as (
+          select
+          coalesce(user_id, user_id_b, user_id_c) as user_id
+          , coalesce(email, email_b, email_c) as email
+          , coalesce(phone, phone_b, phone_c) as phone
+          , ip_address
+          , anonymous_id
+          , coalesce(cross_domain_id, cross_domain_id_b, cross_domain_id_c) as cross_domain_id
+          from distinct_identities_filled
+        )
+        select *
+        , cast(null as string) as device_id
+        , "web" as platform
+        from coalesce_columns
+      )
+      select distinct * from unique_identities
+    )
+    , roku_identities as (
+      select
+      safe_cast(user_id as string) as user_id
+      , safe_cast(user_email as string) as email
+      , cast(null as string) as phone
+      , cast(null as string) as ip_address
+      , safe_cast(anonymous_id as string) as anonymous_id
+      , cast(null as string) as cross_domain_id
+      , safe_cast(device_id as string) as device_id
+      , safe_cast(platform as string) as platform
+      FROM roku.sign_in_complete
+      group by 1,2,3,4,5,6,7,8
+    )
+    , amazon_identities as (
+      select
+      safe_cast(user_id as string) as user_id
+      , safe_cast(user_email as string) as email
+      , cast(null as string) as phone
+      , safe_cast(context_ip as string) as ip_address
+      , safe_cast(anonymous_id as string) as anonymous_id
+      , cast(null as string) as cross_domain_id
+      , safe_cast(device_id as string) as device_id
+      , safe_cast(platform as string) as platform
+      FROM amazon_fire_tv.sign_in_complete
+      group by 1,2,3,4,5,6,7,8
+    )
+    , ios_identities as (
+      select
+      safe_cast(user_id as string) as user_id
+      , safe_cast(user_email as string) as email
+      , cast(null as string) as phone
+      , safe_cast(context_ip as string) as ip_address
+      , safe_cast(anonymous_id as string) as anonymous_id
+      , cast(null as string) as cross_domain_id
+      , safe_cast(device_id as string) as device_id
+      , safe_cast(platform as string) as platform
+      FROM ios.sign_in_complete
+      group by 1,2,3,4,5,6,7,8
+    )
+    , android_identities as (
+      select
+      safe_cast(user_id as string) as user_id
+      , safe_cast(user_email as string) as email
+      , cast(null as string) as phone
+      , safe_cast(context_ip as string) as ip_address
+      , safe_cast(anonymous_id as string) as anonymous_id
+      , cast(null as string) as cross_domain_id
+      , safe_cast(device_id as string) as device_id
+      , safe_cast(platform as string) as platform
+      FROM android.sign_in_complete
+      group by 1,2,3,4,5,6,7,8
+    )
+    , all_identities as (
+      select * from web_identities
+      union all
+      select * from roku_identities
+      union all
+      select * from amazon_identities
+      union all
+      select * from ios_identities
+      union all
+      select * from android_identities
+    )
+    select distinct *, row_number() over (order by user_id) as row from all_identities ;;
+  }
+
+  measure: count {
+    type: count
+    drill_fields: [detail*]
+  }
+
+  dimension: row {
+    primary_key: yes
+    type: number
+    sql: ${TABLE}.row ;;
   }
 
   dimension: user_id {
     type: string
-    primary_key: yes
     sql: ${TABLE}.user_id ;;
   }
 
-  dimension: anonymous_id {
+  dimension: email {
     type: string
-    sql: ${TABLE}.anonymous_id ;;
-  }
-
-  dimension: context_ip {
-    type: string
-    sql: ${TABLE}.context_ip ;;
-  }
-
-  dimension: context_traits_cross_domain_id {
-    type: string
-    sql: ${TABLE}.context_traits_cross_domain_id ;;
-  }
-
-  dimension: status {
-    type: string
-    sql: ${TABLE}.status ;;
-  }
-
-  dimension: platform {
-    type: string
-    sql: ${TABLE}.platform ;;
+    sql: ${TABLE}.email ;;
   }
 
   dimension: phone {
@@ -105,8 +164,41 @@ view: vimeo_user_identities {
     sql: ${TABLE}.phone ;;
   }
 
-  dimension_group: timestamp {
-    type: time
-    sql: ${TABLE}.timestamp ;;
+  dimension: ip_address {
+    type: string
+    sql: ${TABLE}.ip_address ;;
+  }
+
+  dimension: anonymous_id {
+    type: string
+    sql: ${TABLE}.anonymous_id ;;
+  }
+
+  dimension: cross_domain_id {
+    type: string
+    sql: ${TABLE}.cross_domain_id ;;
+  }
+
+  dimension: device_id {
+    type: string
+    sql: ${TABLE}.device_id ;;
+  }
+
+  dimension: platform {
+    type: string
+    sql: ${TABLE}.platform ;;
+  }
+
+  set: detail {
+    fields: [
+      user_id,
+      email,
+      phone,
+      ip_address,
+      anonymous_id,
+      cross_domain_id,
+      device_id,
+      platform
+    ]
   }
 }

@@ -1,4 +1,4 @@
-view: sql_runner_query {
+view: subscriber_lifecycles {
   derived_table: {
     sql: with order_completed as (
         with web as (

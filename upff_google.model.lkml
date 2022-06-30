@@ -159,9 +159,18 @@ include: "other_marketing_spend.view.lkml"
 include: "counties.view.lkml"
 
 include: "/views/multi_touch_attribution.view.lkml"
+include: "/views/multi_touch_attribution_web.view.lkml"
 include: "/views/identity_resolution.view.lkml"
 include: "/views/vimeo_user_identities.view.lkml"
 include: "/views/subscriber_lifecycles.view.lkml"
+include: "/views/vimeo_app_screens.view.lkml"
+include: "/views/upff_web_pages.view.lkml"
+include: "/views/vimeo_app_installs.view.lkml"
+
+
+explore: subscriber_lifecycles  {
+  label: "Subscriber Lifecycles"
+}
 
 explore: multi_touch_attribution {
   label: "Multi-touch Attribution (Dev)"
@@ -171,13 +180,47 @@ explore: vimeo_user_identities {
   label: "Vimeo User Identities"
 }
 
-explore: identity_resolution {
+explore: funnel_performance {
+  view_name: vimeo_user_identities
   label: "Funnel Performance"
+
+  join: upff_web_pages {
+    type: full_outer
+    sql_on: ${vimeo_user_identities.anonymous_id} = ${upff_web_pages.anonymous_id} ;;
+    relationship: many_to_many
+  }
+
+  join: subscriber_lifecycles {
+    type: full_outer
+    sql_on: ${vimeo_user_identities.user_id} = ${subscriber_lifecycles.user_id} ;;
+    relationship: many_to_many
+  }
+
+  join: vimeo_app_screens {
+    type: full_outer
+    sql_on: ${vimeo_user_identities.device_id} = ${vimeo_app_screens.device_id} ;;
+    relationship: many_to_many
+  }
+
+  join: vimeo_app_installs {
+    type: full_outer
+    sql_on: ${vimeo_user_identities.device_id} = ${vimeo_app_installs.device_id} ;;
+    relationship: many_to_many
+  }
+
+  join: multi_touch_attribution_web {
+    type: full_outer
+    sql_on: ${vimeo_user_identities.anonymous_id} = ${multi_touch_attribution_web.anonymous_id} ;;
+    relationship: many_to_many
+  }
+}
+
+explore: identity_resolution {
+  label: "Cross Promotion Performance"
 
   join: multi_touch_attribution {
     type: full_outer
-    sql_on: ${identity_resolution.anonymous_id} = ${multi_touch_attribution.anonymous_id}
-      ;;
+    sql_on: ${identity_resolution.anonymous_id} = ${multi_touch_attribution.anonymous_id};;
     relationship: many_to_many
   }
   join: purchase_event {
@@ -185,6 +228,7 @@ explore: identity_resolution {
     sql_on:  ${purchase_event.user_id} = ${multi_touch_attribution.user_id};;
     relationship: many_to_one
   }
+
 }
 
 explore: hubspot_contacts {
