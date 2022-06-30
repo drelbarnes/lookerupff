@@ -249,22 +249,22 @@ view: multi_touch_attribution {
         select * from web_pages_web_orders_ip
         union all
         select * from web_pages_web_orders_cross_domain
-        --union all
-        --select * from web_pages_fire_tv_orders_anon
-        --union all
-        --select * from web_pages_fire_tv_orders_ip
-        --union all
-        --select * from web_pages_android_orders_anon
-        --union all
-        --select * from web_pages_android_orders_ip
-        --union all
-        --select * from web_pages_ios_orders_anon
-        --union all
-        --select * from web_pages_ios_orders_ip
-        --union all
-        --select * from web_pages_roku_orders_anon
-        --union all
-        --select * from web_pages_roku_orders_ip
+        -- union all
+        -- select * from web_pages_fire_tv_orders_anon
+        -- union all
+        -- select * from web_pages_fire_tv_orders_ip
+        -- union all
+        -- select * from web_pages_android_orders_anon
+        -- union all
+        -- select * from web_pages_android_orders_ip
+        -- union all
+        -- select * from web_pages_ios_orders_anon
+        -- union all
+        -- select * from web_pages_ios_orders_ip
+        -- union all
+        -- select * from web_pages_roku_orders_anon
+        -- union all
+        -- select * from web_pages_roku_orders_ip
       )
       -- ATTRIBUITION MODELS
       -- Multitouch source attribution, channel decay
@@ -449,9 +449,12 @@ view: multi_touch_attribution {
         from all_orders
         where viewed_at is null
       )
-      select *, row_number() over (order by ordered_at) as row from final
-      union all
-      select *, row_number() over (order by ordered_at) as row from non_attributable_orders
+      , union_all as (
+        select * from final
+        union all
+        select * from non_attributable_orders
+      )
+      select *, row_number() over (order by ordered_at) as row from union_all
       ;;
   }
 
