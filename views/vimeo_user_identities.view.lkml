@@ -9,18 +9,20 @@ view: vimeo_user_identities {
         , safe_cast(context_ip as string) as ip_address
         , safe_cast(anonymous_id as string) as anonymous_id
         , safe_cast(context_traits_cross_domain_id as string) as cross_domain_id
-        FROM javascript.sign_in_complete
+        FROM javascript.pages
         group by 1,2,3,4,5,6
       )
       , web_site as (
         select
-        safe_cast(user_id as string) as user_id
-        , safe_cast(email as string) as email
-        , safe_cast(phone as string) as phone
-        , safe_cast(context_ip as string) as ip_address
-        , safe_cast(anonymous_id as string) as anonymous_id
-        , safe_cast(context_traits_cross_domain_id as string) as cross_domain_id
-        FROM javascript_upff_home.identifies
+        safe_cast(a.user_id as string) as user_id
+        , safe_cast(b.email as string) as email
+        , safe_cast(b.phone as string) as phone
+        , safe_cast(a.context_ip as string) as ip_address
+        , safe_cast(a.anonymous_id as string) as anonymous_id
+        , safe_cast(a.context_traits_cross_domain_id as string) as cross_domain_id
+        FROM javascript_upff_home.pages as a
+        left join javascript_upff_home.identifies as b
+        on a.anonymous_id = b.anonymous_id
         group by 1,2,3,4,5,6
       )
       , union_all as (
@@ -136,11 +138,18 @@ view: vimeo_user_identities {
       select * from android_identities
     )
     select distinct *, row_number() over (order by user_id) as row from all_identities ;;
+
+    persist_for: "12 hours"
   }
 
   measure: count {
     type: count
     drill_fields: [detail*]
+  }
+
+  measure: count_distinct_user_id {
+    type: count_distinct
+    sql: ${TABLE}.user_id ;;
   }
 
   dimension: row {
