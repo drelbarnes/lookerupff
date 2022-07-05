@@ -252,8 +252,8 @@ view: upff_web_pages {
 
   dimension: campaign_source {
     sql: CASE
-              WHEN ${TABLE}.utm_source IS NULL then 'Organic'
-              WHEN ${TABLE}.utm_source = 'organic' then 'Organic'
+              WHEN ${TABLE}.utm_source IS NULL then 'Direct Traffic'
+              WHEN ${TABLE}.utm_source = 'organic' then 'Direct Traffic'
               WHEN ${TABLE}.utm_source LIKE 'hs_email' then 'Internal'
               WHEN ${TABLE}.utm_source LIKE 'hs_automation' then 'Internal'
               WHEN ${TABLE}.utm_source LIKE '%site.source.name%' then 'Facebook Ads'

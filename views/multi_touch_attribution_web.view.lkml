@@ -21,6 +21,8 @@ view: multi_touch_attribution_web {
         , subscription_frequency as plan_type
         from http_api.purchase_event
         where topic in ("customer.product.created", "customer.product.free_trial_created")
+        and
+        timestamp >= {% date_start date_filter %} and timestamp <= {% date_end date_filter %}
         )
         select
         a.ordered_at
@@ -289,34 +291,67 @@ view: multi_touch_attribution_web {
       on a.user_id = b.user_id and a.n = b.n
       )
       , non_attributable_orders as (
-      select
-      ordered_at
-      , viewed_at
-      , user_id
-      , anonymous_id
-      , ip_address
-      , cross_domain_id
-      , plan_type
-      , platform
-      , topic
-      , utm_content
-      , utm_medium
-      , utm_campaign
-      , utm_source
-      , utm_term
-      , user_agent
-      , view
-      , referrer
-      , "" as source
-      , 1 as conversion_event
-      , null as credit
-      from all_orders
-      where viewed_at is null
+        select
+        ordered_at
+        , viewed_at
+        , user_id
+        , anonymous_id
+        , ip_address
+        , cross_domain_id
+        , plan_type
+        , platform
+        , topic
+        , utm_content
+        , utm_medium
+        , utm_campaign
+        , utm_source
+        , utm_term
+        , user_agent
+        , view
+        , referrer
+        , cast(null as string) as source
+        , 1 as conversion_event
+        , null as credit
+        from all_orders
+        where viewed_at is null
+        and user_id not in (select user_id from final)
+        and ordered_at >= {% date_start date_filter %} and ordered_at <= {% date_end date_filter %}
+      )
+      , unconverted_page_views as (
+        select
+        cast(null as timestamp) as ordered_at
+        , viewed_at
+        , cast(null as string) as user_id
+        , anonymous_id
+        , ip_address
+        , cross_domain_id
+        , cast(null as string) as plan_type
+        , "web" as platform
+        , cast(null as string) as topic
+        , utm_content
+        , utm_medium
+        , utm_campaign
+        , utm_source
+        , utm_term
+        , user_agent
+        , view
+        , referrer
+        , cast(null as string) as source
+        , 0 as conversion_event
+        , null as credit
+        from web_pages
+        where anonymous_id not in (
+          select distinct anonymous_id from final
+        )
+        and
+        viewed_at >= {% date_start date_filter %} and viewed_at <= {% date_end date_filter %}
       )
       , union_all as (
       select * from final
       union all
       select * from non_attributable_orders
+      union all
+      select * from unconverted_page_views
       )
       select *, row_number() over (order by ordered_at) as row from union_all
       ;;
@@ -497,8 +532,8 @@ view: multi_touch_attribution_web {
 
   dimension: campaign_source {
     sql: CASE
-              WHEN ${TABLE}.source IS NULL then 'Organic'
-              WHEN ${TABLE}.source = 'organic' then 'Organic'
+              WHEN ${TABLE}.source IS NULL then 'Direct Traffic'
+              WHEN ${TABLE}.source = 'organic' then 'Direct Traffic'
               WHEN ${TABLE}.source LIKE 'hs_email' then 'Internal'
               WHEN ${TABLE}.source LIKE 'hs_automation' then 'Internal'
               WHEN ${TABLE}.source LIKE '%site.source.name%' then 'Facebook Ads'
