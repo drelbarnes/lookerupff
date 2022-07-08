@@ -170,7 +170,11 @@ include: "/views/subscriber_lifecycles.view.lkml"
 include: "/views/vimeo_app_screens.view.lkml"
 include: "/views/upff_web_pages.view.lkml"
 include: "/views/vimeo_app_installs.view.lkml"
+include: "/views/vimeo_webhook_events.view.lkml"
 
+explore: vimeo_webhook_events {
+  label: "Vimeo Webhook Events"
+}
 
 explore: subscriber_lifecycles  {
   label: "Subscriber Lifecycles"

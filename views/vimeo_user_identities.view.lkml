@@ -3,7 +3,10 @@ view: vimeo_user_identities {
     sql: with web_identities as (
       with web_app as (
         select
-        safe_cast(user_id as string) as user_id
+        case
+          when safe_cast(user_id as string) = safe_cast(anonymous_id as string) then cast(null as string)
+          else safe_cast(user_id as string)
+        end as user_id
         , safe_cast(user_email as string) as email
         , cast(null as string) as phone
         , safe_cast(context_ip as string) as ip_address
@@ -14,7 +17,10 @@ view: vimeo_user_identities {
       )
       , web_site as (
         select
-        safe_cast(a.user_id as string) as user_id
+        case
+          when safe_cast(a.user_id as string) = safe_cast(a.anonymous_id as string) then cast(null as string)
+          else safe_cast(a.user_id as string)
+        end as user_id
         , safe_cast(b.email as string) as email
         , safe_cast(b.phone as string) as phone
         , safe_cast(a.context_ip as string) as ip_address
