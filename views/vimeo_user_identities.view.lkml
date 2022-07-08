@@ -81,56 +81,242 @@ view: vimeo_user_identities {
       select distinct * from unique_identities
     )
     , roku_identities as (
-      select
-      safe_cast(user_id as string) as user_id
-      , safe_cast(user_email as string) as email
-      , cast(null as string) as phone
-      , cast(null as string) as ip_address
-      , safe_cast(anonymous_id as string) as anonymous_id
-      , cast(null as string) as cross_domain_id
-      , safe_cast(device_id as string) as device_id
-      , safe_cast(platform as string) as platform
-      FROM roku.sign_in_complete
-      group by 1,2,3,4,5,6,7,8
+      with screens as (
+        select
+        case
+          when safe_cast(user_id as string) = safe_cast(anonymous_id as string) then cast(null as string)
+          else safe_cast(user_id as string)
+        end as user_id
+        , safe_cast(user_email as string) as email
+        , safe_cast(anonymous_id as string) as anonymous_id
+        , case
+            when safe_cast(device_id as string) = "<tracking disabled>" then cast(null as string)
+            else safe_cast(device_id as string)
+        end as device_id
+        FROM roku.screens
+        group by 1,2,3,4
+      )
+      , distinct_identities as (
+        select distinct * from screens
+      )
+      , look_up_existing_user_id as (
+        select user_id, email, anonymous_id, device_id from distinct_identities where (user_id is not null and email is not null)
+      )
+      , look_up_existing_email as (
+        select user_id, email, anonymous_id, device_id from distinct_identities where (user_id is null and email is not null)
+      )
+      , distinct_identities_filled as (
+        select
+        a.*
+        , b.user_id as user_id_b
+        , b.email as email_b
+        , b.device_id as device_id_b
+        , c.user_id as user_id_c
+        , c.email as email_c
+        , c.device_id as device_id_c
+        from distinct_identities as a
+        left join look_up_existing_user_id as b
+        on a.anonymous_id = b.anonymous_id
+        left join look_up_existing_email as c
+        on a.anonymous_id = c.anonymous_id
+      )
+      , unique_identities as (
+        with coalesce_columns as (
+          select
+          coalesce(user_id, user_id_b, user_id_c) as user_id
+          , coalesce(email, email_b, email_c) as email
+          , anonymous_id
+          , coalesce(device_id, device_id_b, device_id_c) as device_id
+          from distinct_identities_filled
+        )
+        select *
+        , "roku" as platform
+        , cast(null as string) as phone
+        , safe_cast(null as string) as ip_address
+        , safe_cast(null as string) as cross_domain_id
+        from coalesce_columns
+      )
+      select distinct * from unique_identities
     )
     , amazon_identities as (
-      select
-      safe_cast(user_id as string) as user_id
-      , safe_cast(user_email as string) as email
-      , cast(null as string) as phone
-      , safe_cast(context_ip as string) as ip_address
-      , safe_cast(anonymous_id as string) as anonymous_id
-      , cast(null as string) as cross_domain_id
-      , safe_cast(device_id as string) as device_id
-      , safe_cast(platform as string) as platform
-      FROM amazon_fire_tv.sign_in_complete
-      group by 1,2,3,4,5,6,7,8
+      with screens as (
+        select
+        case
+          when safe_cast(user_id as string) = safe_cast(anonymous_id as string) then cast(null as string)
+          else safe_cast(user_id as string)
+        end as user_id
+        , safe_cast(user_email as string) as email
+        , safe_cast(anonymous_id as string) as anonymous_id
+        , safe_cast(context_ip as string) as ip_address
+        , safe_cast(device_id as string) as device_id
+        FROM amazon_fire_tv.screens
+        group by 1,2,3,4,5
+      )
+      , distinct_identities as (
+        select distinct * from screens
+      )
+      , look_up_existing_user_id as (
+        select user_id, email, anonymous_id, ip_address, device_id from distinct_identities where (user_id is not null and email is not null)
+      )
+      , look_up_existing_email as (
+        select user_id, email, anonymous_id, ip_address, device_id from distinct_identities where (user_id is null and email is not null)
+      )
+      , distinct_identities_filled as (
+        select
+        a.*
+        , b.user_id as user_id_b
+        , b.email as email_b
+        , b.ip_address as ip_address_b
+        , b.device_id as device_id_b
+        , c.user_id as user_id_c
+        , c.email as email_c
+        , c.ip_address as ip_address_c
+        , c.device_id as device_id_c
+        from distinct_identities as a
+        left join look_up_existing_user_id as b
+        on a.anonymous_id = b.anonymous_id
+        left join look_up_existing_email as c
+        on a.anonymous_id = c.anonymous_id
+      )
+      , unique_identities as (
+        with coalesce_columns as (
+          select
+          coalesce(user_id, user_id_b, user_id_c) as user_id
+          , coalesce(email, email_b, email_c) as email
+          , anonymous_id
+          , coalesce(ip_address, ip_address_b, ip_address_c) as ip_address
+          , coalesce(device_id, device_id_b, device_id_c) as device_id
+          from distinct_identities_filled
+        )
+        select *
+        , "fire_tv" as platform
+        , cast(null as string) as phone
+        , safe_cast(null as string) as cross_domain_id
+        from coalesce_columns
+      )
+      select distinct * from unique_identities
     )
     , ios_identities as (
-      select
-      safe_cast(user_id as string) as user_id
-      , safe_cast(user_email as string) as email
-      , cast(null as string) as phone
-      , safe_cast(context_ip as string) as ip_address
-      , safe_cast(anonymous_id as string) as anonymous_id
-      , cast(null as string) as cross_domain_id
-      , safe_cast(device_id as string) as device_id
-      , safe_cast(platform as string) as platform
-      FROM ios.sign_in_complete
-      group by 1,2,3,4,5,6,7,8
+      with screens as (
+        select
+        case
+          when safe_cast(user_id as string) = safe_cast(anonymous_id as string) then cast(null as string)
+          else safe_cast(user_id as string)
+        end as user_id
+        , safe_cast(user_email as string) as email
+        , safe_cast(anonymous_id as string) as anonymous_id
+        , safe_cast(context_ip as string) as ip_address
+        , safe_cast(device_id as string) as device_id
+        , safe_cast(platform as string) as platform
+        FROM ios.screens
+        group by 1,2,3,4,5,6
+      )
+      , distinct_identities as (
+        select distinct * from screens
+      )
+      , look_up_existing_user_id as (
+        select user_id, email, anonymous_id, ip_address, device_id, platform from distinct_identities where (user_id is not null and email is not null)
+      )
+      , look_up_existing_email as (
+        select user_id, email, anonymous_id, ip_address, device_id, platform from distinct_identities where (user_id is null and email is not null)
+      )
+      , distinct_identities_filled as (
+        select
+        a.*
+        , b.user_id as user_id_b
+        , b.email as email_b
+        , b.ip_address as ip_address_b
+        , b.device_id as device_id_b
+        , b.platform as platform_b
+        , c.user_id as user_id_c
+        , c.email as email_c
+        , c.ip_address as ip_address_c
+        , c.device_id as device_id_c
+        , c.platform as platform_c
+        from distinct_identities as a
+        left join look_up_existing_user_id as b
+        on a.anonymous_id = b.anonymous_id
+        left join look_up_existing_email as c
+        on a.anonymous_id = c.anonymous_id
+      )
+      , unique_identities as (
+        with coalesce_columns as (
+          select
+          coalesce(user_id, user_id_b, user_id_c) as user_id
+          , coalesce(email, email_b, email_c) as email
+          , anonymous_id
+          , coalesce(ip_address, ip_address_b, ip_address_c) as ip_address
+          , coalesce(device_id, device_id_b, device_id_c) as device_id
+          , coalesce(platform, platform_b, platform_c) as platform
+          from distinct_identities_filled
+        )
+        select *
+        , cast(null as string) as phone
+        , safe_cast(null as string) as cross_domain_id
+        from coalesce_columns
+      )
+      select distinct * from unique_identities
     )
     , android_identities as (
-      select
-      safe_cast(user_id as string) as user_id
-      , safe_cast(user_email as string) as email
-      , cast(null as string) as phone
-      , safe_cast(context_ip as string) as ip_address
-      , safe_cast(anonymous_id as string) as anonymous_id
-      , cast(null as string) as cross_domain_id
-      , safe_cast(device_id as string) as device_id
-      , safe_cast(platform as string) as platform
-      FROM android.sign_in_complete
-      group by 1,2,3,4,5,6,7,8
+      with screens as (
+        select
+        case
+          when safe_cast(user_id as string) = safe_cast(anonymous_id as string) then cast(null as string)
+          else safe_cast(user_id as string)
+        end as user_id
+        , safe_cast(user_email as string) as email
+        , safe_cast(anonymous_id as string) as anonymous_id
+        , safe_cast(context_ip as string) as ip_address
+        , safe_cast(device_id as string) as device_id
+        , safe_cast(platform as string) as platform
+        FROM android.screens
+        group by 1,2,3,4,5,6
+      )
+      , distinct_identities as (
+        select distinct * from screens
+      )
+      , look_up_existing_user_id as (
+        select user_id, email, anonymous_id, ip_address, device_id, platform from distinct_identities where (user_id is not null and email is not null)
+      )
+      , look_up_existing_email as (
+        select user_id, email, anonymous_id, ip_address, device_id, platform from distinct_identities where (user_id is null and email is not null)
+      )
+      , distinct_identities_filled as (
+        select
+        a.*
+        , b.user_id as user_id_b
+        , b.email as email_b
+        , b.ip_address as ip_address_b
+        , b.device_id as device_id_b
+        , b.platform as platform_b
+        , c.user_id as user_id_c
+        , c.email as email_c
+        , c.ip_address as ip_address_c
+        , c.device_id as device_id_c
+        , c.platform as platform_c
+        from distinct_identities as a
+        left join look_up_existing_user_id as b
+        on a.anonymous_id = b.anonymous_id
+        left join look_up_existing_email as c
+        on a.anonymous_id = c.anonymous_id
+      )
+      , unique_identities as (
+        with coalesce_columns as (
+          select
+          coalesce(user_id, user_id_b, user_id_c) as user_id
+          , coalesce(email, email_b, email_c) as email
+          , anonymous_id
+          , coalesce(ip_address, ip_address_b, ip_address_c) as ip_address
+          , coalesce(device_id, device_id_b, device_id_c) as device_id
+          , coalesce(platform, platform_b, platform_c) as platform
+          from distinct_identities_filled
+        )
+        select *
+        , cast(null as string) as phone
+        , safe_cast(null as string) as cross_domain_id
+        from coalesce_columns
+      )
+      select distinct * from unique_identities
     )
     , all_identities as (
       select * from web_identities
