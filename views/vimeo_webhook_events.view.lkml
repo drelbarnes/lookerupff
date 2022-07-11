@@ -57,7 +57,7 @@ view: vimeo_webhook_events {
     )
     select *, row_number() over (order by timestamp, user_id) as row from purchase_events where platform in ("tvos", "android_tv", "ios", "amazon_fire_tv", "web", "android", "roku") ;;
 
-    persist_for: "12 hours"
+    persist_for: "6 hours"
 
   }
 

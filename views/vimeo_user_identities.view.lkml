@@ -331,7 +331,7 @@ view: vimeo_user_identities {
     )
     select distinct *, row_number() over (order by user_id) as row from all_identities ;;
 
-    persist_for: "12 hours"
+    persist_for: "6 hours"
   }
 
   measure: count {

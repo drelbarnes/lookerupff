@@ -171,9 +171,14 @@ include: "/views/vimeo_app_screens.view.lkml"
 include: "/views/upff_web_pages.view.lkml"
 include: "/views/vimeo_app_installs.view.lkml"
 include: "/views/vimeo_webhook_events.view.lkml"
+include: "/views/vimeo_active_users.view.lkml"
 
 explore: vimeo_webhook_events {
   label: "Vimeo Webhook Events"
+}
+
+explore: vimeo_active_users {
+  label: "Vimeo Active Users"
 }
 
 explore: subscriber_lifecycles  {
@@ -201,6 +206,12 @@ explore: funnel_performance {
   join: subscriber_lifecycles {
     type: full_outer
     sql_on: ${vimeo_user_identities.user_id} = ${subscriber_lifecycles.user_id} ;;
+    relationship: many_to_many
+  }
+
+  join: vimeo_active_users {
+    type: left_outer
+    sql_on: ${vimeo_user_identities.user_id} = ${vimeo_active_users.user_id} ;;
     relationship: many_to_many
   }
 
