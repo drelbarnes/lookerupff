@@ -164,6 +164,7 @@ include: "counties.view.lkml"
 
 include: "/views/multi_touch_attribution.view.lkml"
 include: "/views/multi_touch_attribution_web.view.lkml"
+include: "/views/multi_touch_attribution_web_tof.view.lkml"
 include: "/views/identity_resolution.view.lkml"
 include: "/views/vimeo_user_identities.view.lkml"
 include: "/views/subscriber_lifecycles.view.lkml"
@@ -230,6 +231,12 @@ explore: funnel_performance {
   join: multi_touch_attribution_web {
     type: full_outer
     sql_on: ${vimeo_user_identities.anonymous_id} = ${multi_touch_attribution_web.anonymous_id} ;;
+    relationship: many_to_many
+  }
+
+  join: multi_touch_attribution_web_tof {
+    type: full_outer
+    sql_on: ${vimeo_user_identities.anonymous_id} = ${multi_touch_attribution_web_tof.anonymous_id} ;;
     relationship: many_to_many
   }
 }

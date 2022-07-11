@@ -281,6 +281,8 @@ view: subscriber_lifecycles {
       , last_charge_status
       from summary
        ;;
+
+    persist_for: "6 hours"
   }
 
   measure: count {

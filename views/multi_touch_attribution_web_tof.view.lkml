@@ -1,4 +1,4 @@
-view: multi_touch_attribution_web {
+view: multi_touch_attribution_web_tof {
   derived_table: {
     sql:
       -- JOIN ORDERS ON PAGE VISITS
@@ -12,7 +12,8 @@ view: multi_touch_attribution_web {
           , platform
           from javascript.order_completed
           where
-          timestamp >= {% date_start date_filter %} and timestamp <= {% date_end date_filter %}
+          timestamp >= TIMESTAMP_ADD({% date_start date_filter %}, INTERVAL -({% parameter free_trial_window %} - 1) DAY)
+          and timestamp <= TIMESTAMP_ADD({% date_end date_filter %}, INTERVAL -({% parameter free_trial_window %} - 1) DAY)
         )
         , purchase_events as (
         select
@@ -20,7 +21,7 @@ view: multi_touch_attribution_web {
         , topic
         , subscription_frequency as plan_type
         from http_api.purchase_event
-        where topic in ("customer.product.created", "customer.product.free_trial_created")
+        where topic in ("customer.product.free_trial_converted")
         and
         timestamp >= {% date_start date_filter %} and timestamp <= {% date_end date_filter %}
         )
@@ -54,8 +55,8 @@ view: multi_touch_attribution_web {
         , context_user_agent as user_agent
         from javascript.pages
         where
-        timestamp >= TIMESTAMP_ADD({% date_start date_filter %}, INTERVAL -({% parameter attribution_window %} - 1) DAY)
-        and timestamp <= {% date_end date_filter %}
+        timestamp >= TIMESTAMP_ADD(TIMESTAMP_ADD({% date_start date_filter %}, INTERVAL -({% parameter free_trial_window %} - 1) DAY), INTERVAL -({% parameter attribution_window %} - 1) DAY)
+        and timestamp <= TIMESTAMP_ADD({% date_end date_filter %}, INTERVAL -({% parameter free_trial_window %} - 1) DAY)
         )
         , site_pages as (
           select
@@ -73,8 +74,8 @@ view: multi_touch_attribution_web {
         , context_user_agent as user_agent
         from javascript_upff_home.pages
         where
-        timestamp >= TIMESTAMP_ADD({% date_start date_filter %}, INTERVAL -({% parameter attribution_window %} - 1) DAY)
-        and timestamp <= {% date_end date_filter %}
+        timestamp >= TIMESTAMP_ADD(TIMESTAMP_ADD({% date_start date_filter %}, INTERVAL -({% parameter free_trial_window %} - 1) DAY), INTERVAL -({% parameter attribution_window %} - 1) DAY)
+        and timestamp <= TIMESTAMP_ADD({% date_end date_filter %}, INTERVAL -({% parameter free_trial_window %} - 1) DAY)
         )
         , pages_union as (
           select * from app_pages
@@ -291,67 +292,37 @@ view: multi_touch_attribution_web {
       on a.user_id = b.user_id and a.n = b.n
       )
       , non_attributable_orders as (
-        select
-        ordered_at
-        , viewed_at
-        , user_id
-        , anonymous_id
-        , ip_address
-        , cross_domain_id
-        , plan_type
-        , platform
-        , topic
-        , utm_content
-        , utm_medium
-        , utm_campaign
-        , utm_source
-        , utm_term
-        , user_agent
-        , view
-        , referrer
-        , cast(null as string) as source
-        , 1 as conversion_event
-        , null as credit
-        from all_orders
-        where viewed_at is null
-        and user_id not in (select user_id from final)
-        and ordered_at >= {% date_start date_filter %} and ordered_at <= {% date_end date_filter %}
-      )
-      , unconverted_page_views as (
-        select
-        cast(null as timestamp) as ordered_at
-        , viewed_at
-        , cast(null as string) as user_id
-        , anonymous_id
-        , ip_address
-        , cross_domain_id
-        , cast(null as string) as plan_type
-        , "web" as platform
-        , cast(null as string) as topic
-        , utm_content
-        , utm_medium
-        , utm_campaign
-        , utm_source
-        , utm_term
-        , user_agent
-        , view
-        , referrer
-        , cast(null as string) as source
-        , null as conversion_event
-        , null as credit
-        from web_pages
-        where anonymous_id not in (
-          select distinct anonymous_id from final
-        )
-        and
-        viewed_at >= {% date_start date_filter %} and viewed_at <= {% date_end date_filter %}
+      select
+      ordered_at
+      , viewed_at
+      , user_id
+      , anonymous_id
+      , ip_address
+      , cross_domain_id
+      , plan_type
+      , platform
+      , topic
+      , utm_content
+      , utm_medium
+      , utm_campaign
+      , utm_source
+      , utm_term
+      , user_agent
+      , view
+      , referrer
+      , cast(null as string) as source
+      , 1 as conversion_event
+      , null as credit
+      from all_orders
+      where viewed_at is null
+      and user_id not in (select user_id from final)
+      and ordered_at >= TIMESTAMP_ADD({% date_start date_filter %}, INTERVAL -({% parameter free_trial_window %} - 1) DAY)
+      and ordered_at <= TIMESTAMP_ADD({% date_end date_filter %}, INTERVAL -({% parameter free_trial_window %} - 1) DAY)
       )
       , union_all as (
       select * from final
       union all
       select * from non_attributable_orders
-      union all
-      select * from unconverted_page_views
       )
       select *, row_number() over (order by ordered_at) as row from union_all
       ;;
@@ -425,42 +396,13 @@ view: multi_touch_attribution_web {
     }
   }
 
-  parameter: order_window {
+  parameter: free_trial_window {
     type: unquoted
-    label: "Order Completed Window"
-    allowed_value: {
-      label: "7 days"
-      value: "7"
-    }
+    label: "Free Trial Length"
+    default_value: "14"
     allowed_value: {
       label: "14 days"
       value: "14"
-    }
-    allowed_value: {
-      label: "28 days"
-      value: "28"
-    }
-    allowed_value: {
-      label: "30 days"
-      value: "30"
-    }
-    allowed_value: {
-      label: "60 days"
-      value: "60"
-    }
-    allowed_value: {
-      label: "90 days"
-      value: "90"
-    }
-
-    allowed_value: {
-      label: "180 days"
-      value: "180"
-    }
-
-    allowed_value: {
-      label: "365 days"
-      value: "365"
     }
   }
 
