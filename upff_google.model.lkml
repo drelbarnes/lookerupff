@@ -173,9 +173,14 @@ include: "/views/upff_web_pages.view.lkml"
 include: "/views/vimeo_app_installs.view.lkml"
 include: "/views/vimeo_webhook_events.view.lkml"
 include: "/views/vimeo_active_users.view.lkml"
+include: "/views/customer_record.view.lkml"
 
 explore: vimeo_webhook_events {
   label: "Vimeo Webhook Events"
+}
+
+explore: customer_record {
+  label: "Customer Record"
 }
 
 explore: vimeo_active_users {
