@@ -174,6 +174,7 @@ include: "/views/vimeo_app_installs.view.lkml"
 include: "/views/vimeo_webhook_events.view.lkml"
 include: "/views/vimeo_active_users.view.lkml"
 include: "/views/customer_record.view.lkml"
+include: "/views/customer_record_analytics.view.lkml"
 
 explore: vimeo_webhook_events {
   label: "Vimeo Webhook Events"
@@ -181,6 +182,10 @@ explore: vimeo_webhook_events {
 
 explore: customer_record {
   label: "Customer Record"
+}
+
+explore: customer_record_analytics {
+  label: "Customer Record Analytics"
 }
 
 explore: vimeo_active_users {

@@ -54,7 +54,7 @@ view: customer_record_analytics {
         `date` >= {% date_start date_filter %}
         and `date` <= {% date_end date_filter %}
       )
-      select * from period
+      select *, row_number() over (order by date) as row from period
        ;;
   }
 
@@ -71,6 +71,12 @@ view: customer_record_analytics {
   dimension_group: date {
     type: time
     sql: ${TABLE}.date ;;
+  }
+
+  dimension: row {
+    type: number
+    primary_key: yes
+    sql: ${TABLE}.row ;;
   }
 
   dimension: platform {
