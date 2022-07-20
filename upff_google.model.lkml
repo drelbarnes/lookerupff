@@ -249,6 +249,18 @@ explore: funnel_performance {
     sql_on: ${vimeo_user_identities.anonymous_id} = ${multi_touch_attribution_web_tof.anonymous_id} ;;
     relationship: many_to_many
   }
+
+  join: customer_record {
+    type: full_outer
+    sql_on: ${vimeo_user_identities.user_id} = ${customer_record.user_id} ;;
+    relationship: many_to_many
+  }
+
+  join: customer_record_analytics {
+    type: left_outer
+    sql_on: ${customer_record.date_date} = ${customer_record_analytics.date_date} and ${customer_record.platform} = ${customer_record_analytics.platform} and ${customer_record.frequency} = ${customer_record_analytics.frequency} ;;
+    relationship: many_to_many
+  }
 }
 
 explore: identity_resolution {
