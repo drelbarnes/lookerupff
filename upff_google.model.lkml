@@ -258,7 +258,9 @@ explore: funnel_performance {
 
   join: customer_record_analytics {
     type: left_outer
-    sql_on: ${customer_record.date_date} = ${customer_record_analytics.date_date} and ${customer_record.platform} = ${customer_record_analytics.platform} and ${customer_record.frequency} = ${customer_record_analytics.frequency} ;;
+    sql_on: ${customer_record.date_date} = ${customer_record_analytics.date_date}
+      and ${customer_record.platform} = ${customer_record_analytics.platform}
+      and ${customer_record.frequency} = ${customer_record_analytics.frequency} ;;
     relationship: many_to_many
   }
 }

@@ -51,7 +51,7 @@ view: customer_record {
           select *, count(status) over (partition by user_id order by date) as status_group from join_events
         )
       )
-      select *, row_number() over (order by date) as row from customer_record
+      select *, row_number() over (order by date) as row from customer_record where date is not null
        ;;
       persist_for: "6 hours"
   }
