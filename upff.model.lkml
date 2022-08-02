@@ -65,6 +65,7 @@ include: "redshift_javascript_search_executed.view"
 include: "redshift_active_customers.view"
 include: "redshift_customers_resubscribers.view"
 include: "redshift_customers_views_by_user.view"
+include: "/views/monthly_customer_report.view.lkml"
 
 explore: redshift_customers_views_by_user {
   label: "Views By User"
@@ -666,4 +667,8 @@ explore: javascript_conversion {}
 explore: redshift_android_firstplay {}
 explore: redshift_derived_personalize {
   label: "Amazon Personalize Dataset"
+}
+
+explore: monthly_customer_report {
+  label: "Monthly Customer Report"
 }
