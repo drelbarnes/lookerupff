@@ -44,8 +44,8 @@ view: customer_record_analytics {
           from summation
         )
         select *
-        , avg(paying_churn_rate) over (partition by platform, date) as platform_churn_rate
-        , avg(paying_churn_rate) over (partition by date) as global_churn_rate
+        , avg(paying_churn_rate) over (partition by platform, date order by date rows between 29 preceding and current row) as 30_ma_platform_churn_rate
+        , avg(paying_churn_rate) over (partition by date order by date rows between 29 preceding and current row) as 30_ma_global_churn_rate
         from churn_rates
       )
       , period as (
