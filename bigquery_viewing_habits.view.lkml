@@ -560,7 +560,7 @@ view: bigquery_viewing_habits {
         where collection = 'Hudson & Rex - Season 2'
         group by 1,2,3
         order by 1,2,3
-        ),
+        )
 
         select count(distinct user_id) as n, viewing_habit, collection from habits_{% parameter p_series %} group by 2,3
         ;;
