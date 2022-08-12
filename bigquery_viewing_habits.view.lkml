@@ -462,8 +462,8 @@ view: bigquery_viewing_habits {
         total_episodes,
         case
         when total_episodes = 1 then 'First episode only'
-        when total_episodes > 1 and total_episodes < 7 then 'More than 1 but not all'
-        when total_episodes in (7,8) then 'Series completer'
+        when total_episodes > 1 and total_episodes < 12 then 'More than 1 but not all'
+        when total_episodes in (12,13) then 'Series completer'
         else 'Other or missing'
         end as viewing_habit
         from sum
@@ -542,7 +542,25 @@ view: bigquery_viewing_habits {
         where collection = '800 Words - Season 1'
         group by 1,2,3
         order by 1,2,3
-        )
+        ),
+
+        habits_hudson_s2 as
+        (
+        select
+        user_id,
+        collection,
+        total_episodes,
+        case
+        when total_episodes = 1 then 'First episode only'
+        when total_episodes > 1 and total_episodes < 3 then 'More than 1 but not all'
+        when total_episodes in (3,4) then 'Series completer'
+        else 'Other or missing incomplete series'
+        end as viewing_habit
+        from sum
+        where collection = 'Hudson & Rex - Season 2'
+        group by 1,2,3
+        order by 1,2,3
+        ),
 
         select count(distinct user_id) as n, viewing_habit, collection from habits_{% parameter p_series %} group by 2,3
         ;;
@@ -555,6 +573,7 @@ view: bigquery_viewing_habits {
     allowed_value: {label: "Heartland - Season 14" value: "heartland_s14"}
     allowed_value: {label: "Heartland - Season 15" value: "heartland_s15"}
     allowed_value: {label: "Hudson & Rex - Season 1" value: "hudson_s1"}
+    allowed_value: {label: "Hudson & Rex - Season 2" value: "hudson_s2"}
     allowed_value: {label: "800 Words - Season 1" value: "800words_s1"}
   }
 
