@@ -18,7 +18,7 @@ view: multi_touch_attribution_web {
         select
         user_id
         , event as topic
-        , frequency as plan_type
+        , subscription_frequency as plan_type
         from ${vimeo_webhook_events.SQL_TABLE_NAME}
         where event in ("customer.product.created", "customer.product.free_trial_created")
         and
