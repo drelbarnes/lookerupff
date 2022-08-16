@@ -19,8 +19,8 @@ view: multi_touch_attribution_web_tof {
         select
         user_id
         , topic
-        , subscription_frequency as plan_type
-        from http_api.purchase_event
+        , frequency as plan_type
+        from ${vimeo_webhook_events.SQL_TABLE_NAME}
         where topic in ("customer.product.free_trial_converted")
         and
         timestamp >= {% date_start date_filter %} and timestamp <= {% date_end date_filter %}
