@@ -562,7 +562,7 @@ view: bigquery_viewing_habits {
         order by 1,2,3
         ),
 
-        wildfire_s4 as
+        habits_wildfire_s4 as
         (
         select
         user_id,
