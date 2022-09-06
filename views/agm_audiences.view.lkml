@@ -43,8 +43,12 @@ view: agm_audiences {
     select
     user_id
     , sha2(email, 256) as email_sha2
-    , case when ios_ad_id is null then ios_ad_id else sha2(ios_ad_id, 256) end as idfa_sha2
-    , case when android_ad_id is null then android_ad_id else sha2(android_ad_id, 256) end as gaid_sha2
+    , case when ios_ad_id is null then null
+        when ios_ad_id = '00000000-0000-0000-0000-000000000000' then null
+        else sha2(ios_ad_id, 256) end as idfa_sha2
+    , case when android_ad_id is null then null
+        when android_ad_id = '00000000-0000-0000-0000-000000000000' then null
+        else sha2(android_ad_id, 256) end as gaid_sha2
     , status
     -- count(*) as total, count(distinct user_id) as dist_total
     from audience ;;
