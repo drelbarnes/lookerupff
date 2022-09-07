@@ -402,11 +402,12 @@ view: in_app_placement {
         )
 
         select
+        user_id,
         title,
         collection,
         series,
         time_stamp,
-        count(distinct user_id) as num_plays
+        video_id
         from content
         where title in
         (
@@ -420,8 +421,6 @@ view: in_app_placement {
         'Urban Country'
         )
         and time_stamp between '2022-08-19' and '2022-08-31'
-        group by 1,2,3,4
-        order by 1
         ;;
     }
 
@@ -434,6 +433,11 @@ view: in_app_placement {
       type: string
       sql: ${TABLE}.title ;;
     }
+
+  dimension: video_id {
+    type: number
+    sql: ${TABLE}.video_id ;;
+  }
 
     dimension: collection {
       type: string
@@ -455,6 +459,18 @@ view: in_app_placement {
       type: number
       sql: ${TABLE}.num_plays ;;
     }
+
+  dimension: user_id {
+    primary_key: yes
+    tags: ["user_id"]
+    type: string
+    sql: ${TABLE}.user_id ;;
+  }
+
+  measure: play_count {
+    type: count_distinct
+    sql: case when ${user_id} is null or ${user_id}='0' or length(${user_id})=0 then concat(safe_cast(${video_id} as string),cast(${time_stamp} as string)) else concat(safe_cast(${video_id} as string),${user_id},cast(${time_stamp} as string)) end ;;
+  }
 
     set: detail {
       fields: [title, collection, series, time_stamp, num_plays]
