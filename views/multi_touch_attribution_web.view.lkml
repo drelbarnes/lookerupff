@@ -17,10 +17,13 @@ view: multi_touch_attribution_web {
         , purchase_events as (
         select
         user_id
-        , topic
-        , subscription_frequency as plan_type
-        from http_api.purchase_event
-        where topic in ("customer.product.created", "customer.product.free_trial_created")
+        , event as topic
+        , case
+          when subscription_frequency in (null, "custom", "monthly") then "monthly"
+          else "yearly"
+          end as plan_type
+        from ${vimeo_webhook_events.SQL_TABLE_NAME}
+        where event in ("customer_product_created", "customer_product_free_trial_created")
         and
         timestamp >= {% date_start date_filter %} and timestamp <= {% date_end date_filter %}
         )

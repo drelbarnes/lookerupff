@@ -66,6 +66,11 @@ include: "redshift_active_customers.view"
 include: "redshift_customers_resubscribers.view"
 include: "redshift_customers_views_by_user.view"
 include: "/views/monthly_customer_report.view.lkml"
+include: "/views/agm_audiences.view.lkml"
+
+explore: agm_audiences {
+  label: "AGM Audiences"
+}
 
 explore: redshift_customers_views_by_user {
   label: "Views By User"
