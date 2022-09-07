@@ -381,8 +381,9 @@ view: allfirstplay {
       left join svod_titles.promos as c
       on a.video_id=c.video_id
 
-      limit 100
       ;;
+
+      persist_for: "12 hours"
   }
 
   measure: count {
