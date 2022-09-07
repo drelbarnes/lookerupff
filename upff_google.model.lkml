@@ -178,6 +178,12 @@ include: "/views/customer_record_analytics.view.lkml"
 
 include: "/views/bigquery_views/upff_page_events.view.lkml"
 
+include: "allfirstplay.view.lkml"
+
+explore: allfirstplay {
+  label: "Allfirstplay"
+}
+
 explore: upff_page_events {
   label: "UPFF Page Events"
 }
