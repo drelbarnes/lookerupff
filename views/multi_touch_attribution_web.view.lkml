@@ -53,6 +53,7 @@ view: multi_touch_attribution_web {
         , context_campaign_source as utm_source
         , context_campaign_term as utm_term
         , context_page_referrer as referrer
+        , path
         , view
         , context_user_agent as user_agent
         from javascript.pages
@@ -72,6 +73,7 @@ view: multi_touch_attribution_web {
         , context_campaign_source as utm_source
         , context_campaign_term as utm_term
         , context_page_referrer as referrer
+        , path
         , title as view
         , context_user_agent as user_agent
         from javascript_upff_home.pages
@@ -149,6 +151,7 @@ view: multi_touch_attribution_web {
       , utm_campaign
       , utm_source
       , utm_term
+      , path
       , view
       , referrer
       , user_agent
@@ -189,6 +192,7 @@ view: multi_touch_attribution_web {
       , utm_campaign
       , utm_source
       , utm_term
+      , path
       , view
       , referrer
       , user_agent
@@ -216,6 +220,7 @@ view: multi_touch_attribution_web {
       , utm_campaign
       , utm_source
       , utm_term
+      , path
       , view
       , referrer
       , user_agent
@@ -284,6 +289,7 @@ view: multi_touch_attribution_web {
       , a.utm_source
       , a.utm_term
       , a.user_agent
+      , a.path
       , a.view
       , a.referrer
       , a.source
@@ -310,6 +316,7 @@ view: multi_touch_attribution_web {
         , utm_source
         , utm_term
         , user_agent
+        , path
         , view
         , referrer
         , cast(null as string) as source
@@ -337,6 +344,7 @@ view: multi_touch_attribution_web {
         , utm_source
         , utm_term
         , user_agent
+        , path
         , view
         , referrer
         , cast(null as string) as source
@@ -570,6 +578,11 @@ view: multi_touch_attribution_web {
   dimension: utm_term {
     type: string
     sql: ${TABLE}.utm_term ;;
+  }
+
+  dimension: path {
+    type: string
+    sql: ${TABLE}.path ;;
   }
 
   dimension: view {
