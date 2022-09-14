@@ -18,15 +18,8 @@ view: other_marketing_spend {
       , google_dcm as (
         select date as date,
         sum(media_cost) as spend,
-        'Google DCM' as channel
+        'Google Campaign Manager' as channel
         from customers.google_dcm
-        group by 1,3
-      )
-      , google_performance_max as (
-        select date as date,
-        sum(cost) as spend,
-        'Google Performance Max' as channel
-        from customers.google_performance_max
         group by 1,3
       )
       , mntn as (
@@ -58,11 +51,6 @@ view: other_marketing_spend {
         , spend
         , channel
         from google_dcm
-        union all
-        select date
-        , spend
-        , channel
-        from google_performance_max
         union all
         select date
         , spend
