@@ -179,6 +179,11 @@ include: "/views/customer_record_analytics.view.lkml"
 include: "/views/bigquery_views/upff_page_events.view.lkml"
 
 include: "allfirstplay.view.lkml"
+include: "ticket_comments.view.lkml"
+
+explore: ticket_comments {
+  label: "Ticket Comments"
+}
 
 explore: allfirstplay {
   label: "Allfirstplay"
