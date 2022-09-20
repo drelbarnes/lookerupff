@@ -154,6 +154,21 @@ view: daily_spend {
     sql: ${TABLE}.timestamp ;;
   }
 
+  dimension_group: week_start_tuesday {
+    type: time
+    timeframes: [raw, date, day_of_week, week, month]
+    sql: CASE
+      WHEN ${timestamp_day_of_week} = 'Tuesday' THEN ${timestamp_date}
+      WHEN ${timestamp_day_of_week} = 'Wednesday' THEN dateadd(days, -1, ${timestamp_date})
+      WHEN ${timestamp_day_of_week} = 'Thursday' THEN dateadd(days, -2, ${timestamp_date})
+      WHEN ${timestamp_day_of_week} = 'Friday' THEN dateadd(days, -3,  ${timestamp_date})
+      WHEN ${timestamp_day_of_week} = 'Saturday' THEN dateadd(days, -4, ${timestamp_date})
+      WHEN ${timestamp_day_of_week} = 'Sunday' THEN dateadd(days, -5, ${timestamp_date})
+      WHEN ${timestamp_day_of_week} = 'Monday' THEN dateadd(days, -6, ${timestamp_date})
+      END;;
+    datatype: date
+  }
+
   measure: spend {
     type: sum
     sql: ${TABLE}.spend ;;
