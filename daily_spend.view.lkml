@@ -135,12 +135,13 @@ view: daily_spend {
 
       select date_start as timestamp,
       free_trial_created,
+      channel,
       sum(spend) as spend,
       sum(spend)/free_trial_created
       from t1
       inner join customers_analytics
       on date(date_start)=timestamp
-      group by 1,2
+      group by 1,2,3
       order by 1 desc ;;
   }
 
@@ -167,6 +168,11 @@ view: daily_spend {
       WHEN ${timestamp_day_of_week} = 'Monday' THEN dateadd(days, -6, ${timestamp_date})
       END;;
     datatype: date
+  }
+
+  dimension: channel {
+    type: string
+    sql: ${TABLE}.channel ;;
   }
 
   measure: spend {
