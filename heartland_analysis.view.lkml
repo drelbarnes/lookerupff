@@ -347,7 +347,7 @@ view: heartland_analysis {
   }
 
   measure: ltv_estimate {
-    type: number
+    type: sum
     sql: ${TABLE}.ltv_estimate ;;
   }
 
