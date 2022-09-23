@@ -346,6 +346,11 @@ view: heartland_analysis {
     drill_fields: [detail*]
   }
 
+  measure: ltv_estimate {
+    type: number
+    sql: ${TABLE}.ltv_estimate ;;
+  }
+
   dimension: user_id {
     type: string
     sql: ${TABLE}.user_id ;;
@@ -436,11 +441,6 @@ view: heartland_analysis {
   dimension: binger {
     type: string
     sql: ${TABLE}.binger ;;
-  }
-
-  dimension: ltv_estimate {
-    type: number
-    sql: ${TABLE}.ltv_estimate ;;
   }
 
   set: detail {
