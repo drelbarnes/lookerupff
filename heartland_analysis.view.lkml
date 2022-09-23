@@ -352,6 +352,11 @@ view: heartland_analysis {
     sql: ${TABLE}.ltv_estimate ;;
   }
 
+  measure: number_heartland_s15_views {
+    type: average
+    sql: ${TABLE}.number_heartland_s15_views ;;
+  }
+
   dimension: user_id {
     type: string
     sql: ${TABLE}.user_id ;;
@@ -427,11 +432,6 @@ view: heartland_analysis {
   dimension: subscription_frequency {
     type: string
     sql: ${TABLE}.subscription_frequency ;;
-  }
-
-  dimension: number_heartland_s15_views {
-    type: number
-    sql: ${TABLE}.number_heartland_s15_views ;;
   }
 
   dimension: free_trial {
