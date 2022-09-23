@@ -92,7 +92,7 @@ view: daily_spend {
 
       others_perf as (
         select date_start
-        , 'others' as channel
+        , channel
         , sum(spend) as spend
         from looker.get_other_marketing_spend
         where date(sent_at) = (select max(date(sent_at)) from looker.get_other_marketing_spend)
@@ -152,6 +152,21 @@ view: daily_spend {
   dimension_group: timestamp {
     type: time
     sql: ${TABLE}.timestamp ;;
+  }
+
+  dimension_group: week_start_tuesday {
+    type: time
+    timeframes: [raw, date, day_of_week, week, month]
+    sql: CASE
+      WHEN ${timestamp_day_of_week} = 'Tuesday' THEN ${timestamp_date}
+      WHEN ${timestamp_day_of_week} = 'Wednesday' THEN dateadd(days, -1, ${timestamp_date})
+      WHEN ${timestamp_day_of_week} = 'Thursday' THEN dateadd(days, -2, ${timestamp_date})
+      WHEN ${timestamp_day_of_week} = 'Friday' THEN dateadd(days, -3,  ${timestamp_date})
+      WHEN ${timestamp_day_of_week} = 'Saturday' THEN dateadd(days, -4, ${timestamp_date})
+      WHEN ${timestamp_day_of_week} = 'Sunday' THEN dateadd(days, -5, ${timestamp_date})
+      WHEN ${timestamp_day_of_week} = 'Monday' THEN dateadd(days, -6, ${timestamp_date})
+      END;;
+    datatype: date
   }
 
   measure: spend {
