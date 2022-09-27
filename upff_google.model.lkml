@@ -180,6 +180,11 @@ include: "/views/bigquery_views/upff_page_events.view.lkml"
 
 include: "allfirstplay.view.lkml"
 include: "ticket_comments.view.lkml"
+include: "heartland_analysis.view.lkml"
+
+explore: heartland_analysis {
+  label: "Heartland Analysis"
+}
 
 explore: ticket_comments {
   label: "Ticket Comments"
