@@ -17,7 +17,7 @@ view: other_marketing_spend {
       )
       , google_dcm as (
         select date as date,
-        sum(media_cost) as spend,
+        sum(dbm_cost_usd) as spend,
         'Google Campaign Manager' as channel
         from customers.google_dcm
         group by 1,3

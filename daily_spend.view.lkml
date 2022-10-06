@@ -133,14 +133,15 @@ view: daily_spend {
         from others_perf
       )
 
-      select date_start as timestamp,
+      select date_start,
       free_trial_created,
-      sum(spend) as spend,
-      sum(spend)/free_trial_created
+      channel,
+      spend as channel_spend,
+      sum(spend) over (partition by date_start) as spend
       from t1
       inner join customers_analytics
       on date(date_start)=timestamp
-      group by 1,2
+      group by 1,2,3,4
       order by 1 desc ;;
   }
 
@@ -151,7 +152,12 @@ view: daily_spend {
 
   dimension_group: timestamp {
     type: time
-    sql: ${TABLE}.timestamp ;;
+    sql: ${TABLE}.date_start ;;
+  }
+
+  dimension: channel {
+    type: string
+    sql: ${TABLE}.channel ;;
   }
 
   dimension_group: week_start_tuesday {
@@ -169,14 +175,22 @@ view: daily_spend {
     datatype: date
   }
 
-  measure: spend {
+  measure: channel_spend {
     type: sum
+    sql: ${TABLE}.channel_spend ;;
+    value_format_name: usd
+  }
+
+  measure: spend {
+    type: sum_distinct
+    sql_distinct_key: ${timestamp_date} ;;
     sql: ${TABLE}.spend ;;
     value_format_name: usd
   }
 
   measure: free_trial_created {
-    type: sum
+    type: sum_distinct
+    sql_distinct_key: ${timestamp_date} ;;
     sql: ${TABLE}.free_trial_created ;;
   }
 
