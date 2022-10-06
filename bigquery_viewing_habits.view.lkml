@@ -570,8 +570,8 @@ view: bigquery_viewing_habits {
         total_episodes,
         case
         when total_episodes = 1 then 'First episode only'
-        when total_episodes > 1 and total_episodes < 4 then 'More than 1 but not all'
-        when total_episodes in (4,5) then 'Series completer'
+        when total_episodes > 1 and total_episodes < 11 then 'More than 1 but not all'
+        when total_episodes in (11,12) then 'Series completer'
         else 'Other or missing incomplete series'
         end as viewing_habit
         from sum
@@ -606,6 +606,7 @@ view: bigquery_viewing_habits {
     type: unquoted
     label: "Series"
     allowed_value: {label: "Mystic - Season 1" value: "mystic_s1"}
+    allowed_value: {label: "Heartland - Season 13" value: "heartland_s13"}
     allowed_value: {label: "Heartland - Season 14" value: "heartland_s14"}
     allowed_value: {label: "Heartland - Season 15" value: "heartland_s15"}
     allowed_value: {label: "Hudson & Rex - Season 1" value: "hudson_s1"}
