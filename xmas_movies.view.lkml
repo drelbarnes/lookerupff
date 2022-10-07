@@ -1,10 +1,6 @@
 view: xmas_movies {
     derived_table: {
       sql:
-        declare c_start date default '2021-11-01';
-        declare c_end date default '2022-12-31';
-        declare c_window date default '2022-01-16';
-
         with
 
         xmas_titles as (select * from ad_hoc.xmas_titles),
@@ -25,14 +21,14 @@ view: xmas_movies {
         select *
         from audience_p0
         where event_num = 1
-        and date_stamp between c_start and c_end
+        and date_stamp between '2021-11-01' and '2022-12-31'
         ),
 
         events_p0 as (
         select user_id, ctopic, date_stamp, event_num
         from audience_p0 where user_id in
         (select user_id from audience_p1)
-        and date_stamp < c_window
+        and date_stamp < '2022-01-16'
         order by user_id, event_num
         ),
 
@@ -104,7 +100,7 @@ view: xmas_movies {
         (partition by user_id, video_id order by date(timestamp)) as mins
         from allfirstplay.p0 where title in
         (select name from ad_hoc.xmas_titles)
-        and date(timestamp) between c_start and c_window
+        and date(timestamp) between '2021-11-01' and '2022-01-16'
         and regexp_contains(user_id, r'^[0-9]*$')
         and user_id is not null
         and user_id <> '0'
