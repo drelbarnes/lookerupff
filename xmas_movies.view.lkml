@@ -203,8 +203,8 @@ view: xmas_movies {
       sql: ${TABLE}.status ;;
     }
 
-    dimension: number_plays {
-      type: number
+    measure: number_plays {
+      type: sum
       sql: ${TABLE}.number_plays ;;
     }
 
