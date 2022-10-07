@@ -181,6 +181,11 @@ include: "/views/bigquery_views/upff_page_events.view.lkml"
 include: "allfirstplay.view.lkml"
 include: "ticket_comments.view.lkml"
 include: "heartland_analysis.view.lkml"
+include: "xmas_movies.view.lkml"
+
+explore: xmas_movies {
+  label: "Christmas Movies"
+}
 
 explore: heartland_analysis {
   label: "Heartland Analysis"
