@@ -1,8 +1,9 @@
 view: xmas_movies {
     derived_table: {
-      sql: declare c_start date default '2021-11-01';
-              declare c_end date default '2022-12-31';
-              declare c_window date default '2022-01-16';
+      sql:
+        declare c_start date default '2021-11-01';
+        declare c_end date default '2022-12-31';
+        declare c_window date default '2022-01-16';
 
         with
 
