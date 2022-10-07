@@ -164,7 +164,7 @@ view: xmas_movies {
         analysis_p3 as (
         select title, status, number_plays, case
         when status = 'converted' then round(number_plays / number_converted * 100, 2)
-        when status = 'explired' then round(number_plays / number_expired * 100, 2)
+        when status = 'expired' then round(number_plays / number_expired * 100, 2)
         else 0.00 end as percent_viewed,
         avg_completion, number_expired, number_converted
         from analysis_p2
