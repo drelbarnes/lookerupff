@@ -210,12 +210,12 @@ view: upff_page_events {
 
   dimension: is_session_start {
     type: yesno
-    sql: ${TABLE}.is_session_start ;;
+    sql: ${TABLE}.is_session_start = 1 ;;
   }
 
   dimension: is_session_end {
     type: yesno
-    sql: ${TABLE}.is_session_end ;;
+    sql: ${TABLE}.is_session_end = 1 ;;
   }
 
   dimension: platform {
