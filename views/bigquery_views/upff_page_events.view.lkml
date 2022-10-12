@@ -209,13 +209,13 @@ view: upff_page_events {
   }
 
   dimension: is_session_start {
-    type: yesno
-    sql: ${TABLE}.is_session_start = 1 ;;
+    type: number
+    sql: ${TABLE}.is_session_start ;;
   }
 
   dimension: is_session_end {
-    type: yesno
-    sql: ${TABLE}.is_session_end = 1 ;;
+    type: number
+    sql: ${TABLE}.is_session_end ;;
   }
 
   dimension: platform {
