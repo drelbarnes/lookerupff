@@ -48,8 +48,8 @@ view: wishlist_p2 {
       sql: ${TABLE}.num_titles_in_watchlist ;;
     }
 
-    dimension: number_of_users {
-      type: number
+    measure: number_of_users {
+      type: sum
       sql: ${TABLE}.number_of_users ;;
     }
 
