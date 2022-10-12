@@ -75,7 +75,7 @@ view: upff_page_events {
         , case when is_session_start = 1 then generate_uuid()
           else null
           end as new_session_id
-        from session_mapping_p0
+        from session_mapping_p1
       )
       , session_ids_p1 as (
         select *
