@@ -182,6 +182,11 @@ include: "allfirstplay.view.lkml"
 include: "ticket_comments.view.lkml"
 include: "heartland_analysis.view.lkml"
 include: "xmas_movies.view.lkml"
+include: "wishlist_p1.view.lkml"
+
+explore: wishlist_p1 {
+  label: "Wishlist P1"
+}
 
 explore: xmas_movies {
   label: "Christmas Movies"
