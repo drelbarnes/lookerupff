@@ -188,6 +188,11 @@ view: search_and_discovery2 {
       sql: ${TABLE}.result_seq_num ;;
     }
 
+  dimension: results_max {
+    type: number
+    sql: max(${TABLE}.result_seq_num) ;;
+  }
+
     dimension: user_id {
       type: string
       sql: ${TABLE}.user_id ;;
