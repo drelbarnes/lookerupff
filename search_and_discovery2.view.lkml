@@ -176,7 +176,7 @@ view: search_and_discovery2 {
 
       search_count_by_user as (
       select user_id,
-      max(result_seq_num) as total_search_count,
+      max(result_seq_num) as total_result_count,
       max(daily_seq_num) as max_daily_result_count,
       avg(daily_seq_num) as avg_daily_result_count
       from result_all_platforms_p1
@@ -184,7 +184,7 @@ view: search_and_discovery2 {
 
       result_all_platforms_p2 as (
       select a.*,
-      b.total_search_count,
+      b.total_result_count,
       b.max_daily_result_count,
       b.avg_daily_result_count
       from result_all_platforms_p1 as a
@@ -207,7 +207,7 @@ view: search_and_discovery2 {
       coalesce(b.series, 'Movie') as collection_title,
       coalesce(b.season, 0) as season,
       platform, device, view, date_stamp, timestamp,
-      total_search_count,
+      total_result_count,
       max_daily_result_count,
       avg_daily_result_count,
       platform_seq_num,
@@ -290,9 +290,9 @@ view: search_and_discovery2 {
       sql: ${TABLE}.timestamp ;;
     }
 
-    dimension: total_search_count {
+    dimension: total_result_count {
       type: number
-      sql: ${TABLE}.total_search_count ;;
+      sql: ${TABLE}.total_result_count ;;
     }
 
     dimension: max_daily_result_count {
@@ -327,7 +327,7 @@ view: search_and_discovery2 {
         view,
         date_stamp,
         timestamp_time,
-        total_search_count,
+        total_result_count,
         max_daily_result_count,
         avg_daily_result_count,
         platform_seq_num,
