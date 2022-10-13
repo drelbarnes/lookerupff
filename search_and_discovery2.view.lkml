@@ -190,7 +190,7 @@ view: search_and_discovery2 {
 
   dimension: results_max {
     type: number
-    sql: max(${TABLE}.result_seq_num) ;;
+    sql: max(${TABLE}.result_seq_num) group by user_id ;;
   }
 
     dimension: user_id {
