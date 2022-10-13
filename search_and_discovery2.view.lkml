@@ -183,6 +183,11 @@ view: search_and_discovery2 {
       sql: ${TABLE}.user_id ;;
     }
 
+    measure: result_count {
+      type: max
+      sql: ${TABLE}.result_seq_num ;;
+    }
+
     dimension: user_id {
       type: string
       sql: ${TABLE}.user_id ;;
