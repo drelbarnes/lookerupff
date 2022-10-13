@@ -184,6 +184,11 @@ include: "heartland_analysis.view.lkml"
 include: "xmas_movies.view.lkml"
 include: "wishlist_p1.view.lkml"
 include: "wishlist_p2.view.lkml"
+include: "search_and_discovery.view.lkml"
+
+explore: search_and_discovery {
+  label: "Search and Discovery"
+}
 
 explore: wishlist_p1 {
   label: "Wishlist P1"
