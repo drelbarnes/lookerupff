@@ -127,7 +127,7 @@ view: upff_web_sessions {
       , first_utm_source
       , first_utm_medium
       , first_utm_content
-      , frist_utm_term
+      , first_utm_term
       , utm_campaign_values
       , utm_source_values
       , utm_medium_values
