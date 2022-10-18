@@ -187,6 +187,26 @@ view: upff_web_sessions {
     type: string
     sql: ${TABLE}.session_path ;;
   }
+  dimension: first_utm_campaign {
+    type: string
+    sql: ${TABLE}.first_utm_campaign ;;
+  }
+  dimension: first_utm_source {
+    type: string
+    sql: ${TABLE}.first_utm_source ;;
+  }
+  dimension: first_utm_medium {
+    type: string
+    sql: ${TABLE}.first_utm_medium ;;
+  }
+  dimension: first_utm_content {
+    type: string
+    sql: ${TABLE}.first_utm_content ;;
+  }
+  dimension: first_utm_term {
+    type: string
+    sql: ${TABLE}.first_utm_term ;;
+  }
   dimension: utm_campaign_values {
     type: string
     sql: ${TABLE}.utm_campaign_values ;;
@@ -218,6 +238,11 @@ view: upff_web_sessions {
       , user_ids
       , touchpoints
       , session_path
+      , first_utm_campaign
+      , first_utm_source
+      , first_utm_medium
+      , first_utm_content
+      , first_utm_term
       , utm_campaign_values
       , utm_source_values
       , utm_medium_values
