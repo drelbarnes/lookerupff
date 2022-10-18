@@ -233,15 +233,15 @@ view: upff_web_sessions {
               WHEN ${TABLE}.first_utm_source = 'organic' then 'Direct Traffic'
               WHEN ${TABLE}.first_utm_source LIKE 'hs_email' then 'Internal'
               WHEN ${TABLE}.first_utm_source LIKE 'hs_automation' then 'Internal'
-              WHEN ${TABLE}.first_utm_source LIKE '%site.source.name%' then 'Facebook Ads'
-              WHEN ${TABLE}.first_utm_source LIKE '%site_source_name%' then 'Facebook Ads'
+              WHEN ${TABLE}.first_utm_source LIKE '%site.source.name%' then 'Meta Ads'
+              WHEN ${TABLE}.first_utm_source LIKE '%site_source_name%' then 'Meta Ads'
               WHEN ${TABLE}.first_utm_source = 'google_ads' then 'Google Ads'
               WHEN ${TABLE}.first_utm_source = 'GoogleAds' then 'Google Ads'
-              WHEN ${TABLE}.first_utm_source = 'fb' then 'Facebook Ads'
-              WHEN ${TABLE}.first_utm_source = 'facebook' then 'Facebook Ads'
-              WHEN ${TABLE}.first_utm_source = 'ig' then 'Facebook Ads'
+              WHEN ${TABLE}.first_utm_source = 'fb' then 'Meta Ads'
+              WHEN ${TABLE}.first_utm_source = 'facebook' then 'Meta Ads'
+              WHEN ${TABLE}.first_utm_source = 'ig' then 'Meta Ads'
               WHEN ${TABLE}.first_utm_source = 'bing_ads' then 'Bing Ads'
-              WHEN ${TABLE}.first_utm_source = 'an' then 'Facebook Ads'
+              WHEN ${TABLE}.first_utm_source = 'an' then 'Meta Ads'
               else ${TABLE}.first_utm_source
             END ;;
   }
@@ -252,12 +252,12 @@ view: upff_web_sessions {
   measure: total_conversions {
     type: count_distinct
     sql: ${TABLE}.session_id ;;
-    filters: [conversion: "1"]
+    filters: [conversion: "yes"]
   }
   measure: conversion_rate {
     type: number
-    sql: ${total_conversions}/${total_sessions}l ;;
-    value_format: "0.00\%"
+    sql: ${total_conversions}/NULLIF(${total_sessions},0) ;;
+    value_format_name: percent_2
   }
 
   set: detail {
