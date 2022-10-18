@@ -97,6 +97,20 @@ view: upff_web_sessions {
       from group_user_ids
       group by session_id, user_id
     )
+    , sessions_p5 as (
+      with first_utms as (
+        select
+        session_id
+        , first_value(event_number) over (partition by session_id order by event_number) as first_event
+        , first_value(utm_campaign) over (partition by session_id order by event_number) as first_utm_campaign
+        , first_value(utm_source) over (partition by session_id order by event_number) as first_utm_source
+        , first_value(utm_medium) over (partition by session_id order by event_number) as first_utm_medium
+        , first_value(utm_content) over (partition by session_id order by event_number) as first_utm_content
+        , first_value(utm_term) over (partition by session_id order by event_number) as first_utm_term
+        from page_events
+      )
+      select * from first_utms group by 1,2,3,4,5,6,7
+    )
     , sessions_final as (
       select
       a.session_id
@@ -109,6 +123,11 @@ view: upff_web_sessions {
       , user_ids
       , touchpoints
       , session_path
+      , first_utm_campaign
+      , first_utm_source
+      , first_utm_medium
+      , first_utm_content
+      , utm_term_values
       , utm_campaign_values
       , utm_source_values
       , utm_medium_values
@@ -119,7 +138,8 @@ view: upff_web_sessions {
       left join sessions_p2 c on a.session_id = c.session_id
       left join sessions_p3 d on a.session_id = d.session_id
       left join sessions_p4 e on a.session_id = e.session_id
-      group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+      left join sessions_p5 f on a.session_id = f.session_id
+      group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20
     )
     select * from sessions_final where session_id is not null ;;
     persist_for: "6 hours"
