@@ -270,6 +270,7 @@ view: upff_web_sessions {
   set: detail {
     fields: [
       session_id
+      , anonymous_id
       , landing_page
       , exit_page
       , conversion
