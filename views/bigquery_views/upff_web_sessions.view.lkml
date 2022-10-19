@@ -115,7 +115,7 @@ view: upff_web_sessions {
     , sessions_final as (
       select
       a.session_id
-      a.anonymous_id
+      , a.anonymous_id
       , session_start
       , session_end
       , landing_page
