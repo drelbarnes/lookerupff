@@ -42,7 +42,7 @@ view: upff_web_sessions {
           end as bounce
         from page_events
       )
-      select * from first_values group by 1,2,3,4,5,6,7
+      select * from first_values group by 1,2,3,4,5,6,7,8
     )
     , sessions_p1 as (
       with sessions_utm_values as (
@@ -141,7 +141,7 @@ view: upff_web_sessions {
       left join sessions_p3 d on a.session_id = d.session_id
       left join sessions_p4 e on a.session_id = e.session_id
       left join sessions_p5 f on a.session_id = f.session_id
-      group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20
+      group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21
     )
     select * from sessions_final where session_id is not null ;;
     persist_for: "6 hours"
