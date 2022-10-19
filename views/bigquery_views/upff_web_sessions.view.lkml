@@ -30,6 +30,7 @@ view: upff_web_sessions {
       with first_values as (
         select
         session_id
+        , anonymous_id
         , first_value(timestamp) over (partition by session_id order by event_number) as session_start
         , first_value(timestamp) over (partition by session_id order by event_number desc) as session_end
         , first_value(path) over (partition by session_id order by event_number) as landing_page
@@ -114,6 +115,7 @@ view: upff_web_sessions {
     , sessions_final as (
       select
       a.session_id
+      a.anonymous_id
       , session_start
       , session_end
       , landing_page
@@ -149,6 +151,11 @@ view: upff_web_sessions {
     type: string
     primary_key: yes
     sql: ${TABLE}.session_id ;;
+  }
+
+  dimension: anonymous_id {
+    type: string
+    sql: ${TABLE}.anonymous_id ;;
   }
 
   dimension_group: session_start {
