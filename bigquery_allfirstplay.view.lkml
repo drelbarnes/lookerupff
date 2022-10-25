@@ -49,8 +49,7 @@ titles_id_mapping as
        a.title,
        a.video_id as id,
        episode_number as episode,
-       coalesce(cast(date(time_available) as string), json_value(release_dates, '$[0].date')) as date,
-      -- date(time_available) as date,
+       date(time_available) as date,
        date(time_unavailable) as end_date,
        round(duration_seconds/60) as duration,
        promotion
