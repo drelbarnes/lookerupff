@@ -58,7 +58,7 @@ view: upff_web_sessions {
       )
       select * from sessions_utm_values group by 1,2,3,4,5,6
     )
-    , paths as (select session_id, event_number, path from page_events)
+    , paths as (select session_id, event_number, path, event from page_events)
     , sessions_p2 as (
       select
       session_id
