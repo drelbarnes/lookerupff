@@ -75,6 +75,7 @@ view: upff_web_sessions {
         , event_number
         , string_agg(path) over (partition by session_id order by event_number ROWS BETWEEN 49 PRECEDING AND CURRENT ROW) as session_path
         from paths
+        where event = "Page Viewed"
         group by session_id, event_number, path
       )
       select
