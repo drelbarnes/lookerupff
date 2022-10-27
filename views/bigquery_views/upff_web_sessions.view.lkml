@@ -24,7 +24,7 @@ view: upff_web_sessions {
         , path
         , device
         , platform
-        from `up-faith-and-family-216419.looker_scratch.LR_P4K5E1666877928701_upff_page_events`
+        from ${upff_page_events.SQL_TABLE_NAME}
       )
       , sessions_p0 as (
         with first_values as (
