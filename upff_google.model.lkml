@@ -318,7 +318,7 @@ explore: funnel_performance {
 
   join: upff_web_sessions {
     type: full_outer
-    sql_on: ${vimeo_user_identities.user_id}=${upff_web_sessions.user_ids};;
+    sql_on: ${vimeo_user_identities.anonymous_id}=${upff_web_sessions.anonymous_id};;
     relationship: many_to_many
   }
 }
