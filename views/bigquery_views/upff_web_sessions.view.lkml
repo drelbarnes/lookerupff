@@ -279,7 +279,7 @@ view: upff_web_sessions {
               WHEN ${TABLE}.first_utm_source = 'ig' then 'Meta Ads'
               WHEN ${TABLE}.first_utm_source = 'bing_ads' then 'Bing Ads'
               WHEN ${TABLE}.first_utm_source = 'an' then 'Meta Ads'
-              else ${TABLE}.first_utm_source
+              else 'other'
             END ;;
   }
   measure: total_sessions {
