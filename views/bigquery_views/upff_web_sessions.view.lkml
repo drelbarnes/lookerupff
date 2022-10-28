@@ -1,64 +1,66 @@
 view: upff_web_sessions {
   derived_table: {
     sql: with page_events as (
+      select
+      cast(timestamp as timestamp) as timestamp
+      , row as event_number
+      , anonymous_id
+      , ip_address
+      , cross_domain_id
+      , user_id
+      , event
+      , session_id
+      , is_session_start
+      , is_session_end
+      , is_conversion
+      , utm_campaign
+      , utm_source
+      , utm_medium
+      , utm_content
+      , utm_term
+      , referrer
+      , title
+      , url
+      , path
+      , device
+      , platform
+      from ${upff_page_events.SQL_TABLE_NAME}
+      where event in ("Page Viewed","Order Completed")
+    )
+    , sessions_p0 as (
+      with first_values as (
         select
-        cast(timestamp as timestamp) as timestamp
-        , row as event_number
+        session_id
         , anonymous_id
-        , ip_address
-        , cross_domain_id
-        , user_id
-        , event
-        , session_id
-        , is_session_start
-        , is_session_end
-        , is_conversion
-        , utm_campaign
-        , utm_source
-        , utm_medium
-        , utm_content
-        , utm_term
-        , referrer
-        , title
-        , url
-        , path
-        , device
-        , platform
-        from ${upff_page_events.SQL_TABLE_NAME}
+        , first_value(timestamp) over (partition by session_id order by event_number) as session_start
+        , first_value(timestamp) over (partition by session_id order by event_number desc) as session_end
+        , first_value(path) over (partition by session_id order by event_number) as landing_page
+        , first_value(path) over (partition by session_id order by event_number desc) as exit_page
+        , first_value(is_conversion ignore nulls) over (partition by session_id order by is_conversion desc) as conversion
+        , case
+          when is_session_start =1 and is_session_end =1 then 1
+          else 0
+          end as bounce
+        from page_events
       )
-      , sessions_p0 as (
-        with first_values as (
-          select
-          session_id
-          , anonymous_id
-          , first_value(timestamp) over (partition by session_id order by event_number) as session_start
-          , first_value(timestamp) over (partition by session_id order by event_number desc) as session_end
-          , first_value(path) over (partition by session_id order by event_number) as landing_page
-          , first_value(path) over (partition by session_id order by event_number desc) as exit_page
-          , first_value(is_conversion ignore nulls) over (partition by session_id order by is_conversion desc) as conversion
-          , case
-            when is_session_start =1 and is_session_end =1 then 1
-            else 0
-            end as bounce
-          from page_events
-        )
-        select * from first_values group by 1,2,3,4,5,6,7,8
+      select * from first_values group by 1,2,3,4,5,6,7,8
+    )
+    , sessions_p1 as (
+      with sessions_utm_values as (
+        select
+        session_id
+        , string_agg(utm_campaign) over (partition by session_id) as utm_campaign_values
+        , string_agg(utm_source) over (partition by session_id) as utm_source_values
+        , string_agg(utm_medium) over (partition by session_id) as utm_medium_values
+        , string_agg(utm_content) over (partition by session_id) as utm_content_values
+        , string_agg(utm_term) over (partition by session_id) as utm_term_values
+        from page_events
+        group by session_id, utm_campaign, utm_source, utm_medium, utm_content, utm_term
       )
-      , sessions_p1 as (
-        with sessions_utm_values as (
-          select
-          session_id
-          , string_agg(utm_campaign) over (partition by session_id) as utm_campaign_values
-          , string_agg(utm_source) over (partition by session_id) as utm_source_values
-          , string_agg(utm_medium) over (partition by session_id) as utm_medium_values
-          , string_agg(utm_content) over (partition by session_id) as utm_content_values
-          , string_agg(utm_term) over (partition by session_id) as utm_term_values
-          from page_events
-          group by session_id, utm_campaign, utm_source, utm_medium, utm_content, utm_term
-        )
-        select * from sessions_utm_values group by 1,2,3,4,5,6
-      )
-      , paths as (
+      select * from sessions_utm_values group by 1,2,3,4,5,6
+    )
+    , paths as (
+      with p0 as (
         select
         session_id
         , event_number
@@ -68,107 +70,117 @@ view: upff_web_sessions {
         from page_events
         group by session_id, event_number, path, event, is_conversion
       )
-      , sessions_p2 as (
-        select
-        session_id
-        , count(path) over (partition by session_id) as touchpoints
-        from paths
-        group by session_id, path
-      )
-      , max_events as (select max(event_number) over (partition by session_id) from page_events)
-      -- any sessions with more than 50 touchpoints are in the 99.9999th percentile
-      -- but drastically increase processing time, so we cap the session path at 50 touchpoints
-      , sessions_p3 as (
-        with p0 as (
-          select session_id
-          , event_number
-          , conversion
-          , string_agg(case when event = "Page Viewed" or event = "Order Completed" then path end) over (partition by session_id order by event_number ROWS BETWEEN 49 PRECEDING AND CURRENT ROW) as session_path
-          from paths
-          group by session_id, event_number, path, event, conversion
-        )
-        , p1 as (
-          select
-          session_id
-          , session_path
-          , conversion
-          from p0
-          where event_number in (select * from max_events)
-          group by session_id, session_path, conversion
-        )
-        , p2 as (
-          select *
-          , case when conversion = 1 then split(session_path, ",/checkout/subscribe,")
-            else null
-           end as conversion_path_arr
-          from p1
-        )
-        select
-        session_id
-        , session_path
-        , conversion_path_arr[offset(0)] as conversion_path
-        from p2
-      )
-      , sessions_p4 as (
-        with group_user_ids as (
-          select
-          session_id
-          , user_id
-          from page_events
-          group by 1,2
-        )
-        select
-        session_id
-        , string_agg(user_id) over (partition by session_id) as user_ids
-        from group_user_ids
-        group by session_id, user_id
-      )
-      , sessions_p5 as (
-        with first_utms as (
-          select
-          session_id
-          , first_value(event_number) over (partition by session_id order by event_number) as first_event
-          , first_value(utm_campaign) over (partition by session_id order by event_number) as first_utm_campaign
-          , first_value(utm_source) over (partition by session_id order by event_number) as first_utm_source
-          , first_value(utm_medium) over (partition by session_id order by event_number) as first_utm_medium
-          , first_value(utm_content) over (partition by session_id order by event_number) as first_utm_content
-          , first_value(utm_term) over (partition by session_id order by event_number) as first_utm_term
-          from page_events
-        )
-        select * from first_utms group by 1,2,3,4,5,6,7
-      )
-      , sessions_final as (
-        select
-        a.session_id
-        , a.anonymous_id
-        , session_start
-        , session_end
-        , landing_page
-        , exit_page
+      select *
+      , lag(path) over (partition by session_id order by event_number) as path_lag
+      from p0
+    )
+    , sessions_p2 as (
+      select
+      session_id
+      , count(distinct path) over (partition by session_id) as unique_pages_viewed
+      from paths
+      group by session_id, path
+    )
+    , max_events as (select max(event_number) over (partition by session_id) from page_events)
+    -- any sessions with more than 50 touchpoints are in the 99.9999th percentile
+    -- but drastically increase processing time, so we cap the session path at 50 touchpoints
+    , sessions_p3 as (
+      with p0 as (
+        select session_id
+        , event_number
         , conversion
-        , bounce
-        , user_ids
-        , touchpoints
-        , session_path
-        , conversion_path
-        , first_utm_campaign
-        , first_utm_source
-        , first_utm_medium
-        , first_utm_content
-        , first_utm_term
-        , utm_campaign_values
-        , utm_source_values
-        , utm_medium_values
-        , utm_content_values
-        , utm_term_values
-        from sessions_p0 a
-        left join sessions_p1 b on a.session_id = b.session_id
-        left join sessions_p2 c on a.session_id = c.session_id
-        left join sessions_p3 d on a.session_id = d.session_id
-        left join sessions_p4 e on a.session_id = e.session_id
-        left join sessions_p5 f on a.session_id = f.session_id
-        group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22
+        , string_agg(
+          case
+            when (path_lag is null or path != path_lag) then path
+          end
+          , ">") over (partition by session_id order by event_number ROWS BETWEEN 49 PRECEDING AND CURRENT ROW) as session_path
+        from paths
+        group by session_id, event_number, path, event, conversion, path_lag
       )
+      , p1 as (
+        select
+        session_id
+        , session_path
+        , conversion
+        from p0
+        where event_number in (select * from max_events)
+        group by session_id, session_path, conversion
+      )
+      , p2 as (
+        select *
+        , case when conversion = 1 then split(session_path, ">/checkout/subscribe>")
+          else null
+         end as conversion_path_arr
+        from p1
+      )
+      select
+      session_id
+      , session_path
+      , conversion_path_arr[offset(0)] as conversion_path
+      , array_length(split(conversion_path_arr[offset(0)], ",")) as conversion_path_length
+      from p2
+    )
+    , sessions_p4 as (
+      with group_user_ids as (
+        select
+        session_id
+        , user_id
+        from page_events
+        group by 1,2
+      )
+      select
+      session_id
+      , string_agg(user_id) over (partition by session_id) as user_ids
+      from group_user_ids
+      group by session_id, user_id
+    )
+    , sessions_p5 as (
+      with first_utms as (
+        select
+        session_id
+        , first_value(event_number) over (partition by session_id order by event_number) as first_event
+        , first_value(utm_campaign) over (partition by session_id order by event_number) as first_utm_campaign
+        , first_value(utm_source) over (partition by session_id order by event_number) as first_utm_source
+        , first_value(utm_medium) over (partition by session_id order by event_number) as first_utm_medium
+        , first_value(utm_content) over (partition by session_id order by event_number) as first_utm_content
+        , first_value(utm_term) over (partition by session_id order by event_number) as first_utm_term
+        from page_events
+      )
+      select * from first_utms group by 1,2,3,4,5,6,7
+    )
+    , sessions_final as (
+      select
+      a.session_id
+      , a.anonymous_id
+      , session_start
+      , session_end
+      , landing_page
+      , exit_page
+      , conversion
+      , bounce
+      , user_ids
+      , unique_pages_viewed
+      , session_path
+      , conversion_path
+      , conversion_path_length
+      , first_utm_campaign
+      , first_utm_source
+      , first_utm_medium
+      , first_utm_content
+      , first_utm_term
+      , utm_campaign_values
+      , utm_source_values
+      , utm_medium_values
+      , utm_content_values
+      , utm_term_values
+      from sessions_p0 a
+      left join sessions_p1 b on a.session_id = b.session_id
+      left join sessions_p2 c on a.session_id = c.session_id
+      left join sessions_p3 d on a.session_id = d.session_id
+      left join sessions_p4 e on a.session_id = e.session_id
+      left join sessions_p5 f on a.session_id = f.session_id
+      group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
+    )
     select * from sessions_final where session_id is not null ;;
     persist_for: "6 hours"
   }
@@ -212,9 +224,9 @@ view: upff_web_sessions {
     type: string
     sql: ${TABLE}.user_ids ;;
   }
-  dimension: touchpoints {
+  dimension: unique_pages_viewed {
     type: number
-    sql: ${TABLE}.touchpoints ;;
+    sql: ${TABLE}.unique_pages_viewed ;;
   }
   dimension: session_path {
     type: string
@@ -223,6 +235,10 @@ view: upff_web_sessions {
   dimension: conversion_path {
     type: string
     sql: ${TABLE}.conversion_path ;;
+  }
+  dimension: conversion_path_length {
+    type: number
+    sql: ${TABLE}.conversion_path_length ;;
   }
   dimension: first_utm_campaign {
     type: string
@@ -306,7 +322,7 @@ view: upff_web_sessions {
       , conversion
       , bounce
       , user_ids
-      , touchpoints
+      , unique_pages_viewed
       , session_path
       , first_utm_campaign
       , first_utm_source
