@@ -71,8 +71,7 @@ view: analytics_v2 {
       cast(winback_30_days as decimal) as winback_30_days
       from c inner join d on c.timestamp=d.timestamp),
 
-      f as (select *, sum((49000-(total_paying))/(365-day_of_year)) OVER (PARTITION by cast(datepart(month,date(timestamp)) as varchar) order by timestamp asc
-      rows between unbounded preceding and current row) as Running_Free_Trial_Target
+      f as (select *, sum((49000-(total_paying))/nullif((365-day_of_year),0)) OVER (PARTITION by cast(datepart(month,date(timestamp)) as varchar) order by timestamp asc rows between unbounded preceding and current row) as Running_Free_Trial_Target
       from (select *, SUM(free_trial_created) OVER (PARTITION by cast(datepart(month,date(timestamp)) as varchar) order by timestamp asc rows between unbounded preceding and current row) AS Running_Free_Trials
       from (select distinct * from (select a.*,
       case when extract(YEAR from a.timestamp)='2018' then 795+((49000-795)*(cast(datepart(dayofyear,date(a.timestamp)) as integer)-1)/365)
@@ -115,7 +114,8 @@ view: analytics_v2 {
       (select dateadd(day,-14,timestamp) as timestamp from customers_analytics )) as b on a.rownum=b.rownum)) as a
       left join customers.churn_reasons_aggregated as b on a.timestamp=b.timestamp)) as a))
 
-      select f.*,paying_30_days_prior,churn_30_days,churn_30_day_percent,winback_30_days from e inner join f on e.timestamp=f.timestamp ;;}
+      select f.*,paying_30_days_prior,churn_30_days,churn_30_day_percent,winback_30_days from e inner join f on e.timestamp=f.timestamp ;;
+      }
 
   parameter: subscription_frequency {
     label: "Subscription Frequency"
