@@ -115,6 +115,7 @@ view: analytics_v2 {
       left join customers.churn_reasons_aggregated as b on a.timestamp=b.timestamp)) as a))
 
       select f.*,paying_30_days_prior,churn_30_days,churn_30_day_percent,winback_30_days from e inner join f on e.timestamp=f.timestamp ;;
+
       }
 
   parameter: subscription_frequency {
