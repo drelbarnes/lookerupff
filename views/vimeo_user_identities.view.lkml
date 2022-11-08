@@ -36,8 +36,24 @@ view: vimeo_user_identities {
         union all
         select * from web_site
       )
+      -- The Vimeo OTT Web Segment Implementation bug rendered the above logic useless. Alt pages is the temp fix.
+        , alt_pages as (
+        select
+        case
+          when safe_cast(a.user_id as string) = safe_cast(a.anonymous_id as string) then cast(null as string)
+          else safe_cast(a.user_id as string)
+        end as user_id
+        , safe_cast(b.email as string) as email
+        , cast(null as string) as phone
+        , safe_cast(context_ip as string) as ip_address
+        , safe_cast(a.anonymous_id as string) as anonymous_id
+        , safe_cast(context_traits_cross_domain_id as string) as cross_domain_id
+        from ${upff_page_events.SQL_TABLE_NAME} as a
+        left join javascript_upff_home.identifies as b
+        on a.anonymous_id = b.anonymous_id
+      )
       , distinct_identities as (
-      select distinct * from union_all
+      select distinct * from alt_pages
       )
       , look_up_existing_user_id as (
         select user_id, email, phone, anonymous_id, cross_domain_id from distinct_identities where (user_id is not null and email is not null)

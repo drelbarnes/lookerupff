@@ -7,6 +7,7 @@ view: upff_page_events {
       , safe_cast(context_ip as string) as ip_address
       , safe_cast(context_traits_cross_domain_id as string) as cross_domain_id
       , "Page Viewed" as event
+      , id as event_id
       , safe_cast(context_campaign_content as string) as utm_content
       , safe_cast(context_campaign_medium as string) as utm_medium
       , safe_cast(context_campaign_name as string) as utm_campaign
@@ -28,6 +29,7 @@ view: upff_page_events {
       , safe_cast(context_ip as string) as ip_address
       , safe_cast(context_traits_cross_domain_id as string) as cross_domain_id
       , "Page Viewed" as event
+      , id as event_id
       , safe_cast(context_campaign_content as string) as utm_content
       , safe_cast(context_campaign_medium as string) as utm_medium
       , safe_cast(context_campaign_name as string) as utm_campaign
@@ -49,6 +51,7 @@ view: upff_page_events {
       , safe_cast(context_ip as string) as ip_address
       , safe_cast(context_traits_cross_domain_id as string) as cross_domain_id
       , "Identify" as event
+      , id as event_id
       , safe_cast(context_campaign_content as string) as utm_content
       , safe_cast(context_campaign_medium as string) as utm_medium
       , safe_cast(context_campaign_name as string) as utm_campaign
@@ -69,7 +72,8 @@ view: upff_page_events {
       , safe_cast(anonymous_id as string) as anonymous_id
       , safe_cast(context_ip as string) as ip_address
       , safe_cast(context_traits_cross_domain_id as string) as cross_domain_id
-      , name as event
+      , "Order Completed" as event
+      , id as event_id
       , safe_cast(context_campaign_content as string) as utm_content
       , safe_cast(context_campaign_medium as string) as utm_medium
       , safe_cast(context_campaign_name as string) as utm_campaign
@@ -138,11 +142,12 @@ view: upff_page_events {
       select
       timestamp
       , coalesce(anon_id_alt, anonymous_id) as anonymous_id
-      , anonymous_id as old_anon_id
+      , anonymous_id as anonymous_id_raw
       , user_id
       , ip_address
       , cross_domain_id
       , event
+      , event_id
       , utm_content
       , utm_medium
       , utm_campaign
@@ -202,10 +207,12 @@ view: upff_page_events {
       select
       timestamp
       , anonymous_id
+      , anonymous_id_raw
       , ip_address
       , cross_domain_id
       , user_id
       , event
+      , event_id
       , session_id_alt as session_id
       , is_session_start
       , is_session_end
@@ -244,6 +251,11 @@ view: upff_page_events {
     sql: ${TABLE}.anonymous_id ;;
   }
 
+  dimension: anonymous_id_raw {
+    type: string
+    sql: ${TABLE}.anonymous_id_raw ;;
+  }
+
   dimension: ip_address {
     type: string
     sql: ${TABLE}.ip_address ;;
@@ -257,6 +269,11 @@ view: upff_page_events {
   dimension: event {
     type: string
     sql: ${TABLE}.event ;;
+  }
+
+  dimension: event_id {
+    type: string
+    sql: ${TABLE}.event_id ;;
   }
 
   dimension: utm_content {

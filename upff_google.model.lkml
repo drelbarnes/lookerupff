@@ -315,6 +315,12 @@ explore: funnel_performance {
       and ${customer_record.frequency} = ${customer_record_analytics.frequency} ;;
     relationship: many_to_many
   }
+
+  join: upff_web_sessions {
+    type: full_outer
+    sql_on: ${vimeo_user_identities.anonymous_id}=${upff_web_sessions.anonymous_id};;
+    relationship: many_to_many
+  }
 }
 
 explore: identity_resolution {

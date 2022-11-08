@@ -25,6 +25,7 @@ view: upff_web_sessions {
       , device
       , platform
       from ${upff_page_events.SQL_TABLE_NAME}
+      where event in ("Page Viewed","Order Completed")
     )
     , sessions_p0 as (
       with first_values as (
@@ -58,11 +59,25 @@ view: upff_web_sessions {
       )
       select * from sessions_utm_values group by 1,2,3,4,5,6
     )
-    , paths as (select session_id, event_number, path from page_events)
+    , paths as (
+      with p0 as (
+        select
+        session_id
+        , event_number
+        , path
+        , event
+        , first_value(is_conversion ignore nulls) over (partition by session_id order by is_conversion desc) as conversion
+        from page_events
+        group by session_id, event_number, path, event, is_conversion
+      )
+      select *
+      , lag(path) over (partition by session_id order by event_number) as path_lag
+      from p0
+    )
     , sessions_p2 as (
       select
       session_id
-      , count(path) over (partition by session_id) as touchpoints
+      , count(distinct path) over (partition by session_id) as unique_pages_viewed
       from paths
       group by session_id, path
     )
@@ -70,19 +85,40 @@ view: upff_web_sessions {
     -- any sessions with more than 50 touchpoints are in the 99.9999th percentile
     -- but drastically increase processing time, so we cap the session path at 50 touchpoints
     , sessions_p3 as (
-      with all_paths as (
+      with p0 as (
         select session_id
         , event_number
-        , string_agg(path) over (partition by session_id order by event_number ROWS BETWEEN 49 PRECEDING AND CURRENT ROW) as session_path
+        , conversion
+        , string_agg(
+          case
+            when (path_lag is null or path != path_lag) then path
+          end
+          , ">") over (partition by session_id order by event_number ROWS BETWEEN 49 PRECEDING AND CURRENT ROW) as session_path
         from paths
-        group by session_id, event_number, path
+        group by session_id, event_number, path, event, conversion, path_lag
+      )
+      , p1 as (
+        select
+        session_id
+        , session_path
+        , conversion
+        from p0
+        where event_number in (select * from max_events)
+        group by session_id, session_path, conversion
+      )
+      , p2 as (
+        select *
+        , case when conversion = 1 then split(session_path, ">/checkout/subscribe>")
+          else null
+         end as conversion_path_arr
+        from p1
       )
       select
       session_id
       , session_path
-      from all_paths
-      where event_number in (select * from max_events)
-      group by session_id, session_path
+      , conversion_path_arr[offset(0)] as conversion_path
+      , array_length(split(conversion_path_arr[offset(0)], ",")) as conversion_path_length
+      from p2
     )
     , sessions_p4 as (
       with group_user_ids as (
@@ -123,8 +159,10 @@ view: upff_web_sessions {
       , conversion
       , bounce
       , user_ids
-      , touchpoints
+      , unique_pages_viewed
       , session_path
+      , conversion_path
+      , conversion_path_length
       , first_utm_campaign
       , first_utm_source
       , first_utm_medium
@@ -141,7 +179,7 @@ view: upff_web_sessions {
       left join sessions_p3 d on a.session_id = d.session_id
       left join sessions_p4 e on a.session_id = e.session_id
       left join sessions_p5 f on a.session_id = f.session_id
-      group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21
+      group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
     )
     select * from sessions_final where session_id is not null ;;
     persist_for: "6 hours"
@@ -186,13 +224,21 @@ view: upff_web_sessions {
     type: string
     sql: ${TABLE}.user_ids ;;
   }
-  dimension: touchpoints {
+  dimension: unique_pages_viewed {
     type: number
-    sql: ${TABLE}.touchpoints ;;
+    sql: ${TABLE}.unique_pages_viewed ;;
   }
   dimension: session_path {
     type: string
     sql: ${TABLE}.session_path ;;
+  }
+  dimension: conversion_path {
+    type: string
+    sql: ${TABLE}.conversion_path ;;
+  }
+  dimension: conversion_path_length {
+    type: number
+    sql: ${TABLE}.conversion_path_length ;;
   }
   dimension: first_utm_campaign {
     type: string
@@ -249,7 +295,7 @@ view: upff_web_sessions {
               WHEN ${TABLE}.first_utm_source = 'ig' then 'Meta Ads'
               WHEN ${TABLE}.first_utm_source = 'bing_ads' then 'Bing Ads'
               WHEN ${TABLE}.first_utm_source = 'an' then 'Meta Ads'
-              else ${TABLE}.first_utm_source
+              else 'other'
             END ;;
   }
   measure: total_sessions {
@@ -276,7 +322,7 @@ view: upff_web_sessions {
       , conversion
       , bounce
       , user_ids
-      , touchpoints
+      , unique_pages_viewed
       , session_path
       , first_utm_campaign
       , first_utm_source
