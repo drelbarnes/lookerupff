@@ -610,7 +610,27 @@ view: bigquery_viewing_habits {
         where collection = 'Wildfire - Season 4'
         group by 1,2,3
         order by 1,2,3
-        )
+        ),
+
+        habits_touchedbyangel_s1 as
+        (
+        select
+        user_id,
+        collection,
+        total_episodes,
+        case
+        when total_episodes = 1 then 'First episode only'
+        when total_episodes > 1 and total_episodes < 10 then 'More than 1 but not all'
+        when total_episodes in (10,11) then 'Series completer'
+        else 'Other or missing incomplete series'
+        end as viewing_habit
+        from sum
+        where collection = 'Touched by an Angel - Season 1'
+        group by 1,2,3
+        order by 1,2,3
+        ),
+
+
 
         select count(distinct user_id) as n, viewing_habit, collection from habits_{% parameter p_series %} group by 2,3
         ;;
@@ -627,6 +647,7 @@ view: bigquery_viewing_habits {
     allowed_value: {label: "Hudson & Rex - Season 2" value: "hudson_s2"}
     allowed_value: {label: "800 Words - Season 1" value: "800words_s1"}
     allowed_value: {label: "Wildfire - Season 4" value: "wildfire_s4"}
+    allowed_value: {label: "Touched by an Angel - Season 1" value: "touchedbyangel_s1"}
   }
 
     measure: count {
