@@ -415,7 +415,14 @@ view: bigquery_viewing_habits {
         case when episode=10 then 1 else 0 end as ep10,
         case when episode=11 then 1 else 0 end as ep11,
         case when episode=12 then 1 else 0 end as ep12,
-        case when episode=13 then 1 else 0 end as ep13
+        case when episode=13 then 1 else 0 end as ep13,
+        case when episode=14 then 1 else 0 end as ep14,
+        case when episode=15 then 1 else 0 end as ep15,
+        case when episode=16 then 1 else 0 end as ep16,
+        case when episode=17 then 1 else 0 end as ep17,
+        case when episode=18 then 1 else 0 end as ep18,
+        case when episode=19 then 1 else 0 end as ep19,
+        case when episode=20 then 1 else 0 end as ep20
         from episodes
         group by 1,2,3
         order by 1,2,3
@@ -438,7 +445,14 @@ view: bigquery_viewing_habits {
         max(ep10) as ep10,
         max(ep11) as ep11,
         max(ep12) as ep12,
-        max(ep13) as ep13
+        max(ep13) as ep13,
+        max(ep14) as ep14,
+        max(ep15) as ep15,
+        max(ep16) as ep16,
+        max(ep17) as ep17,
+        max(ep18) as ep18,
+        max(ep19) as ep19,
+        max(ep20) as ep20
         from flags
         group by 1,2
         ),
@@ -448,10 +462,10 @@ view: bigquery_viewing_habits {
         select
         user_id,
         collection,
-        ep1, ep2, ep3, ep4, ep5, ep6, ep7, ep8, ep9, ep10, ep11, ep12, ep13,
-        ep1 + ep2 + ep3 + ep4 + ep5 + ep6 + ep7 + ep8 + ep9 + ep10 + ep11 + ep12 + ep13 as total_episodes
+        ep1,ep2,ep3,ep4,ep5,ep6,ep7,ep8,ep9,ep10,ep11,ep12,ep13,ep14,ep15,ep16,ep17,ep18,ep19,ep20,
+        ep1+ep2+ep3+ep4+ep5+ep6+ep7+ep8+ep9+ep10+ep11+ep12+ep13+ep14+ep15+ep16+ep17+ep18+ep19+ep20 as total_episodes
         from max
-        group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+        group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22
         ),
 
         habits_mystic_s1 as
