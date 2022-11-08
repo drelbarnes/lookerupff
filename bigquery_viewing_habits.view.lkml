@@ -628,7 +628,7 @@ view: bigquery_viewing_habits {
         where collection = 'Touched by an Angel - Season 1'
         group by 1,2,3
         order by 1,2,3
-        ),
+        )
 
 
 
