@@ -179,6 +179,7 @@ include: "/views/customer_record_analytics.view.lkml"
 include: "/views/bigquery_views/upff_page_events.view.lkml"
 include: "/views/bigquery_views/upff_web_sessions.view.lkml"
 include: "/views/bigquery_views/upff_order_completed_events.view.lkml"
+include: "/views/bigquery_views/ios_app_events.view.lkml"
 
 include: "allfirstplay.view.lkml"
 include: "ticket_comments.view.lkml"
