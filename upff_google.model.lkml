@@ -178,6 +178,7 @@ include: "/views/customer_record_analytics.view.lkml"
 
 include: "/views/bigquery_views/upff_page_events.view.lkml"
 include: "/views/bigquery_views/upff_web_sessions.view.lkml"
+include: "/views/bigquery_views/upff_order_completed_events.view.lkml"
 
 include: "allfirstplay.view.lkml"
 include: "ticket_comments.view.lkml"
@@ -230,6 +231,10 @@ explore: upff_web_sessions {
 
 explore: vimeo_webhook_events {
   label: "Vimeo Webhook Events"
+}
+
+explore: upff_order_completed_events {
+  label: "UPFF Order Completed Events"
 }
 
 explore: customer_record {
