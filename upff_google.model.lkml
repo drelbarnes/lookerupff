@@ -238,6 +238,10 @@ explore: upff_order_completed_events {
   label: "UPFF Order Completed Events"
 }
 
+explore: ios_app_events {
+  label: "iOS App Events"
+}
+
 explore: customer_record {
   label: "Customer Record"
 }

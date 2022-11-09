@@ -1,4 +1,4 @@
-view: sql_runner_query {
+view: ios_app_events {
   derived_table: {
     sql: with app_installed as (
       select
