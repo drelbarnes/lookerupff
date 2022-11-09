@@ -199,6 +199,7 @@ view: upff_order_completed_events {
       anonymous_id,
       context_app_name,
       context_app_version,
+      context_ip,
       context_external_ids,
       context_library_name,
       context_library_version,
