@@ -106,6 +106,7 @@ view: upff_ios_sessions {
     )
     select * from sessions_final where session_id is not null
      ;;
+    persist_for: "6 hours"
   }
 
   measure: count {
