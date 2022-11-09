@@ -208,7 +208,7 @@ view: ios_app_events {
       , conversion_type
       from session_ids_p2
     )
-    select * from session_ids_p3 where date(timestamp) between '2022-10-22' and '2022-10-23' order by device_id, timestamp
+    select *, row_number() over (order by timestamp) as row from session_ids_p3
      ;;
     persist_for: "6 hours"
   }
