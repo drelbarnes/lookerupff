@@ -1,7 +1,6 @@
 view: upff_attributable_events {
   derived_table: {
-    sql: DECLARE attribution_window INT64 DEFAULT 30 ;
-      DECLARE free_trial_window INT64 DEFAULT 15 ;
+    sql:
       -- JOIN ORDERS ON PAGE VISITS
       with web_pages as (
       select
@@ -368,7 +367,6 @@ view: upff_attributable_events {
 
   set: detail {
     fields: [
-      row,
       ordered_at_time,
       session_start_time,
       user_id,
@@ -385,7 +383,8 @@ view: upff_attributable_events {
       utm_term,
       referrer_domain,
       user_agent,
-      source
+      source,
+      row
     ]
   }
 }
