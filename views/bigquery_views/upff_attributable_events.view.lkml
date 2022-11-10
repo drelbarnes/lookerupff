@@ -23,8 +23,8 @@ view: upff_attributable_events {
       , path
       , title as view
       , '' as user_agent
-        from `up-faith-and-family-216419.looker_scratch.LR_P4H321668106386112_upff_page_events` a
-        left join `up-faith-and-family-216419.looker_scratch.LR_P4YF81668114275665_upff_web_sessions` b
+        from ${upff_page_events.SQL_TABLE_NAME} as a
+        left join ${upff_web_sessions.SQL_TABLE_NAME} as b
         on a.session_id = b.session_id
       )
       , ios_events as (
@@ -46,8 +46,8 @@ view: upff_attributable_events {
         , cast(null as string) as path
         , cast(null as string) as view
         , cast(null as string) as user_agent
-        from `up-faith-and-family-216419.looker_scratch.LR_P4GLO1668114279161_ios_app_events` a
-        left join `up-faith-and-family-216419.looker_scratch.LR_P4N9K1668114282459_upff_ios_sessions` b
+        from ${ios_app_events.SQL_TABLE_NAME} as a
+        left join ${upff_ios_sessions.SQL_TABLE_NAME} as b
         on a.session_id = b.session_id
       )
       , webhook_events as (
@@ -61,7 +61,7 @@ view: upff_attributable_events {
           else "yearly"
           end as plan_type
         , platform
-        from `up-faith-and-family-216419.looker_scratch.LR_P4IO31668106675324_vimeo_webhook_events`
+        from ${vimeo_webhook_events.SQL_TABLE_NAME}
         where event in ("customer_product_created", "customer_product_free_trial_created", "customer_product_free_trial_converted")
       )
       , order_completed_events as (
@@ -73,7 +73,7 @@ view: upff_attributable_events {
         , context_ip as ip_address
         , user_email as email
         , platform
-        from `up-faith-and-family-216419.looker_scratch.LR_P4EFR1668111781660_upff_order_completed_events`
+        from ${upff_order_completed_events.SQL_TABLE_NAME}
       )
       , web_orders as (
           select
