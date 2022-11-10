@@ -3,11 +3,11 @@ derived_table: {
   sql:
     with attributable_events as (
     select *
-    from ${upff_attributable_events.SQL_TABLE}
+    from ${upff_attributable_events.SQL_TABLE_NAME}
     )
     , conversion_events as (
     select *
-    from ${vimeo_webhook_events.SQL_TABLE}
+    from ${vimeo_webhook_events.SQL_TABLE_NAME}
     )
     , sources_last_touch as (
     select *

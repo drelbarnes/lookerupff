@@ -182,6 +182,7 @@ include: "/views/bigquery_views/upff_order_completed_events.view.lkml"
 include: "/views/bigquery_views/ios_app_events.view.lkml"
 include: "/views/bigquery_views/upff_ios_sessions.view.lkml"
 include: "/views/bigquery_views/upff_attributable_events.view.lkml"
+include: "/views/bigquery_views/upff_multitouch_attribution.view.lkml"
 
 include: "allfirstplay.view.lkml"
 include: "ticket_comments.view.lkml"
@@ -250,6 +251,10 @@ explore: upff_ios_sessions {
 
 explore: upff_attributable_events {
   label: "UPFF Attributable Events"
+}
+
+explore: upff_multitouch_attribution {
+  label: "UPFF Multitouch Attribution"
 }
 
 explore: customer_record {
