@@ -3,7 +3,7 @@ derived_table: {
   sql:
     with attributable_events as (
     select *
-    from ${upff_attributable_events.SQL_TABLE_NAME}
+    from (select * from ${upff_attributable_events.SQL_TABLE_NAME} where platform = "web")
     where ordered_at between timestamp_sub({% date_start date_filter %}, interval 15 day)
     and {% date_end date_filter %}
     )
@@ -133,8 +133,8 @@ derived_table: {
     , b.credit as last_touch
     , c.credit as first_touch
     , d.credit as equal_credit
-    , e.channel_decay
-    , e.reverse_channel_decay
+    --, e.channel_decay
+    --, e.reverse_channel_decay
     from attributable_events a
     inner join last_touch_v2 b
     on a.user_id = b.user_id and a.session_start = b.session_start
@@ -142,8 +142,8 @@ derived_table: {
     on a.user_id = c.user_id and a.session_start = c.session_start
     inner join linear_v2 d
     on a.user_id = d.user_id and a.session_start = d.session_start
-    inner join channel_decay e
-    on a.user_id = e.user_id and a.session_start = e.session_start
+    --inner join channel_decay e
+    --on a.user_id = e.user_id and a.session_start = e.session_start
     )
     , mofu_final as (
     select * from final
@@ -172,8 +172,8 @@ derived_table: {
     , a.last_touch
     , a.first_touch
     , a.equal_credit
-    , a.channel_decay
-    , a.reverse_channel_decay
+    --, a.channel_decay
+    --, a.reverse_channel_decay
     from final a
     inner join conversion_events as b
     on a.user_id = b.user_id

@@ -182,6 +182,7 @@ include: "/views/bigquery_views/upff_order_completed_events.view.lkml"
 include: "/views/bigquery_views/ios_app_events.view.lkml"
 include: "/views/bigquery_views/upff_ios_sessions.view.lkml"
 include: "/views/bigquery_views/upff_attributable_events.view.lkml"
+include:"/views/bigquery_views/upff_ios_event_processing.view.lkml"
 include: "/views/bigquery_views/upff_multitouch_attribution.view.lkml"
 
 include: "allfirstplay.view.lkml"
@@ -251,6 +252,10 @@ explore: upff_ios_sessions {
 
 explore: upff_attributable_events {
   label: "UPFF Attributable Events"
+}
+
+explore: upff_ios_event_processing {
+  label: "UPFF iOS Event Processing"
 }
 
 explore: upff_multitouch_attribution {
