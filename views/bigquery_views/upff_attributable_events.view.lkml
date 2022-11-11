@@ -107,6 +107,7 @@ view: upff_attributable_events {
           , b.plan_type
           , case
             when b.topic = "customer_product_created" and c.topic = "customer_product_free_trial_created" then c.topic
+            when b.topic is null and c.topic is null then "customer_product_free_trial_created"
             else b.topic
             end as topic
           from (select * from order_completed_events where platform in ("iphone", "ipad")) as a

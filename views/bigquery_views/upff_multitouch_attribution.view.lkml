@@ -4,10 +4,14 @@ derived_table: {
     with attributable_events as (
     select *
     from ${upff_attributable_events.SQL_TABLE_NAME}
+    where ordered_at between timestamp_sub({% date_start date_filter %}, interval 15 day)
+    and {% date_end date_filter %}
     )
     , conversion_events as (
     select *
     from ${vimeo_webhook_events.SQL_TABLE_NAME}
+    where timestamp between {% date_start date_filter %}
+    and {% date_end date_filter %}
     )
     , sources_last_touch as (
     select *
@@ -142,7 +146,9 @@ derived_table: {
     on a.user_id = e.user_id and a.session_start = e.session_start
     )
     , mofu_final as (
-    select * from final where date(ordered_at) >= {% date_start date_filter %} and date(ordered_at) <= {% date_start date_filter %}
+    select * from final
+    where ordered_at between {% date_start date_filter %}
+    and {% date_end date_filter %}
     )
     , tofu_final as (
     select
@@ -172,15 +178,14 @@ derived_table: {
     inner join conversion_events as b
     on a.user_id = b.user_id
     where b.event in ("customer_product_free_trial_converted")
-    and
-    date(b.timestamp) >= {% date_start date_filter %} and date(b.timestamp) <= {% date_start date_filter %}
+    and b.timestamp between {% date_start date_filter %} and {% date_end date_filter %}
     )
     , union_all as (
     select * from mofu_final
     union all
     select * from tofu_final
     )
-    select *, row_number() over (order by ordered_at) as row from union_all
+    select * from union_all
     ;;
   }
 
@@ -192,13 +197,6 @@ derived_table: {
     type: count
     drill_fields: [detail*]
   }
-
-  dimension: row {
-    type: number
-    primary_key: yes
-    sql: ${TABLE}.row ;;
-  }
-
 
   dimension_group: ordered_at {
     type: time
