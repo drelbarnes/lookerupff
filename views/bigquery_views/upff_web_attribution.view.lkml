@@ -1,9 +1,9 @@
-view: upff_multitouch_attribution {
+view: upff_web_attribution {
 derived_table: {
   sql:
     with attributable_events as (
     select *
-    from (select * from ${upff_attributable_events.SQL_TABLE_NAME} where platform = "web")
+    from (select * from ${upff_web_event_processing.SQL_TABLE_NAME})
     where ordered_at between timestamp_sub({% date_start date_filter %}, interval 15 day)
     and {% date_end date_filter %}
     )

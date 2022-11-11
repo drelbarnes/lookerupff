@@ -1,4 +1,4 @@
-view: upff_attributable_events {
+view: upff_web_event_processing {
   derived_table: {
     sql:
       -- JOIN ORDERS ON PAGE VISITS
