@@ -2,18 +2,27 @@ view: upff_ios_attribution {
   derived_table: {
     sql:
     with attributable_events as (
-    select *
-    from ${upff_ios_event_processing.SQL_TABLE_NAME}
-    where ordered_at between timestamp_sub({% date_start date_filter %}, interval 15 day)
-    and {% date_end date_filter %}
+    -- dedup sessions
+      with p0 as (
+      select *
+      from ${upff_ios_event_processing.SQL_TABLE_NAME}
+      where ordered_at between timestamp_sub({% date_start date_filter %}, interval 15 day)
+      and {% date_end date_filter %}
+      )
+      , p1 as (
+        select *
+        , row_number() over (partition by device_id, session_start) as event_partition
+        from p0
+      )
+      select * from p1 where event_partition = 1
     )
     , conversion_events as (
-    select *
-    from ${vimeo_webhook_events.SQL_TABLE_NAME}
-    where timestamp between {% date_start date_filter %}
-    and {% date_end date_filter %}
-    and event in ("customer_product_free_trial_converted")
-    and platform = "ios"
+      select *
+      from ${vimeo_webhook_events.SQL_TABLE_NAME}
+      where timestamp between {% date_start date_filter %}
+      and {% date_end date_filter %}
+      and event in ("customer_product_free_trial_converted")
+      and platform = "ios"
     )
     , sources_last_touch as (
     select *
@@ -135,8 +144,8 @@ view: upff_ios_attribution {
     , b.credit as last_touch
     , c.credit as first_touch
     , d.credit as equal_credit
-    --, e.channel_decay
-    --, e.reverse_channel_decay
+    , e.channel_decay
+    , e.reverse_channel_decay
     from attributable_events a
     inner join last_touch_v2 b
     on a.user_id = b.user_id and a.session_start = b.session_start
@@ -144,8 +153,8 @@ view: upff_ios_attribution {
     on a.user_id = c.user_id and a.session_start = c.session_start
     inner join linear_v2 d
     on a.user_id = d.user_id and a.session_start = d.session_start
-    --inner join channel_decay e
-    --on a.user_id = e.user_id and a.session_start = e.session_start
+    inner join channel_decay e
+    on a.user_id = e.user_id and a.session_start = e.session_start
     )
     , mofu_final as (
     select * from final
@@ -174,8 +183,8 @@ view: upff_ios_attribution {
     , a.last_touch
     , a.first_touch
     , a.equal_credit
-    --, a.channel_decay
-    --, a.reverse_channel_decay
+    , a.channel_decay
+    , a.reverse_channel_decay
     from final a
     inner join conversion_events as b
     on a.user_id = b.user_id
@@ -198,6 +207,31 @@ view: upff_ios_attribution {
   measure: count {
     type: count
     drill_fields: [detail*]
+  }
+
+  measure: last_touch_total {
+    type: sum
+    sql: ${TABLE}.last_touch ;;
+  }
+
+  measure: first_touch_total {
+    type: sum
+    sql: ${TABLE}.first_touch ;;
+  }
+
+  measure: equal_credit_total {
+    type: sum
+    sql: ${TABLE}.equal_credit ;;
+  }
+
+  measure: channel_decay_total {
+    type: sum
+    sql: ${TABLE}.channel_decay ;;
+  }
+
+  measure: reverse_channel_decay_total {
+    type: sum
+    sql: ${TABLE}.reverse_channel_decay ;;
   }
 
   dimension_group: ordered_at {

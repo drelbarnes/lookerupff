@@ -5,7 +5,7 @@ view: upff_ios_event_processing {
       with web_events as (
       select
       a.timestamp as viewed_at
-      , coalesce(b.session_start, a.timestamp) as session_start
+      , b.session_start as session_start
       , a.event_id
       , a.anonymous_id
       , cast(null as string) as device_id
@@ -28,7 +28,7 @@ view: upff_ios_event_processing {
       , ios_events as (
         select
         a.timestamp as viewed_at
-        , coalesce(b.session_start, a.timestamp) as session_start
+        , b.session_start as session_start
         , a.id as event_id
         , a.anonymous_id
         , a.device_id
@@ -64,16 +64,27 @@ view: upff_ios_event_processing {
         and platform = "ios"
       )
       , order_completed_events as (
-        select timestamp as ordered_at
-        , user_id as user_id
-        , id as event_id
-        , anonymous_id
-        , device_id
-        , context_ip as ip_address
-        , user_email as email
-        , platform
-        from ${upff_order_completed_events.SQL_TABLE_NAME}
-        where platform in ("iphone", "ipad")
+        with p0 as (
+          select timestamp as ordered_at
+          , user_id as user_id
+          , id as event_id
+          , anonymous_id
+          , device_id
+          , context_ip as ip_address
+          , user_email as email
+          , platform
+          from ${upff_order_completed_events.SQL_TABLE_NAME}
+          where platform in ("iphone", "ipad")
+          and device_id is not null
+        )
+        , p1 as (
+          select *
+          , row_number() over (partition by device_id, date(ordered_at)) as n
+          from p0
+        )
+        select ordered_at, user_id, event_id, anonymous_id, device_id, ip_address, email, platform
+        from p1
+        where n = 1
       )
       , ios_orders as (
           select
@@ -89,7 +100,7 @@ view: upff_ios_event_processing {
           , b.plan_type
           , case
             when b.topic = "customer_product_created" and c.topic = "customer_product_free_trial_created" then c.topic
-            when b.topic is null and c.topic is null then "customer_product_free_trial_created"
+            when b.topic is null and c.topic is null then "customer_product_created"
             else b.topic
             end as topic
           from order_completed_events as a
