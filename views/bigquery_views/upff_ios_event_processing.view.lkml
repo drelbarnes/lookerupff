@@ -5,7 +5,7 @@ view: upff_ios_event_processing {
       with web_pages as (
       select
       a.timestamp as viewed_at
-      , b.session_start
+      , coalesce(b.session_start, a.timestamp) as session_start
       , a.event_id
       , a.anonymous_id
       , cast(null as string) as device_id
@@ -17,7 +17,6 @@ view: upff_ios_event_processing {
       , b.first_utm_source as utm_source
       , b.first_utm_term as utm_term
       , b.session_referrer as referrer_domain
-      -- , regexp_extract(referrer, r'[a-zA-Z]+\.[a-zA-Z]+\/') as referrer_domain
       , split(referrer, "?")[safe_offset(1)] AS referrer_query
       , path
       , title as view
@@ -29,7 +28,7 @@ view: upff_ios_event_processing {
       , ios_events as (
         select
         a.timestamp as viewed_at
-        , b.session_start
+        , coalesce(b.session_start, a.timestamp) as session_start
         , a.id as event_id
         , a.anonymous_id
         , a.device_id
@@ -93,10 +92,10 @@ view: upff_ios_event_processing {
             when b.topic is null and c.topic is null then "customer_product_free_trial_created"
             else b.topic
             end as topic
-          from (select * from order_completed_events where platform in ("iphone", "ipad")) as a
-          left join (select * from webhook_events where (topic = "customer_product_created" or topic is null) and platform = 'ios') as b
+          from order_completed_events as a
+          left join (select * from webhook_events where topic = "customer_product_created" or topic is null) as b
           on a.user_id = b.user_id and date(a.ordered_at) = date(b.timestamp)
-          left join (select * from webhook_events where (topic = "customer_product_free_trial_created" or topic is null) and platform = 'ios') as c
+          left join (select * from webhook_events where topic = "customer_product_free_trial_created" or topic is null) as c
           on a.user_id = c.user_id and date(a.ordered_at) = date(c.timestamp)
           left join ios.identifies as d
           on a.device_id = d.context_device_id
