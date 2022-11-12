@@ -12,6 +12,8 @@ derived_table: {
     from ${vimeo_webhook_events.SQL_TABLE_NAME}
     where timestamp between {% date_start date_filter %}
     and {% date_end date_filter %}
+    and event in ("customer_product_free_trial_converted")
+    and platform = "web"
     )
     , sources_last_touch as (
     select *
@@ -177,13 +179,12 @@ derived_table: {
     from final a
     inner join conversion_events as b
     on a.user_id = b.user_id
-    where b.event in ("customer_product_free_trial_converted")
-    and b.timestamp between {% date_start date_filter %} and {% date_end date_filter %}
     )
     , union_all as (
     select * from mofu_final
     union all
     select * from tofu_final
+    where ordered_at between {% date_start date_filter %} and {% date_end date_filter %}
     )
     select * from union_all
     ;;
