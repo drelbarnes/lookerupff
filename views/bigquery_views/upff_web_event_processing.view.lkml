@@ -2,10 +2,10 @@ view: upff_web_event_processing {
   derived_table: {
     sql:
       -- JOIN ORDERS ON PAGE VISITS
-      with web_pages as (
+      with web_events as (
       select
       a.timestamp as viewed_at
-      , b.session_start
+      , coalesce(b.session_start, a.timestamp) as session_start
       , a.event_id
       , a.anonymous_id
       , cast(null as string) as device_id
@@ -26,29 +26,6 @@ view: upff_web_event_processing {
         left join ${upff_web_sessions.SQL_TABLE_NAME} as b
         on a.session_id = b.session_id
       )
-      , ios_events as (
-        select
-        a.timestamp as viewed_at
-        , b.session_start
-        , a.id as event_id
-        , a.anonymous_id
-        , a.device_id
-        , a.session_id
-        , a.ip_address
-        , b.first_utm_content as utm_content
-        , b.first_utm_medium as utm_medium
-        , b.first_utm_campaign as utm_campaign
-        , b.first_utm_source as utm_source
-        , b.first_utm_term as utm_term
-        , cast(null as string) as referrer_domain
-        , cast(null as string) as referrer_query
-        , cast(null as string) as path
-        , cast(null as string) as view
-        , cast(null as string) as user_agent
-        from ${ios_app_events.SQL_TABLE_NAME} as a
-        left join ${upff_ios_sessions.SQL_TABLE_NAME} as b
-        on a.session_id = b.session_id
-      )
       , webhook_events as (
         select
         timestamp
@@ -61,7 +38,8 @@ view: upff_web_event_processing {
           end as plan_type
         , platform
         from ${vimeo_webhook_events.SQL_TABLE_NAME}
-        where event in ("customer_product_created", "customer_product_free_trial_created", "customer_product_free_trial_converted")
+        where event in ("customer_product_created", "customer_product_free_trial_created")
+        and platform = "web"
       )
       , order_completed_events as (
         select timestamp as ordered_at
@@ -73,6 +51,7 @@ view: upff_web_event_processing {
         , user_email as email
         , platform
         from ${upff_order_completed_events.SQL_TABLE_NAME}
+        where platform in ("web")
       )
       , web_orders as (
           select
@@ -87,119 +66,44 @@ view: upff_web_event_processing {
           , a.platform
           , b.plan_type
           , b.topic
-          from (select * from order_completed_events where platform = "web") as a
-          left join (select * from webhook_events where topic in ("customer_product_created", "customer_product_free_trial_created")) as b
+          from order_completed_events as a
+          left join webhook_events as b
           on a.user_id = b.user_id and date(a.ordered_at) = date(b.timestamp)
-          left join web_pages as c
+          left join web_events as c
           on a.event_id = c.event_id
       )
-      , ios_orders as (
-          select
-          a.ordered_at
-          , coalesce(a.user_id, d.user_id, e.user_id, a.device_id) as user_id
-          , a.anonymous_id
-          -- hotfix for the anonymous_id bug of Q2/Q3 2022
-          , cast(null as string) as anonymous_id_raw
-          , a.device_id
-          , a.event_id
-          , a.ip_address
-          , a.platform
-          , b.plan_type
-          , case
-            when b.topic = "customer_product_created" and c.topic = "customer_product_free_trial_created" then c.topic
-            when b.topic is null and c.topic is null then "customer_product_free_trial_created"
-            else b.topic
-            end as topic
-          from (select * from order_completed_events where platform in ("iphone", "ipad")) as a
-          left join (select * from webhook_events where (topic = "customer_product_created" or topic is null) and platform = 'ios') as b
-          on a.user_id = b.user_id and date(a.ordered_at) = date(b.timestamp)
-          left join (select * from webhook_events where (topic = "customer_product_free_trial_created" or topic is null) and platform = 'ios') as c
-          on a.user_id = c.user_id and date(a.ordered_at) = date(c.timestamp)
-          left join ios.identifies as d
-          on a.device_id = d.context_device_id
-          left join (select * from webhook_events where email is not null) as e
-          on a.email = e.email and date(a.ordered_at) = date(e.timestamp)
-      )
-      , web_pages_web_orders_anon as (
+      , web_events_web_orders_anon as (
         select
         web_orders.ordered_at
         , web_orders.user_id
         , web_orders.plan_type
         , web_orders.platform
         , web_orders.topic
-        , web_pages.*
+        , web_events.*
         from web_orders
-        full join web_pages
-        on web_orders.anonymous_id = web_pages.anonymous_id
-        -- and web_orders.ordered_at > web_pages.viewed_at
-        -- and web_pages.viewed_at > timestamp_sub(web_orders.ordered_at, INTERVAL 30 DAY)
+        full join web_events
+        on web_orders.anonymous_id = web_events.anonymous_id
+        -- and web_orders.ordered_at > web_events.viewed_at
+        -- and web_events.viewed_at > timestamp_sub(web_orders.ordered_at, INTERVAL 30 DAY)
       )
-      , web_pages_web_orders_ip as (
+      , web_events_web_orders_ip as (
         select
         web_orders.ordered_at
         , web_orders.user_id
         , web_orders.plan_type
         , web_orders.platform
         , web_orders.topic
-        , web_pages.*
+        , web_events.*
         from web_orders
-        full join web_pages
-        on web_pages.ip_address = web_orders.ip_address
-        -- and web_orders.ordered_at > web_pages.viewed_at
-        -- and web_pages.viewed_at > timestamp_sub(web_orders.ordered_at, INTERVAL 30 DAY)
-      )
-      , ios_events_ios_orders_device as (
-        select
-        ios_orders.ordered_at
-        , ios_orders.user_id
-        , ios_orders.plan_type
-        , ios_orders.platform
-        , ios_orders.topic
-        , ios_events.*
-        from ios_orders
-        full join ios_events
-        on ios_orders.device_id = ios_events.device_id
-        -- and ios_orders.ordered_at > ios_events.viewed_at
-        -- and ios_events.viewed_at > timestamp_sub(ios_orders.ordered_at, INTERVAL 30 DAY)
-      )
-      , ios_events_ios_orders_ip as (
-        select
-        ios_orders.ordered_at
-        , ios_orders.user_id
-        , ios_orders.plan_type
-        , ios_orders.platform
-        , ios_orders.topic
-        , ios_events.*
-        from ios_orders
-        full join ios_events
-        on ios_orders.ip_address = ios_events.ip_address
-        -- and ios_orders.ordered_at > ios_events.viewed_at
-        -- and ios_events.viewed_at > timestamp_sub(ios_orders.ordered_at, INTERVAL 30 DAY)
-      )
-      , web_pages_ios_orders_ip as (
-        select
-        ios_orders.ordered_at
-        , ios_orders.user_id
-        , ios_orders.plan_type
-        , ios_orders.platform
-        , ios_orders.topic
-        , web_pages.*
-        from ios_orders
-        full join web_pages
-        on ios_orders.ip_address = web_pages.ip_address
-        -- and ios_orders.ordered_at > web_pages.viewed_at
-        -- and web_pages.viewed_at > timestamp_sub(ios_orders.ordered_at, INTERVAL 30 DAY)
+        full join web_events
+        on web_events.ip_address = web_orders.ip_address
+        -- and web_orders.ordered_at > web_events.viewed_at
+        -- and web_events.viewed_at > timestamp_sub(web_orders.ordered_at, INTERVAL 30 DAY)
       )
       , all_joined_events as (
-        select * from web_pages_web_orders_anon
+        select * from web_events_web_orders_anon
         union all
-        select * from web_pages_web_orders_ip
-        union all
-        select * from ios_events_ios_orders_device
-        union all
-        select * from ios_events_ios_orders_ip
-        union all
-        select * from web_pages_ios_orders_ip
+        select * from web_events_web_orders_ip
       )
       , final_p0 as (
         select

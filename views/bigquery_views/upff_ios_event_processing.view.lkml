@@ -60,7 +60,7 @@ view: upff_ios_event_processing {
           end as plan_type
         , platform
         from ${vimeo_webhook_events.SQL_TABLE_NAME}
-        where event in ("customer_product_created", "customer_product_free_trial_created", "customer_product_free_trial_converted")
+        where event in ("customer_product_created", "customer_product_free_trial_created")
         and platform = "ios"
       )
       , order_completed_events as (
