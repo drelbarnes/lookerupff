@@ -17,7 +17,6 @@ view: upff_web_event_processing {
       , b.first_utm_source as utm_source
       , b.first_utm_term as utm_term
       , b.session_referrer as referrer_domain
-      -- , regexp_extract(referrer, r'[a-zA-Z]+\.[a-zA-Z]+\/') as referrer_domain
       , split(referrer, "?")[safe_offset(1)] AS referrer_query
       , path
       , title as view
@@ -27,31 +26,51 @@ view: upff_web_event_processing {
         on a.session_id = b.session_id
       )
       , webhook_events as (
-        select
-        timestamp
-        , user_id
-        , email
-        , event as topic
-        , case
-          when subscription_frequency in (null, "custom", "monthly") then "monthly"
-          else "yearly"
-          end as plan_type
-        , platform
-        from ${vimeo_webhook_events.SQL_TABLE_NAME}
-        where event in ("customer_product_created", "customer_product_free_trial_created")
-        and platform = "web"
+        with p0 as (
+          select
+          timestamp
+          , user_id
+          , email
+          , event as topic
+          , case
+            when subscription_frequency in (null, "custom", "monthly") then "monthly"
+            else "yearly"
+            end as plan_type
+          , platform
+          from ${vimeo_webhook_events.SQL_TABLE_NAME}
+          where event in ("customer_product_created", "customer_product_free_trial_created")
+          and platform = "web"
+        )
+        , p1 as (
+          select *
+          , row_number() over (partition by user_id) as n
+          from p0
+        )
+        select timestamp, user_id, email, topic, plan_type, platform
+        from p1
+        where n = 1
       )
       , order_completed_events as (
-        select timestamp as ordered_at
-        , user_id as user_id
-        , id as event_id
-        , anonymous_id
-        , device_id
-        , context_ip as ip_address
-        , user_email as email
-        , platform
-        from ${upff_order_completed_events.SQL_TABLE_NAME}
-        where platform in ("web")
+        with p0 as (
+          select timestamp as ordered_at
+          , user_id as user_id
+          , id as event_id
+          , anonymous_id
+          , device_id
+          , context_ip as ip_address
+          , user_email as email
+          , platform
+          from ${upff_order_completed_events.SQL_TABLE_NAME}
+          where platform in ("web")
+        )
+        , p1 as (
+          select *
+          , row_number() over (partition by anonymous_id) as n
+          from p0
+        )
+        select ordered_at, user_id, event_id, anonymous_id, device_id, ip_address, email, platform
+        from p1
+        where n = 1
       )
       , web_orders as (
           select

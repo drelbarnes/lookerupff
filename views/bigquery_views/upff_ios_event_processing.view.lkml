@@ -2,7 +2,7 @@ view: upff_ios_event_processing {
   derived_table: {
     sql:
       -- JOIN ORDERS ON PAGE VISITS
-      with web_pages as (
+      with web_events as (
       select
       a.timestamp as viewed_at
       , coalesce(b.session_start, a.timestamp) as session_start
@@ -49,31 +49,51 @@ view: upff_ios_event_processing {
         on a.session_id = b.session_id
       )
       , webhook_events as (
-        select
-        timestamp
-        , user_id
-        , email
-        , event as topic
-        , case
-          when subscription_frequency in (null, "custom", "monthly") then "monthly"
-          else "yearly"
-          end as plan_type
-        , platform
-        from ${vimeo_webhook_events.SQL_TABLE_NAME}
-        where event in ("customer_product_created", "customer_product_free_trial_created")
-        and platform = "ios"
+        with p0 as (
+          select
+          timestamp
+          , user_id
+          , email
+          , event as topic
+          , case
+            when subscription_frequency in (null, "custom", "monthly") then "monthly"
+            else "yearly"
+            end as plan_type
+          , platform
+          from ${vimeo_webhook_events.SQL_TABLE_NAME}
+          where event in ("customer_product_created", "customer_product_free_trial_created")
+          and platform = "ios"
+        )
+        , p1 as (
+          select *
+          , row_number() over (partition by user_id) as n
+          from p0
+        )
+        select timestamp, user_id, email, topic, plan_type, platform
+        from p1
+        where n = 1
       )
       , order_completed_events as (
-        select timestamp as ordered_at
-        , user_id as user_id
-        , id as event_id
-        , anonymous_id
-        , device_id
-        , context_ip as ip_address
-        , user_email as email
-        , platform
-        from ${upff_order_completed_events.SQL_TABLE_NAME}
-        where platform in ("iphone", "ipad")
+        with p0 as (
+          select timestamp as ordered_at
+          , user_id as user_id
+          , id as event_id
+          , anonymous_id
+          , device_id
+          , context_ip as ip_address
+          , user_email as email
+          , platform
+          from ${upff_order_completed_events.SQL_TABLE_NAME}
+          where platform in ("iphone", "ipad")
+        )
+        , p1 as (
+          select *
+          , row_number() over (partition by anonymous_id) as n
+          from p0
+        )
+        select ordered_at, user_id, event_id, anonymous_id, device_id, ip_address, email, platform
+        from p1
+        where n = 1
       )
       , ios_orders as (
           select
@@ -130,26 +150,26 @@ view: upff_ios_event_processing {
         -- and ios_orders.ordered_at > ios_events.viewed_at
         -- and ios_events.viewed_at > timestamp_sub(ios_orders.ordered_at, INTERVAL 30 DAY)
       )
-      , web_pages_ios_orders_ip as (
+      , web_events_ios_orders_ip as (
         select
         ios_orders.ordered_at
         , ios_orders.user_id
         , ios_orders.plan_type
         , ios_orders.platform
         , ios_orders.topic
-        , web_pages.*
+        , web_events.*
         from ios_orders
-        full join web_pages
-        on ios_orders.ip_address = web_pages.ip_address
-        -- and ios_orders.ordered_at > web_pages.viewed_at
-        -- and web_pages.viewed_at > timestamp_sub(ios_orders.ordered_at, INTERVAL 30 DAY)
+        full join web_events
+        on ios_orders.ip_address = web_events.ip_address
+        -- and ios_orders.ordered_at > web_events.viewed_at
+        -- and web_events.viewed_at > timestamp_sub(ios_orders.ordered_at, INTERVAL 30 DAY)
       )
       , all_joined_events as (
         select * from ios_events_ios_orders_device
         union all
         select * from ios_events_ios_orders_ip
         union all
-        select * from web_pages_ios_orders_ip
+        select * from web_events_ios_orders_ip
       )
       , final_p0 as (
         select
