@@ -40,6 +40,7 @@ view: upff_web_event_processing {
           from ${vimeo_webhook_events.SQL_TABLE_NAME}
           where event in ("customer_product_created", "customer_product_free_trial_created")
           and platform = "web"
+          and user_id is not null
         )
         , p1 as (
           select *
@@ -62,6 +63,7 @@ view: upff_web_event_processing {
           , platform
           from ${upff_order_completed_events.SQL_TABLE_NAME}
           where platform in ("web")
+          and anonymous_id is not null
         )
         , p1 as (
           select *

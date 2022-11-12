@@ -63,6 +63,7 @@ view: upff_ios_event_processing {
           from ${vimeo_webhook_events.SQL_TABLE_NAME}
           where event in ("customer_product_created", "customer_product_free_trial_created")
           and platform = "ios"
+          and user_id is not null
         )
         , p1 as (
           select *
