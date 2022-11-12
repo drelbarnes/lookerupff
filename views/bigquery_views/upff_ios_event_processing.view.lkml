@@ -49,53 +49,31 @@ view: upff_ios_event_processing {
         on a.session_id = b.session_id
       )
       , webhook_events as (
-        with p0 as (
-          select
-          timestamp
-          , user_id
-          , email
-          , event as topic
-          , case
-            when subscription_frequency in (null, "custom", "monthly") then "monthly"
-            else "yearly"
-            end as plan_type
-          , platform
-          from ${vimeo_webhook_events.SQL_TABLE_NAME}
-          where event in ("customer_product_created", "customer_product_free_trial_created")
-          and platform = "ios"
-          and user_id is not null
-        )
-        , p1 as (
-          select *
-          , row_number() over (partition by user_id, date(timestamp)) as n
-          from p0
-        )
-        select timestamp, user_id, email, topic, plan_type, platform
-        from p1
-        where n = 1
+        select
+        timestamp
+        , user_id
+        , email
+        , event as topic
+        , case
+          when subscription_frequency in (null, "custom", "monthly") then "monthly"
+          else "yearly"
+          end as plan_type
+        , platform
+        from ${vimeo_webhook_events.SQL_TABLE_NAME}
+        where event in ("customer_product_created", "customer_product_free_trial_created")
+        and platform = "ios"
       )
       , order_completed_events as (
-        with p0 as (
-          select timestamp as ordered_at
-          , user_id as user_id
-          , id as event_id
-          , anonymous_id
-          , device_id
-          , context_ip as ip_address
-          , user_email as email
-          , platform
-          from ${upff_order_completed_events.SQL_TABLE_NAME}
-          where platform in ("iphone", "ipad")
-          and device_id is not null
-        )
-        , p1 as (
-          select *
-          , row_number() over (partition by device_id, date(ordered_at)) as n
-          from p0
-        )
-        select ordered_at, user_id, event_id, anonymous_id, device_id, ip_address, email, platform
-        from p1
-        where n = 1
+        select timestamp as ordered_at
+        , user_id as user_id
+        , id as event_id
+        , anonymous_id
+        , device_id
+        , context_ip as ip_address
+        , user_email as email
+        , platform
+        from ${upff_order_completed_events.SQL_TABLE_NAME}
+        where platform in ("iphone", "ipad")
       )
       , ios_orders as (
           select
