@@ -43,7 +43,7 @@ view: upff_web_event_processing {
         )
         , p1 as (
           select *
-          , row_number() over (partition by user_id, date(ordered_at)) as n
+          , row_number() over (partition by user_id, date(timestamp)) as n
           from p0
         )
         select timestamp, user_id, email, topic, plan_type, platform
