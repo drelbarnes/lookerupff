@@ -206,8 +206,8 @@ view: upff_ios_event_processing {
       , final_p1 as (
         select *
         , case
-        when (sum(attribution_flag) over (partition by user_id) = 0) then "unknown"
-        when sum(attribution_flag) over (partition by user_id) > 0 and utm_source is null and referrer_domain != "upfaithandfamily.com/" then referrer_domain
+        when (sum(attribution_flag) over (partition by device_id) = 0) then "unknown"
+        when sum(attribution_flag) over (partition by device_id) > 0 and utm_source is null and referrer_domain != "upfaithandfamily.com/" then referrer_domain
         else utm_source
         end as source
         from final_p0
