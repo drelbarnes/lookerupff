@@ -86,6 +86,7 @@ view: upff_ios_event_processing {
           , platform
           from ${upff_order_completed_events.SQL_TABLE_NAME}
           where platform in ("iphone", "ipad")
+          and device_id is not null
         )
         , p1 as (
           select *
