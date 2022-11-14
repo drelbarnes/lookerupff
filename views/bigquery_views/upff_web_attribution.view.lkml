@@ -343,6 +343,25 @@ derived_table: {
     sql: ${TABLE}.reverse_channel_decay ;;
   }
 
+  dimension: campaign_source {
+    sql: CASE
+      WHEN ${TABLE}.source IS NULL then 'Unknown'
+      WHEN ${TABLE}.source = 'organic' then 'Unknown'
+      WHEN ${TABLE}.source LIKE 'hs_email' then 'Internal'
+      WHEN ${TABLE}.source LIKE 'hs_automation' then 'Internal'
+      WHEN ${TABLE}.source LIKE '%site.source.name%' then 'Facebook Ads'
+      WHEN ${TABLE}.source LIKE '%site_source_name%' then 'Facebook Ads'
+      WHEN ${TABLE}.source = 'google_ads' then 'Google Ads'
+      WHEN ${TABLE}.source = 'GoogleAds' then 'Google Ads'
+      WHEN ${TABLE}.source = 'fb' then 'Facebook Ads'
+      WHEN ${TABLE}.source = 'facebook' then 'Facebook Ads'
+      WHEN ${TABLE}.source = 'ig' then 'Facebook Ads'
+      WHEN ${TABLE}.source = 'bing_ads' then 'Bing Ads'
+      WHEN ${TABLE}.source = 'an' then 'Facebook Ads'
+      else ${TABLE}.source
+    END ;;
+  }
+
   set: detail {
     fields: [
       ordered_at_time,
