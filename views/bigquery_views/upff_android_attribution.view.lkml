@@ -221,16 +221,19 @@ view: upff_android_attribution {
   measure: equal_credit_total {
     type: sum
     sql: ${TABLE}.equal_credit ;;
+    value_format: "0.##"
   }
 
   measure: channel_decay_total {
     type: sum
     sql: ${TABLE}.channel_decay ;;
+    value_format: "0.##"
   }
 
   measure: reverse_channel_decay_total {
     type: sum
     sql: ${TABLE}.reverse_channel_decay ;;
+    value_format: "0.##"
   }
 
   dimension_group: ordered_at {
