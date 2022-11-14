@@ -14,6 +14,7 @@ view: upff_page_events {
       , safe_cast(context_campaign_source as string) as utm_source
       , safe_cast(context_campaign_term as string) as utm_term
       , safe_cast(context_page_referrer as string) as referrer
+      , safe_cast(context_page_search as string) as search
       , safe_cast(title as string) as title
       , safe_cast(context_page_url as string) as url
       , safe_cast(context_page_path as string) as path
@@ -36,6 +37,7 @@ view: upff_page_events {
       , safe_cast(context_campaign_source as string) as utm_source
       , safe_cast(context_campaign_term as string) as utm_term
       , safe_cast(context_page_referrer as string) as referrer
+      , safe_cast(context_page_search as string) as search
       , safe_cast(title as string) as title
       , safe_cast(context_page_url as string) as url
       , safe_cast(context_page_path as string) as path
@@ -58,6 +60,7 @@ view: upff_page_events {
       , safe_cast(context_campaign_source as string) as utm_source
       , safe_cast(context_campaign_term as string) as utm_term
       , safe_cast(context_page_referrer as string) as referrer
+      , safe_cast(context_page_search as string) as search
       , safe_cast(context_page_title as string) as title
       , safe_cast(context_page_url as string) as url
       , safe_cast(context_page_path as string) as path
@@ -80,6 +83,7 @@ view: upff_page_events {
       , safe_cast(context_campaign_source as string) as utm_source
       , safe_cast(context_campaign_term as string) as utm_term
       , safe_cast(context_page_referrer as string) as referrer
+      , safe_cast(null as string) as search
       , safe_cast(context_page_title as string) as title
       , safe_cast(context_page_url as string) as url
       , safe_cast(context_page_path as string) as path
@@ -154,6 +158,7 @@ view: upff_page_events {
       , utm_source
       , utm_term
       , referrer
+      , search
       , title
       , url
       , path
@@ -223,6 +228,7 @@ view: upff_page_events {
       , utm_source
       , utm_term
       , referrer
+      , search
       , title
       , url
       , path
@@ -304,6 +310,11 @@ view: upff_page_events {
   dimension: referrer {
     type: string
     sql: ${TABLE}.referrer ;;
+  }
+
+  dimension: search {
+    type: string
+    sql: ${TABLE}.search ;;
   }
 
   dimension: title {

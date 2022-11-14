@@ -20,6 +20,7 @@ view: upff_web_sessions {
       , utm_term
       , referrer
       , regexp_extract(referrer, r'[a-zA-Z]+\.[a-zA-Z]+\/') as referrer_domain
+      , search
       , title
       , url
       , path
@@ -154,9 +155,10 @@ view: upff_web_sessions {
         select
         session_id
         , first_value(referrer_domain) over(partition by session_id order by event_number) as session_referrer
+        , first_value(search) over(partition by session_id order by event_number) as session_search
         from page_events
       )
-      select * from first_referrer group by 1,2
+      select * from first_referrer group by 1,2,3
     )
     , sessions_final as (
       select
@@ -174,6 +176,7 @@ view: upff_web_sessions {
       , conversion_path
       , conversion_path_length
       , session_referrer
+      , session_search
       , first_utm_campaign
       , first_utm_source
       , first_utm_medium
@@ -191,7 +194,7 @@ view: upff_web_sessions {
       left join sessions_p4 e on a.session_id = e.session_id
       left join sessions_p5 f on a.session_id = f.session_id
       left join sessions_p6 g on a.session_id = g.session_id
-      group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24
+      group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25
     )
     select * from sessions_final where session_id is not null ;;
     persist_for: "6 hours"
@@ -255,6 +258,10 @@ view: upff_web_sessions {
   dimension: session_referrer {
     type: string
     sql: ${TABLE}.session_referrer ;;
+  }
+  dimension: session_search {
+    type: string
+    sql: ${TABLE}.session_search ;;
   }
   dimension: first_utm_campaign {
     type: string
