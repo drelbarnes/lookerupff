@@ -5,7 +5,7 @@ derived_table: {
     -- dedup sessions
       with p0 as (
       select *
-      from ${upff_web_event_processing.SQL_TABLE_NAME}
+      from (select * from ${upff_web_event_processing.SQL_TABLE_NAME} where session_start > timestamp_sub(ordered_at, INTERVAL {% parameter attribution_window %} DAY))
       where ordered_at between timestamp_sub({% date_start date_filter %}, interval 15 day)
       and {% date_end date_filter %}
       )
@@ -122,10 +122,19 @@ derived_table: {
     left join p1
     on p0.user_id = p1.user_id and p0.session_start = p1.session_start
     )
+    , conversion_window as (
+      select
+      user_id
+      , ordered_at
+      , session_start
+      , timestamp_diff(ordered_at, session_start, day) as conversion_window
+      from (select * from sources_last_touch where n = 1)
+    )
     , final as (
     select
     a.ordered_at
     , a.session_start
+    , f.conversion_window
     , a.user_id
     , a.anonymous_id
     , a.device_id
@@ -155,6 +164,8 @@ derived_table: {
     on a.user_id = d.user_id and a.session_start = d.session_start
     inner join channel_decay e
     on a.user_id = e.user_id and a.session_start = e.session_start
+    inner join conversion_window f
+    on a.user_id = f.user_id and a.ordered_at = f.ordered_at
     )
     , mofu_final as (
     select * from final
@@ -165,6 +176,7 @@ derived_table: {
     select
     b.timestamp as ordered_at
     , a.session_start
+    , a.conversion_window
     , a.user_id
     , a.anonymous_id
     , a.device_id
@@ -203,6 +215,33 @@ derived_table: {
     label: "Date Range"
     type: date
   }
+
+  parameter: attribution_window {
+    label: "Attribution Window"
+    type: number
+    default_value: "30"
+    allowed_value: {
+      label: "1 day"
+      value: "1"
+    }
+    allowed_value: {
+      label: "3 days"
+      value: "3"
+    }
+    allowed_value: {
+      label: "7 days"
+      value: "7"
+    }
+    allowed_value: {
+      label: "14 days"
+      value: "14"
+    }
+    allowed_value: {
+      label: "30 days"
+      value: "30"
+    }
+  }
+
   measure: count {
     type: count
     drill_fields: [detail*]
@@ -244,6 +283,11 @@ derived_table: {
   dimension_group: session_start {
     type: time
     sql: ${TABLE}.session_start ;;
+  }
+
+  dimension: conversion_window {
+    type: number
+    sql: ${TABLE}.conversion_window ;;
   }
 
   dimension: user_id {

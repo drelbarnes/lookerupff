@@ -19,7 +19,7 @@ view: upff_web_sessions {
       , utm_content
       , utm_term
       , referrer
-      , regexp_extract(referrer, r'[a-zA-Z]+\.[a-zA-Z]+\/') as referrer_domain
+      , referrer_domain
       , search
       , title
       , url
