@@ -413,6 +413,25 @@ view: upff_page_events {
     sql: ${TABLE}.row ;;
   }
 
+  dimension: campaign_source {
+    sql: CASE
+      WHEN ${TABLE}.utm_source is null and ${TABLE}.referrer_domain is null or ${TABLE}.referrer_domain = "upfaithandfamily.com/" then "unknown"
+      WHEN ${TABLE}.utm_source is null and ${TABLE}.referrer_domain is not null and ${TABLE}.referrer_domain != "upfaithandfamily.com/" then ${TABLE}.referrer_domain
+      WHEN ${TABLE}.utm_source LIKE 'hs_email' then 'Internal'
+      WHEN ${TABLE}.utm_source LIKE 'hs_automation' then 'Internal'
+      WHEN ${TABLE}.utm_source LIKE '%site.source.name%' then 'Facebook Ads'
+      WHEN ${TABLE}.utm_source LIKE '%site_source_name%' then 'Facebook Ads'
+      WHEN ${TABLE}.utm_source = 'google_ads' then 'Google Ads'
+      WHEN ${TABLE}.utm_source = 'GoogleAds' then 'Google Ads'
+      WHEN ${TABLE}.utm_source = 'fb' then 'Facebook Ads'
+      WHEN ${TABLE}.utm_source = 'facebook' then 'Facebook Ads'
+      WHEN ${TABLE}.utm_source = 'ig' then 'Facebook Ads'
+      WHEN ${TABLE}.utm_source = 'bing_ads' then 'Bing Ads'
+      WHEN ${TABLE}.utm_source = 'an' then 'Facebook Ads'
+      else ${TABLE}.utm_source
+    END ;;
+  }
+
   set: detail {
     fields: [
       user_id,
