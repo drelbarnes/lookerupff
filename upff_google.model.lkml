@@ -199,6 +199,10 @@ include: "wishlist_p2.view.lkml"
 include: "search_and_discovery.view.lkml"
 include: "search_and_discovery2.view.lkml"
 
+# Test Views #
+
+include: "/views/testing_views/hubspot_bogo_testing.view.lkml"
+
 explore: search_and_discovery {
   label: "Search"
 }
@@ -1368,6 +1372,12 @@ explore: bigquery_looker_get_clicks {
 
 explore: redshift_php_get_weekly_comments {}
 explore: bigquery_http_api_roku_firstplay{}
+
+# Explores for testing pipelines #
+
+explore: hubspot_bogo_testing {
+  label: "HubSpot BOGO Testing"
+}
 
 # include all views in this project
 # include: "my_dashboard.dashboard.lookml"   # include a LookML dashboard called my_dashboard
