@@ -26,11 +26,14 @@ view: hubspot_bogo_testing {
 
   dimension: email {
     type: string
+    tags: ["email"]
     sql: ${TABLE}.email ;;
   }
 
   dimension: user_id {
-    type: number
+    type: string
+    tags: ["user_id"]
+    primary_key: yes
     sql: ${TABLE}.user_id ;;
   }
 
