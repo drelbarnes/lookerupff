@@ -18,6 +18,7 @@ view: upff_web_event_processing {
       , b.first_utm_term as utm_term
       , b.session_referrer as referrer_domain
       , split(referrer, "?")[safe_offset(1)] AS referrer_query
+      , regexp_extract(regexp_extract(session_search, r'ad_id=[0-9]+'), r'[0-9]+') as ad_id
       , path
       , title as view
       , '' as user_agent
@@ -144,6 +145,7 @@ view: upff_web_event_processing {
         , utm_campaign
         , utm_source
         , utm_term
+        , ad_id
         , path
         , view
         , referrer_domain
@@ -173,6 +175,7 @@ view: upff_web_event_processing {
         , session_start
         , user_id
         , anonymous_id
+        , session_id
         , device_id
         , ip_address
         , plan_type
@@ -183,12 +186,13 @@ view: upff_web_event_processing {
         , utm_campaign
         , utm_source
         , utm_term
+        , ad_id
         , referrer_domain
         , user_agent
         , source
         from final_p1
         where source is not null
-        group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17
+        group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19
       )
       select *, row_number() over (order by ordered_at) as row from attributable_events
        ;;
@@ -226,6 +230,10 @@ view: upff_web_event_processing {
     sql: ${TABLE}.anonymous_id ;;
   }
 
+  dimension: session_id {
+    type: string
+    sql: ${TABLE}.session_id ;;
+  }
   dimension: device_id {
     type: string
     sql: ${TABLE}.device_id ;;
@@ -276,6 +284,11 @@ view: upff_web_event_processing {
     sql: ${TABLE}.utm_term ;;
   }
 
+  dimension: ad_id {
+    type: string
+    sql: ${TABLE}.ad_id ;;
+  }
+
   dimension: referrer_domain {
     type: string
     sql: ${TABLE}.referrer_domain ;;
@@ -297,6 +310,7 @@ view: upff_web_event_processing {
       session_start_time,
       user_id,
       anonymous_id,
+      session_id,
       device_id,
       ip_address,
       plan_type,

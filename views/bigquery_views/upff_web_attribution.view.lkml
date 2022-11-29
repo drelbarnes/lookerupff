@@ -5,7 +5,11 @@ derived_table: {
     -- dedup sessions
       with p0 as (
       select *
-      from (select * from ${upff_web_event_processing.SQL_TABLE_NAME} where session_start > timestamp_sub(ordered_at, INTERVAL {% parameter attribution_window %} DAY))
+      from (
+        select *
+        from ${upff_web_event_processing.SQL_TABLE_NAME}
+        where session_start > timestamp_sub(ordered_at, INTERVAL {% parameter attribution_window %} DAY)
+      )
       where ordered_at between timestamp_sub({% date_start date_filter %}, interval 15 day)
       and {% date_end date_filter %}
       )
@@ -147,6 +151,7 @@ derived_table: {
     , a.utm_campaign
     , a.utm_source
     , a.utm_term
+    , a.ad_id
     , a.user_agent
     , a.referrer_domain
     , a.source
@@ -189,6 +194,7 @@ derived_table: {
     , a.utm_campaign
     , a.utm_source
     , a.utm_term
+    , a.ad_id
     , a.user_agent
     , a.referrer_domain
     , a.source
@@ -348,6 +354,11 @@ derived_table: {
   dimension: utm_term {
     type: string
     sql: ${TABLE}.utm_term ;;
+  }
+
+  dimension: ad_id {
+    type: string
+    sql: ${TABLE}.ad_id ;;
   }
 
   dimension: user_agent {

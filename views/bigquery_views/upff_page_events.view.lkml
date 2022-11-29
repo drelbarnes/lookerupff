@@ -176,16 +176,16 @@ view: upff_page_events {
       , session_mapping_p0 as (
         select *
         , lag(timestamp,1) over (partition by anonymous_id order by timestamp) as last_event
-        , lag(utm_source,1) over (partition by anonymous_id order by timestamp) as last_utm_source
+        , lag(utm_campaign,1) over (partition by anonymous_id order by timestamp) as last_utm_campaign
         , lead(timestamp, 1) over (partition by anonymous_id order by timestamp) as next_event
         from anon_id_mapping_p4
       )
       , campaign_session_mapping_p1 as (
         select *
         , case
+          when utm_campaign is not null and (ifnull(last_utm_campaign, '') != utm_campaign) then 1
           when last_event is null or unix_seconds(timestamp) - unix_seconds(last_event) >= (7 * 24 * 60 * 60) then 1
-          when utm_source is not null and utm_source != last_utm_source then 1
-          when utm_source is null and (referrer_domain is not null and referrer_domain != "upfaithandfamily.com/") then 1
+          when utm_campaign is null and (referrer_domain is not null and referrer_domain != "upfaithandfamily.com/") then 1
           else 0
           end as is_session_start
         from session_mapping_p0
