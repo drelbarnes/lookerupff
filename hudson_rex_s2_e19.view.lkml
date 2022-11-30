@@ -634,7 +634,7 @@ view: hudson_rex_s2_e19 {
       round(min_count/44,2) as cr
       from plays_less_granular
       where title = 'Season Finale: 219 - In a Family Way'
-      and min_count >= 35
+      and min_count >= 31
       order by user_id
       ),
 
