@@ -19,6 +19,8 @@ view: upff_web_sessions {
       , utm_content
       , utm_term
       , referrer
+      , referrer_domain
+      , search
       , title
       , url
       , path
@@ -148,6 +150,16 @@ view: upff_web_sessions {
       )
       select * from first_utms group by 1,2,3,4,5,6,7
     )
+    , sessions_p6 as (
+      with first_referrer as (
+        select
+        session_id
+        , first_value(referrer_domain) over(partition by session_id order by event_number) as session_referrer
+        , first_value(search) over(partition by session_id order by event_number) as session_search
+        from page_events
+      )
+      select * from first_referrer group by 1,2,3
+    )
     , sessions_final as (
       select
       a.session_id
@@ -163,6 +175,8 @@ view: upff_web_sessions {
       , session_path
       , conversion_path
       , conversion_path_length
+      , session_referrer
+      , session_search
       , first_utm_campaign
       , first_utm_source
       , first_utm_medium
@@ -179,7 +193,8 @@ view: upff_web_sessions {
       left join sessions_p3 d on a.session_id = d.session_id
       left join sessions_p4 e on a.session_id = e.session_id
       left join sessions_p5 f on a.session_id = f.session_id
-      group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
+      left join sessions_p6 g on a.session_id = g.session_id
+      group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25
     )
     select * from sessions_final where session_id is not null ;;
     persist_for: "6 hours"
@@ -239,6 +254,14 @@ view: upff_web_sessions {
   dimension: conversion_path_length {
     type: number
     sql: ${TABLE}.conversion_path_length ;;
+  }
+  dimension: session_referrer {
+    type: string
+    sql: ${TABLE}.session_referrer ;;
+  }
+  dimension: session_search {
+    type: string
+    sql: ${TABLE}.session_search ;;
   }
   dimension: first_utm_campaign {
     type: string

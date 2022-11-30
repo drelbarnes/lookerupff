@@ -178,6 +178,17 @@ include: "/views/customer_record_analytics.view.lkml"
 
 include: "/views/bigquery_views/upff_page_events.view.lkml"
 include: "/views/bigquery_views/upff_web_sessions.view.lkml"
+include: "/views/bigquery_views/upff_order_completed_events.view.lkml"
+include: "/views/bigquery_views/ios_app_events.view.lkml"
+include: "/views/bigquery_views/upff_ios_sessions.view.lkml"
+include: "/views/bigquery_views/android_app_events.view.lkml"
+include: "/views/bigquery_views/upff_android_sessions.view.lkml"
+include: "/views/bigquery_views/upff_web_event_processing.view.lkml"
+include:"/views/bigquery_views/upff_ios_event_processing.view.lkml"
+include: "/views/bigquery_views/upff_android_event_processing.view.lkml"
+include: "/views/bigquery_views/upff_web_attribution.view.lkml"
+include: "/views/bigquery_views/upff_ios_attribution.view.lkml"
+include: "/views/bigquery_views/upff_android_attribution.view.lkml"
 
 include: "allfirstplay.view.lkml"
 include: "ticket_comments.view.lkml"
@@ -187,6 +198,10 @@ include: "wishlist_p1.view.lkml"
 include: "wishlist_p2.view.lkml"
 include: "search_and_discovery.view.lkml"
 include: "search_and_discovery2.view.lkml"
+
+# Test Views #
+
+include: "/views/testing_views/hubspot_bogo_testing.view.lkml"
 
 explore: search_and_discovery {
   label: "Search"
@@ -230,6 +245,50 @@ explore: upff_web_sessions {
 
 explore: vimeo_webhook_events {
   label: "Vimeo Webhook Events"
+}
+
+explore: upff_order_completed_events {
+  label: "UPFF Order Completed Events"
+}
+
+explore: ios_app_events {
+  label: "iOS App Events"
+}
+
+explore: android_app_events {
+  label: "Android App Events"
+}
+
+explore: upff_ios_sessions {
+  label: "UPFF iOS Sessions"
+}
+
+explore: upff_android_sessions {
+  label: "UPFF Android Sessions"
+}
+
+explore: upff_web_event_processing {
+  label: "UPFF Web Event Processing"
+}
+
+explore: upff_ios_event_processing {
+  label: "UPFF iOS Event Processing"
+}
+
+explore: upff_android_event_processing {
+  label: "UPFF Android Event Processing"
+}
+
+explore: upff_web_attribution {
+  label: "UPFF Web Attribution"
+}
+
+explore: upff_ios_attribution {
+  label: "UPFF iOS Attribution"
+}
+
+explore: upff_android_attribution {
+  label: "UPFF Android Attribution"
 }
 
 explore: customer_record {
@@ -1313,6 +1372,12 @@ explore: bigquery_looker_get_clicks {
 
 explore: redshift_php_get_weekly_comments {}
 explore: bigquery_http_api_roku_firstplay{}
+
+# Explores for testing pipelines #
+
+explore: hubspot_bogo_testing {
+  label: "HubSpot BOGO Testing"
+}
 
 # include all views in this project
 # include: "my_dashboard.dashboard.lookml"   # include a LookML dashboard called my_dashboard
