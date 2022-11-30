@@ -242,6 +242,8 @@ view: ltv_cpa{
       from t8
       inner join t9
       on t8.timestamp=t9.timestamp ;;
+    persist_for: "6 hours"
+    distribution_style: all
   }
 
   measure: target_ratio {
