@@ -119,6 +119,8 @@ view: daily_spend_v2 {
       inner join customers_analytics
       on t1.date_start=customers_analytics.timestamp
       group by 1,2,3,4 ;;
+    datagroup_trigger: upff_acquisition_reporting
+    distribution_style: all
   }
 
   measure: count {

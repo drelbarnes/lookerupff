@@ -113,10 +113,10 @@ view: analytics_v2 {
       where timestamp in
       (select dateadd(day,-14,timestamp) as timestamp from customers_analytics )) as b on a.rownum=b.rownum)) as a
       left join customers.churn_reasons_aggregated as b on a.timestamp=b.timestamp)) as a))
-
       select f.*,paying_30_days_prior,churn_30_days,churn_30_day_percent,winback_30_days from e inner join f on e.timestamp=f.timestamp ;;
-
-      }
+    datagroup_trigger: upff_acquisition_reporting
+    distribution_style: all
+  }
 
   parameter: subscription_frequency {
     label: "Subscription Frequency"
