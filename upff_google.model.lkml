@@ -199,10 +199,15 @@ include: "wishlist_p2.view.lkml"
 include: "search_and_discovery.view.lkml"
 include: "search_and_discovery2.view.lkml"
 include: "hudson_rex_s2_e19.view.lkml"
+include: "research_active_users.view.lkml"
 
 # Test Views #
 
 include: "/views/testing_views/hubspot_bogo_testing.view.lkml"
+
+explore: research_active_users {
+  label: "Research Active Users"
+}
 
 explore: hudson_rex_s2_e19 {
 label: "Hudson & Rex S2 E19 Completers"
