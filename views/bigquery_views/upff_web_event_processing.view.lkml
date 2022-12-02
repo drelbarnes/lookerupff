@@ -321,6 +321,7 @@ view: upff_web_event_processing {
       utm_campaign,
       utm_source,
       utm_term,
+      ad_id,
       referrer_domain,
       user_agent,
       source,

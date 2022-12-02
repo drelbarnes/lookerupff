@@ -5,7 +5,11 @@ view: upff_ios_attribution {
     -- dedup sessions
       with p0 as (
       select *
-      from ${upff_ios_event_processing.SQL_TABLE_NAME}
+      from (
+        select *
+        from ${upff_ios_event_processing.SQL_TABLE_NAME}
+        where session_start > timestamp_sub(ordered_at, INTERVAL {% parameter attribution_window %} DAY)
+      )
       where ordered_at between timestamp_sub({% date_start date_filter %}, interval 15 day)
       and {% date_end date_filter %}
       )
@@ -140,6 +144,9 @@ view: upff_ios_attribution {
     , a.utm_term
     , a.user_agent
     , a.referrer_domain
+    , a.ad_id
+    , a.ad_set_id
+    , a.campaign_id
     , a.source
     , b.credit as last_touch
     , c.credit as first_touch
@@ -179,6 +186,9 @@ view: upff_ios_attribution {
     , a.utm_term
     , a.user_agent
     , a.referrer_domain
+    , a.ad_id
+    , a.ad_set_id
+    , a.campaign_id
     , a.source
     , a.last_touch
     , a.first_touch
@@ -203,6 +213,31 @@ view: upff_ios_attribution {
   filter: date_filter {
     label: "Date Range"
     type: date
+  }
+  parameter: attribution_window {
+    label: "Attribution Window"
+    type: number
+    default_value: "30"
+    allowed_value: {
+      label: "1 day"
+      value: "1"
+    }
+    allowed_value: {
+      label: "3 days"
+      value: "3"
+    }
+    allowed_value: {
+      label: "7 days"
+      value: "7"
+    }
+    allowed_value: {
+      label: "14 days"
+      value: "14"
+    }
+    allowed_value: {
+      label: "30 days"
+      value: "30"
+    }
   }
   measure: count {
     type: count
@@ -315,6 +350,21 @@ view: upff_ios_attribution {
   dimension: referrer_domain {
     type: string
     sql: ${TABLE}.referrer_domain ;;
+  }
+
+  dimension: ad_id {
+    type: string
+    sql: ${TABLE}.ad_id ;;
+  }
+
+  dimension: ad_set_id {
+    type: string
+    sql: ${TABLE}.ad_set_id ;;
+  }
+
+  dimension: campaign_id {
+    type: string
+    sql: ${TABLE}.campaign_id ;;
   }
 
   dimension: source {

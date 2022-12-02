@@ -4,7 +4,11 @@ view: upff_android_attribution {
       -- dedup sessions
       with p0 as (
       select *
-      from ${upff_android_event_processing.SQL_TABLE_NAME}
+      from (
+        select *
+        from ${upff_android_event_processing.SQL_TABLE_NAME}
+        where session_start > timestamp_sub(ordered_at, INTERVAL {% parameter attribution_window %} DAY)
+      )
       where ordered_at between timestamp_sub({% date_start date_filter %}, interval 15 day)
       and {% date_end date_filter %}
       )
@@ -202,6 +206,31 @@ view: upff_android_attribution {
   filter: date_filter {
     label: "Date Range"
     type: date
+  }
+  parameter: attribution_window {
+    label: "Attribution Window"
+    type: number
+    default_value: "30"
+    allowed_value: {
+      label: "1 day"
+      value: "1"
+    }
+    allowed_value: {
+      label: "3 days"
+      value: "3"
+    }
+    allowed_value: {
+      label: "7 days"
+      value: "7"
+    }
+    allowed_value: {
+      label: "14 days"
+      value: "14"
+    }
+    allowed_value: {
+      label: "30 days"
+      value: "30"
+    }
   }
   measure: count {
     type: count
