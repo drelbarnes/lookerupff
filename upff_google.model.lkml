@@ -200,10 +200,15 @@ include: "search_and_discovery.view.lkml"
 include: "search_and_discovery2.view.lkml"
 include: "hudson_rex_s2_e19.view.lkml"
 include: "research_active_users.view.lkml"
+include: "user_play_history.view.lkml"
 
 # Test Views #
 
 include: "/views/testing_views/hubspot_bogo_testing.view.lkml"
+
+explore: user_play_history {
+  label: "User Play History"
+}
 
 explore: research_active_users {
   label: "Research Active Users"
