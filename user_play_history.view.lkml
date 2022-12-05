@@ -50,7 +50,7 @@ view: user_play_history {
         )
 
         select user_id, date(timestamp) as date_stamp, type, video_id,
-        series, collection, title, episode, source, email, play_number
+        series, collection, title, episode, source, email, play_number, min_count
         from plays_less_granular
         order by user_id, play_number
 
