@@ -201,6 +201,7 @@ include: "search_and_discovery2.view.lkml"
 include: "hudson_rex_s2_e19.view.lkml"
 include: "research_active_users.view.lkml"
 include: "user_play_history.view.lkml"
+include: "first_n_plays.view.lkml"
 
 # Test Views #
 
@@ -211,6 +212,10 @@ explore: user_play_history {
   always_filter: {
     filters: [user_id: "123"]
     }
+}
+
+explore: first_n_plays {
+  label: "First N Plays"
 }
 
 explore: research_active_users {
