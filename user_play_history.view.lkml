@@ -2,13 +2,13 @@ view: user_play_history {
     derived_table: {
       sql: with
 
-              play_data_global as
-              (
-              select * from allfirstplay.p0
-              where user_id <> '0'
-              and regexp_contains(user_id, r'^[0-9]*$')
-              and user_id is not null
-              ),
+        play_data_global as
+        (
+        select * from allfirstplay.p0
+        where user_id <> '0'
+        and regexp_contains(user_id, r'^[0-9]*$')
+        and user_id is not null
+        ),
 
         plays_most_granular as
         (
@@ -53,8 +53,6 @@ view: user_play_history {
         series, collection, title, episode, source, email, play_number, min_count
         from plays_less_granular
         order by user_id, play_number
-
-        -- select * from plays_less_granular order by user_id, play_number limit 5000
         ;;
     }
 
