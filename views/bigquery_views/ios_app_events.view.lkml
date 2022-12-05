@@ -15,6 +15,7 @@ view: ios_app_events {
       , b.campaign_id
       , b.ad_set_id
       , b.ad_set_name
+      , b.canonical_url
       , b.context_campaign_source
       , b.context_campaign_name
       , b.context_campaign_medium
@@ -30,6 +31,7 @@ view: ios_app_events {
         , campaign_id
         , ad_set_id
         , ad_set_name
+        , canonical_url
         , context_campaign_source
         , context_campaign_name
         , context_campaign_medium
@@ -45,6 +47,7 @@ view: ios_app_events {
         , campaign_id
         , ad_set_id
         , ad_set_name
+        , canonical_url
         , context_campaign_source
         , context_campaign_name
         , context_campaign_medium
@@ -53,7 +56,8 @@ view: ios_app_events {
         , conversion_type
         from `up-faith-and-family-216419.ios.branch_reinstall`
       ) as b
-      on a.context_device_id = b.context_idfv and date(a.timestamp) = date(b.timestamp)
+      on a.context_device_id = b.context_idfv and b.timestamp between a.timestamp and timestamp_add(a.timestamp, interval 1 minute)
+      group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20
     )
     , app_opened as (
       select
@@ -70,6 +74,7 @@ view: ios_app_events {
       , b.campaign_id
       , b.ad_set_id
       , b.ad_set_name
+      , b.canonical_url
       , b.context_campaign_source
       , b.context_campaign_name
       , b.context_campaign_medium
@@ -78,7 +83,8 @@ view: ios_app_events {
       , b.conversion_type
       from `up-faith-and-family-216419.ios.application_opened` a
       left join `up-faith-and-family-216419.ios.branch_open` b
-      on a.context_device_id = b.context_idfv and date(a.timestamp) = date(b.timestamp)
+      on a.context_device_id = b.context_idfv and b.timestamp between a.timestamp and timestamp_add(a.timestamp, interval 1 minute)
+      group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20
     )
     , checkout_started as (
       select
@@ -95,6 +101,7 @@ view: ios_app_events {
       , b.campaign_id
       , b.ad_set_id
       , b.ad_set_name
+      , b.canonical_url
       , b.context_campaign_source
       , b.context_campaign_name
       , b.context_campaign_medium
@@ -103,7 +110,8 @@ view: ios_app_events {
       , b.conversion_type
       from `up-faith-and-family-216419.ios.checkout_started` a
       left join `up-faith-and-family-216419.ios.branch_initiate_purchase` b
-      on a.context_device_id = b.context_idfv and date(a.timestamp) = date(b.timestamp)
+      on a.context_device_id = b.context_idfv and b.timestamp between a.timestamp and timestamp_add(a.timestamp, interval 1 minute)
+      group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20
     )
     , order_completed as (
       select
@@ -120,6 +128,7 @@ view: ios_app_events {
       , b.campaign_id
       , b.ad_set_id
       , b.ad_set_name
+      , b.canonical_url
       , b.context_campaign_source
       , b.context_campaign_name
       , b.context_campaign_medium
@@ -128,7 +137,8 @@ view: ios_app_events {
       , b.conversion_type
       from `up-faith-and-family-216419.ios.order_completed` a
       left join `up-faith-and-family-216419.ios.branch_purchase` b
-      on a.context_device_id = b.context_idfv and date(a.timestamp) = date(b.timestamp)
+      on a.context_device_id = b.context_idfv and b.timestamp between a.timestamp and timestamp_add(a.timestamp, interval 1 minute)
+      group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20
     )
     , all_events as (
     select * from app_installed
@@ -143,7 +153,38 @@ view: ios_app_events {
       select *
       , lag(timestamp,1) over (partition by device_id order by timestamp) as last_event
       , lead(timestamp, 1) over (partition by device_id order by timestamp) as next_event
+      , lag(context_campaign_name,1) over (partition by anonymous_id order by timestamp) as last_campaign_name
+      , regexp_extract(canonical_url, r'[a-zA-Z]+\.[a-zA-Z]+\/') as referrer_domain
       from all_events
+      where device_id is not null
+    )
+    , campaign_session_mapping_p1 as (
+      select *
+      , case
+        when context_campaign_name is not null and (ifnull(last_campaign_name, '') != context_campaign_name) then 1
+        when last_event is null or unix_seconds(timestamp) - unix_seconds(last_event) >= (7 * 24 * 60 * 60) then 1
+        when context_campaign_name is null and (referrer_domain is not null) then 1
+        else 0
+        end as is_session_start
+      from session_mapping_p0
+    )
+    , campaign_session_mapping_p2 as (
+        select *
+        , lead(is_session_start,1) over (partition by device_id order by timestamp) as next_session
+        from campaign_session_mapping_p1
+    )
+    , campaign_session_mapping_p3 as (
+      select *
+      , case
+        when next_session = 1 then 1
+        when next_session is null then 1
+        else 0
+        end as is_session_end
+      , case
+        when event = "Order Completed" then 1
+        else 0
+        end as is_conversion
+      from campaign_session_mapping_p2
     )
     , session_mapping_p1 as (
       select *
@@ -169,11 +210,11 @@ view: ios_app_events {
       , case when is_session_start = 1 then generate_uuid()
         else null
         end as session_id
-      from session_mapping_p1
+      from campaign_session_mapping_p3
     )
     , session_ids_p1 as (
       select *
-      , sum(case when session_id is null then 0 else 1 end) over (partition by device_id order by timestamp) as session_partition
+      , sum(case when is_session_start = 1 then 1 else 0 end) over (partition by device_id order by timestamp) as session_partition
       from session_ids_p0
     )
     , session_ids_p2 as (
