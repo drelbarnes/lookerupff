@@ -63,7 +63,7 @@ view: user_play_history {
       drill_fields: [detail*]
     }
 
-    measure: min_count {
+    dimension: min_count {
       type: number
       sql: ${TABLE}.min_count ;;
     }
