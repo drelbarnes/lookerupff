@@ -99,7 +99,7 @@ view: first_n_plays {
 
   parameter: table_name {
     label: "n-Play Depth"
-    type: string
+    type: unquoted
 
     default_value: "plays_first_four"
 
