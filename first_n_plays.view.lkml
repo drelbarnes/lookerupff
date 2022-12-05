@@ -105,19 +105,19 @@ view: first_n_plays {
 
     allowed_value: {
       label: "1st Play"
-      value: "plays_first"
+      value: "first_plays"
     }
     allowed_value: {
       label: "2nd Play"
-      value: "plays_second"
+      value: "second_plays"
     }
     allowed_value: {
       label: "3rd Play"
-      value: "plays_third"
+      value: "third_plays"
     }
     allowed_value: {
       label: "4th Play"
-      value: "plays_fourth"
+      value: "fourth_plays"
     }
   }
 
