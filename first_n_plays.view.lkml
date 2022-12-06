@@ -89,7 +89,7 @@ view: first_n_plays {
       group by 1,2
       )
 
-      select * from {% parameter table_name %}
+      select * from {% parameter table_name %} order by play_count desc
       ;;
   }
 
