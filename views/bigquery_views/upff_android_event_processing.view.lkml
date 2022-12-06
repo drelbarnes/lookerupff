@@ -2,24 +2,27 @@ view: upff_android_event_processing {
   derived_table: {
     sql: -- JOIN ORDERS ON PAGE VISITS
       with web_events as (
-      select
-      a.timestamp as viewed_at
-      , b.session_start as session_start
-      , a.event_id
-      , a.anonymous_id
-      , cast(null as string) as device_id
-      , a.session_id
-      , a.ip_address
-      , b.first_utm_content as utm_content
-      , b.first_utm_medium as utm_medium
-      , b.first_utm_campaign as utm_campaign
-      , b.first_utm_source as utm_source
-      , b.first_utm_term as utm_term
-      , b.session_referrer as referrer_domain
-      , split(referrer, "?")[safe_offset(1)] AS referrer_query
-      , path
-      , title as view
-      , '' as user_agent
+        select
+        a.timestamp as viewed_at
+        , b.session_start as session_start
+        , a.event_id
+        , a.anonymous_id
+        , cast(null as string) as device_id
+        , a.session_id
+        , a.ip_address
+        , b.first_utm_content as utm_content
+        , b.first_utm_medium as utm_medium
+        , b.first_utm_campaign as utm_campaign
+        , b.first_utm_source as utm_source
+        , b.first_utm_term as utm_term
+        , b.session_referrer as referrer_domain
+        , split(referrer, "?")[safe_offset(1)] AS referrer_query
+        , regexp_extract(regexp_extract(session_search, r'ad_id=[0-9]+'), r'[0-9]+') as ad_id
+        , cast(null as string) as ad_set_id
+        , cast(null as string) as campaign_id
+        , path
+        , title as view
+        , '' as user_agent
         from ${upff_page_events.SQL_TABLE_NAME} as a
         left join ${upff_web_sessions.SQL_TABLE_NAME} as b
         on a.session_id = b.session_id
@@ -38,8 +41,11 @@ view: upff_android_event_processing {
         , b.first_utm_campaign as utm_campaign
         , b.first_utm_source as utm_source
         , b.first_utm_term as utm_term
-        , cast(null as string) as referrer_domain
         , cast(null as string) as referrer_query
+        , cast(null as string) as ad_id
+        , a.ad_set_id
+        , a.campaign_id
+        , a.referrer_domain
         , cast(null as string) as path
         , cast(null as string) as view
         , cast(null as string) as user_agent
@@ -86,31 +92,31 @@ view: upff_android_event_processing {
         where n = 1
       )
       , android_orders as (
-          select
-          a.ordered_at
-          , coalesce(a.user_id, d.user_id, e.user_id, a.device_id) as user_id
-          , a.anonymous_id
-          -- hotfix for the anonymous_id bug of Q2/Q3 2022
-          , cast(null as string) as anonymous_id_raw
-          , a.device_id
-          , a.event_id
-          , a.ip_address
-          , a.platform
-          , b.plan_type
-          , case
-            when b.topic = "customer_product_created" and c.topic = "customer_product_free_trial_created" then c.topic
-            when b.topic is null and c.topic is null then "customer_product_created"
-            else b.topic
-            end as topic
-          from order_completed_events as a
-          left join (select * from webhook_events where topic = "customer_product_created" or topic is null) as b
-          on a.user_id = b.user_id and date(a.ordered_at) = date(b.timestamp)
-          left join (select * from webhook_events where topic = "customer_product_free_trial_created" or topic is null) as c
-          on a.user_id = c.user_id and date(a.ordered_at) = date(c.timestamp)
-          left join ios.identifies as d
-          on a.device_id = d.context_device_id
-          left join (select * from webhook_events where email is not null) as e
-          on a.email = e.email and date(a.ordered_at) = date(e.timestamp)
+        select
+        a.ordered_at
+        , coalesce(a.user_id, d.user_id, e.user_id, a.device_id) as user_id
+        , a.anonymous_id
+        -- hotfix for the anonymous_id bug of Q2/Q3 2022
+        , cast(null as string) as anonymous_id_raw
+        , a.device_id
+        , a.event_id
+        , a.ip_address
+        , a.platform
+        , b.plan_type
+        , case
+          when b.topic = "customer_product_created" and c.topic = "customer_product_free_trial_created" then c.topic
+          when b.topic is null and c.topic is null then "customer_product_created"
+          else b.topic
+          end as topic
+        from order_completed_events as a
+        left join (select * from webhook_events where topic = "customer_product_created" or topic is null) as b
+        on a.user_id = b.user_id and date(a.ordered_at) = date(b.timestamp)
+        left join (select * from webhook_events where topic = "customer_product_free_trial_created" or topic is null) as c
+        on a.user_id = c.user_id and date(a.ordered_at) = date(c.timestamp)
+        left join ios.identifies as d
+        on a.device_id = d.context_device_id
+        left join (select * from webhook_events where email is not null) as e
+        on a.email = e.email and date(a.ordered_at) = date(e.timestamp)
       )
       , android_events_android_orders_device as (
         select
@@ -179,6 +185,9 @@ view: upff_android_event_processing {
         , utm_campaign
         , utm_source
         , utm_term
+        , ad_id
+        , ad_set_id
+        , campaign_id
         , path
         , view
         , referrer_domain
@@ -218,12 +227,15 @@ view: upff_android_event_processing {
         , utm_campaign
         , utm_source
         , utm_term
+        , ad_id
+        , ad_set_id
+        , campaign_id
         , referrer_domain
         , user_agent
         , source
         from final_p1
         where source is not null
-        group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17
+        group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20
       )
       select *, row_number() over (order by ordered_at) as row from attributable_events;;
       persist_for: "6 hours"
