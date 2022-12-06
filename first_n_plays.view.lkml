@@ -50,7 +50,7 @@ view: first_n_plays {
 
       first_plays as
       (
-      select collection, title, count(distinct user_id) as count_plays_first
+      select collection, title, count(distinct user_id) as play_count
       from plays_less_granular
       where play_number = 1
       group by 1,2
@@ -58,7 +58,7 @@ view: first_n_plays {
 
       second_plays as
       (
-      select collection, title, count(distinct user_id) as count_plays_second
+      select collection, title, count(distinct user_id) as play_count
       from plays_less_granular
       where play_number = 2
       group by 1,2
@@ -66,7 +66,7 @@ view: first_n_plays {
 
       third_plays as
       (
-      select collection, title, count(distinct user_id) as count_plays_third
+      select collection, title, count(distinct user_id) as play_count
       from plays_less_granular
       where play_number = 3
       group by 1,2
@@ -74,7 +74,7 @@ view: first_n_plays {
 
       fourth_plays as
       (
-      select collection, title, count(distinct user_id) as count_plays_fourth
+      select collection, title, count(distinct user_id) as play_count
       from plays_less_granular
       where play_number = 3
       group by 1,2
@@ -82,7 +82,7 @@ view: first_n_plays {
 
       plays_first_four as
       (
-      select collection, title, count(distinct user_id) as count_plays_first
+      select collection, title, count(distinct user_id) as play_count
       from plays_less_granular
       where play_number in (1,2,3,4)
       group by 1,2
