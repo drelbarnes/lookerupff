@@ -136,12 +136,12 @@ view: first_n_plays {
     sql: ${TABLE}.title ;;
   }
 
-  dimension: count_plays_first {
+  dimension: plays_count {
     type: number
-    sql: ${TABLE}.count_plays_first ;;
+    sql: ${TABLE}.plays_count ;;
   }
 
   set: detail {
-    fields: [collection, title, count_plays_first]
+    fields: [collection, title, plays_count]
   }
 }
