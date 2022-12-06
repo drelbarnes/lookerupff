@@ -26,7 +26,7 @@ view: first_n_plays {
       (
       select * from plays_most_granular
       where timestamp between {% date_start date_filter %} and {% date_end date_filter %}
-      and type in ({% parameter p_type %})
+      and type in ("{% parameter p_type %}")
       ),
 
       plays_max_duration as
