@@ -115,6 +115,11 @@ view: first_n_plays {
       label: "Series"
       value: "series"
     }
+
+    allowed_value: {
+      label: "Other"
+      value: "other"
+    }
   }
 
   parameter: table_name {
