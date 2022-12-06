@@ -9,6 +9,8 @@ view: first_n_plays {
       where user_id <> '0'
       and regexp_contains(user_id, r'^[0-9]*$')
       and user_id is not null
+      and timestamp between {% date_start date_filter %} and {% date_end date_filter %}
+      and type in ("{% parameter p_type %}")
       ),
 
       plays_most_granular as
@@ -22,26 +24,19 @@ view: first_n_plays {
       date(timestamp), video_id, min_count
       ),
 
-      plays_with_date_filter as
-      (
-      select * from plays_most_granular
-      where timestamp between {% date_start date_filter %} and {% date_end date_filter %}
-      and type in ("{% parameter p_type %}")
-      ),
-
       plays_max_duration as
       (
       select user_id, video_id,
       date(timestamp) as date,
       max(min_count) as min_count
-      from plays_with_date_filter
+      from plays_most_granular
       group by 1,2,3
       ),
 
       plays_less_granular as
       (
       select a.*, row_number() over (partition by a.user_id order by a.timestamp) as play_number
-      from plays_with_date_filter as a
+      from plays_most_granular as a
       inner join plays_max_duration as b
       on a.user_id = b.user_id
       and a.video_id = b.video_id
