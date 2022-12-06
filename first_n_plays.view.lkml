@@ -26,6 +26,7 @@ view: first_n_plays {
       (
       select * from plays_most_granular
       where timestamp between {% date_start date_filter %} and {% date_end date_filter %}
+      and type in ({% parameter p_type %})
       ),
 
       plays_max_duration as
@@ -97,6 +98,21 @@ view: first_n_plays {
     type: date
   }
 
+  parameter: p_type {
+    label: "Type"
+    type: unquoted
+
+    allowed_value: {
+      label: "Movies"
+      value: "movies"
+    }
+
+    allowed_value: {
+      label: "Series"
+      value: "series"
+    }
+  }
+
   parameter: table_name {
     label: "n-Play Depth"
     type: unquoted
@@ -107,14 +123,17 @@ view: first_n_plays {
       label: "1st Play"
       value: "first_plays"
     }
+
     allowed_value: {
       label: "2nd Play"
       value: "second_plays"
     }
+
     allowed_value: {
       label: "3rd Play"
       value: "third_plays"
     }
+
     allowed_value: {
       label: "4th Play"
       value: "fourth_plays"
