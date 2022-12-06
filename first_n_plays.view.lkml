@@ -98,6 +98,11 @@ view: first_n_plays {
     type: date
   }
 
+  filter: end_date {
+    label: "End Date"
+    type: date
+  }
+
   parameter: p_type {
     label: "Type"
     type: unquoted
