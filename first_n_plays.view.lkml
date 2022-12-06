@@ -34,14 +34,14 @@ view: first_n_plays {
       select user_id, video_id,
       date(timestamp) as date,
       max(min_count) as min_count
-      from plays_most_granular
+      from plays_with_date_filter
       group by 1,2,3
       ),
 
       plays_less_granular as
       (
       select a.*, row_number() over (partition by a.user_id order by a.timestamp) as play_number
-      from plays_most_granular as a
+      from plays_with_date_filter as a
       inner join plays_max_duration as b
       on a.user_id = b.user_id
       and a.video_id = b.video_id
@@ -109,7 +109,7 @@ view: first_n_plays {
 
     allowed_value: {
       label: "Movies"
-      value: "movies"
+      value: "movie"
     }
 
     allowed_value: {
