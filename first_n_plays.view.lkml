@@ -9,7 +9,6 @@ view: first_n_plays {
       where user_id <> '0'
       and regexp_contains(user_id, r'^[0-9]*$')
       and user_id is not null
-      and timestamp between {% date_start date_filter %} and {% date_end date_filter %}
       and type in ("{% parameter p_type %}")
       ),
 
@@ -49,6 +48,7 @@ view: first_n_plays {
       select collection, title, count(distinct user_id) as play_count
       from plays_less_granular
       where play_number = 1
+      and timestamp between {% date_start date_filter %} and {% date_end date_filter %}
       group by 1,2
       ),
 
@@ -57,6 +57,7 @@ view: first_n_plays {
       select collection, title, count(distinct user_id) as play_count
       from plays_less_granular
       where play_number = 2
+      and timestamp between {% date_start date_filter %} and {% date_end date_filter %}
       group by 1,2
       ),
 
@@ -65,6 +66,7 @@ view: first_n_plays {
       select collection, title, count(distinct user_id) as play_count
       from plays_less_granular
       where play_number = 3
+      and timestamp between {% date_start date_filter %} and {% date_end date_filter %}
       group by 1,2
       ),
 
@@ -73,6 +75,7 @@ view: first_n_plays {
       select collection, title, count(distinct user_id) as play_count
       from plays_less_granular
       where play_number = 3
+      and timestamp between {% date_start date_filter %} and {% date_end date_filter %}
       group by 1,2
       ),
 
@@ -81,6 +84,7 @@ view: first_n_plays {
       select collection, title, count(distinct user_id) as play_count
       from plays_less_granular
       where play_number in (1,2,3,4)
+      and timestamp between {% date_start date_filter %} and {% date_end date_filter %}
       group by 1,2
       )
 
@@ -137,6 +141,11 @@ view: first_n_plays {
     allowed_value: {
       label: "4th Play"
       value: "fourth_plays"
+    }
+
+    allowed_value: {
+      label: "First Four"
+      value: "plays_first_four"
     }
   }
 
