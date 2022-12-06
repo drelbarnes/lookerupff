@@ -144,7 +144,7 @@ view: first_n_plays {
     }
 
     allowed_value: {
-      label: "First Four"
+      label: "First Four Plays"
       value: "plays_first_four"
     }
   }
