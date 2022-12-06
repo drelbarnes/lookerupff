@@ -86,6 +86,15 @@ view: first_n_plays {
       where play_number in (1,2,3,4)
       and timestamp between {% date_start date_filter %} and {% date_end date_filter %}
       group by 1,2
+      ),
+
+      plays_first_ten as
+      (
+      select collection, title, count(distinct user_id) as play_count
+      from plays_less_granular
+      where play_number between 1 and 10
+      and timestamp between {% date_start date_filter %} and {% date_end date_filter %}
+      group by 1,2
       )
 
       select * from {% parameter table_name %} order by play_count desc
@@ -149,8 +158,13 @@ view: first_n_plays {
     }
 
     allowed_value: {
-      label: "First Four Plays"
+      label: "First 4 Plays"
       value: "plays_first_four"
+    }
+
+    allowed_value: {
+      label: "First 10 Plays"
+      value: "plays_first_ten"
     }
   }
 
