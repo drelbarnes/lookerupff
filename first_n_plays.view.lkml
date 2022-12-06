@@ -9,6 +9,7 @@ view: first_n_plays {
       where user_id <> '0'
       and regexp_contains(user_id, r'^[0-9]*$')
       and user_id is not null
+      and title is not null
       and type in ("{% parameter p_type %}")
       ),
 
