@@ -17,8 +17,8 @@ view: upff_web_event_processing {
       , b.first_utm_source as utm_source
       , b.first_utm_term as utm_term
       , b.session_referrer as referrer_domain
-      , split(referrer, "?")[safe_offset(1)] AS referrer_query
-      , regexp_extract(regexp_extract(session_search, r'ad_id=[0-9]+'), r'[0-9]+') as ad_id
+      , b.session_search as referrer_query
+      , b.ad_id
       , path
       , title as view
       , '' as user_agent

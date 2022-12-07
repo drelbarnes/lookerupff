@@ -177,6 +177,7 @@ view: upff_web_sessions {
       , conversion_path_length
       , session_referrer
       , session_search
+      , regexp_extract(regexp_extract(session_search, r'ad_id=[0-9]+'), r'[0-9]+') as ad_id
       , first_utm_campaign
       , first_utm_source
       , first_utm_medium
@@ -194,7 +195,7 @@ view: upff_web_sessions {
       left join sessions_p4 e on a.session_id = e.session_id
       left join sessions_p5 f on a.session_id = f.session_id
       left join sessions_p6 g on a.session_id = g.session_id
-      group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25
+      group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26
     )
     select * from sessions_final where session_id is not null ;;
     persist_for: "6 hours"
