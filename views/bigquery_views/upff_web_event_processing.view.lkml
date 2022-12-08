@@ -7,21 +7,23 @@ view: upff_web_event_processing {
       a.timestamp as viewed_at
       , coalesce(b.session_start, a.timestamp) as session_start
       , a.event_id
+      , a.session_id
       , a.anonymous_id
       , cast(null as string) as device_id
-      , a.session_id
       , a.ip_address
-      , b.first_utm_content as utm_content
-      , b.first_utm_medium as utm_medium
-      , b.first_utm_campaign as utm_campaign
-      , b.first_utm_source as utm_source
-      , b.first_utm_term as utm_term
+      , b.session_utm_content as utm_content
+      , b.session_utm_medium as utm_medium
+      , b.session_utm_campaign as utm_campaign
+      , b.session_utm_source as utm_source
+      , b.session_utm_term as utm_term
       , b.session_referrer as referrer_domain
-      , b.session_search as referrer_query
-      , b.ad_id
-      , path
-      , title as view
-      , '' as user_agent
+      , b.session_search as referrer_search
+      , b.session_ad_id as ad_id
+      , b.session_adset_id as adset_id
+      , b.session_campaign_id as campaign_id
+      , a.path
+      , a.title as view
+      , a.user_agent
         from ${upff_page_events.SQL_TABLE_NAME} as a
         left join ${upff_web_sessions.SQL_TABLE_NAME} as b
         on a.session_id = b.session_id
@@ -56,7 +58,7 @@ view: upff_web_event_processing {
         with p0 as (
           select timestamp as ordered_at
           , user_id as user_id
-          , id as event_id
+          , to_hex(sha1(concat(id,safe_cast(timestamp as string)))) as event_id
           , anonymous_id
           , device_id
           , context_ip as ip_address
@@ -105,8 +107,6 @@ view: upff_web_event_processing {
         from web_orders
         full join web_events
         on web_orders.anonymous_id = web_events.anonymous_id
-        -- and web_orders.ordered_at > web_events.viewed_at
-        -- and web_events.viewed_at > timestamp_sub(web_orders.ordered_at, INTERVAL 30 DAY)
       )
       , web_events_web_orders_ip as (
         select
@@ -119,8 +119,6 @@ view: upff_web_event_processing {
         from web_orders
         full join web_events
         on web_events.ip_address = web_orders.ip_address
-        -- and web_orders.ordered_at > web_events.viewed_at
-        -- and web_events.viewed_at > timestamp_sub(web_orders.ordered_at, INTERVAL 30 DAY)
       )
       , all_joined_events as (
         select * from web_events_web_orders_anon
@@ -134,6 +132,7 @@ view: upff_web_event_processing {
         , session_start
         , user_id
         , anonymous_id
+        , event_id
         , device_id
         , session_id
         , ip_address
@@ -146,10 +145,12 @@ view: upff_web_event_processing {
         , utm_source
         , utm_term
         , ad_id
+        , adset_id
+        , campaign_id
         , path
         , view
         , referrer_domain
-        , referrer_query
+        , referrer_search
         , user_agent
         , case
           when utm_source is null and (referrer_domain is null or referrer_domain = "upfaithandfamily.com/") then 0
@@ -175,6 +176,7 @@ view: upff_web_event_processing {
         , session_start
         , user_id
         , anonymous_id
+        , event_id
         , session_id
         , device_id
         , ip_address
@@ -187,12 +189,15 @@ view: upff_web_event_processing {
         , utm_source
         , utm_term
         , ad_id
+        , adset_id
+        , campaign_id
         , referrer_domain
+        , referrer_search
         , user_agent
         , source
         from final_p1
         where source is not null
-        group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19
+        group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
       )
       select *, row_number() over (order by ordered_at) as row from attributable_events
        ;;
@@ -230,10 +235,16 @@ view: upff_web_event_processing {
     sql: ${TABLE}.anonymous_id ;;
   }
 
+  dimension: event_id {
+    type: string
+    sql: ${TABLE}.event_id ;;
+  }
+
   dimension: session_id {
     type: string
     sql: ${TABLE}.session_id ;;
   }
+
   dimension: device_id {
     type: string
     sql: ${TABLE}.device_id ;;
@@ -289,9 +300,24 @@ view: upff_web_event_processing {
     sql: ${TABLE}.ad_id ;;
   }
 
+  dimension: adset_id {
+    type: string
+    sql: ${TABLE}.adset_id ;;
+  }
+
+  dimension: campaign_id {
+    type: string
+    sql: ${TABLE}.campaign_id ;;
+  }
+
   dimension: referrer_domain {
     type: string
     sql: ${TABLE}.referrer_domain ;;
+  }
+
+  dimension: referrer_search {
+    type: string
+    sql: ${TABLE}.referrer_search ;;
   }
 
   dimension: user_agent {
@@ -322,7 +348,10 @@ view: upff_web_event_processing {
       utm_source,
       utm_term,
       ad_id,
+      adset_id,
+      campaign_id,
       referrer_domain,
+      referrer_search,
       user_agent,
       source,
       row

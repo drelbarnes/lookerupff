@@ -7,7 +7,7 @@ view: upff_page_events {
         , safe_cast(context_ip as string) as ip_address
         , safe_cast(context_traits_cross_domain_id as string) as cross_domain_id
         , "Page Viewed" as event
-        , id as event_id
+        , id
         , safe_cast(context_campaign_content as string) as utm_content
         , safe_cast(context_campaign_medium as string) as utm_medium
         , safe_cast(context_campaign_name as string) as utm_campaign
@@ -18,10 +18,11 @@ view: upff_page_events {
         , safe_cast(title as string) as title
         , safe_cast(context_page_url as string) as url
         , safe_cast(context_page_path as string) as path
-        , safe_cast(context_user_agent as string) as device
+        , safe_cast(context_user_agent as string) as user_agent
         , "web" as platform
         , timestamp
         from javascript_upff_home.pages
+        group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19
       )
       , app_pages as (
         select
@@ -30,7 +31,7 @@ view: upff_page_events {
         , safe_cast(context_ip as string) as ip_address
         , safe_cast(context_traits_cross_domain_id as string) as cross_domain_id
         , "Page Viewed" as event
-        , id as event_id
+        , id
         , safe_cast(context_campaign_content as string) as utm_content
         , safe_cast(context_campaign_medium as string) as utm_medium
         , safe_cast(context_campaign_name as string) as utm_campaign
@@ -41,10 +42,11 @@ view: upff_page_events {
         , safe_cast(title as string) as title
         , safe_cast(context_page_url as string) as url
         , safe_cast(context_page_path as string) as path
-        , safe_cast(context_user_agent as string) as device
+        , safe_cast(context_user_agent as string) as user_agent
         , safe_cast(platform as string) as platform
         , timestamp
         from javascript.pages
+        group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19
       )
       , identifies as (
         select
@@ -53,7 +55,7 @@ view: upff_page_events {
         , safe_cast(context_ip as string) as ip_address
         , safe_cast(context_traits_cross_domain_id as string) as cross_domain_id
         , "Identify" as event
-        , id as event_id
+        , id
         , safe_cast(context_campaign_content as string) as utm_content
         , safe_cast(context_campaign_medium as string) as utm_medium
         , safe_cast(context_campaign_name as string) as utm_campaign
@@ -64,10 +66,11 @@ view: upff_page_events {
         , safe_cast(context_page_title as string) as title
         , safe_cast(context_page_url as string) as url
         , safe_cast(context_page_path as string) as path
-        , safe_cast(context_user_agent as string) as device
+        , safe_cast(context_user_agent as string) as user_agent
         , "web" as platform
         , timestamp
         from javascript.identifies
+        group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19
       )
       , order_completed as (
         select
@@ -76,7 +79,7 @@ view: upff_page_events {
         , safe_cast(context_ip as string) as ip_address
         , safe_cast(context_traits_cross_domain_id as string) as cross_domain_id
         , "Order Completed" as event
-        , id as event_id
+        , id
         , safe_cast(context_campaign_content as string) as utm_content
         , safe_cast(context_campaign_medium as string) as utm_medium
         , safe_cast(context_campaign_name as string) as utm_campaign
@@ -87,10 +90,11 @@ view: upff_page_events {
         , safe_cast(context_page_title as string) as title
         , safe_cast(context_page_url as string) as url
         , safe_cast(context_page_path as string) as path
-        , safe_cast(context_user_agent as string) as device
+        , safe_cast(context_user_agent as string) as user_agent
         , safe_cast(platform as string) as platform
         , timestamp
         from javascript.order_completed
+        group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19
       )
       , page_events as (
         select * from site_pages
@@ -101,16 +105,58 @@ view: upff_page_events {
         union all
         select * from order_completed
       )
-      , referrer_domain as (
+      -- DATA CLEANING AND PROCESSING
+      -- unique event_id creation
+      , page_event_ids as (
         select *
-        , regexp_extract(referrer, r'[a-zA-Z]+\.[a-zA-Z]+\/') as referrer_domain
+        , to_hex(sha1(concat(id,safe_cast(timestamp as string)))) as event_id
         from page_events
       )
-      -- hotfix to stitch app sessions and web sessions together during period that Vimeo OTT messed up Segment implementation
+      , referrer_domain_p0 as (
+        select event_id
+        , regexp_extract(referrer, r'[a-zA-Z]+\.[a-zA-Z]+\/') as referrer_domain
+        from page_event_ids
+      )
+      , search_params_p0 as (
+        select event_id
+        , split(ltrim(search, "?"), "&") as search_params
+        from page_event_ids
+      )
+      , search_params_p1 as (
+        SELECT event_id, flattened_params
+        FROM search_params_p0 CROSS JOIN search_params_p0.search_params AS flattened_params
+      )
+      , search_params_p2 as (
+        select event_id
+        , split(flattened_params, "=") as parameters
+        from search_params_p1
+      )
+      , search_params_p3 as (
+        SELECT event_id, parameters[safe_offset(0)] as key, parameters[safe_offset(1)] as value
+        from search_params_p2
+      )
+      , search_params_p4 as (
+        select *
+        from search_params_p3
+        PIVOT(string_agg(value) FOR key IN ("ad_id", "adset_id", "campaign_id"))
+      )
+      , clean_page_events as (
+        select a.*
+        , b.referrer_domain
+        , c.ad_id
+        , c.adset_id
+        , c.campaign_id
+        from page_event_ids as a
+        left join referrer_domain_p0 as b
+        on a.event_id = b.event_id
+        left join search_params_p4 as c
+        on a.event_id = c.event_id
+      )
+      -- hotfix to stitch app sessions and web sessions together during period that Vimeo OTT messed up Segment anon_id implementation
       , app_session_mapping_p0 as (
         select *
         , lag(timestamp,1) over (partition by user_id order by timestamp) as last_event_0
-        from referrer_domain
+        from clean_page_events
       )
       , app_session_mapping_p1 as (
         select *
@@ -140,13 +186,12 @@ view: upff_page_events {
         , first_value(anon_id_2) over (partition by user_id, session_partition order by timestamp) as anon_id_alt
         from anon_id_mapping_p1
         where user_id is not null
-
       )
       , anon_id_mapping_p3 as (
         select a.*, b.anon_id_alt
         from app_session_mapping_p1 a
         left join anon_id_mapping_p2 b
-        on a.timestamp = b.timestamp and a.anonymous_id = b.anonymous_id
+        on a.event_id = b.event_id
       )
       , anon_id_mapping_p4 as (
         select
@@ -158,27 +203,37 @@ view: upff_page_events {
         , cross_domain_id
         , event
         , event_id
+        , referrer
+        , search
+        , referrer_domain
+        , ad_id
+        , adset_id
+        , campaign_id
         , utm_content
         , utm_medium
         , utm_campaign
         , utm_source
         , utm_term
-        , referrer
-        , referrer_domain
-        , search
         , title
         , url
         , path
-        , device
+        , user_agent
         , platform
         from anon_id_mapping_p3
+        where event in ("Page Viewed","Order Completed")
+        group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24
       )
       , session_mapping_p0 as (
         select *
-        , lag(timestamp,1) over (partition by anonymous_id order by timestamp) as last_event
-        , lag(utm_campaign,1) over (partition by anonymous_id order by timestamp) as last_utm_campaign
-        , lead(timestamp, 1) over (partition by anonymous_id order by timestamp) as next_event
+        , row_number() over (order by timestamp) as event_number
         from anon_id_mapping_p4
+      )
+      , session_mapping_p1 as (
+        select *
+        , lag(timestamp,1) over (partition by anonymous_id order by event_number) as last_event
+        , lag(utm_campaign,1) over (partition by anonymous_id order by event_number) as last_utm_campaign
+        , lead(timestamp, 1) over (partition by anonymous_id order by event_number) as next_event
+        from session_mapping_p0
       )
       , campaign_session_mapping_p1 as (
         select *
@@ -188,11 +243,11 @@ view: upff_page_events {
           when utm_campaign is null and (referrer_domain is not null and referrer_domain != "upfaithandfamily.com/") then 1
           else 0
           end as is_session_start
-        from session_mapping_p0
+        from session_mapping_p1
       )
       , campaign_session_mapping_p2 as (
         select *
-        , lead(is_session_start,1) over (partition by anonymous_id order by timestamp) as next_session
+        , lead(is_session_start,1) over (partition by anonymous_id order by event_number) as next_session
         from campaign_session_mapping_p1
       )
       , campaign_session_mapping_p3 as (
@@ -224,25 +279,25 @@ view: upff_page_events {
             when event = "Order Completed" then 1
             else 0
             end as is_conversion
-        from session_mapping_p0
+        from session_mapping_p1
         order by anonymous_id, timestamp
       )
       , session_ids_p0 as (
         select *
-        , case when is_session_start = 1 then generate_uuid()
+        , case when is_session_start = 1 then to_hex(sha1(concat(event_id,safe_cast(timestamp as string))))
           else null
           end as new_session_id
         from campaign_session_mapping_p3
       )
       , session_ids_p1 as (
         select *
-        , sum(case when new_session_id is null then 0 else 1 end) over (partition by anonymous_id order by timestamp) as session_partition
+        , sum(case when new_session_id is null then 0 else 1 end) over (partition by anonymous_id order by event_number) as session_partition
         from session_ids_p0
       )
       , session_ids_p2 as (
-      select *
-      , first_value(new_session_id) over (partition by anonymous_id, session_partition order by timestamp) as session_id_alt
-      from session_ids_p1
+        select *
+        , first_value(new_session_id) over (partition by anonymous_id, session_partition order by event_number) as session_id_alt
+        from session_ids_p1
       )
       , session_ids_p3 as (
         select
@@ -254,32 +309,43 @@ view: upff_page_events {
         , user_id
         , event
         , event_id
+        , event_number
         , session_id_alt as session_id
         , is_session_start
         , is_session_end
         , is_conversion
+        , referrer
+        , search
+        , referrer_domain
+        , ad_id
+        , adset_id
+        , campaign_id
         , utm_content
         , utm_medium
         , utm_campaign
         , utm_source
         , utm_term
-        , referrer
-        , referrer_domain
-        , search
         , title
         , url
         , path
-        , device
+        , user_agent
         , platform
         from session_ids_p2
+        group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29
       )
-      select *, row_number() over (order by timestamp) as row from session_ids_p3 ;;
+      select * from session_ids_p3;;
     persist_for: "6 hours"
   }
 
   measure: count {
     type: count
     drill_fields: [detail*]
+  }
+
+  dimension: event_id {
+    type: string
+    primary_key: yes
+    sql: ${TABLE}.event_id ;;
   }
 
   dimension: user_id {
@@ -312,9 +378,9 @@ view: upff_page_events {
     sql: ${TABLE}.event ;;
   }
 
-  dimension: event_id {
-    type: string
-    sql: ${TABLE}.event_id ;;
+  dimension: event_number {
+    type: number
+    sql: ${TABLE}.event_number ;;
   }
 
   dimension: utm_content {
@@ -357,6 +423,21 @@ view: upff_page_events {
     sql: ${TABLE}.search ;;
   }
 
+  dimension: ad_id {
+    type: string
+    sql: ${TABLE}.ad_id ;;
+  }
+
+  dimension: adset_id {
+    type: string
+    sql: ${TABLE}.adset_id ;;
+  }
+
+  dimension: campaign_id {
+    type: string
+    sql: ${TABLE}.campaign_id ;;
+  }
+
   dimension: title {
     type: string
     sql: ${TABLE}.title ;;
@@ -372,9 +453,9 @@ view: upff_page_events {
     sql: ${TABLE}.path ;;
   }
 
-  dimension: device {
+  dimension: user_agent {
     type: string
-    sql: ${TABLE}.device ;;
+    sql: ${TABLE}.user_agent ;;
   }
 
   dimension: session_id {
@@ -405,12 +486,6 @@ view: upff_page_events {
   dimension_group: timestamp {
     type: time
     sql: ${TABLE}.timestamp ;;
-  }
-
-  dimension: row {
-    type: number
-    primary_key: yes
-    sql: ${TABLE}.row ;;
   }
 
   dimension: campaign_source {
@@ -448,14 +523,14 @@ view: upff_page_events {
       title,
       url,
       path,
-      device,
+      user_agent,
       session_id,
       is_session_start,
       is_session_end,
       is_conversion,
       platform,
       timestamp_time,
-      row
+      event_number
     ]
   }
 }

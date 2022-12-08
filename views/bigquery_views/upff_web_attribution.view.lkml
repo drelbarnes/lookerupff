@@ -152,8 +152,11 @@ derived_table: {
     , a.utm_source
     , a.utm_term
     , a.ad_id
+    , a.adset_id
+    , a.campaign_id
     , a.user_agent
     , a.referrer_domain
+    , a.referrer_search
     , a.source
     , b.credit as last_touch
     , c.credit as first_touch
@@ -195,8 +198,11 @@ derived_table: {
     , a.utm_source
     , a.utm_term
     , a.ad_id
+    , a.adset_id
+    , a.campaign_id
     , a.user_agent
     , a.referrer_domain
+    , a.referrer_search
     , a.source
     , a.last_touch
     , a.first_touch
@@ -361,6 +367,16 @@ derived_table: {
     sql: ${TABLE}.ad_id ;;
   }
 
+  dimension: adset_id {
+    type: string
+    sql: ${TABLE}.adset_id ;;
+  }
+
+  dimension: campaign_id {
+    type: string
+    sql: ${TABLE}.campaign_id ;;
+  }
+
   dimension: user_agent {
     type: string
     sql: ${TABLE}.user_agent ;;
@@ -369,6 +385,11 @@ derived_table: {
   dimension: referrer_domain {
     type: string
     sql: ${TABLE}.referrer_domain ;;
+  }
+
+  dimension: referrer_search {
+    type: string
+    sql: ${TABLE}.referrer_search ;;
   }
 
   dimension: source {
