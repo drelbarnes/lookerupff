@@ -210,7 +210,7 @@ include: "/views/testing_views/hubspot_bogo_testing.view.lkml"
 explore: user_play_history {
   label: "User Play History"
   always_filter: {
-    filters: [user_id: "123"]
+    filters: [user_id: "22620729"]
     }
 }
 
