@@ -241,6 +241,7 @@ view: ios_app_events {
       , campaign_id
       , ad_set_id
       , ad_set_name
+      , referrer_domain
       , context_campaign_source as utm_source
       , context_campaign_name as utm_campaign
       , context_campaign_medium as utm_medium
@@ -342,6 +343,11 @@ view: ios_app_events {
   dimension: ad_set_name {
     type: string
     sql: ${TABLE}.ad_set_name ;;
+  }
+
+  dimension: referrer_domain {
+    type: string
+    sql: ${TABLE}.referrer_domain ;;
   }
 
   dimension: utm_source {
