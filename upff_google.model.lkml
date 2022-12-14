@@ -189,6 +189,7 @@ include: "/views/bigquery_views/upff_android_event_processing.view.lkml"
 include: "/views/bigquery_views/upff_web_attribution.view.lkml"
 include: "/views/bigquery_views/upff_ios_attribution.view.lkml"
 include: "/views/bigquery_views/upff_android_attribution.view.lkml"
+include: "/views/bigquery_views/upff_multi_platform_attribution.view.lkml"
 
 include: "allfirstplay.view.lkml"
 include: "ticket_comments.view.lkml"
@@ -312,6 +313,10 @@ explore: upff_ios_attribution {
 
 explore: upff_android_attribution {
   label: "UPFF Android Attribution"
+}
+
+explore: upff_multi_platform_attribution {
+  label: "UPFF Multi Platform Attribution"
 }
 
 explore: customer_record {

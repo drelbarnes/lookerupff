@@ -152,6 +152,7 @@ view: upff_page_events {
         left join search_params_p4 as c
         on a.event_id = c.event_id
       )
+      -- THIS BLOCK FIXS THE ANONYMOUS ID BUG OF Q222-Q322
       -- hotfix to stitch app sessions and web sessions together during period that Vimeo OTT messed up Segment anon_id implementation
       , app_session_mapping_p0 as (
         select *
@@ -223,6 +224,7 @@ view: upff_page_events {
         where event in ("Page Viewed","Order Completed")
         group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24
       )
+      -- END OF BLOCK
       , session_mapping_p0 as (
         select *
         , row_number() over (order by timestamp) as event_number

@@ -1,12 +1,12 @@
 view: upff_web_sessions {
   derived_table: {
-    sql:
-      with page_events as (
+    sql: with page_events as (
         select
         cast(timestamp as timestamp) as timestamp
         , event_number
         , anonymous_id
         , ip_address
+        , user_agent
         , cross_domain_id
         , user_id
         , event
@@ -36,7 +36,9 @@ view: upff_web_sessions {
         with first_values as (
           select
           session_id
-          , anonymous_id
+          , first_value(anonymous_id) over (partition by session_id order by event_number) as anonymous_id
+          , first_value(ip_address) over (partition by session_id order by event_number) as ip_address
+          , first_value(user_agent) over (partition by session_id order by event_number) as user_agent
           , first_value(event_id) over (partition by session_id order by event_number) as event_id
           , first_value(timestamp) over (partition by session_id order by event_number) as session_start
           , first_value(timestamp) over (partition by session_id order by event_number desc) as session_end
@@ -49,7 +51,7 @@ view: upff_web_sessions {
             end as bounce
           from page_events
         )
-        select * from first_values group by 1,2,3,4,5,6,7,8,9
+        select * from first_values group by 1,2,3,4,5,6,7,8,9,10,11
       )
       , sessions_p1 as (
         with sessions_utm_values as (
@@ -172,12 +174,14 @@ view: upff_web_sessions {
         a.session_id
         , a.event_id
         , a.anonymous_id
-        , session_start
-        , session_end
-        , landing_page
-        , exit_page
-        , conversion
-        , bounce
+        , a.ip_address
+        , a.user_agent
+        , a.session_start
+        , a.session_end
+        , a.landing_page
+        , a.exit_page
+        , a.conversion
+        , a.bounce
         , user_ids
         , unique_pages_viewed
         , session_path
@@ -205,7 +209,7 @@ view: upff_web_sessions {
         left join sessions_p4 e on a.session_id = e.session_id
         left join sessions_p5 f on a.session_id = f.session_id
         left join sessions_p6 g on a.session_id = g.session_id
-        group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29
+        group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
       )
       select * from sessions_final where session_id is not null ;;
     persist_for: "6 hours"
@@ -220,6 +224,16 @@ view: upff_web_sessions {
   dimension: anonymous_id {
     type: string
     sql: ${TABLE}.anonymous_id ;;
+  }
+
+  dimension: ip_address {
+    type: string
+    sql: ${TABLE}.ip_address ;;
+  }
+
+  dimension: user_agent {
+    type: string
+    sql: ${TABLE}.user_agent ;;
   }
 
   dimension_group: session_start {
@@ -363,6 +377,8 @@ view: upff_web_sessions {
     fields: [
       session_id
       , anonymous_id
+      , ip_address
+      , user_agent
       , landing_page
       , exit_page
       , conversion

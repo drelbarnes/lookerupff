@@ -145,7 +145,7 @@ view: upff_ios_attribution {
       , a.user_agent
       , a.referrer_domain
       , a.ad_id
-      , a.ad_set_id
+      , a.adset_id
       , a.campaign_id
       , a.source
       , b.credit as last_touch
@@ -187,7 +187,7 @@ view: upff_ios_attribution {
       , a.user_agent
       , a.referrer_domain
       , a.ad_id
-      , a.ad_set_id
+      , a.adset_id
       , a.campaign_id
       , a.source
       , a.last_touch
@@ -355,9 +355,9 @@ view: upff_ios_attribution {
     sql: ${TABLE}.ad_id ;;
   }
 
-  dimension: ad_set_id {
+  dimension: adset_id {
     type: string
-    sql: ${TABLE}.ad_set_id ;;
+    sql: ${TABLE}.adset_id ;;
   }
 
   dimension: campaign_id {
