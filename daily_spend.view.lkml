@@ -169,8 +169,10 @@ view: daily_spend {
       select date_start,
       free_trial_created,
       channel,
-      spend_forecast as channel_spend,
-      sum(spend_forecast) over (partition by date_start) as spend
+      -- spend_forecast as channel_spend,
+      channel_spend,
+      -- sum(spend_forecast) over (partition by date_start) as spend,
+      sum(channel_spend)over (partition by date_start) as spend
       from forecast
       inner join customers_analytics
       on date(date_start)=timestamp
