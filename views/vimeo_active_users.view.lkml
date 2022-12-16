@@ -51,7 +51,7 @@ view: vimeo_active_users {
       )
       select *, row_number() over (order by date, user_id) as row from dedup ;;
 
-      persist_for: "6 hours"
+    datagroup_trigger: upff_daily_refresh_datagroup
   }
 
   measure: count {
