@@ -297,7 +297,7 @@ view: upff_ios_event_processing {
         group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24
       )
       select *, row_number() over (order by ordered_at) as row from attributable_events;;
-    persist_for: "6 hours"
+    datagroup_trigger: upff_daily_refresh_datagroup
   }
 
   measure: count {

@@ -232,7 +232,7 @@ view: upff_web_event_processing {
     )
       select *, row_number() over (order by ordered_at) as row from attributable_events
        ;;
-      persist_for: "6 hours"
+    datagroup_trigger: upff_daily_refresh_datagroup
   }
 
   measure: count {

@@ -69,8 +69,8 @@ include: "/views/monthly_customer_report.view.lkml"
 include: "/views/agm_audiences.view.lkml"
 
 datagroup: upff_acquisition_reporting {
-  description: "Datagroup for UPFF Acquisition PDTs. Triggers once per day at 8am"
-  sql_trigger: SELECT FLOOR((EXTRACT(epoch from GETDATE()) - 60*60*8)/(60*60*24)) ;;
+  description: "Datagroup for UPFF Acquisition PDTs. Triggers once per day at 9am"
+  sql_trigger: SELECT FLOOR((EXTRACT(epoch from GETDATE()) - 60*60*9)/(60*60*24)) ;;
 }
 
 explore: agm_audiences {
