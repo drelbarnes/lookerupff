@@ -26,7 +26,7 @@ view: cine_romantico {
   }
 
   dimension: avg_playthrough_rate {
-    type: string
+    type: number
     sql: ${TABLE}.avg_playthrough_rate ;;
   }
 
@@ -36,7 +36,7 @@ view: cine_romantico {
   }
 
   dimension: converted_hours_watched {
-    type: string
+    type: number
     sql: ${TABLE}.converted_hours_watched ;;
   }
 
@@ -46,7 +46,7 @@ view: cine_romantico {
   }
 
   dimension: play_count {
-    type: string
+    type: number
     sql: ${TABLE}.play_count ;;
   }
 
@@ -93,4 +93,27 @@ view: cine_romantico {
     type: count
     drill_fields: []
   }
+
+  measure: total_hrs {
+    type: sum
+    sql: ${converted_hours_watched} ;;
+
+      }
+
+  measure: play_rate {
+    type: average
+    sql: 100.0*${avg_playthrough_rate} ;;
+  }
+
+  measure: av_play_rate {
+    type: average
+    sql: ${avg_playthrough_rate} ;;
+  }
+
+
+  measure: play_count_final {
+    type: sum
+    sql: ${play_count} ;;
+  }
+
 }
