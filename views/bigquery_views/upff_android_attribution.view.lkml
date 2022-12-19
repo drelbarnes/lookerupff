@@ -1,75 +1,80 @@
 view: upff_android_attribution {
   derived_table: {
-    sql: with attributable_events as (
-      -- dedup sessions
-      with p0 as (
-      select *
-      from ${upff_android_event_processing.SQL_TABLE_NAME}
-      where ordered_at between timestamp_sub({% date_start date_filter %}, interval 15 day)
-      and {% date_end date_filter %}
-      )
-      , p1 as (
-      select *
-      , row_number() over (partition by device_id, session_start) as event_partition
-      from p0
-      )
-      select * from p1 where event_partition = 1
+    sql:
+      with attributable_events as (
+        -- dedup sessions
+        with p0 as (
+        select *
+        from (
+          select *
+          from ${upff_android_event_processing.SQL_TABLE_NAME}
+          where session_start > timestamp_sub(ordered_at, INTERVAL {% parameter attribution_window %} DAY)
+        )
+        where ordered_at between timestamp_sub({% date_start date_filter %}, interval 15 day)
+        and {% date_end date_filter %}
+        )
+        , p1 as (
+          select *
+          , row_number() over (partition by device_id, session_start) as event_partition
+          from p0
+        )
+        select * from p1 where event_partition = 1
       )
       , conversion_events as (
-      select *
-      from ${vimeo_webhook_events.SQL_TABLE_NAME}
-      where timestamp between {% date_start date_filter %}
-      and {% date_end date_filter %}
-      and event in ("customer_product_free_trial_converted")
-      and platform = "android"
+        select *
+        from ${vimeo_webhook_events.SQL_TABLE_NAME}
+        where timestamp between {% date_start date_filter %}
+        and {% date_end date_filter %}
+        and event in ("customer_product_free_trial_converted")
+        and platform = "android"
       )
       , sources_last_touch as (
-      select *
-      , row_number() over (partition by user_id order by session_start asc) as n
-      from attributable_events
+        select *
+        , row_number() over (partition by user_id order by session_start asc) as n
+        from attributable_events
       )
       , sources_first_touch as (
-      select *
-      , row_number() over (partition by user_id order by session_start desc) as n
-      from attributable_events
+        select *
+        , row_number() over (partition by user_id order by session_start desc) as n
+        from attributable_events
       )
       , last_touch_v2 as (
-      with p2 as (
-      select
-      user_id
-      , session_start
-      , source
-      , case when n = max(n) over (partition by user_id) then 1 else 0
-      end as conversion_event
-      , n
-      from sources_last_touch
-      )
-      select
-      user_id
-      , session_start
-      , source
-      , conversion_event as credit
-      , n
-      from p2
+        with p2 as (
+          select
+          user_id
+          , session_start
+          , source
+          , case when n = max(n) over (partition by user_id) then 1 else 0
+          end as conversion_event
+          , n
+          from sources_last_touch
+        )
+        select
+        user_id
+        , session_start
+        , source
+        , conversion_event as credit
+        , n
+        from p2
       )
       , first_touch_v2 as (
-      with p2 as (
-      select
-      user_id
-      , session_start
-      , source
-      , case when n = max(n) over (partition by user_id) then 1 else 0
-      end as conversion_event
-      , n
-      from sources_first_touch
-      )
-      select
-      user_id
-      , session_start
-      , source
-      , conversion_event as credit
-      , n
-      from p2
+        with p2 as (
+          select
+          user_id
+          , session_start
+          , source
+          , case when n = max(n) over (partition by user_id) then 1 else 0
+          end as conversion_event
+          , n
+          from sources_first_touch
+        )
+        select
+        user_id
+        , session_start
+        , source
+        , conversion_event as credit
+        , n
+        from p2
       )
       , linear_v2 as (
       select
@@ -139,6 +144,9 @@ view: upff_android_attribution {
       , a.utm_term
       , a.user_agent
       , a.referrer_domain
+      , a.ad_id
+      , a.adset_id
+      , a.campaign_id
       , a.source
       , b.credit as last_touch
       , c.credit as first_touch
@@ -178,6 +186,9 @@ view: upff_android_attribution {
       , a.utm_term
       , a.user_agent
       , a.referrer_domain
+      , a.ad_id
+      , a.adset_id
+      , a.campaign_id
       , a.source
       , a.last_touch
       , a.first_touch
@@ -193,15 +204,38 @@ view: upff_android_attribution {
       union all
       select * from tofu_final
       where ordered_at between {% date_start date_filter %} and {% date_end date_filter %}
-
       )
-      select * from union_all order by user_id, ordered_at, session_start
-      ;;
+      select * from union_all ;;
   }
 
   filter: date_filter {
     label: "Date Range"
     type: date
+  }
+  parameter: attribution_window {
+    label: "Attribution Window"
+    type: number
+    default_value: "30"
+    allowed_value: {
+      label: "1 day"
+      value: "1"
+    }
+    allowed_value: {
+      label: "3 days"
+      value: "3"
+    }
+    allowed_value: {
+      label: "7 days"
+      value: "7"
+    }
+    allowed_value: {
+      label: "14 days"
+      value: "14"
+    }
+    allowed_value: {
+      label: "30 days"
+      value: "30"
+    }
   }
   measure: count {
     type: count
@@ -316,6 +350,21 @@ view: upff_android_attribution {
     sql: ${TABLE}.referrer_domain ;;
   }
 
+  dimension: ad_id {
+    type: string
+    sql: ${TABLE}.ad_id ;;
+  }
+
+  dimension: adset_id {
+    type: string
+    sql: ${TABLE}.adset_id ;;
+  }
+
+  dimension: campaign_id {
+    type: string
+    sql: ${TABLE}.campaign_id ;;
+  }
+
   dimension: source {
     type: string
     sql: ${TABLE}.source ;;
@@ -383,6 +432,9 @@ view: upff_android_attribution {
       utm_term,
       user_agent,
       referrer_domain,
+      ad_id,
+      adset_id,
+      campaign_id,
       source,
       last_touch,
       first_touch,

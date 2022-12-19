@@ -53,8 +53,8 @@ view: customer_record {
       )
       select *, row_number() over (order by date) as row from customer_record where date is not null
        ;;
-      persist_for: "6 hours"
-  }
+      datagroup_trigger: upff_daily_refresh_datagroup
+    }
 
   measure: count {
     type: count

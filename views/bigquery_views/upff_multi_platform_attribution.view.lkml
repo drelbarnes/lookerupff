@@ -1,6 +1,6 @@
-view: upff_web_attribution {
-derived_table: {
-  sql:
+view: upff_multi_platform_attribution {
+  derived_table: {
+    sql:
     with attributable_events as (
     -- dedup sessions
       with p0 as (
@@ -8,6 +8,14 @@ derived_table: {
       from (
         select *
         from ${upff_web_event_processing.SQL_TABLE_NAME}
+        where session_start > timestamp_sub(ordered_at, INTERVAL {% parameter attribution_window %} DAY)
+        union all
+        select *
+        from ${upff_ios_event_processing.SQL_TABLE_NAME}
+        where session_start > timestamp_sub(ordered_at, INTERVAL {% parameter attribution_window %} DAY)
+        union all
+        select *
+        from ${upff_android_event_processing.SQL_TABLE_NAME}
         where session_start > timestamp_sub(ordered_at, INTERVAL {% parameter attribution_window %} DAY)
       )
       where ordered_at between timestamp_sub({% date_start date_filter %}, interval 15 day)
@@ -26,7 +34,7 @@ derived_table: {
     where timestamp between {% date_start date_filter %}
     and {% date_end date_filter %}
     and event in ("customer_product_free_trial_converted")
-    and platform = "web"
+    and platform in ("web", "ios", "android")
     )
     , sources_last_touch as (
     select *

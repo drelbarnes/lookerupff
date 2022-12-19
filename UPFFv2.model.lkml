@@ -31,6 +31,9 @@ include: "redshift_google_ad_groups.view.lkml"
 include: "redshift_marketing_installs.view.lkml"
 include: "redshift_ribbow_agency_fee.view.lkml"
 include: "redshift_exec_summary_metrics.view.lkml"
+include: "analytics_v2.view"
+include: "mailchimp_email_campaigns.view"
+include: "delighted_survey_question_answered.view"
 
 explore: redshift_exec_summary_metrics {
   label: "Exec Summary Metrics"
@@ -106,7 +109,11 @@ datagroup: upff_default_datagroup {
   max_cache_age: "6 hour"
 }
 
-persist_with: upff_default_datagroup
+datagroup: upff_acquisition_reporting {
+  description: "Datagroup for UPFF Acquisition PDTs. Triggers once per day at 8am"
+  sql_trigger: SELECT FLOOR((EXTRACT(epoch from GETDATE()) - 60*60*8)/(60*60*24)) ;;
+}
+
 
 include: "ios_application_installed.view"
 include: "ios_signupstarted.view"
@@ -123,22 +130,17 @@ explore: application_installed{
   }
 }
 
-
 explore: analytics_v2 {
-
-
-
   join: mailchimp_email_campaigns {
     type:  inner
     sql_on: ${mailchimp_email_campaigns.campaign_date} = ${analytics_v2.timestamp_date};;
     relationship: one_to_one
   }
-
   join: daily_spend_v2 {
     type: inner
     sql_on: ${analytics_v2.timestamp_date}=${daily_spend_v2.timestamp_date} ;;
-    relationship: one_to_one}
-
+    relationship: one_to_one
+  }
 }
 
 include: "javascript_subscribed.view"
@@ -146,10 +148,6 @@ explore: subscribed {}
 
 include: "customers.view"
 include: "customers_analytics.view"
-
-
-
-
 
 
 include: "customers_churn_reasons_aggregated.view"
@@ -178,12 +176,6 @@ explore: customer_churn_percent {}
 
 explore: ios_play {}
 explore: javascript_play {}
-
-
-
-include: "analytics_v2.view"
-include: "mailchimp_email_campaigns.view"
-include: "delighted_survey_question_answered.view"
 
 
 include: "javascript_users.view"

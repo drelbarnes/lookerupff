@@ -281,8 +281,7 @@ view: subscriber_lifecycles {
       , last_charge_status
       from summary
        ;;
-
-    persist_for: "6 hours"
+    datagroup_trigger: upff_daily_refresh_datagroup
   }
 
   measure: count {

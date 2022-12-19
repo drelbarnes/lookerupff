@@ -189,6 +189,7 @@ include: "/views/bigquery_views/upff_android_event_processing.view.lkml"
 include: "/views/bigquery_views/upff_web_attribution.view.lkml"
 include: "/views/bigquery_views/upff_ios_attribution.view.lkml"
 include: "/views/bigquery_views/upff_android_attribution.view.lkml"
+include: "/views/bigquery_views/upff_multi_platform_attribution.view.lkml"
 
 include: "allfirstplay.view.lkml"
 include: "ticket_comments.view.lkml"
@@ -199,10 +200,37 @@ include: "wishlist_p2.view.lkml"
 include: "search_and_discovery.view.lkml"
 include: "search_and_discovery2.view.lkml"
 include: "hudson_rex_s2_e19.view.lkml"
+include: "research_active_users.view.lkml"
+include: "user_play_history.view.lkml"
+include: "first_n_plays.view.lkml"
 
 # Test Views #
 
 include: "/views/testing_views/hubspot_bogo_testing.view.lkml"
+
+# Datagroups for PDT Triggers #
+
+datagroup: upff_daily_refresh_datagroup {
+  description: "Datagroup for Identity Resolution and Attribution PDTs. Triggers once per day at 9am"
+  sql_trigger: SELECT FLOOR((EXTRACT(epoch from GETDATE()) - 60*60*9)/(60*60*24)) ;;
+}
+
+# Explores #
+
+explore: user_play_history {
+  label: "User Play History"
+  always_filter: {
+    filters: [user_id: "22620729"]
+    }
+}
+
+explore: first_n_plays {
+  label: "First N Plays"
+}
+
+explore: research_active_users {
+  label: "Research Active Users"
+}
 
 explore: hudson_rex_s2_e19 {
 label: "Hudson & Rex S2 E19 Completers"
@@ -294,6 +322,10 @@ explore: upff_ios_attribution {
 
 explore: upff_android_attribution {
   label: "UPFF Android Attribution"
+}
+
+explore: upff_multi_platform_attribution {
+  label: "UPFF Multi Platform Attribution"
 }
 
 explore: customer_record {

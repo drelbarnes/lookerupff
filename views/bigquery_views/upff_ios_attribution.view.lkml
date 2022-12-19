@@ -1,208 +1,241 @@
 view: upff_ios_attribution {
   derived_table: {
     sql:
-    with attributable_events as (
-    -- dedup sessions
-      with p0 as (
+      with attributable_events as (
+      -- dedup sessions
+        with p0 as (
+        select *
+        from (
+          select *
+          from ${upff_ios_event_processing.SQL_TABLE_NAME}
+          where session_start > timestamp_sub(ordered_at, INTERVAL {% parameter attribution_window %} DAY)
+        )
+        where ordered_at between timestamp_sub({% date_start date_filter %}, interval 15 day)
+        and {% date_end date_filter %}
+        )
+        , p1 as (
+          select *
+          , row_number() over (partition by device_id, session_start) as event_partition
+          from p0
+        )
+        select * from p1 where event_partition = 1
+      )
+      , conversion_events as (
+        select *
+        from ${vimeo_webhook_events.SQL_TABLE_NAME}
+        where timestamp between {% date_start date_filter %}
+        and {% date_end date_filter %}
+        and event in ("customer_product_free_trial_converted")
+        and platform = "ios"
+      )
+      , sources_last_touch as (
       select *
-      from ${upff_ios_event_processing.SQL_TABLE_NAME}
-      where ordered_at between timestamp_sub({% date_start date_filter %}, interval 15 day)
-      and {% date_end date_filter %}
+      , row_number() over (partition by user_id order by session_start asc) as n
+      from attributable_events
+      )
+      , sources_first_touch as (
+      select *
+      , row_number() over (partition by user_id order by session_start desc) as n
+      from attributable_events
+      )
+      , last_touch_v2 as (
+      with p2 as (
+      select
+      user_id
+      , session_start
+      , source
+      , case when n = max(n) over (partition by user_id) then 1 else 0
+      end as conversion_event
+      , n
+      from sources_last_touch
+      )
+      select
+      user_id
+      , session_start
+      , source
+      , conversion_event as credit
+      , n
+      from p2
+      )
+      , first_touch_v2 as (
+      with p2 as (
+      select
+      user_id
+      , session_start
+      , source
+      , case when n = max(n) over (partition by user_id) then 1 else 0
+      end as conversion_event
+      , n
+      from sources_first_touch
+      )
+      select
+      user_id
+      , session_start
+      , source
+      , conversion_event as credit
+      , n
+      from p2
+      )
+      , linear_v2 as (
+      select
+      user_id
+      , session_start
+      , source
+      , safe_cast(round(1/max(n) over (partition by user_id), 4) as float64) as credit
+      , n
+      FROM sources_last_touch
+      )
+      , channel_decay as (
+      with p0 as (
+      select
+      user_id
+      , session_start
+      , source
+      , safe_cast(round(pow(2,-n/(max(n) over (partition by user_id)/2)), 4) as float64) as weights
+      , n
+      from sources_first_touch
       )
       , p1 as (
-        select *
-        , row_number() over (partition by device_id, session_start) as event_partition
-        from p0
+      select
+      user_id
+      , session_start
+      , source
+      , safe_cast(round(pow(2,-n/(max(n) over (partition by user_id)/2)), 4) as float64) as reverse_weights
+      , n
+      from sources_last_touch
       )
-      select * from p1 where event_partition = 1
-    )
-    , conversion_events as (
-      select *
-      from ${vimeo_webhook_events.SQL_TABLE_NAME}
-      where timestamp between {% date_start date_filter %}
+      select
+      p0.user_id
+      , p0.session_start
+      , p0.source
+      , round(
+      if(
+      safe_cast(p0.weights AS FLOAT64)=0 or sum(safe_cast(p0.weights as FLOAT64)) over (partition by p0.user_id)=0
+      , 0
+      , safe_cast(p0.weights AS FLOAT64)/sum(safe_cast(p0.weights AS FLOAT64)) over (partition by p0.user_id)
+      )
+      , 2) as channel_decay
+      , round(
+      if(
+      safe_cast(p1.reverse_weights AS FLOAT64)=0 or sum(safe_cast(p1.reverse_weights as FLOAT64)) over (partition by p1.user_id)=0
+      , 0
+      , safe_cast(p1.reverse_weights AS FLOAT64)/sum(safe_cast(p1.reverse_weights AS FLOAT64)) over (partition by p1.user_id)
+      )
+      , 2) as reverse_channel_decay
+      from p0
+      left join p1
+      on p0.user_id = p1.user_id and p0.session_start = p1.session_start
+      )
+      , final as (
+      select
+      a.ordered_at
+      , a.session_start
+      , a.user_id
+      , a.anonymous_id
+      , a.device_id
+      , a.ip_address
+      , a.plan_type
+      , a.platform
+      , a.topic
+      , a.utm_content
+      , a.utm_medium
+      , a.utm_campaign
+      , a.utm_source
+      , a.utm_term
+      , a.user_agent
+      , a.referrer_domain
+      , a.ad_id
+      , a.adset_id
+      , a.campaign_id
+      , a.source
+      , b.credit as last_touch
+      , c.credit as first_touch
+      , d.credit as equal_credit
+      , e.channel_decay
+      , e.reverse_channel_decay
+      from attributable_events a
+      inner join last_touch_v2 b
+      on a.user_id = b.user_id and a.session_start = b.session_start
+      inner join first_touch_v2 c
+      on a.user_id = c.user_id and a.session_start = c.session_start
+      inner join linear_v2 d
+      on a.user_id = d.user_id and a.session_start = d.session_start
+      inner join channel_decay e
+      on a.user_id = e.user_id and a.session_start = e.session_start
+      )
+      , mofu_final as (
+      select * from final
+      where ordered_at between {% date_start date_filter %}
       and {% date_end date_filter %}
-      and event in ("customer_product_free_trial_converted")
-      and platform = "ios"
-    )
-    , sources_last_touch as (
-    select *
-    , row_number() over (partition by user_id order by session_start asc) as n
-    from attributable_events
-    )
-    , sources_first_touch as (
-    select *
-    , row_number() over (partition by user_id order by session_start desc) as n
-    from attributable_events
-    )
-    , last_touch_v2 as (
-    with p2 as (
-    select
-    user_id
-    , session_start
-    , source
-    , case when n = max(n) over (partition by user_id) then 1 else 0
-    end as conversion_event
-    , n
-    from sources_last_touch
-    )
-    select
-    user_id
-    , session_start
-    , source
-    , conversion_event as credit
-    , n
-    from p2
-    )
-    , first_touch_v2 as (
-    with p2 as (
-    select
-    user_id
-    , session_start
-    , source
-    , case when n = max(n) over (partition by user_id) then 1 else 0
-    end as conversion_event
-    , n
-    from sources_first_touch
-    )
-    select
-    user_id
-    , session_start
-    , source
-    , conversion_event as credit
-    , n
-    from p2
-    )
-    , linear_v2 as (
-    select
-    user_id
-    , session_start
-    , source
-    , safe_cast(round(1/max(n) over (partition by user_id), 4) as float64) as credit
-    , n
-    FROM sources_last_touch
-    )
-    , channel_decay as (
-    with p0 as (
-    select
-    user_id
-    , session_start
-    , source
-    , safe_cast(round(pow(2,-n/(max(n) over (partition by user_id)/2)), 4) as float64) as weights
-    , n
-    from sources_first_touch
-    )
-    , p1 as (
-    select
-    user_id
-    , session_start
-    , source
-    , safe_cast(round(pow(2,-n/(max(n) over (partition by user_id)/2)), 4) as float64) as reverse_weights
-    , n
-    from sources_last_touch
-    )
-    select
-    p0.user_id
-    , p0.session_start
-    , p0.source
-    , round(
-    if(
-    safe_cast(p0.weights AS FLOAT64)=0 or sum(safe_cast(p0.weights as FLOAT64)) over (partition by p0.user_id)=0
-    , 0
-    , safe_cast(p0.weights AS FLOAT64)/sum(safe_cast(p0.weights AS FLOAT64)) over (partition by p0.user_id)
-    )
-    , 2) as channel_decay
-    , round(
-    if(
-    safe_cast(p1.reverse_weights AS FLOAT64)=0 or sum(safe_cast(p1.reverse_weights as FLOAT64)) over (partition by p1.user_id)=0
-    , 0
-    , safe_cast(p1.reverse_weights AS FLOAT64)/sum(safe_cast(p1.reverse_weights AS FLOAT64)) over (partition by p1.user_id)
-    )
-    , 2) as reverse_channel_decay
-    from p0
-    left join p1
-    on p0.user_id = p1.user_id and p0.session_start = p1.session_start
-    )
-    , final as (
-    select
-    a.ordered_at
-    , a.session_start
-    , a.user_id
-    , a.anonymous_id
-    , a.device_id
-    , a.ip_address
-    , a.plan_type
-    , a.platform
-    , a.topic
-    , a.utm_content
-    , a.utm_medium
-    , a.utm_campaign
-    , a.utm_source
-    , a.utm_term
-    , a.user_agent
-    , a.referrer_domain
-    , a.source
-    , b.credit as last_touch
-    , c.credit as first_touch
-    , d.credit as equal_credit
-    , e.channel_decay
-    , e.reverse_channel_decay
-    from attributable_events a
-    inner join last_touch_v2 b
-    on a.user_id = b.user_id and a.session_start = b.session_start
-    inner join first_touch_v2 c
-    on a.user_id = c.user_id and a.session_start = c.session_start
-    inner join linear_v2 d
-    on a.user_id = d.user_id and a.session_start = d.session_start
-    inner join channel_decay e
-    on a.user_id = e.user_id and a.session_start = e.session_start
-    )
-    , mofu_final as (
-    select * from final
-    where ordered_at between {% date_start date_filter %}
-    and {% date_end date_filter %}
-    )
-    , tofu_final as (
-    select
-    b.timestamp as ordered_at
-    , a.session_start
-    , a.user_id
-    , a.anonymous_id
-    , a.device_id
-    , a.ip_address
-    , a.plan_type
-    , a.platform
-    , b.event as topic
-    , a.utm_content
-    , a.utm_medium
-    , a.utm_campaign
-    , a.utm_source
-    , a.utm_term
-    , a.user_agent
-    , a.referrer_domain
-    , a.source
-    , a.last_touch
-    , a.first_touch
-    , a.equal_credit
-    , a.channel_decay
-    , a.reverse_channel_decay
-    from final a
-    inner join conversion_events as b
-    on a.user_id = b.user_id
-    )
-    , union_all as (
-    select * from mofu_final
-    union all
-    select * from tofu_final
-    where ordered_at between {% date_start date_filter %} and {% date_end date_filter %}
-
-    )
-    select * from union_all
-    ;;
+      )
+      , tofu_final as (
+      select
+      b.timestamp as ordered_at
+      , a.session_start
+      , a.user_id
+      , a.anonymous_id
+      , a.device_id
+      , a.ip_address
+      , a.plan_type
+      , a.platform
+      , b.event as topic
+      , a.utm_content
+      , a.utm_medium
+      , a.utm_campaign
+      , a.utm_source
+      , a.utm_term
+      , a.user_agent
+      , a.referrer_domain
+      , a.ad_id
+      , a.adset_id
+      , a.campaign_id
+      , a.source
+      , a.last_touch
+      , a.first_touch
+      , a.equal_credit
+      , a.channel_decay
+      , a.reverse_channel_decay
+      from final a
+      inner join conversion_events as b
+      on a.user_id = b.user_id
+      )
+      , union_all as (
+      select * from mofu_final
+      union all
+      select * from tofu_final
+      where ordered_at between {% date_start date_filter %} and {% date_end date_filter %}
+      )
+      select * from union_all ;;
   }
 
   filter: date_filter {
     label: "Date Range"
     type: date
+  }
+  parameter: attribution_window {
+    label: "Attribution Window"
+    type: number
+    default_value: "30"
+    allowed_value: {
+      label: "1 day"
+      value: "1"
+    }
+    allowed_value: {
+      label: "3 days"
+      value: "3"
+    }
+    allowed_value: {
+      label: "7 days"
+      value: "7"
+    }
+    allowed_value: {
+      label: "14 days"
+      value: "14"
+    }
+    allowed_value: {
+      label: "30 days"
+      value: "30"
+    }
   }
   measure: count {
     type: count
@@ -315,6 +348,21 @@ view: upff_ios_attribution {
   dimension: referrer_domain {
     type: string
     sql: ${TABLE}.referrer_domain ;;
+  }
+
+  dimension: ad_id {
+    type: string
+    sql: ${TABLE}.ad_id ;;
+  }
+
+  dimension: adset_id {
+    type: string
+    sql: ${TABLE}.adset_id ;;
+  }
+
+  dimension: campaign_id {
+    type: string
+    sql: ${TABLE}.campaign_id ;;
   }
 
   dimension: source {

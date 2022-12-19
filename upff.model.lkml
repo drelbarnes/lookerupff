@@ -68,6 +68,11 @@ include: "redshift_customers_views_by_user.view"
 include: "/views/monthly_customer_report.view.lkml"
 include: "/views/agm_audiences.view.lkml"
 
+datagroup: upff_acquisition_reporting {
+  description: "Datagroup for UPFF Acquisition PDTs. Triggers once per day at 9am"
+  sql_trigger: SELECT FLOOR((EXTRACT(epoch from GETDATE()) - 60*60*9)/(60*60*24)) ;;
+}
+
 explore: agm_audiences {
   label: "AGM Audiences"
 }
