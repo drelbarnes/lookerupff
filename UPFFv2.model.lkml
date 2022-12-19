@@ -220,6 +220,7 @@ include: "uptv_daily_key_demo.view"
 include: "top_play.view"
 include: "campaign_wicket_export.view"
 include: "svod_titles.view"
+include:  "/views/**/cine_romantico.view"
 
 explore: titles {}
 explore: mvpd_subs {}
@@ -229,3 +230,4 @@ explore: uptv_daily_key_demo {}
 explore: uptv_daily_day_part {}
 explore: top_play {}
 explore: campaign_wicket_export {}
+explore: cine_romantico {}
