@@ -2,35 +2,35 @@ view: other_marketing_spend {
   derived_table: {
     sql:
       with apple_search as (
-        select date as date,
+        select safe_cast(date as timestamp) as date,
         sum(cost) as spend,
         'Apple Search Ads' as channel
         from (select date, cost from customers.apple_search group by 1,2)
         group by 1,3
       )
       , bing_ads as (
-        select date as date,
+        select safe_cast(date as timestamp) as date,
         sum(cost) as spend,
         'Bing Ads' as channel
         from (select date, cost from customers.bing_ads group by 1,2)
         group by 1,3
       )
       , google_dcm as (
-        select date as date,
+        select safe_cast(date as timestamp) as date,
         sum(dbm_cost_usd + media_cost) as spend,
         'Google Campaign Manager' as channel
         from (select date, dbm_cost_usd, media_cost from customers.google_dcm group by 1,2,3)
         group by 1,3
       )
       , mntn as (
-        select day as date,
+        select safe_cast(day as timestamp) as date,
         sum(spend) as spend,
         'MNTN' as channel
         from (select day, spend from customers.mntn group by 1,2)
         group by 1,3
       )
       , tiktok as (
-        select date as date,
+        select safe_cast(date as timestamp) as date,
         sum(cost) as spend,
         'TikTok' as channel
         from (select date, cost from customers.tiktok group by 1,2)
