@@ -90,12 +90,24 @@ view: ltv_cpa{
 
       /* Adding other marketing spend provided by Ribbow */
       others_perf as (
-        select date_start
+        with p0 as (
+          select date_start
+          , channel
+          , original_timestamp
+          , spend
+          , row_number() over (partition by date_start, channel order by original_timestamp desc) as rn
+          , count(*) as n
+          FROM looker.get_other_marketing_spend
+          group by 1,2,3,4 order by 1 desc,2,3 desc,4
+        )
+        select
+        date_start
         , sum(spend) as spend
-        from looker.get_other_marketing_spend
-        where date(sent_at) = (select max(date(sent_at)) from looker.get_other_marketing_spend)
+        from p0
+        where rn = 1
         and date_start is not null
         group by 1
+        order by date_start desc
       ),
 
       /*Input manual spend for earlier dates*/
