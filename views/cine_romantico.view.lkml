@@ -2,7 +2,23 @@
 view: cine_romantico {
   # The sql_table_name parameter indicates the underlying database table
   # to be used for all fields in this view.
-  sql_table_name: customers.cine_romantico ;;
+  derived_table: {
+    sql: select
+          mvpd
+          , week_starting
+          , week_ending
+          , channel
+          , title
+          , play_count
+          , total_time_watched
+          , asset_duration
+          , avg_play_time
+          , avg_playthrough_rate
+          , asset_id
+          , cast(replace(converted_hours_watched, ',', '') as decimal(12,2)) as converted_hours_watched
+          , year
+          from customers.cine_romantico  ;;
+  }
   # No primary key is defined for this view. In order to join this view in an Explore,
   # define primary_key: yes on a dimension that has no repeated values.
 
@@ -42,8 +58,12 @@ view: cine_romantico {
 
   dimension: mvpd {
     type: string
-    sql: ${TABLE}.mvpd ;;
+    sql: CASE
+      WHEN ${TABLE}.mvpd = 'XUMO' then 'Xumo'
+      else ${TABLE}.mvpd
+      end;;
   }
+
 
   dimension: play_count {
     type: number
@@ -52,7 +72,7 @@ view: cine_romantico {
 
   dimension: title {
     type: string
-    sql: ${TABLE}.title ;;
+    sql: upper(${TABLE}.title) ;;
   }
 
   dimension: total_time_watched {
@@ -61,17 +81,17 @@ view: cine_romantico {
   }
 
   dimension: week_ending {
-    type: string
+    type: date
     sql: ${TABLE}.week_ending ;;
   }
 
   dimension: week_starting {
-    type: string
+    type: date
     sql: ${TABLE}.week_starting ;;
   }
 
   dimension: year {
-    type: number
+    type: string
     sql: ${TABLE}.year ;;
   }
 
@@ -79,41 +99,18 @@ view: cine_romantico {
   # measures for this dimension, but you can also add measures of many different aggregates.
   # Click on the type parameter to see all the options in the Quick Help panel on the right.
 
-  measure: total_year {
-    type: sum
-    sql: ${year} ;;
-  }
-
-  measure: average_year {
-    type: average
-    sql: ${year} ;;
-  }
 
   measure: count {
     type: count
     drill_fields: []
   }
-
   measure: total_hrs {
     type: sum
-    sql: ${converted_hours_watched} ;;
+    sql:  ${TABLE}.converted_hours_watched ;;
+    }
 
-      }
-
-  measure: play_rate {
-    type: average
-    sql: 100.0*${avg_playthrough_rate} ;;
+    measure: total_plays {
+      type: sum
+      sql:  ${TABLE}.play_count ;;
   }
-
-  measure: av_play_rate {
-    type: average
-    sql: ${avg_playthrough_rate} ;;
-  }
-
-
-  measure: play_count_final {
-    type: sum
-    sql: ${play_count} ;;
-  }
-
 }
