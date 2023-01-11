@@ -108,9 +108,12 @@ view: cine_romantico {
     type: sum
     sql:  ${TABLE}.converted_hours_watched ;;
     }
-
     measure: total_plays {
       type: sum
       sql:  ${TABLE}.play_count ;;
+  }
+    measure: completion_rates {
+    type: sum
+    sql:  ${TABLE}.avg_playthrough_rate ;;
   }
 }
