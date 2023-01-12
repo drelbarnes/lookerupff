@@ -1,18 +1,28 @@
 view: mtd_free_trials {
   derived_table: {
-    sql: with customers_analytics as (select analytics_timestamp as timestamp,
-       existing_free_trials,
-       existing_paying,
-       free_trial_churn,
-       free_trial_converted,
-       free_trial_created,
-       paused_created,
-       paying_churn,
-       paying_created,
-       total_free_trials,
-       total_paying
-from php.get_analytics
-where date(sent_at)=current_date),
+    sql: with customers_analytics as (
+    with p0 as (
+      select
+      analytics_timestamp as timestamp
+      , existing_free_trials
+      , existing_paying
+      , free_trial_churn
+      , free_trial_converted
+      , free_trial_created
+      , paused_created
+      , paying_churn
+      , paying_created
+      , total_free_trials
+      , total_paying
+      , row_number() over (partition by analytics_timestamp order by sent_at desc) as n
+      from php.get_analytics
+      where date(sent_at)=current_date
+    )
+    select
+    *
+    from p0
+    where n=1
+  ),
 
 a as
 (select a.timestamp,
