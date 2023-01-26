@@ -20,7 +20,7 @@ derived_table: {
       )
       select * from p1 where event_partition = 1
     )
-    , conversion_events as (
+    , trial_conversion_events as (
     select *
     from ${vimeo_webhook_events.SQL_TABLE_NAME}
     where timestamp between {% date_start date_filter %}
@@ -210,7 +210,7 @@ derived_table: {
     , a.channel_decay
     , a.reverse_channel_decay
     from final a
-    inner join conversion_events as b
+    inner join trial_conversion_events as b
     on a.user_id = b.user_id
     )
     , union_all as (
