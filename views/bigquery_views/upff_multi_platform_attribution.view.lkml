@@ -6,15 +6,87 @@ view: upff_multi_platform_attribution {
       with p0 as (
       select *
       from (
-        select *
+        select
+        ordered_at
+        , session_start
+        , user_id
+        , anonymous_id
+        , event_id
+        , session_id
+        , device_id
+        , advertising_id
+        , ip_address
+        , user_agent
+        , plan_type
+        , platform
+        , topic
+        , utm_content
+        , utm_medium
+        , utm_campaign
+        , utm_source
+        , utm_term
+        , ad_id
+        , adset_id
+        , campaign_id
+        , referrer_domain
+        , referrer_search
+        , source
         from ${upff_web_event_processing.SQL_TABLE_NAME}
         where session_start > timestamp_sub(ordered_at, INTERVAL {% parameter attribution_window %} DAY)
         union all
-        select *
+        select
+        ordered_at
+        , session_start
+        , user_id
+        , anonymous_id
+        , event_id
+        , session_id
+        , device_id
+        , advertising_id
+        , ip_address
+        , user_agent
+        , plan_type
+        , platform
+        , topic
+        , utm_content
+        , utm_medium
+        , utm_campaign
+        , utm_source
+        , utm_term
+        , ad_id
+        , adset_id
+        , campaign_id
+        , referrer_domain
+        , referrer_search
+        , source
         from ${upff_ios_event_processing.SQL_TABLE_NAME}
         where session_start > timestamp_sub(ordered_at, INTERVAL {% parameter attribution_window %} DAY)
         union all
-        select *
+        select
+        ordered_at
+        , session_start
+        , user_id
+        , anonymous_id
+        , event_id
+        , session_id
+        , device_id
+        , advertising_id
+        , ip_address
+        , user_agent
+        , plan_type
+        , platform
+        , topic
+        , utm_content
+        , utm_medium
+        , utm_campaign
+        , utm_source
+        , utm_term
+        , ad_id
+        , adset_id
+        , campaign_id
+        , referrer_domain
+        , referrer_search
+        , source
         from ${upff_android_event_processing.SQL_TABLE_NAME}
         where session_start > timestamp_sub(ordered_at, INTERVAL {% parameter attribution_window %} DAY)
       )
@@ -198,7 +270,7 @@ view: upff_multi_platform_attribution {
     , a.plan_type
     , a.platform
     , a.topic
-    , a.utm_content
+    , replace(a.utm_content, "+", " ") as utm_content
     , a.utm_medium
     -- hotfixing a bug where the plus sign is coming though instead of a space
     , replace(a.utm_campaign, "+", " ") as utm_campaign
@@ -372,57 +444,57 @@ view: upff_multi_platform_attribution {
 
   measure: spend_total {
     type: sum_distinct
-    sql_distinct_key: ${ad_id} ;;
+    sql_distinct_key: ${ordered_at_date} ;;
     sql: ${TABLE}.spend ;;
     value_format: "$#.00;($#.00)"
   }
 
   measure: social_spend_total {
     type: sum_distinct
-    sql_distinct_key: ${ad_id} ;;
+    sql_distinct_key: ${ordered_at_date} ;;
     sql: ${TABLE}.social_spend ;;
     value_format: "$#.00;($#.00)"
   }
 
   measure: clicks_total {
     type: sum_distinct
-    sql_distinct_key: ${ad_id} ;;
+    sql_distinct_key: ${ordered_at_date} ;;
     sql: ${TABLE}.clicks ;;
   }
 
   measure: inline_post_engagements_total {
     type: sum_distinct
-    sql_distinct_key: ${ad_id} ;;
+    sql_distinct_key: ${ordered_at_date} ;;
     sql: ${TABLE}.inline_post_engagements ;;
   }
 
   measure: unique_clicks_total {
     type: sum_distinct
-    sql_distinct_key: ${ad_id} ;;
+    sql_distinct_key: ${ordered_at_date} ;;
     sql: ${TABLE}.unique_clicks ;;
   }
 
   measure: link_clicks_total {
     type: sum_distinct
-    sql_distinct_key: ${ad_id} ;;
+    sql_distinct_key: ${ordered_at_date} ;;
     sql: ${TABLE}.link_clicks ;;
   }
 
   measure: frequency_average {
     type: average_distinct
-    sql_distinct_key: ${ad_id} ;;
+    sql_distinct_key: ${ordered_at_date} ;;
     sql: ${TABLE}.frequency ;;
   }
 
   measure: impressions_total {
     type: sum_distinct
-    sql_distinct_key: ${ad_id} ;;
+    sql_distinct_key: ${ordered_at_date} ;;
     sql: ${TABLE}.impressions ;;
   }
 
   measure: reach_total {
     type: sum_distinct
-    sql_distinct_key: ${ad_id} ;;
+    sql_distinct_key: ${ordered_at_date} ;;
     sql: ${TABLE}.reach ;;
   }
 

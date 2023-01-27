@@ -364,57 +364,57 @@ view: upff_android_attribution {
 
   measure: spend_total {
     type: sum_distinct
-    sql_distinct_key: ${ad_id} ;;
+    sql_distinct_key: ${ordered_at_date} ;;
     sql: ${TABLE}.spend ;;
     value_format: "$#.00;($#.00)"
   }
 
   measure: social_spend_total {
     type: sum_distinct
-    sql_distinct_key: ${ad_id} ;;
+    sql_distinct_key: ${ordered_at_date} ;;
     sql: ${TABLE}.social_spend ;;
     value_format: "$#.00;($#.00)"
   }
 
   measure: clicks_total {
     type: sum_distinct
-    sql_distinct_key: ${ad_id} ;;
+    sql_distinct_key: ${ordered_at_date} ;;
     sql: ${TABLE}.clicks ;;
   }
 
   measure: inline_post_engagements_total {
     type: sum_distinct
-    sql_distinct_key: ${ad_id} ;;
+    sql_distinct_key: ${ordered_at_date} ;;
     sql: ${TABLE}.inline_post_engagements ;;
   }
 
   measure: unique_clicks_total {
     type: sum_distinct
-    sql_distinct_key: ${ad_id} ;;
+    sql_distinct_key: ${ordered_at_date} ;;
     sql: ${TABLE}.unique_clicks ;;
   }
 
   measure: link_clicks_total {
     type: sum_distinct
-    sql_distinct_key: ${ad_id} ;;
+    sql_distinct_key: ${ordered_at_date} ;;
     sql: ${TABLE}.link_clicks ;;
   }
 
   measure: frequency_average {
     type: average_distinct
-    sql_distinct_key: ${ad_id} ;;
+    sql_distinct_key: ${ordered_at_date} ;;
     sql: ${TABLE}.frequency ;;
   }
 
   measure: impressions_total {
     type: sum_distinct
-    sql_distinct_key: ${ad_id} ;;
+    sql_distinct_key: ${ordered_at_date} ;;
     sql: ${TABLE}.impressions ;;
   }
 
   measure: reach_total {
     type: sum_distinct
-    sql_distinct_key: ${ad_id} ;;
+    sql_distinct_key: ${ordered_at_date} ;;
     sql: ${TABLE}.reach ;;
   }
 
