@@ -6,6 +6,7 @@ view: upff_multi_platform_attribution {
       with p0 as (
       select *
       from (
+      -- Note: Bigquery produced a weird error when I used the * selector instead of declaring each field.
         select
         ordered_at
         , session_start
@@ -215,48 +216,107 @@ view: upff_multi_platform_attribution {
       from (select * from sources_last_touch where n = 1)
     )
     , paid_media_metrics as (
-      with meta_p0 as (
+      with meta as (
         SELECT
-        ad_id
+        "Meta" as platform
+        , ad_id
         , clicks
         , date_start
         , date_stop
         , frequency
         , impressions
+        , cast(null as int) as engagements
         , reach
         , inline_post_engagements
         , unique_clicks
         , link_clicks
         , spend
         , social_spend
-        from `up-faith-and-family-216419.facebook_ads.insights`
+        from facebook_ads.insights
         where date_start between timestamp_sub({% date_start date_filter %}, interval 15 day)
         and {% date_end date_filter %}
       )
-      , meta_p1 as (
+      , google_ads as (
+      SELECT
+      "Google Ads" as platform
+      , split(ad_id, "::")[OFFSET(1)] as ad_id
+      , clicks
+      , date_start
+      , date_stop
+      , cast(null as int) as frequency
+      , impressions
+      , engagements
+      , cast(null as int) as reach
+      , cast(null as int) as inline_post_engagements
+      , cast(null as int) as unique_clicks
+      , cast(null as int) as link_clicks
+      , COALESCE((cost/1000000),0 ) as spend
+      , cast(null as int) as social_spend
+      from adwords.ad_performance_reports
+      where date_start between timestamp_sub({% date_start date_filter %}, interval 15 day)
+      and {% date_end date_filter %}
+      )
+      , all_platforms_p0 as (
+        select
+        platform
+        , ad_id
+        , clicks
+        , date_start
+        , date_stop
+        , frequency
+        , impressions
+        , engagements
+        , reach
+        , inline_post_engagements
+        , unique_clicks
+        , link_clicks
+        , spend
+        , social_spend
+        from meta
+        union all
+        select
+        platform
+        , ad_id
+        , clicks
+        , date_start
+        , date_stop
+        , frequency
+        , impressions
+        , engagements
+        , reach
+        , inline_post_engagements
+        , unique_clicks
+        , link_clicks
+        , spend
+        , social_spend
+        from google_ads
+      )
+      , all_platforms_p1 as (
         SELECT *
         , row_number() over (partition by ad_id, date_start order by spend desc) as n
-        from meta_p0
+        from all_platforms_p0
       )
-      , meta_p2 as (
+      , all_platforms_p2 as (
         select *
-        from meta_p1
+        from all_platforms_p1
         where n=1
       )
       select
-      ad_id
+      platform
+      , ad_id
       , clicks
       , date_start
       , date_stop
       , frequency
       , impressions
+      , engagements
       , reach
       , inline_post_engagements
       , unique_clicks
       , link_clicks
       , spend
       , social_spend
-      from meta_p2
+      from all_platforms_p2
     )
     , final as (
     select
@@ -293,6 +353,7 @@ view: upff_multi_platform_attribution {
     , g.date_stop
     , g.frequency
     , g.impressions
+    , g.engagements
     , g.reach
     , g.inline_post_engagements
     , g.unique_clicks
@@ -352,6 +413,7 @@ view: upff_multi_platform_attribution {
     , a.date_stop
     , a.frequency
     , a.impressions
+    , a.engagements
     , a.reach
     , a.inline_post_engagements
     , a.unique_clicks
@@ -646,6 +708,11 @@ view: upff_multi_platform_attribution {
   dimension: impressions {
     type: number
     sql: ${TABLE}.impressions ;;
+  }
+
+  dimension: engagements {
+    type: number
+    sql: ${TABLE}.engagements ;;
   }
 
   dimension: reach {
