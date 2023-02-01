@@ -5,8 +5,8 @@ view: cine_romantico {
   derived_table: {
     sql: select
           mvpd
-          , week_starting
-          , week_ending
+          , date(week_starting) as week_starting
+          , date(week_ending) as week_ending
           , channel
           , title
           , play_count
@@ -113,7 +113,9 @@ view: cine_romantico {
       sql:  ${TABLE}.play_count ;;
   }
     measure: completion_rates {
-    type: sum
-    sql:  ${TABLE}.avg_playthrough_rate ;;
+    type: average
+    value_format: "0.00%"
+    sql:  CAST( ${TABLE}.avg_playthrough_rate   AS DOUBLE PRECISION) ;;
   }
-}
+
+  }
