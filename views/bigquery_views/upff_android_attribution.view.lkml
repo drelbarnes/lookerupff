@@ -20,7 +20,7 @@ view: upff_android_attribution {
         )
         select * from p1 where event_partition = 1
       )
-      , conversion_events as (
+      , trial_conversion_events as (
         select *
         from ${vimeo_webhook_events.SQL_TABLE_NAME}
         where timestamp between {% date_start date_filter %}
@@ -28,190 +28,275 @@ view: upff_android_attribution {
         and event in ("customer_product_free_trial_converted")
         and platform = "android"
       )
-      , sources_last_touch as (
+    , sources_last_touch as (
+    select *
+    , row_number() over (partition by user_id order by session_start asc) as n
+    from attributable_events
+    )
+    , sources_first_touch as (
+    select *
+    , row_number() over (partition by user_id order by session_start desc) as n
+    from attributable_events
+    )
+    , last_touch_v2 as (
+    with p2 as (
+    select
+    user_id
+    , session_start
+    , source
+    , case when n = max(n) over (partition by user_id) then 1 else 0
+    end as conversion_event
+    , n
+    from sources_last_touch
+    )
+    select
+    user_id
+    , session_start
+    , source
+    , conversion_event as credit
+    , n
+    from p2
+    )
+    , first_touch_v2 as (
+    with p2 as (
+    select
+    user_id
+    , session_start
+    , source
+    , case when n = max(n) over (partition by user_id) then 1 else 0
+    end as conversion_event
+    , n
+    from sources_first_touch
+    )
+    select
+    user_id
+    , session_start
+    , source
+    , conversion_event as credit
+    , n
+    from p2
+    )
+    , linear_v2 as (
+    select
+    user_id
+    , session_start
+    , source
+    , safe_cast(round(1/max(n) over (partition by user_id), 4) as float64) as credit
+    , n
+    FROM sources_last_touch
+    )
+    , channel_decay as (
+    with p0 as (
+    select
+    user_id
+    , session_start
+    , source
+    , safe_cast(round(pow(2,-n/(max(n) over (partition by user_id)/2)), 4) as float64) as weights
+    , n
+    from sources_first_touch
+    )
+    , p1 as (
+    select
+    user_id
+    , session_start
+    , source
+    , safe_cast(round(pow(2,-n/(max(n) over (partition by user_id)/2)), 4) as float64) as reverse_weights
+    , n
+    from sources_last_touch
+    )
+    select
+    p0.user_id
+    , p0.session_start
+    , p0.source
+    , round(
+    if(
+    safe_cast(p0.weights AS FLOAT64)=0 or sum(safe_cast(p0.weights as FLOAT64)) over (partition by p0.user_id)=0
+    , 0
+    , safe_cast(p0.weights AS FLOAT64)/sum(safe_cast(p0.weights AS FLOAT64)) over (partition by p0.user_id)
+    )
+    , 2) as channel_decay
+    , round(
+    if(
+    safe_cast(p1.reverse_weights AS FLOAT64)=0 or sum(safe_cast(p1.reverse_weights as FLOAT64)) over (partition by p1.user_id)=0
+    , 0
+    , safe_cast(p1.reverse_weights AS FLOAT64)/sum(safe_cast(p1.reverse_weights AS FLOAT64)) over (partition by p1.user_id)
+    )
+    , 2) as reverse_channel_decay
+    from p0
+    left join p1
+    on p0.user_id = p1.user_id and p0.session_start = p1.session_start
+    )
+    , conversion_window as (
+      select
+      user_id
+      , ordered_at
+      , session_start
+      , timestamp_diff(ordered_at, session_start, day) as conversion_window
+      from (select * from sources_last_touch where n = 1)
+    )
+    , paid_media_metrics as (
+      with meta_p0 as (
+        SELECT
+        ad_id
+        , clicks
+        , date_start
+        , date_stop
+        , frequency
+        , impressions
+        , reach
+        , inline_post_engagements
+        , unique_clicks
+        , link_clicks
+        , spend
+        , social_spend
+        from `up-faith-and-family-216419.facebook_ads.insights`
+        where date_start between timestamp_sub({% date_start date_filter %}, interval 15 day)
+        and {% date_end date_filter %}
+      )
+      , meta_p1 as (
+        SELECT *
+        , row_number() over (partition by ad_id, date_start order by spend desc) as n
+        from meta_p0
+      )
+      , meta_p2 as (
         select *
-        , row_number() over (partition by user_id order by session_start asc) as n
-        from attributable_events
-      )
-      , sources_first_touch as (
-        select *
-        , row_number() over (partition by user_id order by session_start desc) as n
-        from attributable_events
-      )
-      , last_touch_v2 as (
-        with p2 as (
-          select
-          user_id
-          , session_start
-          , source
-          , case when n = max(n) over (partition by user_id) then 1 else 0
-          end as conversion_event
-          , n
-          from sources_last_touch
-        )
-        select
-        user_id
-        , session_start
-        , source
-        , conversion_event as credit
-        , n
-        from p2
-      )
-      , first_touch_v2 as (
-        with p2 as (
-          select
-          user_id
-          , session_start
-          , source
-          , case when n = max(n) over (partition by user_id) then 1 else 0
-          end as conversion_event
-          , n
-          from sources_first_touch
-        )
-        select
-        user_id
-        , session_start
-        , source
-        , conversion_event as credit
-        , n
-        from p2
-      )
-      , linear_v2 as (
-      select
-      user_id
-      , session_start
-      , source
-      , safe_cast(round(1/max(n) over (partition by user_id), 4) as float64) as credit
-      , n
-      FROM sources_last_touch
-      )
-      , channel_decay as (
-      with p0 as (
-      select
-      user_id
-      , session_start
-      , source
-      , safe_cast(round(pow(2,-n/(max(n) over (partition by user_id)/2)), 4) as float64) as weights
-      , n
-      from sources_first_touch
-      )
-      , p1 as (
-      select
-      user_id
-      , session_start
-      , source
-      , safe_cast(round(pow(2,-n/(max(n) over (partition by user_id)/2)), 4) as float64) as reverse_weights
-      , n
-      from sources_last_touch
+        from meta_p1
+        where n=1
       )
       select
-      p0.user_id
-      , p0.session_start
-      , p0.source
-      , round(
-      if(
-      safe_cast(p0.weights AS FLOAT64)=0 or sum(safe_cast(p0.weights as FLOAT64)) over (partition by p0.user_id)=0
-      , 0
-      , safe_cast(p0.weights AS FLOAT64)/sum(safe_cast(p0.weights AS FLOAT64)) over (partition by p0.user_id)
-      )
-      , 2) as channel_decay
-      , round(
-      if(
-      safe_cast(p1.reverse_weights AS FLOAT64)=0 or sum(safe_cast(p1.reverse_weights as FLOAT64)) over (partition by p1.user_id)=0
-      , 0
-      , safe_cast(p1.reverse_weights AS FLOAT64)/sum(safe_cast(p1.reverse_weights AS FLOAT64)) over (partition by p1.user_id)
-      )
-      , 2) as reverse_channel_decay
-      from p0
-      left join p1
-      on p0.user_id = p1.user_id and p0.session_start = p1.session_start
-      )
-      , final as (
-      select
-      a.ordered_at
-      , a.session_start
-      , a.user_id
-      , a.anonymous_id
-      , a.device_id
-      , a.ip_address
-      , a.plan_type
-      , a.platform
-      , a.topic
-      , a.utm_content
-      , a.utm_medium
-      , a.utm_campaign
-      , a.utm_source
-      , a.utm_term
-      , a.user_agent
-      , a.referrer_domain
-      , a.ad_id
-      , a.adset_id
-      , a.campaign_id
-      , a.source
-      , b.credit as last_touch
-      , c.credit as first_touch
-      , d.credit as equal_credit
-      , e.channel_decay
-      , e.reverse_channel_decay
-      from attributable_events a
-      inner join last_touch_v2 b
-      on a.user_id = b.user_id and a.session_start = b.session_start
-      inner join first_touch_v2 c
-      on a.user_id = c.user_id and a.session_start = c.session_start
-      inner join linear_v2 d
-      on a.user_id = d.user_id and a.session_start = d.session_start
-      inner join channel_decay e
-      on a.user_id = e.user_id and a.session_start = e.session_start
-      )
-      , mofu_final as (
-      select * from final
-      where ordered_at between {% date_start date_filter %}
-      and {% date_end date_filter %}
-      )
-      , tofu_final as (
-      select
-      b.timestamp as ordered_at
-      , a.session_start
-      , a.user_id
-      , a.anonymous_id
-      , a.device_id
-      , a.ip_address
-      , a.plan_type
-      , a.platform
-      , b.event as topic
-      , a.utm_content
-      , a.utm_medium
-      , a.utm_campaign
-      , a.utm_source
-      , a.utm_term
-      , a.user_agent
-      , a.referrer_domain
-      , a.ad_id
-      , a.adset_id
-      , a.campaign_id
-      , a.source
-      , a.last_touch
-      , a.first_touch
-      , a.equal_credit
-      , a.channel_decay
-      , a.reverse_channel_decay
-      from final a
-      inner join conversion_events as b
-      on a.user_id = b.user_id
-      )
-      , union_all as (
-      select * from mofu_final
-      union all
-      select * from tofu_final
-      where ordered_at between {% date_start date_filter %} and {% date_end date_filter %}
-      )
-      select * from union_all ;;
+      ad_id
+      , clicks
+      , date_start
+      , date_stop
+      , frequency
+      , impressions
+      , reach
+      , inline_post_engagements
+      , unique_clicks
+      , link_clicks
+      , spend
+      , social_spend
+      from meta_p2
+    )
+    , final as (
+    select
+    a.ordered_at
+    , a.session_start
+    , f.conversion_window
+    , a.user_id
+    , a.anonymous_id
+    , a.device_id
+    , a.ip_address
+    , a.plan_type
+    , a.platform
+    , a.topic
+    , a.utm_content
+    , a.utm_medium
+    -- hotfixing a bug where the plus sign is coming though instead of a space
+    , replace(a.utm_campaign, "+", " ") as utm_campaign
+    , a.utm_source
+    , a.utm_term
+    , a.ad_id
+    , a.adset_id
+    , a.campaign_id
+    , a.user_agent
+    , a.referrer_domain
+    , a.referrer_search
+    , a.source
+    , b.credit as last_touch
+    , c.credit as first_touch
+    , d.credit as equal_credit
+    , e.channel_decay
+    , e.reverse_channel_decay
+    , g.clicks
+    , g.date_start
+    , g.date_stop
+    , g.frequency
+    , g.impressions
+    , g.reach
+    , g.inline_post_engagements
+    , g.unique_clicks
+    , g.link_clicks
+    , g.spend
+    , g.social_spend
+    from attributable_events a
+    inner join last_touch_v2 b
+    on a.user_id = b.user_id and a.session_start = b.session_start
+    inner join first_touch_v2 c
+    on a.user_id = c.user_id and a.session_start = c.session_start
+    inner join linear_v2 d
+    on a.user_id = d.user_id and a.session_start = d.session_start
+    inner join channel_decay e
+    on a.user_id = e.user_id and a.session_start = e.session_start
+    inner join conversion_window f
+    on a.user_id = f.user_id and a.ordered_at = f.ordered_at
+    left join paid_media_metrics g
+    on a.ad_id = g.ad_id and date(a.ordered_at) = date(g.date_start)
+    )
+    , mofu_final as (
+    select * from final
+    where ordered_at between {% date_start date_filter %}
+    and {% date_end date_filter %}
+    )
+    , tofu_final as (
+    select
+    b.timestamp as ordered_at
+    , a.session_start
+    , a.conversion_window
+    , a.user_id
+    , a.anonymous_id
+    , a.device_id
+    , a.ip_address
+    , a.plan_type
+    , a.platform
+    , b.event as topic
+    , a.utm_content
+    , a.utm_medium
+    , a.utm_campaign
+    , a.utm_source
+    , a.utm_term
+    , a.ad_id
+    , a.adset_id
+    , a.campaign_id
+    , a.user_agent
+    , a.referrer_domain
+    , a.referrer_search
+    , a.source
+    , a.last_touch
+    , a.first_touch
+    , a.equal_credit
+    , a.channel_decay
+    , a.reverse_channel_decay
+    , a.clicks
+    , a.date_start
+    , a.date_stop
+    , a.frequency
+    , a.impressions
+    , a.reach
+    , a.inline_post_engagements
+    , a.unique_clicks
+    , a.link_clicks
+    , a.spend
+    , a.social_spend
+    from final a
+    inner join trial_conversion_events as b
+    on a.user_id = b.user_id
+    )
+    , union_all as (
+    select * from mofu_final
+    union all
+    select * from tofu_final
+    where ordered_at between {% date_start date_filter %} and {% date_end date_filter %}
+    )
+    select *, row_number() over (order by ordered_at) as row from union_all
+    ;;
   }
 
   filter: date_filter {
     label: "Date Range"
     type: date
   }
+
   parameter: attribution_window {
     label: "Attribution Window"
     type: number
@@ -237,6 +322,13 @@ view: upff_android_attribution {
       value: "30"
     }
   }
+
+  dimension: row {
+    primary_key: yes
+    type: number
+    sql: ${TABLE}.row ;;
+  }
+
   measure: count {
     type: count
     drill_fields: [detail*]
@@ -270,6 +362,62 @@ view: upff_android_attribution {
     value_format: "0.##"
   }
 
+  measure: spend_total {
+    type: sum_distinct
+    sql_distinct_key: ${ordered_at_date} ;;
+    sql: ${TABLE}.spend ;;
+    value_format: "$#.00;($#.00)"
+  }
+
+  measure: social_spend_total {
+    type: sum_distinct
+    sql_distinct_key: ${ordered_at_date} ;;
+    sql: ${TABLE}.social_spend ;;
+    value_format: "$#.00;($#.00)"
+  }
+
+  measure: clicks_total {
+    type: sum_distinct
+    sql_distinct_key: ${ordered_at_date} ;;
+    sql: ${TABLE}.clicks ;;
+  }
+
+  measure: inline_post_engagements_total {
+    type: sum_distinct
+    sql_distinct_key: ${ordered_at_date} ;;
+    sql: ${TABLE}.inline_post_engagements ;;
+  }
+
+  measure: unique_clicks_total {
+    type: sum_distinct
+    sql_distinct_key: ${ordered_at_date} ;;
+    sql: ${TABLE}.unique_clicks ;;
+  }
+
+  measure: link_clicks_total {
+    type: sum_distinct
+    sql_distinct_key: ${ordered_at_date} ;;
+    sql: ${TABLE}.link_clicks ;;
+  }
+
+  measure: frequency_average {
+    type: average_distinct
+    sql_distinct_key: ${ordered_at_date} ;;
+    sql: ${TABLE}.frequency ;;
+  }
+
+  measure: impressions_total {
+    type: sum_distinct
+    sql_distinct_key: ${ordered_at_date} ;;
+    sql: ${TABLE}.impressions ;;
+  }
+
+  measure: reach_total {
+    type: sum_distinct
+    sql_distinct_key: ${ordered_at_date} ;;
+    sql: ${TABLE}.reach ;;
+  }
+
   dimension_group: ordered_at {
     type: time
     sql: ${TABLE}.ordered_at ;;
@@ -278,6 +426,11 @@ view: upff_android_attribution {
   dimension_group: session_start {
     type: time
     sql: ${TABLE}.session_start ;;
+  }
+
+  dimension: conversion_window {
+    type: number
+    sql: ${TABLE}.conversion_window ;;
   }
 
   dimension: user_id {
@@ -340,16 +493,6 @@ view: upff_android_attribution {
     sql: ${TABLE}.utm_term ;;
   }
 
-  dimension: user_agent {
-    type: string
-    sql: ${TABLE}.user_agent ;;
-  }
-
-  dimension: referrer_domain {
-    type: string
-    sql: ${TABLE}.referrer_domain ;;
-  }
-
   dimension: ad_id {
     type: string
     sql: ${TABLE}.ad_id ;;
@@ -363,6 +506,21 @@ view: upff_android_attribution {
   dimension: campaign_id {
     type: string
     sql: ${TABLE}.campaign_id ;;
+  }
+
+  dimension: user_agent {
+    type: string
+    sql: ${TABLE}.user_agent ;;
+  }
+
+  dimension: referrer_domain {
+    type: string
+    sql: ${TABLE}.referrer_domain ;;
+  }
+
+  dimension: referrer_search {
+    type: string
+    sql: ${TABLE}.referrer_search ;;
   }
 
   dimension: source {
@@ -393,6 +551,51 @@ view: upff_android_attribution {
   dimension: reverse_channel_decay {
     type: number
     sql: ${TABLE}.reverse_channel_decay ;;
+  }
+
+  dimension: clicks {
+    type: number
+    sql: ${TABLE}.clicks ;;
+  }
+
+  dimension: frequency {
+    type: number
+    sql: ${TABLE}.frequency ;;
+  }
+
+  dimension: impressions {
+    type: number
+    sql: ${TABLE}.impressions ;;
+  }
+
+  dimension: reach {
+    type: number
+    sql: ${TABLE}.reach ;;
+  }
+
+  dimension: inline_post_engagements {
+    type: number
+    sql: ${TABLE}.inline_post_engagements ;;
+  }
+
+  dimension: unique_clicks {
+    type: number
+    sql: ${TABLE}.unique_clicks ;;
+  }
+
+  dimension: link_clicks {
+    type: number
+    sql: ${TABLE}.link_clicks ;;
+  }
+
+  dimension: spend {
+    type: number
+    sql: ${TABLE}.spend ;;
+  }
+
+  dimension: social_spend {
+    type: number
+    sql: ${TABLE}.social_spend ;;
   }
 
   dimension: campaign_source {
@@ -432,9 +635,6 @@ view: upff_android_attribution {
       utm_term,
       user_agent,
       referrer_domain,
-      ad_id,
-      adset_id,
-      campaign_id,
       source,
       last_touch,
       first_touch,

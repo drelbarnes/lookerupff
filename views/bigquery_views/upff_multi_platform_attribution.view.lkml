@@ -6,15 +6,88 @@ view: upff_multi_platform_attribution {
       with p0 as (
       select *
       from (
-        select *
+      -- Note: Bigquery produced a weird error when I used the * selector instead of declaring each field.
+        select
+        ordered_at
+        , session_start
+        , user_id
+        , anonymous_id
+        , event_id
+        , session_id
+        , device_id
+        , advertising_id
+        , ip_address
+        , user_agent
+        , plan_type
+        , platform
+        , topic
+        , utm_content
+        , utm_medium
+        , utm_campaign
+        , utm_source
+        , utm_term
+        , ad_id
+        , adset_id
+        , campaign_id
+        , referrer_domain
+        , referrer_search
+        , source
         from ${upff_web_event_processing.SQL_TABLE_NAME}
         where session_start > timestamp_sub(ordered_at, INTERVAL {% parameter attribution_window %} DAY)
         union all
-        select *
+        select
+        ordered_at
+        , session_start
+        , user_id
+        , anonymous_id
+        , event_id
+        , session_id
+        , device_id
+        , advertising_id
+        , ip_address
+        , user_agent
+        , plan_type
+        , platform
+        , topic
+        , utm_content
+        , utm_medium
+        , utm_campaign
+        , utm_source
+        , utm_term
+        , ad_id
+        , adset_id
+        , campaign_id
+        , referrer_domain
+        , referrer_search
+        , source
         from ${upff_ios_event_processing.SQL_TABLE_NAME}
         where session_start > timestamp_sub(ordered_at, INTERVAL {% parameter attribution_window %} DAY)
         union all
-        select *
+        select
+        ordered_at
+        , session_start
+        , user_id
+        , anonymous_id
+        , event_id
+        , session_id
+        , device_id
+        , advertising_id
+        , ip_address
+        , user_agent
+        , plan_type
+        , platform
+        , topic
+        , utm_content
+        , utm_medium
+        , utm_campaign
+        , utm_source
+        , utm_term
+        , ad_id
+        , adset_id
+        , campaign_id
+        , referrer_domain
+        , referrer_search
+        , source
         from ${upff_android_event_processing.SQL_TABLE_NAME}
         where session_start > timestamp_sub(ordered_at, INTERVAL {% parameter attribution_window %} DAY)
       )
@@ -28,13 +101,13 @@ view: upff_multi_platform_attribution {
       )
       select * from p1 where event_partition = 1
     )
-    , conversion_events as (
+    , trial_conversion_events as (
     select *
     from ${vimeo_webhook_events.SQL_TABLE_NAME}
     where timestamp between {% date_start date_filter %}
     and {% date_end date_filter %}
     and event in ("customer_product_free_trial_converted")
-    and platform in ("web", "ios", "android")
+    and platform = "web"
     )
     , sources_last_touch as (
     select *
@@ -142,6 +215,109 @@ view: upff_multi_platform_attribution {
       , timestamp_diff(ordered_at, session_start, day) as conversion_window
       from (select * from sources_last_touch where n = 1)
     )
+    , paid_media_metrics as (
+      with meta as (
+        SELECT
+        "Meta" as platform
+        , ad_id
+        , clicks
+        , date_start
+        , date_stop
+        , frequency
+        , impressions
+        , cast(null as int) as engagements
+        , reach
+        , inline_post_engagements
+        , unique_clicks
+        , link_clicks
+        , spend
+        , social_spend
+        from facebook_ads.insights
+        where date_start between timestamp_sub({% date_start date_filter %}, interval 15 day)
+        and {% date_end date_filter %}
+      )
+      , google_ads as (
+      SELECT
+      "Google Ads" as platform
+      , split(ad_id, "::")[OFFSET(1)] as ad_id
+      , clicks
+      , date_start
+      , date_stop
+      , cast(null as int) as frequency
+      , impressions
+      , engagements
+      , cast(null as int) as reach
+      , cast(null as int) as inline_post_engagements
+      , cast(null as int) as unique_clicks
+      , cast(null as int) as link_clicks
+      , COALESCE((cost/1000000),0 ) as spend
+      , cast(null as int) as social_spend
+      from adwords.ad_performance_reports
+      where date_start between timestamp_sub({% date_start date_filter %}, interval 15 day)
+      and {% date_end date_filter %}
+      )
+      , all_platforms_p0 as (
+        select
+        platform
+        , ad_id
+        , clicks
+        , date_start
+        , date_stop
+        , frequency
+        , impressions
+        , engagements
+        , reach
+        , inline_post_engagements
+        , unique_clicks
+        , link_clicks
+        , spend
+        , social_spend
+        from meta
+        union all
+        select
+        platform
+        , ad_id
+        , clicks
+        , date_start
+        , date_stop
+        , frequency
+        , impressions
+        , engagements
+        , reach
+        , inline_post_engagements
+        , unique_clicks
+        , link_clicks
+        , spend
+        , social_spend
+        from google_ads
+      )
+      , all_platforms_p1 as (
+        SELECT *
+        , row_number() over (partition by ad_id, date_start order by spend desc) as n
+        from all_platforms_p0
+      )
+      , all_platforms_p2 as (
+        select *
+        from all_platforms_p1
+        where n=1
+      )
+      select
+      platform
+      , ad_id
+      , clicks
+      , date_start
+      , date_stop
+      , frequency
+      , impressions
+      , engagements
+      , reach
+      , inline_post_engagements
+      , unique_clicks
+      , link_clicks
+      , spend
+      , social_spend
+      from all_platforms_p2
+    )
     , final as (
     select
     a.ordered_at
@@ -154,9 +330,10 @@ view: upff_multi_platform_attribution {
     , a.plan_type
     , a.platform
     , a.topic
-    , a.utm_content
+    , replace(a.utm_content, "+", " ") as utm_content
     , a.utm_medium
-    , a.utm_campaign
+    -- hotfixing a bug where the plus sign is coming though instead of a space
+    , replace(a.utm_campaign, "+", " ") as utm_campaign
     , a.utm_source
     , a.utm_term
     , a.ad_id
@@ -171,6 +348,18 @@ view: upff_multi_platform_attribution {
     , d.credit as equal_credit
     , e.channel_decay
     , e.reverse_channel_decay
+    , g.clicks
+    , g.date_start
+    , g.date_stop
+    , g.frequency
+    , g.impressions
+    , g.engagements
+    , g.reach
+    , g.inline_post_engagements
+    , g.unique_clicks
+    , g.link_clicks
+    , g.spend
+    , g.social_spend
     from attributable_events a
     inner join last_touch_v2 b
     on a.user_id = b.user_id and a.session_start = b.session_start
@@ -182,6 +371,8 @@ view: upff_multi_platform_attribution {
     on a.user_id = e.user_id and a.session_start = e.session_start
     inner join conversion_window f
     on a.user_id = f.user_id and a.ordered_at = f.ordered_at
+    left join paid_media_metrics g
+    on a.ad_id = g.ad_id and date(a.ordered_at) = date(g.date_start)
     )
     , mofu_final as (
     select * from final
@@ -217,8 +408,20 @@ view: upff_multi_platform_attribution {
     , a.equal_credit
     , a.channel_decay
     , a.reverse_channel_decay
+    , a.clicks
+    , a.date_start
+    , a.date_stop
+    , a.frequency
+    , a.impressions
+    , a.engagements
+    , a.reach
+    , a.inline_post_engagements
+    , a.unique_clicks
+    , a.link_clicks
+    , a.spend
+    , a.social_spend
     from final a
-    inner join conversion_events as b
+    inner join trial_conversion_events as b
     on a.user_id = b.user_id
     )
     , union_all as (
@@ -227,7 +430,7 @@ view: upff_multi_platform_attribution {
     select * from tofu_final
     where ordered_at between {% date_start date_filter %} and {% date_end date_filter %}
     )
-    select * from union_all
+    select *, row_number() over (order by ordered_at) as row from union_all
     ;;
   }
 
@@ -262,6 +465,12 @@ view: upff_multi_platform_attribution {
     }
   }
 
+  dimension: row {
+    primary_key: yes
+    type: number
+    sql: ${TABLE}.row ;;
+  }
+
   measure: count {
     type: count
     drill_fields: [detail*]
@@ -293,6 +502,62 @@ view: upff_multi_platform_attribution {
     type: sum
     sql: ${TABLE}.reverse_channel_decay ;;
     value_format: "0.##"
+  }
+
+  measure: spend_total {
+    type: sum_distinct
+    sql_distinct_key: ${ordered_at_date} ;;
+    sql: ${TABLE}.spend ;;
+    value_format: "$#.00;($#.00)"
+  }
+
+  measure: social_spend_total {
+    type: sum_distinct
+    sql_distinct_key: ${ordered_at_date} ;;
+    sql: ${TABLE}.social_spend ;;
+    value_format: "$#.00;($#.00)"
+  }
+
+  measure: clicks_total {
+    type: sum_distinct
+    sql_distinct_key: ${ordered_at_date} ;;
+    sql: ${TABLE}.clicks ;;
+  }
+
+  measure: inline_post_engagements_total {
+    type: sum_distinct
+    sql_distinct_key: ${ordered_at_date} ;;
+    sql: ${TABLE}.inline_post_engagements ;;
+  }
+
+  measure: unique_clicks_total {
+    type: sum_distinct
+    sql_distinct_key: ${ordered_at_date} ;;
+    sql: ${TABLE}.unique_clicks ;;
+  }
+
+  measure: link_clicks_total {
+    type: sum_distinct
+    sql_distinct_key: ${ordered_at_date} ;;
+    sql: ${TABLE}.link_clicks ;;
+  }
+
+  measure: frequency_average {
+    type: average_distinct
+    sql_distinct_key: ${ordered_at_date} ;;
+    sql: ${TABLE}.frequency ;;
+  }
+
+  measure: impressions_total {
+    type: sum_distinct
+    sql_distinct_key: ${ordered_at_date} ;;
+    sql: ${TABLE}.impressions ;;
+  }
+
+  measure: reach_total {
+    type: sum_distinct
+    sql_distinct_key: ${ordered_at_date} ;;
+    sql: ${TABLE}.reach ;;
   }
 
   dimension_group: ordered_at {
@@ -428,6 +693,56 @@ view: upff_multi_platform_attribution {
   dimension: reverse_channel_decay {
     type: number
     sql: ${TABLE}.reverse_channel_decay ;;
+  }
+
+  dimension: clicks {
+    type: number
+    sql: ${TABLE}.clicks ;;
+  }
+
+  dimension: frequency {
+    type: number
+    sql: ${TABLE}.frequency ;;
+  }
+
+  dimension: impressions {
+    type: number
+    sql: ${TABLE}.impressions ;;
+  }
+
+  dimension: engagements {
+    type: number
+    sql: ${TABLE}.engagements ;;
+  }
+
+  dimension: reach {
+    type: number
+    sql: ${TABLE}.reach ;;
+  }
+
+  dimension: inline_post_engagements {
+    type: number
+    sql: ${TABLE}.inline_post_engagements ;;
+  }
+
+  dimension: unique_clicks {
+    type: number
+    sql: ${TABLE}.unique_clicks ;;
+  }
+
+  dimension: link_clicks {
+    type: number
+    sql: ${TABLE}.link_clicks ;;
+  }
+
+  dimension: spend {
+    type: number
+    sql: ${TABLE}.spend ;;
+  }
+
+  dimension: social_spend {
+    type: number
+    sql: ${TABLE}.social_spend ;;
   }
 
   dimension: campaign_source {

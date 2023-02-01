@@ -211,8 +211,9 @@ include: "/views/testing_views/hubspot_bogo_testing.view.lkml"
 # Datagroups for PDT Triggers #
 
 datagroup: upff_daily_refresh_datagroup {
-  description: "Datagroup for Identity Resolution and Attribution PDTs. Triggers once per day at 9am"
-  sql_trigger: SELECT FLOOR((EXTRACT(epoch from GETDATE()) - 60*60*9)/(60*60*24)) ;;
+  max_cache_age: "24 hours"
+  description: "Datagroup for Identity Resolution and Attribution PDTs. Triggers once per day"
+  sql_trigger: SELECT CURRENT_DATE() ;;
 }
 
 # Explores #
