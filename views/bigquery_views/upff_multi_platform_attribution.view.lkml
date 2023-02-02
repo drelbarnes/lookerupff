@@ -107,7 +107,6 @@ view: upff_multi_platform_attribution {
     where timestamp between {% date_start date_filter %}
     and {% date_end date_filter %}
     and event in ("customer_product_free_trial_converted")
-    and platform = "web"
     )
     , sources_last_touch as (
     select *
