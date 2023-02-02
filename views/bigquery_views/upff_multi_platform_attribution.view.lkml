@@ -218,16 +218,15 @@ view: upff_multi_platform_attribution {
     , paid_media_metrics as (
       with meta as (
         SELECT
-        "Meta" as platform
+        "Meta" as ad_platform
         , ad_id
         , clicks
         , date_start
         , date_stop
         , frequency
         , impressions
-        , cast(null as int) as engagements
+        , inline_post_engagements as engagements
         , reach
-        , inline_post_engagements
         , unique_clicks
         , link_clicks
         , spend
@@ -238,18 +237,17 @@ view: upff_multi_platform_attribution {
       )
       , google_ads as (
       SELECT
-      "Google Ads" as platform
+      "Google Ads" as ad_platform
       , split(ad_id, "::")[OFFSET(1)] as ad_id
-      , clicks
+      , cast(null as int) as clicks
       , date_start
       , date_stop
       , cast(null as int) as frequency
       , impressions
       , engagements
       , cast(null as int) as reach
-      , cast(null as int) as inline_post_engagements
       , cast(null as int) as unique_clicks
-      , cast(null as int) as link_clicks
+      , clicks as link_clicks
       , COALESCE((cost/1000000),0 ) as spend
       , cast(null as int) as social_spend
       from adwords.ad_performance_reports
@@ -258,7 +256,7 @@ view: upff_multi_platform_attribution {
       )
       , all_platforms_p0 as (
         select
-        platform
+        ad_platform
         , ad_id
         , clicks
         , date_start
@@ -267,7 +265,6 @@ view: upff_multi_platform_attribution {
         , impressions
         , engagements
         , reach
-        , inline_post_engagements
         , unique_clicks
         , link_clicks
         , spend
@@ -275,7 +272,7 @@ view: upff_multi_platform_attribution {
         from meta
         union all
         select
-        platform
+        ad_platform
         , ad_id
         , clicks
         , date_start
@@ -284,7 +281,6 @@ view: upff_multi_platform_attribution {
         , impressions
         , engagements
         , reach
-        , inline_post_engagements
         , unique_clicks
         , link_clicks
         , spend
@@ -302,7 +298,7 @@ view: upff_multi_platform_attribution {
         where n=1
       )
       select
-      platform
+      ad_platform
       , ad_id
       , clicks
       , date_start
@@ -311,7 +307,6 @@ view: upff_multi_platform_attribution {
       , impressions
       , engagements
       , reach
-      , inline_post_engagements
       , unique_clicks
       , link_clicks
       , spend
@@ -355,7 +350,6 @@ view: upff_multi_platform_attribution {
     , g.impressions
     , g.engagements
     , g.reach
-    , g.inline_post_engagements
     , g.unique_clicks
     , g.link_clicks
     , g.spend
@@ -413,9 +407,8 @@ view: upff_multi_platform_attribution {
     , a.date_stop
     , a.frequency
     , a.impressions
-    , a.engagements
     , a.reach
-    , a.inline_post_engagements
+    , a.engagements
     , a.unique_clicks
     , a.link_clicks
     , a.spend
@@ -436,6 +429,16 @@ view: upff_multi_platform_attribution {
 
   filter: date_filter {
     label: "Date Range"
+    type: date
+  }
+
+  filter: trial_period_filter {
+    label: "Period A"
+    type: date
+  }
+
+  filter: conversion_period_filter {
+    label: "Period B"
     type: date
   }
 
@@ -476,6 +479,41 @@ view: upff_multi_platform_attribution {
     drill_fields: [detail*]
   }
 
+  dimension: date_satifies_trial_period {
+    type: yesno
+    hidden: yes
+    sql: {% condition trial_period_filter %} ${TABLE}.ordered_at {% endcondition %} ;;
+  }
+
+  dimension: date_satifies_conversion_period {
+    type: yesno
+    hidden: yes
+    sql: {% condition trial_period_filter %} TIMESTAMP_SUB(${TABLE}.ordered_at, interval 14 day) {% endcondition %} ;;
+  }
+
+  measure: free_trial_starts {
+    type: sum
+    sql: ${TABLE}.last_touch ;;
+    filters: [date_satifies_trial_period: "yes", topic: "customer_product_free_trial_created"]
+  }
+
+  measure: reacquisitions {
+    type: sum
+    sql: ${TABLE}.last_touch ;;
+    filters: [date_satifies_trial_period: "yes", topic: "customer_product_created"]
+  }
+
+  measure: free_trial_conversions {
+    type: sum
+    sql: ${TABLE}.last_touch ;;
+    filters: [date_satifies_conversion_period: "yes", topic: "customer_product_free_trial_converted"]
+  }
+
+  measure: paying_total {
+    type: number
+    sql: ${reacquisitions} + ${free_trial_conversions} ;;
+  }
+
   measure: last_touch_total {
     type: sum
     sql: ${TABLE}.last_touch ;;
@@ -508,6 +546,7 @@ view: upff_multi_platform_attribution {
     type: sum_distinct
     sql_distinct_key: ${ordered_at_date} ;;
     sql: ${TABLE}.spend ;;
+    filters: [date_satifies_trial_period: "yes"]
     value_format: "$#.00;($#.00)"
   }
 
@@ -515,6 +554,7 @@ view: upff_multi_platform_attribution {
     type: sum_distinct
     sql_distinct_key: ${ordered_at_date} ;;
     sql: ${TABLE}.social_spend ;;
+    filters: [date_satifies_trial_period: "yes"]
     value_format: "$#.00;($#.00)"
   }
 
@@ -522,42 +562,49 @@ view: upff_multi_platform_attribution {
     type: sum_distinct
     sql_distinct_key: ${ordered_at_date} ;;
     sql: ${TABLE}.clicks ;;
+    filters: [date_satifies_trial_period: "yes"]
   }
 
-  measure: inline_post_engagements_total {
+  measure: engagements_total {
     type: sum_distinct
     sql_distinct_key: ${ordered_at_date} ;;
-    sql: ${TABLE}.inline_post_engagements ;;
+    sql: ${TABLE}.engagements ;;
+    filters: [date_satifies_trial_period: "yes"]
   }
 
   measure: unique_clicks_total {
     type: sum_distinct
     sql_distinct_key: ${ordered_at_date} ;;
     sql: ${TABLE}.unique_clicks ;;
+    filters: [date_satifies_trial_period: "yes"]
   }
 
   measure: link_clicks_total {
     type: sum_distinct
     sql_distinct_key: ${ordered_at_date} ;;
     sql: ${TABLE}.link_clicks ;;
+    filters: [date_satifies_trial_period: "yes"]
   }
 
   measure: frequency_average {
     type: average_distinct
     sql_distinct_key: ${ordered_at_date} ;;
     sql: ${TABLE}.frequency ;;
+    filters: [date_satifies_trial_period: "yes"]
   }
 
   measure: impressions_total {
     type: sum_distinct
     sql_distinct_key: ${ordered_at_date} ;;
     sql: ${TABLE}.impressions ;;
+    filters: [date_satifies_trial_period: "yes"]
   }
 
   measure: reach_total {
     type: sum_distinct
     sql_distinct_key: ${ordered_at_date} ;;
     sql: ${TABLE}.reach ;;
+    filters: [date_satifies_trial_period: "yes"]
   }
 
   dimension_group: ordered_at {
@@ -710,19 +757,14 @@ view: upff_multi_platform_attribution {
     sql: ${TABLE}.impressions ;;
   }
 
-  dimension: engagements {
-    type: number
-    sql: ${TABLE}.engagements ;;
-  }
-
   dimension: reach {
     type: number
     sql: ${TABLE}.reach ;;
   }
 
-  dimension: inline_post_engagements {
+  dimension: engagements {
     type: number
-    sql: ${TABLE}.inline_post_engagements ;;
+    sql: ${TABLE}.engagements ;;
   }
 
   dimension: unique_clicks {

@@ -305,7 +305,7 @@ view: ios_app_events {
       , is_session_end
       , is_conversion
       , advertising_partner_name
-      , ad_id
+      , coalesce(ad_id, context_campaign_content) as ad_id
       , campaign_id
       , ad_set_id as adset_id
       , ad_set_name as adset_name
