@@ -436,11 +436,6 @@ view: upff_multi_platform_attribution {
     type: date
   }
 
-  filter: conversion_period_filter {
-    label: "Period B"
-    type: date
-  }
-
   parameter: attribution_window {
     label: "Attribution Window"
     type: number
@@ -464,6 +459,32 @@ view: upff_multi_platform_attribution {
     allowed_value: {
       label: "30 days"
       value: "30"
+    }
+  }
+
+  parameter: attribution_model {
+    label: "Attribution Model"
+    type: unquoted
+    default_value: "last_touch"
+    allowed_value: {
+      label: "Last Touch"
+      value: "last_touch"
+    }
+    allowed_value: {
+      label: "First Touch"
+      value: "first_touch"
+    }
+    allowed_value: {
+      label: "Equal Credit"
+      value: "equal_credit"
+    }
+    allowed_value: {
+      label: "Channel Decay"
+      value: "channel_decay"
+    }
+    allowed_value: {
+      label: "Reverse Channel Decay"
+      value: "reverse_channel_decay"
     }
   }
 
@@ -492,25 +513,29 @@ view: upff_multi_platform_attribution {
 
   measure: free_trial_starts {
     type: sum
-    sql: ${TABLE}.last_touch ;;
+    sql: ${TABLE}.{% parameter attribution_model %} ;;
     filters: [date_satifies_trial_period: "yes", topic: "customer_product_free_trial_created"]
+    value_format: "0.##"
   }
 
   measure: reacquisitions {
     type: sum
-    sql: ${TABLE}.last_touch ;;
+    sql: ${TABLE}.{% parameter attribution_model %} ;;
     filters: [date_satifies_trial_period: "yes", topic: "customer_product_created"]
+    value_format: "0.##"
   }
 
   measure: free_trial_conversions {
     type: sum
-    sql: ${TABLE}.last_touch ;;
+    sql: ${TABLE}.{% parameter attribution_model %} ;;
     filters: [date_satifies_conversion_period: "yes", topic: "customer_product_free_trial_converted"]
+    value_format: "0.##"
   }
 
   measure: paying_total {
     type: number
     sql: ${reacquisitions} + ${free_trial_conversions} ;;
+    value_format: "0.##"
   }
 
   measure: last_touch_total {
