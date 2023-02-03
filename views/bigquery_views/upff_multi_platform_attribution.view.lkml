@@ -506,12 +506,6 @@ view: upff_multi_platform_attribution {
     sql: {% condition date_filter %} ${TABLE}.ordered_at {% endcondition %} ;;
   }
 
-  dimension: date_satifies_conversion_period {
-    type: yesno
-    hidden: yes
-    sql: {% condition date_filter %} TIMESTAMP_SUB(${TABLE}.ordered_at, interval 14 day) {% endcondition %} ;;
-  }
-
   measure: free_trial_starts {
     type: sum
     sql: ${TABLE}.{% parameter attribution_model %} ;;
@@ -529,7 +523,7 @@ view: upff_multi_platform_attribution {
   measure: free_trial_conversions {
     type: sum
     sql: ${TABLE}.{% parameter attribution_model %} ;;
-    filters: [date_satifies_conversion_period: "yes", topic: "customer_product_free_trial_converted"]
+    filters: [topic: "customer_product_free_trial_converted"]
     value_format: "0.##"
   }
 
