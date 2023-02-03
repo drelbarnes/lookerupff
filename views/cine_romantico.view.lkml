@@ -64,7 +64,6 @@ view: cine_romantico {
       end;;
   }
 
-
   dimension: play_count {
     type: number
     sql: ${TABLE}.play_count ;;
@@ -72,9 +71,42 @@ view: cine_romantico {
 
   dimension: title {
     type: string
-    sql: upper(${TABLE}.title) ;;
+    sql: CASE
+      WHEN UPPER(${TABLE}.title) = 'CANT BUY MY LOVE ME' then 'CANT BUY MY LOVE'
+      WHEN UPPER(${TABLE}.title) = 'CAN''T BUY MY LOVE ME' then 'CANT BUY MY LOVE'
+      WHEN UPPER(${TABLE}.title) = 'CAN''T BUY MY LOVE' then 'CANT BUY MY LOVE'
+      WHEN UPPER(${TABLE}.title) = 'ADVANCE  & RETREAT' then 'ADVANCE AND RETREAT'
+      WHEN UPPER(${TABLE}.title) = 'TOUCHED' then 'TOUCHED BY ROMANCE'
+      WHEN UPPER(${TABLE}.title) = 'THE COOKIE MOBSTER' then 'COOKIE MOBSTER'
+      WHEN UPPER(${TABLE}.title) = 'FAREWELL MR KRINGLE' then 'FAREWELL MR. KRINGLE'
+      WHEN UPPER(${TABLE}.title) = 'FLOWER GIRL' then 'THE FLOWER GIRL'
+      WHEN UPPER(${TABLE}.title) = 'CUPID,INC.' then 'CUPIDINC.'
+      WHEN UPPER(${TABLE}.title) = 'CUPIDINC' then 'CUPIDINC.'
+      WHEN UPPER(${TABLE}.title) = 'CUPID' then 'CUPIDINC.'
+      WHEN UPPER(${TABLE}.title) = 'THE MECHANICS OF LOVE' then 'MECHANICS OF LOVE'
+      WHEN UPPER(${TABLE}.title) = 'MR FICTION' then 'MR. FICTION'
+      WHEN UPPER(${TABLE}.title) = 'CAN''T BUY MY LOVE ME' then 'CANT BUY MY LOVE'
+      WHEN UPPER(${TABLE}.title) = 'CAN''T BUY MY LOVE' then 'CANT BUY MY LOVE'
+      WHEN UPPER(${TABLE}.title) = 'LOVE''S ABIDING JOY' then 'LOVES ABIDING JOY'
+      WHEN UPPER(${TABLE}.title) = 'LOVE''S ENDURING PROMISE' then 'LOVES ENDURING PROMISE'
+      WHEN UPPER(${TABLE}.title) = 'LOVE''S EVERLASTING COURAGE' then 'LOVES EVERLASTING COURAGE'
+      WHEN UPPER(${TABLE}.title) = 'LOVE''S LONG JOURNEY' then 'LOVES LONG JOURNEY'
+      WHEN UPPER(${TABLE}.title) = 'LOVE''S UNENDING LEGACY' then 'LOVES UNENDING LEGACY'
+      WHEN UPPER(${TABLE}.title) = 'LOVE''S UNFOLDING DREAM' then 'LOVES UNFOLDING DREAM'
+      WHEN UPPER(${TABLE}.title) = 'A SON''S PROMISE' then 'A SONS PROMISE'
+      WHEN UPPER(${TABLE}.title) = 'FIELDER''S CHOICE' then 'FIELDERS CHOICE'
+      WHEN UPPER(${TABLE}.title) = 'VICKERY''S WILD RIDE' then 'VICKERYS WILD RIDE'
+      WHEN UPPER(${TABLE}.title) = 'YOU''VE GOT A FRIEND' then 'YOUVE GOT A FRIEND'
+      WHEN UPPER(${TABLE}.title) = 'WHERE THERE''S A WILL' then 'WHERE THERE IS A WILL'
+      WHEN UPPER(${TABLE}.title) = 'WHERE THERES A WILL' then 'WHERE THERE IS A WILL'
+      WHEN UPPER(${TABLE}.title) = 'OLIVER''S GHOST' then 'OLIVERS GHOST'
+      WHEN UPPER(${TABLE}.title) = 'MR. WRITE' then 'MR WRITE'
+      WHEN UPPER(${TABLE}.title) = 'READING, WRITING AND ROMANCE' then 'READING WRITING AND ROMANCE'
+      WHEN UPPER(${TABLE}.title) = 'READING,WRITING AND ROMANCE' then 'READING WRITING AND ROMANCE'
+      WHEN UPPER(${TABLE}.title) = 'CASA VITA' then 'LOVE THROWS A CURVE'
+      else UPPER(${TABLE}.title)
+      end;;
   }
-
   dimension: total_time_watched {
     type: string
     sql: ${TABLE}.total_time_watched ;;
