@@ -91,8 +91,7 @@ view: upff_multi_platform_attribution {
         from ${upff_android_event_processing.SQL_TABLE_NAME}
         where session_start > timestamp_sub(ordered_at, INTERVAL {% parameter attribution_window %} DAY)
       )
-      where ordered_at between timestamp_sub({% date_start date_filter %}, interval 15 day)
-      and {% date_end date_filter %}
+      where ordered_at between {% date_start date_filter %} and {% date_end date_filter %}
       )
       , p1 as (
         select *
@@ -104,8 +103,9 @@ view: upff_multi_platform_attribution {
     , trial_conversion_events as (
     select *
     from ${vimeo_webhook_events.SQL_TABLE_NAME}
-    where timestamp between {% date_start date_filter %}
-    and {% date_end date_filter %}
+    where timestamp between timestamp_add({% date_start date_filter %}, interval 14 day)
+    -- we add 21 days to allow for dunning
+    and timestamp_add({% date_end date_filter %}, interval 21 day)
     and event in ("customer_product_free_trial_converted")
     )
     , sources_last_touch as (
@@ -231,7 +231,7 @@ view: upff_multi_platform_attribution {
         , spend
         , social_spend
         from facebook_ads.insights
-        where date_start between timestamp_sub({% date_start date_filter %}, interval 15 day)
+        where date_start between {% date_start date_filter %}
         and {% date_end date_filter %}
       )
       , google_ads as (
@@ -250,7 +250,7 @@ view: upff_multi_platform_attribution {
       , COALESCE((cost/1000000),0 ) as spend
       , cast(null as int) as social_spend
       from adwords.ad_performance_reports
-      where date_start between timestamp_sub({% date_start date_filter %}, interval 15 day)
+      where date_start between {% date_start date_filter %}
       and {% date_end date_filter %}
       )
       , all_platforms_p0 as (
@@ -369,10 +369,10 @@ view: upff_multi_platform_attribution {
     )
     , mofu_final as (
     select * from final
-    where ordered_at between {% date_start date_filter %}
-    and {% date_end date_filter %}
+    -- where ordered_at between {% date_start date_filter %}
+    -- and {% date_end date_filter %}
     )
-    , tofu_final as (
+    , bofu_final as (
     select
     b.timestamp as ordered_at
     , a.session_start
@@ -419,8 +419,9 @@ view: upff_multi_platform_attribution {
     , union_all as (
     select * from mofu_final
     union all
-    select * from tofu_final
-    where ordered_at between {% date_start date_filter %} and {% date_end date_filter %}
+    select * from bofu_final
+    -- where ordered_at between {% date_start date_filter %}
+    -- and timestamp_add({% date_end date_filter %}, interval 14 day)
     )
     select *, row_number() over (order by ordered_at) as row from union_all
     ;;
@@ -502,13 +503,13 @@ view: upff_multi_platform_attribution {
   dimension: date_satifies_trial_period {
     type: yesno
     hidden: yes
-    sql: {% condition trial_period_filter %} ${TABLE}.ordered_at {% endcondition %} ;;
+    sql: {% condition date_filter %} ${TABLE}.ordered_at {% endcondition %} ;;
   }
 
   dimension: date_satifies_conversion_period {
     type: yesno
     hidden: yes
-    sql: {% condition trial_period_filter %} TIMESTAMP_SUB(${TABLE}.ordered_at, interval 14 day) {% endcondition %} ;;
+    sql: {% condition date_filter %} TIMESTAMP_SUB(${TABLE}.ordered_at, interval 14 day) {% endcondition %} ;;
   }
 
   measure: free_trial_starts {
