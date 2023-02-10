@@ -22,8 +22,9 @@ view: users {
     sql: ${TABLE}.bango_user_Id ;;
   }
 
-  dimension: customer_id {
+  dimension: user_id {
     type: number
+    tags: ["user_id"]
     sql: ${TABLE}.customer_id ;;
   }
 
