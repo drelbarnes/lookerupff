@@ -43,7 +43,7 @@ view: cine_romantico {
 
   dimension: avg_playthrough_rate {
     type: number
-    sql: ${TABLE}.avg_playthrough_rate ;;
+    sql: CAST(${TABLE}.avg_playthrough_rate AS NUMERIC(18, 9)) ;;
   }
 
   dimension: channel {
@@ -66,8 +66,8 @@ view: cine_romantico {
 
   dimension: play_count {
     type: number
-    sql: ${TABLE}.play_count ;;
-  }
+    sql: CAST(${TABLE}.play_count AS NUMERIC(10, 1)) ;;
+    }
 
   dimension: title {
     type: string
@@ -151,4 +151,19 @@ view: cine_romantico {
     sql:  CAST( ${TABLE}.avg_playthrough_rate   AS DOUBLE PRECISION) ;;
   }
 
+  dimension: weighted_play_count {
+    type: number
+    sql: ${play_count}* ${avg_playthrough_rate} ;;
+    }
+
+  measure: weighted_play_count_sum {
+    type: sum
+    sql: ${weighted_play_count} ;;
+    }
+
+  measure: weighted_completion_rate {
+    type: number
+    value_format: "0.00%"
+    sql: ${weighted_play_count_sum}/${total_plays} ;;
+    }
   }
