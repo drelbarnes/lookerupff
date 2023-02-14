@@ -17,13 +17,32 @@ view: users {
   # A dimension is a groupable field that can be used to filter query results.
   # This dimension will be called "Bango User ID" in Explore.
 
+  parameter: free_trial_length {
+    label: "Free Trial Length"
+    type: number
+    default_value: "14"
+    allowed_value: {
+      label: "No Free Trial"
+      value: "0"
+    }
+    allowed_value: {
+      label: "7 days"
+      value: "7"
+    }
+    allowed_value: {
+      label: "14 days"
+      value: "14"
+    }
+  }
+
   dimension: bango_user_id {
     type: number
     sql: ${TABLE}.bango_user_Id ;;
   }
 
-  dimension: customer_id {
+  dimension: user_id {
     type: number
+    tags: ["user_id"]
     sql: ${TABLE}.customer_id ;;
   }
 
@@ -91,5 +110,17 @@ view: users {
   measure: count {
     type: count
     drill_fields: [id, partners.id]
+  }
+
+  measure: free_trials {
+    type: count_distinct
+    sql: ${user_id} ;;
+    filters: [date_activated_date: "last 14 days"]
+  }
+
+  measure: subscribers {
+    type: count_distinct
+    sql: ${user_id} ;;
+    filters: [date_activated_date: "before 14 days ago"]
   }
 }
