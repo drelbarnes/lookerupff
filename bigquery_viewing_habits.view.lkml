@@ -486,6 +486,24 @@ view: bigquery_viewing_habits {
         order by 1,2,3
         ),
 
+        habits_mystic_s2 as
+        (
+        select
+        user_id,
+        collection,
+        total_episodes,
+        case
+        when total_episodes = 1 then 'First episode only'
+        when total_episodes > 1 and total_episodes < 6 then 'More than 1 but not all'
+        when total_episodes in (6,7) then 'Series completer'
+        else 'Other or missing'
+        end as viewing_habit
+        from sum
+        where collection = 'Mystic - Season 2'
+        group by 1,2,3
+        order by 1,2,3
+        ),
+
         habits_heartland_s13 as
         (
         select
@@ -548,8 +566,8 @@ view: bigquery_viewing_habits {
         total_episodes,
         case
         when total_episodes = 1 then 'First episode only'
-        when total_episodes > 1 and total_episodes < 12 then 'More than 1 but not all'
-        when total_episodes in (12,13) then 'Series completer'
+        when total_episodes > 1 and total_episodes < 18 then 'More than 1 but not all'
+        when total_episodes in (18,19) then 'Series completer'
         else 'Other or missing incomplete series'
         end as viewing_habit
         from sum
@@ -584,8 +602,8 @@ view: bigquery_viewing_habits {
         total_episodes,
         case
         when total_episodes = 1 then 'First episode only'
-        when total_episodes > 1 and total_episodes < 17 then 'More than 1 but not all'
-        when total_episodes in (17,18) then 'Series completer'
+        when total_episodes > 1 and total_episodes < 18 then 'More than 1 but not all'
+        when total_episodes in (18,19) then 'Series completer'
         else 'Other or missing incomplete series'
         end as viewing_habit
         from sum
@@ -640,6 +658,7 @@ view: bigquery_viewing_habits {
     type: unquoted
     label: "Series"
     allowed_value: {label: "Mystic - Season 1" value: "mystic_s1"}
+    allowed_value: {label: "Mystic - Season 2" value: "mystic_s2"}
     allowed_value: {label: "Heartland - Season 13" value: "heartland_s13"}
     allowed_value: {label: "Heartland - Season 14" value: "heartland_s14"}
     allowed_value: {label: "Heartland - Season 15" value: "heartland_s15"}
