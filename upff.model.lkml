@@ -67,6 +67,7 @@ include: "redshift_customers_resubscribers.view"
 include: "redshift_customers_views_by_user.view"
 include: "/views/monthly_customer_report.view.lkml"
 include: "/views/agm_audiences.view.lkml"
+include: "/views/bango_views/verizon_events.view.lkml"
 
 datagroup: upff_acquisition_reporting {
   description: "Datagroup for UPFF Acquisition PDTs. Triggers once per day at 9am"
@@ -75,6 +76,10 @@ datagroup: upff_acquisition_reporting {
 
 explore: agm_audiences {
   label: "AGM Audiences"
+}
+
+explore: verizon_events {
+  label: "Verizon +play Events"
 }
 
 explore: redshift_customers_views_by_user {
