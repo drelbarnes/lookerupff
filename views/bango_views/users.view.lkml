@@ -2,20 +2,32 @@
 view: users {
   # The sql_table_name parameter indicates the underlying database table
   # to be used for all fields in this view.
-  sql_table_name: admin_bang_prod.users ;;
-  drill_fields: [id]
+  # sql_table_name: admin_bang_prod.users ;;
+  # drill_fields: [id]
   # This primary key is the unique key for this table in the underlying database.
   # You need to define a primary key in a view in order to join to other views.
 
-  dimension: id {
-    primary_key: yes
-    type: number
-    sql: ${TABLE}.id ;;
+  derived_table: {
+    sql:
+      select
+      bango_user_Id
+      , customer_id
+      , to_timestamp(date_activated, 'YYYY-MM-DD HH24:MI:SS') as date_activated
+      , to_timestamp(date_created, 'YYYY-MM-DD HH24:MI:SS') as date_created
+      , to_timestamp(date_ended, 'YYYY-MM-DD HH24:MI:SS') as date_ended
+      , to_timestamp(date_resumed, 'YYYY-MM-DD HH24:MI:SS') as date_resumed
+      , to_timestamp(date_suspended, 'YYYY-MM-DD HH24:MI:SS') as date_suspended
+      , email_hashed
+      , entitlement_id
+      , offer_key
+      , partner_id
+      , product_key
+      , reseller_key
+      , to_timestamp("timestamp", 'YYYY-MM-DD HH24:MI:SS') as "timestamp"
+      , id
+      from admin_bang_prod.users
+      ;;
   }
-
-  # Here's what a typical dimension looks like in LookML.
-  # A dimension is a groupable field that can be used to filter query results.
-  # This dimension will be called "Bango User ID" in Explore.
 
   parameter: free_trial_length {
     label: "Free Trial Length"
@@ -33,6 +45,12 @@ view: users {
       label: "14 days"
       value: "14"
     }
+  }
+
+  dimension: id {
+    type: number
+    primary_key: yes
+    sql: ${TABLE}.id ;;
   }
 
   dimension: bango_user_id {
