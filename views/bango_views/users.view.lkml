@@ -2,32 +2,33 @@
 view: users {
   # The sql_table_name parameter indicates the underlying database table
   # to be used for all fields in this view.
-  # sql_table_name: admin_bang_prod.users ;;
-  # drill_fields: [id]
+  sql_table_name: admin_bang_prod.users ;;
+  drill_fields: [id]
   # This primary key is the unique key for this table in the underlying database.
   # You need to define a primary key in a view in order to join to other views.
 
-  derived_table: {
-    sql:
-      select
-      bango_user_Id
-      , customer_id
-      , to_timestamp(date_activated, 'YYYY-MM-DD HH24:MI:SS') as date_activated
-      , to_timestamp(date_created, 'YYYY-MM-DD HH24:MI:SS') as date_created
-      , to_timestamp(date_ended, 'YYYY-MM-DD HH24:MI:SS') as date_ended
-      , to_timestamp(date_resumed, 'YYYY-MM-DD HH24:MI:SS') as date_resumed
-      , to_timestamp(date_suspended, 'YYYY-MM-DD HH24:MI:SS') as date_suspended
-      , email_hashed
-      , entitlement_id
-      , offer_key
-      , partner_id
-      , product_key
-      , reseller_key
-      , to_timestamp("timestamp", 'YYYY-MM-DD HH24:MI:SS') as "timestamp"
-      , id
-      from admin_bang_prod.users
-      ;;
-  }
+  # derived_table: {
+  #   sql:
+  #     select
+  #     bango_user_Id
+  #     , customer_id
+  #     , date_activated as date_activated_test
+  #     , str_to_date(date_activated, '%Y-%m-%dT%H:%i:%s') as date_activated
+  #     , str_to_date(date_created, '%Y-%m-%dT%H:%i:%s') as date_created
+  #     , str_to_date(date_suspended, '%Y-%m-%dT%H:%i:%s') as date_suspended
+  #     , str_to_date(date_resumed, '%Y-%m-%dT%H:%i:%s') as date_resumed
+  #     , str_to_date(date_ended, '%Y-%m-%dT%H:%i:%s') as date_ended
+  #     , email_hashed
+  #     , entitlement_id
+  #     , offer_key
+  #     , partner_id
+  #     , product_key
+  #     , reseller_key
+  #     , timestamp
+  #     , id
+  #     from admin_bang_prod.users
+  #     ;;
+  # }
 
   parameter: free_trial_length {
     label: "Free Trial Length"
@@ -139,6 +140,6 @@ view: users {
   measure: subscribers {
     type: count_distinct
     sql: ${user_id} ;;
-    filters: [date_activated_date: "before 14 days ago"]
+    filters: [date_activated_date: "before 13 days ago"]
   }
 }
