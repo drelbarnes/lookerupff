@@ -34,7 +34,7 @@ view: verizon_events {
       )
       , bango_events as (
         select
-        id as event_id
+        event_id
         , event_date
         , bango_user_id
         , entitlement_id
@@ -44,10 +44,10 @@ view: verizon_events {
         , bango_status
         , partner_id
         , partner
-        , date_created
-        , date_activated
-        , date_ended
-        , date_suspended
+        , date_created -- string
+        , date_activated -- date
+        , nullif(date_suspended, '[]') as date_suspended
+        , nullif(date_ended, '[]') as date_ended
         , sent_at
         from looker.bango_events
         where date(sent_at) = current_date

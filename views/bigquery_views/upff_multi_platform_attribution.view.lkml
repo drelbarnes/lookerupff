@@ -619,6 +619,13 @@ view: upff_multi_platform_attribution {
     filters: [date_satifies_trial_period: "yes"]
   }
 
+  measure: distinct_impressions_total {
+    type: sum_distinct
+    sql_distinct_key: ${ad_id} ;;
+    sql: ${TABLE}.impressions ;;
+    filters: [date_satifies_trial_period: "yes"]
+  }
+
   measure: reach_total {
     type: sum_distinct
     sql_distinct_key: ${ordered_at_date} ;;
