@@ -374,7 +374,7 @@ view: upff_multi_platform_attribution {
     )
     , bofu_final as (
     select
-    b.timestamp as ordered_at
+    a.ordered_at
     , a.session_start
     , a.conversion_window
     , a.user_id
@@ -569,9 +569,25 @@ view: upff_multi_platform_attribution {
     value_format: "$#.00;($#.00)"
   }
 
+  measure: spend_platform_total {
+    type: sum_distinct
+    sql_distinct_key: ${ad_id} ;;
+    sql: ${TABLE}.spend ;;
+    filters: [date_satifies_trial_period: "yes"]
+    value_format: "$#.00;($#.00)"
+  }
+
   measure: social_spend_total {
     type: sum_distinct
     sql_distinct_key: ${ordered_at_date} ;;
+    sql: ${TABLE}.social_spend ;;
+    filters: [date_satifies_trial_period: "yes"]
+    value_format: "$#.00;($#.00)"
+  }
+
+  measure: social_spend_platform_total {
+    type: sum_distinct
+    sql_distinct_key: ${ad_id} ;;
     sql: ${TABLE}.social_spend ;;
     filters: [date_satifies_trial_period: "yes"]
     value_format: "$#.00;($#.00)"
@@ -584,9 +600,23 @@ view: upff_multi_platform_attribution {
     filters: [date_satifies_trial_period: "yes"]
   }
 
+  measure: clicks_platform_total {
+    type: sum_distinct
+    sql_distinct_key: ${ad_id} ;;
+    sql: ${TABLE}.clicks ;;
+    filters: [date_satifies_trial_period: "yes"]
+  }
+
   measure: engagements_total {
     type: sum_distinct
     sql_distinct_key: ${ordered_at_date} ;;
+    sql: ${TABLE}.engagements ;;
+    filters: [date_satifies_trial_period: "yes"]
+  }
+
+  measure: engagements_platform_total {
+    type: sum_distinct
+    sql_distinct_key: ${ad_id} ;;
     sql: ${TABLE}.engagements ;;
     filters: [date_satifies_trial_period: "yes"]
   }
@@ -598,9 +628,23 @@ view: upff_multi_platform_attribution {
     filters: [date_satifies_trial_period: "yes"]
   }
 
+  measure: unique_clicks_platform_total {
+    type: sum_distinct
+    sql_distinct_key: ${ad_id} ;;
+    sql: ${TABLE}.unique_clicks ;;
+    filters: [date_satifies_trial_period: "yes"]
+  }
+
   measure: link_clicks_total {
     type: sum_distinct
     sql_distinct_key: ${ordered_at_date} ;;
+    sql: ${TABLE}.link_clicks ;;
+    filters: [date_satifies_trial_period: "yes"]
+  }
+
+  measure: link_clicks_platform_total {
+    type: sum_distinct
+    sql_distinct_key: ${ad_id} ;;
     sql: ${TABLE}.link_clicks ;;
     filters: [date_satifies_trial_period: "yes"]
   }
@@ -612,6 +656,13 @@ view: upff_multi_platform_attribution {
     filters: [date_satifies_trial_period: "yes"]
   }
 
+  measure: frequency_platform_average {
+    type: average_distinct
+    sql_distinct_key: ${ad_id} ;;
+    sql: ${TABLE}.frequency ;;
+    filters: [date_satifies_trial_period: "yes"]
+  }
+
   measure: impressions_total {
     type: sum_distinct
     sql_distinct_key: ${ordered_at_date} ;;
@@ -619,7 +670,7 @@ view: upff_multi_platform_attribution {
     filters: [date_satifies_trial_period: "yes"]
   }
 
-  measure: distinct_impressions_total {
+  measure: impressions_platform_total {
     type: sum_distinct
     sql_distinct_key: ${ad_id} ;;
     sql: ${TABLE}.impressions ;;
@@ -629,6 +680,13 @@ view: upff_multi_platform_attribution {
   measure: reach_total {
     type: sum_distinct
     sql_distinct_key: ${ordered_at_date} ;;
+    sql: ${TABLE}.reach ;;
+    filters: [date_satifies_trial_period: "yes"]
+  }
+
+  measure: reach_platform_total {
+    type: sum_distinct
+    sql_distinct_key: ${ad_id} ;;
     sql: ${TABLE}.reach ;;
     filters: [date_satifies_trial_period: "yes"]
   }
