@@ -10,7 +10,7 @@ view: popular_content_by_series {
       from allfirstplay.p0
       where user_id <> '0'
       and regexp_contains(user_id, r'^[0-9]*$')
-      and date(timestamp) between {% date_start date_filter %} and {% date_end date_filter %}
+      and timestamp between {% date_start date_filter %} and {% date_end date_filter %}
       ),
 
       plays_most_granular as
