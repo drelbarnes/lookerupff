@@ -203,6 +203,7 @@ include: "hudson_rex_s2_e19.view.lkml"
 include: "research_active_users.view.lkml"
 include: "user_play_history.view.lkml"
 include: "first_n_plays.view.lkml"
+include: "popular_content_by_series.view.lkml"
 
 # Test Views #
 
@@ -223,6 +224,10 @@ explore: user_play_history {
   always_filter: {
     filters: [user_id: "22620729"]
     }
+}
+
+explore: popular_content_by_series {
+  label: " Popular Content by Series"
 }
 
 explore: first_n_plays {
