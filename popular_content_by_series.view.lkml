@@ -171,7 +171,7 @@ view: popular_content_by_series {
     drill_fields: [detail*]
   }
 
-  measure: num_plays {
+  dimension: num_plays {
     type: number
     sql: ${TABLE}.num_plays ;;
   }
