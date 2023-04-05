@@ -148,7 +148,15 @@ view: popular_content_by_series {
 
   parameter: c_name {
     label: "Type"
-    type: unquoted
+    type: string
+
+  default_value: "Heartland - Season 15"
+
+  allowed_value: {
+    label: "Heartland - Season 15"
+    value: "Heartland - Season 15"
+  }
+
   }
 
   parameter: p_type {
