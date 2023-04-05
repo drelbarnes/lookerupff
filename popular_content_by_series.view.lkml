@@ -157,6 +157,31 @@ view: popular_content_by_series {
     value: "Heartland - Season 15"
   }
 
+  allowed_value: {
+    label: "Heartland - Season 14"
+    value: "Heartland - Season 14"
+  }
+
+  allowed_value: {
+    label: "Heartland - Season 13"
+    value: "Heartland - Season 13"
+  }
+
+  allowed_value: {
+    label: "Hudson & Rex - Season 1"
+    value: "Hudson & Rex - Season 1"
+  }
+
+  allowed_value: {
+    label: "Hudson & Rex - Season 2"
+    value: "Hudson & Rex - Season 2"
+  }
+
+  allowed_value: {
+    label: "Hudson & Rex - Season 3"
+    value: "Hudson & Rex - Season 3"
+  }
+
   }
 
   parameter: p_type {
