@@ -1,7 +1,6 @@
 view: daily_spend {
   derived_table: {
-    sql:  with get_analytics as (
-        with p0 as (
+    sql:  with get_analytics_p0 as (
           select
           analytics_timestamp as timestamp
           , existing_free_trials
@@ -14,52 +13,65 @@ view: daily_spend {
           , paying_created
           , total_free_trials
           , total_paying
-          , row_number() over (partition by analytics_timestamp order by sent_at desc) as n
+          , row_number() over (partition by analytics_timestamp order by sent_at) as n
           from php.get_analytics
           where date(sent_at)=current_date
         )
+      , get_analytics_p1 as (
         select
-        *
-        from p0
-        where n=1
+        a.timestamp
+        , a.existing_free_trials
+        , a.existing_paying
+        , a.free_trial_churn
+        , a.free_trial_converted
+        , a.free_trial_created
+        , a.paused_created
+        , a.paying_churn
+        , a.paying_created
+        , b.total_free_trials
+        , b.total_paying
+        from (select * from get_analytics_p0 where n=1) as a
+        inner join (select * from get_analytics_p0 where n=2) as b
+        on date(a.timestamp) = date(b.timestamp)
       )
       , distinct_events as (
-        select distinct user_id, action, status, event_created_at, report_date
+        select distinct user_id
+        , action
+        , status
+        , frequency
+        , to_timestamp(event_created_at, 'YYYY-MM-DD HH24:MI:SS') as event_created_at
+        , to_date(event_created_at, 'YYYY-MM-DD') as event_date
+        , to_date(report_date, 'YYYY-MM-DD') as report_date
         from customers.all_customers
-      )
-      , paying as (
-        select report_date
-        , count(distinct user_id) as total_paying
-        from distinct_events
         where action = 'subscription'
-        and status = 'enabled'
-        group by report_date
       )
-      , trials as (
+      , total_counts as (
         select report_date
-        , count(distinct user_id) as total_free_trials
+        , count(distinct case when status = 'enabled' then user_id end) as total_paying
+        , lag(total_paying, 1) over (order by report_date) as existing_paying
+        , count(distinct case when status = 'free_trial' then user_id end) as total_free_trials
+        , lag(total_free_trials, 1) over (order by report_date) as existing_free_trials
         from distinct_events
-        where action = 'subscription'
-        and status = 'free_trial'
-        group by report_date
+        group by 1
       )
       , customers_analytics as (
-      select get_analytics.timestamp,
-      get_analytics.existing_free_trials,
-      get_analytics.existing_paying,
-      get_analytics.free_trial_churn,
-      get_analytics.free_trial_converted,
-      get_analytics.free_trial_created,
-      get_analytics.paused_created,
-      get_analytics.paying_churn,
-      get_analytics.paying_created,
-      COALESCE(trials.total_free_trials, get_analytics.total_free_trials) as total_free_trials,
-      COALESCE(paying.total_paying, get_analytics.total_paying) as total_paying
-      from get_analytics
-      full join paying
-      on paying.report_date = trunc(get_analytics.timestamp)
-      full join trials
-      on trials.report_date = trunc(get_analytics.timestamp)
+        with p0 as (
+          select get_analytics_p1.timestamp,
+          coalesce(get_analytics_p1.existing_free_trials, total_counts.existing_free_trials) as existing_free_trials,
+          coalesce(get_analytics_p1.existing_paying, total_counts.existing_paying) as existing_paying,
+          get_analytics_p1.free_trial_churn,
+          get_analytics_p1.free_trial_converted,
+          get_analytics_p1.free_trial_created,
+          get_analytics_p1.paused_created,
+          get_analytics_p1.paying_churn,
+          get_analytics_p1.paying_created,
+          coalesce(get_analytics_p1.total_free_trials, total_counts.total_free_trials) as total_free_trials,
+          coalesce(get_analytics_p1.total_paying, total_counts.total_paying) as total_paying
+          from get_analytics_p1
+          full join total_counts
+          on total_counts.report_date = trunc(get_analytics_p1.timestamp)
+        )
+        select * from p0 where date(timestamp) < current_date
       ),
 
       apple_perf as (
@@ -156,13 +168,13 @@ view: daily_spend {
       , channel_pivot as (
         select *
         from (select spend, channel, date_start from t1)
-        PIVOT (sum(spend) FOR channel IN ('Apple Search Ads', 'Facebook', 'Bing Ads', 'Google', 'Google Campaign Manager', 'MNTN', 'TikTok'))
+        PIVOT (sum(spend) FOR channel IN ('Apple Search Ads', 'Facebook', 'Bing Ads', 'Google', 'Google Campaign Manager', 'MNTN', 'TikTok', 'Viant'))
       )
       , channel_unpivot as (
         select *
         from channel_pivot
         UNPIVOT include nulls (
-            channel_spend for channel in ("Apple Search Ads", "Facebook", "Bing Ads", "Google", "Google Campaign Manager", "MNTN", "TikTok")
+            channel_spend for channel in ("Apple Search Ads", "Facebook", "Bing Ads", "Google", "Google Campaign Manager", "MNTN", "TikTok", "Viant")
         )
       )
       -- we then create a spend_partition column that keeps track of the last non null spend value per channel

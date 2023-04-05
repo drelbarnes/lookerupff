@@ -1,7 +1,6 @@
 view: analytics_v2 {
   derived_table: {
-    sql: with get_analytics as (
-        with p0 as (
+    sql: with get_analytics_p0 as (
           select
           analytics_timestamp as timestamp
           , existing_free_trials
@@ -14,14 +13,26 @@ view: analytics_v2 {
           , paying_created
           , total_free_trials
           , total_paying
-          , row_number() over (partition by analytics_timestamp order by sent_at desc) as n
+          , row_number() over (partition by analytics_timestamp order by sent_at) as n
           from php.get_analytics
           where date(sent_at)=current_date
         )
+      , get_analytics_p1 as (
         select
-        *
-        from p0
-        where n=1
+        a.timestamp
+        , a.existing_free_trials
+        , a.existing_paying
+        , a.free_trial_churn
+        , a.free_trial_converted
+        , a.free_trial_created
+        , a.paused_created
+        , a.paying_churn
+        , a.paying_created
+        , b.total_free_trials
+        , b.total_paying
+        from (select * from get_analytics_p0 where n=1) as a
+        inner join (select * from get_analytics_p0 where n=2) as b
+        on date(a.timestamp) = date(b.timestamp)
       )
       , distinct_events as (
         select distinct user_id
@@ -44,20 +55,23 @@ view: analytics_v2 {
         group by 1
       )
       , customers_analytics as (
-        select get_analytics.timestamp,
-        coalesce(total_counts.existing_free_trials, get_analytics.existing_free_trials) as existing_free_trials,
-        coalesce(total_counts.existing_paying, get_analytics.existing_paying) as existing_paying,
-        get_analytics.free_trial_churn,
-        get_analytics.free_trial_converted,
-        get_analytics.free_trial_created,
-        get_analytics.paused_created,
-        get_analytics.paying_churn,
-        get_analytics.paying_created,
-        coalesce(total_counts.total_free_trials, get_analytics.total_free_trials) as total_free_trials,
-        coalesce(total_counts.total_paying, get_analytics.total_paying) as total_paying
-        from get_analytics
-        full join total_counts
-        on total_counts.report_date = trunc(get_analytics.timestamp)
+        with p0 as (
+          select get_analytics_p1.timestamp,
+          coalesce(get_analytics_p1.existing_free_trials, total_counts.existing_free_trials) as existing_free_trials,
+          coalesce(get_analytics_p1.existing_paying, total_counts.existing_paying) as existing_paying,
+          get_analytics_p1.free_trial_churn,
+          get_analytics_p1.free_trial_converted,
+          get_analytics_p1.free_trial_created,
+          get_analytics_p1.paused_created,
+          get_analytics_p1.paying_churn,
+          get_analytics_p1.paying_created,
+          coalesce(get_analytics_p1.total_free_trials, total_counts.total_free_trials) as total_free_trials,
+          coalesce(get_analytics_p1.total_paying, total_counts.total_paying) as total_paying
+          from get_analytics_p1
+          full join total_counts
+          on total_counts.report_date = trunc(get_analytics_p1.timestamp)
+        )
+        select * from p0 where date(timestamp) < current_date
       ),
 
       a as (select a.timestamp, ROW_NUMBER() OVER(ORDER BY a.timestamp desc) AS Row
@@ -121,7 +135,11 @@ view: analytics_v2 {
       where timestamp in
       (select dateadd(day,-14,timestamp) as timestamp from customers_analytics )) as b on a.rownum=b.rownum)) as a
       left join customers.churn_reasons_aggregated as b on a.timestamp=b.timestamp)) as a))
-      select f.*,paying_30_days_prior,churn_30_days,churn_30_day_percent,winback_30_days from e inner join f on e.timestamp=f.timestamp ;;
+      , outer_query as (
+        select f.*,paying_30_days_prior,churn_30_days,churn_30_day_percent,winback_30_days from e inner join f on e.timestamp=f.timestamp
+      )
+      select * from outer_query
+      ;;
     datagroup_trigger: upff_acquisition_reporting
     distribution_style: all
   }

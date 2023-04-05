@@ -7,15 +7,28 @@ view: users {
   # This primary key is the unique key for this table in the underlying database.
   # You need to define a primary key in a view in order to join to other views.
 
-  dimension: id {
-    primary_key: yes
-    type: number
-    sql: ${TABLE}.id ;;
-  }
-
-  # Here's what a typical dimension looks like in LookML.
-  # A dimension is a groupable field that can be used to filter query results.
-  # This dimension will be called "Bango User ID" in Explore.
+  # derived_table: {
+  #   sql:
+  #     select
+  #     bango_user_Id
+  #     , customer_id
+  #     , date_activated as date_activated_test
+  #     , str_to_date(date_activated, '%Y-%m-%dT%H:%i:%s') as date_activated
+  #     , str_to_date(date_created, '%Y-%m-%dT%H:%i:%s') as date_created
+  #     , str_to_date(date_suspended, '%Y-%m-%dT%H:%i:%s') as date_suspended
+  #     , str_to_date(date_resumed, '%Y-%m-%dT%H:%i:%s') as date_resumed
+  #     , str_to_date(date_ended, '%Y-%m-%dT%H:%i:%s') as date_ended
+  #     , email_hashed
+  #     , entitlement_id
+  #     , offer_key
+  #     , partner_id
+  #     , product_key
+  #     , reseller_key
+  #     , timestamp
+  #     , id
+  #     from admin_bang_prod.users
+  #     ;;
+  # }
 
   parameter: free_trial_length {
     label: "Free Trial Length"
@@ -33,6 +46,12 @@ view: users {
       label: "14 days"
       value: "14"
     }
+  }
+
+  dimension: id {
+    type: number
+    primary_key: yes
+    sql: ${TABLE}.id ;;
   }
 
   dimension: bango_user_id {
@@ -121,6 +140,6 @@ view: users {
   measure: subscribers {
     type: count_distinct
     sql: ${user_id} ;;
-    filters: [date_activated_date: "before 14 days ago"]
+    filters: [date_activated_date: "before 13 days ago"]
   }
 }
