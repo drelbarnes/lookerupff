@@ -70,7 +70,7 @@ view: popular_content_by_series {
       source,
       episode
       from plays_less_granular
-      where collection = "{% parameter c_name %}"
+      where collection = {% parameter c_name %}
       and min_count > 10
       ),
 
@@ -127,12 +127,12 @@ view: popular_content_by_series {
       count(user_id) as num_plays
       from title_analysis_p0
       where type = 'series'
-      and collection <> "{% parameter c_name %}"
+      and collection <> {% parameter c_name %}
       and title is not null
       group by collection
       )
 
-      select * from "{% parameter p_type %}" order by num_plays desc
+      select * from {% parameter p_type %} order by num_plays desc
       ;;
   }
 
