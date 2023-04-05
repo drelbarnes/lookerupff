@@ -147,7 +147,7 @@ view: popular_content_by_series {
   }
 
   parameter: c_name {
-    label: "Type"
+    label: "Collection"
     type: string
 
   default_value: "Heartland - Season 15"
