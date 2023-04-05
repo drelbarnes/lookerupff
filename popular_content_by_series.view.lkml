@@ -112,7 +112,7 @@ view: popular_content_by_series {
       movies_p0 as
       (
       select
-      title,
+      title as collection,
       count(user_id) as num_plays
       from title_analysis_p0
       where type <> 'series'
