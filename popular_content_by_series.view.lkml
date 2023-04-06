@@ -114,7 +114,7 @@ view: popular_content_by_series {
       select
       title as collection,
       count(user_id) as num_plays,
-      count(distinct user_id) as num_users,
+      (select count(distinct user_id) from audience_select_p3) as num_users
       from title_analysis_p0
       where type <> 'series'
       and title is not null
@@ -126,7 +126,7 @@ view: popular_content_by_series {
       select
       collection,
       count(user_id) as num_plays,
-      count(distinct user_id) as num_users,
+      (select count(distinct user_id) from audience_select_p3) as num_users
       from title_analysis_p0
       where type = 'series'
       and collection <> {% parameter c_name %}
