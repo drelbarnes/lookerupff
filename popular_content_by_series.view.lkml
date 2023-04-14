@@ -184,6 +184,16 @@ view: popular_content_by_series {
     value: "Hudson & Rex - Season 3"
   }
 
+  allowed_value: {
+    label: "Mystic - Season 1"
+    value: "Mystic - Season 1"
+  }
+
+  allowed_value: {
+    label: "Mystic - Season 2"
+    value: "Mystic - Season 2"
+  }
+
   }
 
   parameter: p_type {
