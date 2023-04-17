@@ -322,13 +322,14 @@ group by 1
 )
 
 select
-  a.timestamp,
+  date(a.timestamp) as timestamp,
   a.audience_size + ifnull(b.audience_size, 0) as audience_size,
   total_subs,
   round( (a.audience_size + ifnull(b.audience_size, 0)) / total_subs * 100, 2) as active_user_pct
 from plays as a
 left join roku_plays as b
 on a.timestamp = cast(b.timestamp as timestamp)
+where total_subs is not null
        ;;
   }
 
