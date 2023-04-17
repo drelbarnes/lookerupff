@@ -6,7 +6,7 @@ view: popular_content_by_series {
       play_data_global as
       (
       select
-      *
+        *
       from allfirstplay.p0
       where user_id <> '0'
       and regexp_contains(user_id, r'^[0-9]*$')
@@ -16,33 +16,33 @@ view: popular_content_by_series {
       plays_most_granular as
       (
       select
-      user_id,
-      row_number() over (partition by user_id, date(timestamp), video_id order by date(timestamp)) as min_count,
-      timestamp,
-      collection,
-      type,
-      video_id,
-      series,
-      title,
-      source,
-      episode,
-      email,
-      winback
+        user_id,
+        row_number() over (partition by user_id, date(timestamp), video_id order by date(timestamp)) as min_count,
+        timestamp,
+        collection,
+        type,
+        video_id,
+        series,
+        title,
+        source,
+        episode,
+        email,
+        winback
       from play_data_global
       order by
-      user_id,
-      date(timestamp),
-      video_id,
-      min_count
+        user_id,
+        date(timestamp),
+        video_id,
+        min_count
       ),
 
       plays_max_duration as
       (
       select
-      user_id,
-      video_id,
-      date(timestamp) as date,
-      max(min_count) as min_count
+        user_id,
+        video_id,
+        date(timestamp) as date,
+        max(min_count) as min_count
       from plays_most_granular
       group by 1,2,3
       ),
@@ -50,8 +50,8 @@ view: popular_content_by_series {
       plays_less_granular as
       (
       select
-      a.*,
-      row_number() over (partition by a.user_id order by a.timestamp) as play_number
+        a.*,
+        row_number() over (partition by a.user_id order by a.timestamp) as play_number
       from plays_most_granular as a
       inner join plays_max_duration as b
       on a.user_id = b.user_id
@@ -63,12 +63,12 @@ view: popular_content_by_series {
       audience_select_p0 as
       (
       select
-      user_id,
-      min_count,
-      timestamp,
-      title,
-      source,
-      episode
+        user_id,
+        min_count,
+        timestamp,
+        title,
+        source,
+        episode
       from plays_less_granular
       where collection = {% parameter c_name %}
       and min_count > 10
@@ -77,16 +77,16 @@ view: popular_content_by_series {
       audience_select_p1 as
       (
       select
-      *,
-      row_number() over (partition by user_id order by timestamp) as play_nbr
+        *,
+        row_number() over (partition by user_id order by timestamp) as play_nbr
       from audience_select_p0
       ),
 
       audience_select_p2 as
       (
       select
-      user_id,
-      max(play_nbr) as max_plays
+        user_id,
+        max(play_nbr) as max_plays
       from audience_select_p1
       group by user_id
       ),
@@ -94,40 +94,40 @@ view: popular_content_by_series {
       audience_select_p3 as
       (
       select
-      *
+        *
       from audience_select_p2
       where max_plays > 2
       ),
 
-      title_analysis_p0 as
+      title_analysis as
       (
       select
-      a.*,
-      b.max_plays
+        a.*,
+        b.max_plays
       from plays_less_granular as a
       right join audience_select_p3 as b
       on a.user_id = b.user_id
       ),
 
-      movies_p0 as
+      movies as
       (
       select
-      title as collection,
-      count(user_id) as num_plays,
-      (select count(distinct user_id) from audience_select_p3) as num_users
-      from title_analysis_p0
+        title as collection,
+        count(user_id) as num_plays,
+        (select count(distinct user_id) from audience_select_p3) as num_users
+      from title_analysis
       where type <> 'series'
       and title is not null
       group by title
       ),
 
-      series_p0 as
+      series as
       (
       select
-      collection,
-      count(user_id) as num_plays,
-      (select count(distinct user_id) from audience_select_p3) as num_users
-      from title_analysis_p0
+        collection,
+        count(user_id) as num_plays,
+        (select count(distinct user_id) from audience_select_p3) as num_users
+      from title_analysis
       where type = 'series'
       and collection <> {% parameter c_name %}
       and title is not null
@@ -199,8 +199,8 @@ view: popular_content_by_series {
   parameter: p_type {
     type: unquoted
     label: "Type"
-    allowed_value: {label: "Movies" value: "movies_p0"}
-    allowed_value: {label: "Series" value: "series_p0"}
+    allowed_value: {label: "Movies" value: "movies"}
+    allowed_value: {label: "Series" value: "series"}
   }
 
   measure: count {
