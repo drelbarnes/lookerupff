@@ -362,8 +362,8 @@ where total_subs is not null
     sql: ${TABLE}.total_subs ;;
   }
 
-  dimension: active_user_pct {
-    type: number
+  measure: active_user_pct {
+    type: sum
     sql: ${TABLE}.active_user_pct ;;
   }
 
