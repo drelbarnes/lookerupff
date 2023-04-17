@@ -319,7 +319,7 @@ select
 from a32
 where date(mysql_roku_firstplays_firstplay_date_date) >= '2019-03-04'
 group by 1
-)
+),
 
 outer_table_set as
 (
