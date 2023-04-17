@@ -322,7 +322,7 @@ group by 1
 )
 
 select
-  date(a.timestamp) as timestamp,
+  a.timestamp,
   a.audience_size + ifnull(b.audience_size, 0) as audience_size,
   total_subs,
   round( (a.audience_size + ifnull(b.audience_size, 0)) / total_subs * 100, 2) as active_user_pct
