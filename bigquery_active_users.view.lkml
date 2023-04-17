@@ -361,7 +361,7 @@ on a.timestamp = cast(b.timestamp as timestamp)
     sql: ${TABLE}.total_subs ;;
   }
 
-  measure: active_user_pct {
+  dimension: active_user_pct {
     type: number
     sql: ${TABLE}.active_user_pct ;;
   }
