@@ -321,6 +321,8 @@ where date(mysql_roku_firstplays_firstplay_date_date) >= '2019-03-04'
 group by 1
 )
 
+outer_table_set as
+(
 select
   a.timestamp,
   a.audience_size + ifnull(b.audience_size, 0) as audience_size,
@@ -330,6 +332,12 @@ from plays as a
 left join roku_plays as b
 on a.timestamp = cast(b.timestamp as timestamp)
 where total_subs is not null
+)
+
+select
+  *,
+  lag(active_user_pct, 52) over (order by timestamp) as active_user_pct_yago
+from outer_table_set
        ;;
   }
 
@@ -365,6 +373,11 @@ where total_subs is not null
   measure: active_user_pct {
     type: sum
     sql: ${TABLE}.active_user_pct ;;
+  }
+
+  measure: active_user_pct_yago {
+    type: sum
+    sql: ${TABLE}.active_user_pct_yago ;;
   }
 
 }
