@@ -109,7 +109,7 @@ view: popular_content_by_series {
       on a.user_id = b.user_id
       ),
 
-      movies as
+      movies_p0 as
       (
       select
         title as collection,
@@ -121,7 +121,7 @@ view: popular_content_by_series {
       group by title
       ),
 
-      series as
+      series_p0 as
       (
       select
         collection,
@@ -199,8 +199,8 @@ view: popular_content_by_series {
   parameter: p_type {
     type: unquoted
     label: "Type"
-    allowed_value: {label: "Movies" value: "movies"}
-    allowed_value: {label: "Series" value: "series"}
+    allowed_value: {label: "Movies" value: "movies_p0"}
+    allowed_value: {label: "Series" value: "series_p0"}
   }
 
   measure: count {
