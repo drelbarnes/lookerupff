@@ -27,14 +27,10 @@ view: app_store_connect_aggregate {
   # measures for this dimension, but you can also add measures of many different aggregates.
   # Click on the type parameter to see all the options in the Quick Help panel on the right.
 
-  measure: total_app_store_connect_subscribers_ios {
-    type: sum
-    sql: ${app_store_connect_subscribers_ios} ;;
-  }
-
-  measure: average_app_store_connect_subscribers_ios {
-    type: average
-    sql: ${app_store_connect_subscribers_ios} ;;
+  dimension: user_id {
+    type: number
+    tags: ["user_id"]
+    sql: 1 ;;
   }
 
   dimension: app_store_connect_subscribers_total {
