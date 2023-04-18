@@ -204,6 +204,10 @@ include: "research_active_users.view.lkml"
 include: "user_play_history.view.lkml"
 include: "first_n_plays.view.lkml"
 
+# DTC App reporting #
+
+include: "/views/bigquery_views/app_store_connect_aggregate.view.lkml"
+
 # Test Views #
 
 include: "/views/testing_views/hubspot_bogo_testing.view.lkml"
@@ -217,6 +221,10 @@ datagroup: upff_daily_refresh_datagroup {
 }
 
 # Explores #
+
+explore: app_store_connect_aggregate {
+  label: "App Store Connect Subs"
+}
 
 explore: user_play_history {
   label: "User Play History"
