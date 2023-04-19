@@ -14,6 +14,16 @@ explore: users {
   join: statuses {
     type: inner
     sql_on: ${users.bango_user_id} = ${statuses.bango_user_id} ;;
+    relationship: one_to_many
+  }
+}
+
+explore: statuses {
+  label: "Bango Statuses"
+
+  join: users {
+    type: left_outer
+    sql_on: ${statuses.bango_user_id} = ${users.bango_user_id} ;;
     relationship: many_to_one
   }
 }
