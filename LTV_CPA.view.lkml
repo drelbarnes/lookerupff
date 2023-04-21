@@ -1,7 +1,6 @@
 view: ltv_cpa{
   derived_table: {
-    sql:
-      with get_analytics_p0 as (
+    sql: with get_analytics_p0 as (
         select
         analytics_timestamp as timestamp
         , existing_free_trials
@@ -18,6 +17,15 @@ view: ltv_cpa{
         from php.get_analytics
         where date(sent_at)=current_date
       )
+      , apple_subs as (
+        select
+        report_date
+        , app_store_connect_subscribers_total
+        , vimeo_ott_subscribers_total
+        from
+        looker.get_app_store_connect_subs
+        where date(sent_at)=current_date
+      )
       , get_analytics_p1 as (
         select
         a.timestamp
@@ -30,11 +38,23 @@ view: ltv_cpa{
         , a.paying_churn
         , a.paying_created
         , b.total_free_trials
-        , b.total_paying
+        -- , b.total_paying
+        , (b.total_paying-c.vimeo_ott_subscribers_total+c.app_store_connect_subscribers_total) as total_paying
         from (select * from get_analytics_p0 where n=1) as a
         inner join (select * from get_analytics_p0 where n=2) as b
         on date(a.timestamp) = date(b.timestamp)
+        inner join (
+          select
+          report_date
+          , app_store_connect_subscribers_total
+          , vimeo_ott_subscribers_total
+          from
+          looker.get_app_store_connect_subs
+          where date(sent_at)=current_date
+        ) c
+        on date(a.timestamp) = date(c.report_date)
       )
+      -- BACK UP SOURCE INCASE OF API OUTAGE
       , distinct_events as (
         select distinct user_id
         , action
