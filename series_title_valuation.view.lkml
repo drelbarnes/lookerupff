@@ -650,9 +650,9 @@ view: series_title_valuation {
       sql: ${TABLE}.series ;;
     }
 
-    measure: avg_cr {
+    measure: avg_completion_rate {
       type: sum
-      sql: ${TABLE}.avg_cr ;;
+      sql: ${TABLE}.avg_completion_rate ;;
     }
 
     measure: number_first_plays {
@@ -671,6 +671,6 @@ view: series_title_valuation {
     }
 
     set: detail {
-      fields: [series, avg_cr, number_first_plays, total_ltv, value_score]
+      fields: [series, avg_completion_rate, number_first_plays, total_ltv, value_score]
     }
   }
