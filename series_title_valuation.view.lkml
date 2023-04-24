@@ -77,7 +77,9 @@ view: series_title_valuation {
         from plays_less_granular
         where series in (
         {% parameter c_name1 %},
-        {% parameter c_name2 %}
+        {% parameter c_name2 %},
+        {% parameter c_name3 %},
+        {% parameter c_name4 %}
         --'Sue Thomas: F.B.Eye',
         --'Wildfire',
         --'Touched by an Angel',
@@ -416,9 +418,9 @@ view: series_title_valuation {
       type: date
     }
 
-    parameter: c_name1 {
-      label: "Series"
-      type: string
+  parameter: c_name1 {
+    label: "Series 1"
+    type: string
 
     default_value: "Hudson & Rex"
 
@@ -430,11 +432,32 @@ view: series_title_valuation {
     allowed_value: {
       label: "Touched by an Angel"
       value: "Touched by an Angel"
-    }}
+    }
 
-    parameter: c_name2 {
-      label: "Series"
-      type: string
+    allowed_value: {
+      label: "Sue Thomas: F.B.Eye"
+      value: "Sue Thomas: F.B.Eye"
+    }
+
+    allowed_value: {
+      label: "Wildfire"
+      value: "Wildfire"
+    }
+
+    allowed_value: {
+      label: "Heartland"
+      value: "Heartland"
+    }
+
+    allowed_value: {
+      label: "Mystic"
+      value: "Mysic"
+    }
+  }
+
+  parameter: c_name2 {
+    label: "Series 2"
+    type: string
 
     default_value: "Touched by an Angel"
 
@@ -446,7 +469,102 @@ view: series_title_valuation {
     allowed_value: {
       label: "Touched by an Angel"
       value: "Touched by an Angel"
-    }}
+    }
+
+    allowed_value: {
+      label: "Sue Thomas: F.B.Eye"
+      value: "Sue Thomas: F.B.Eye"
+    }
+
+    allowed_value: {
+      label: "Wildfire"
+      value: "Wildfire"
+    }
+
+    allowed_value: {
+      label: "Heartland"
+      value: "Heartland"
+    }
+
+    allowed_value: {
+      label: "Mystic"
+      value: "Mysic"
+    }
+  }
+
+  parameter: c_name3 {
+    label: "Series 3"
+    type: string
+
+    default_value: "Touched by an Angel"
+
+    allowed_value: {
+      label: "Hudson & Rex"
+      value: "Hudson & Rex"
+    }
+
+    allowed_value: {
+      label: "Touched by an Angel"
+      value: "Touched by an Angel"
+    }
+
+    allowed_value: {
+      label: "Sue Thomas: F.B.Eye"
+      value: "Sue Thomas: F.B.Eye"
+    }
+
+    allowed_value: {
+      label: "Wildfire"
+      value: "Wildfire"
+    }
+
+    allowed_value: {
+      label: "Heartland"
+      value: "Heartland"
+    }
+
+    allowed_value: {
+      label: "Mystic"
+      value: "Mysic"
+    }
+  }
+
+  parameter: c_name4 {
+    label: "Series 4"
+    type: string
+
+    default_value: "Touched by an Angel"
+
+    allowed_value: {
+      label: "Hudson & Rex"
+      value: "Hudson & Rex"
+    }
+
+    allowed_value: {
+      label: "Touched by an Angel"
+      value: "Touched by an Angel"
+    }
+
+    allowed_value: {
+      label: "Sue Thomas: F.B.Eye"
+      value: "Sue Thomas: F.B.Eye"
+    }
+
+    allowed_value: {
+      label: "Wildfire"
+      value: "Wildfire"
+    }
+
+    allowed_value: {
+      label: "Heartland"
+      value: "Heartland"
+    }
+
+    allowed_value: {
+      label: "Mystic"
+      value: "Mysic"
+    }
+  }
 
     measure: count {
       type: count
