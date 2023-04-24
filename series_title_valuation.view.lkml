@@ -76,12 +76,13 @@ view: series_title_valuation {
         select *
         from plays_less_granular
         where series in (
-        'Sue Thomas: F.B.Eye',
-        'Wildfire',
-        'Touched by an Angel',
-        'Hudson & Rex',
-        'Heartland',
-        'Mystic'
+        {% parameter c_name1 %}
+        --'Sue Thomas: F.B.Eye',
+        --'Wildfire',
+        --'Touched by an Angel',
+        --'Hudson & Rex',
+        --'Heartland',
+        --'Mystic'
         )
         ),
 
@@ -412,6 +413,23 @@ view: series_title_valuation {
     filter: end_date {
       label: "End Date"
       type: date
+    }
+
+    parameter: c_name1 {
+      label: "Series"
+      type: string
+
+    default_value: "Hudson & Rex"
+
+    allowed_value: {
+      label: "Hudson & Rex"
+      value: "Hudson & Rex"
+    }
+
+    allowed_value: {
+      label: "Touched by an Angel"
+      value: "Touched by an Angel"
+    }
     }
 
     measure: count {
