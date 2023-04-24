@@ -93,8 +93,7 @@ view: series_title_valuation {
         (
         select *
         from user_first_play
-        where timestamp between {% date_start date_filter %}
-        and {% date_end date_filter %}
+        where date(timestamp) between '2021-11-01' and current_date()
         ),
 
         first_play_p1 as
@@ -295,8 +294,7 @@ view: series_title_valuation {
         (
         select *
         from user_first_play
-        where timestamp between {% date_start date_filter %}
-        and {% date_end date_filter %}
+        where date(timestamp) between '2021-11-01' and current_date()
         ),
 
         first_play_p1 as
