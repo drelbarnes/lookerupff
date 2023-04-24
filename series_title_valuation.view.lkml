@@ -295,7 +295,7 @@ view: series_title_valuation {
         (
         select *
         from user_first_play
-        and date(timestamp) >= '2021-01-01'
+        where date(timestamp) >= '2021-01-01'
         and date(timestamp) <= current_date()
         ),
 
