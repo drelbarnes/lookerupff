@@ -1,13 +1,6 @@
 view: series_title_valuation {
     derived_table: {
-      sql:
-        --series title valuation analysis v2.0 4-24-2023
-
-        --date range for allfirstplay query
-        --declare g_begin_dt date default '2021-01-01';
-        --declare g_end_dt date default '2023-04-01';
-        --declare l_begin_dt date default '2021-10-01';
-        --declare l_end_dt date default '2023-04-01';
+      sql: --series title valuation analysis v2.0 4-24-2023
 
         with
 
