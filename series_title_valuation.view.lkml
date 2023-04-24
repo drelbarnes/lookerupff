@@ -451,7 +451,7 @@ view: series_title_valuation {
 
     allowed_value: {
       label: "Mystic"
-      value: "Mysic"
+      value: "Mystic"
     }
   }
 
@@ -488,7 +488,7 @@ view: series_title_valuation {
 
     allowed_value: {
       label: "Mystic"
-      value: "Mysic"
+      value: "Mystic"
     }
   }
 
@@ -525,7 +525,7 @@ view: series_title_valuation {
 
     allowed_value: {
       label: "Mystic"
-      value: "Mysic"
+      value: "Mystic"
     }
   }
 
@@ -562,7 +562,7 @@ view: series_title_valuation {
 
     allowed_value: {
       label: "Mystic"
-      value: "Mysic"
+      value: "Mystic"
     }
   }
 
@@ -599,7 +599,7 @@ view: series_title_valuation {
 
     allowed_value: {
       label: "Mystic"
-      value: "Mysic"
+      value: "Mystic"
     }
   }
 
@@ -636,7 +636,7 @@ view: series_title_valuation {
 
     allowed_value: {
       label: "Mystic"
-      value: "Mysic"
+      value: "Mystic"
     }
   }
 
