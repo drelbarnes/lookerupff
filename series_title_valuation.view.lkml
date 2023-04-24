@@ -82,7 +82,7 @@ view: series_title_valuation {
           {% parameter c_name3 %},
           {% parameter c_name4 %},
           {% parameter c_name5 %},
-          {% parameter c_name6 %},
+          {% parameter c_name6 %}
             )
         ),
 
