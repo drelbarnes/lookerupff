@@ -496,7 +496,7 @@ view: series_title_valuation {
     label: "Series 3"
     type: string
 
-    default_value: "Touched by an Angel"
+    default_value: "Sue Thomas: F.B.Eye"
 
     allowed_value: {
       label: "Hudson & Rex"
@@ -533,7 +533,7 @@ view: series_title_valuation {
     label: "Series 4"
     type: string
 
-    default_value: "Touched by an Angel"
+    default_value: "Wildfire"
 
     allowed_value: {
       label: "Hudson & Rex"
