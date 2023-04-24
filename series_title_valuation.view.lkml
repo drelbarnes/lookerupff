@@ -426,23 +426,23 @@ view: series_title_valuation {
       sql: ${TABLE}.series ;;
     }
 
-    dimension: avg_cr {
-      type: number
+    measure: avg_cr {
+      type: sum
       sql: ${TABLE}.avg_cr ;;
     }
 
-    dimension: number_first_plays {
-      type: number
+    measure: number_first_plays {
+      type: sum
       sql: ${TABLE}.number_first_plays ;;
     }
 
-    dimension: total_ltv {
-      type: number
+    measure: total_ltv {
+      type: sum
       sql: ${TABLE}.total_ltv ;;
     }
 
-    dimension: value_score {
-      type: number
+    measure: value_score {
+      type: sum
       sql: ${TABLE}.value_score ;;
     }
 
