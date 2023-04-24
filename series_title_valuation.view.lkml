@@ -76,7 +76,8 @@ view: series_title_valuation {
         select *
         from plays_less_granular
         where series in (
-        {% parameter c_name1 %}
+        {% parameter c_name1 %},
+        {% parameter c_name2 %}
         --'Sue Thomas: F.B.Eye',
         --'Wildfire',
         --'Touched by an Angel',
@@ -429,8 +430,23 @@ view: series_title_valuation {
     allowed_value: {
       label: "Touched by an Angel"
       value: "Touched by an Angel"
+    }}
+
+    parameter: c_name2 {
+      label: "Series"
+      type: string
+
+    default_value: "Touched by an Angel"
+
+    allowed_value: {
+      label: "Hudson & Rex"
+      value: "Hudson & Rex"
     }
-    }
+
+    allowed_value: {
+      label: "Touched by an Angel"
+      value: "Touched by an Angel"
+    }}
 
     measure: count {
       type: count
