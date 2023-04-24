@@ -93,8 +93,8 @@ view: series_title_valuation {
         (
         select *
         from user_first_play
-        where date(timestamp) >= {% date_start date_filter %}
-        and date(timestamp) <= {% date_end date_filter %}
+        where timestamp >= {% date_start date_filter %}
+        and timestamp <= {% date_end date_filter %}
         ),
 
         first_play_p1 as
