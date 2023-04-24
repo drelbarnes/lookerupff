@@ -81,7 +81,8 @@ view: series_title_valuation {
           {% parameter c_name2 %},
           {% parameter c_name3 %},
           {% parameter c_name4 %},
-          {% parameter c_name5 %}
+          {% parameter c_name5 %},
+          {% parameter c_name6 %},
             )
         ),
 
@@ -567,6 +568,43 @@ view: series_title_valuation {
 
   parameter: c_name5 {
     label: "Series 5"
+    type: string
+
+    default_value: "Heartland"
+
+    allowed_value: {
+      label: "Hudson & Rex"
+      value: "Hudson & Rex"
+    }
+
+    allowed_value: {
+      label: "Touched by an Angel"
+      value: "Touched by an Angel"
+    }
+
+    allowed_value: {
+      label: "Sue Thomas: F.B.Eye"
+      value: "Sue Thomas: F.B.Eye"
+    }
+
+    allowed_value: {
+      label: "Wildfire"
+      value: "Wildfire"
+    }
+
+    allowed_value: {
+      label: "Heartland"
+      value: "Heartland"
+    }
+
+    allowed_value: {
+      label: "Mystic"
+      value: "Mysic"
+    }
+  }
+
+  parameter: c_name6 {
+    label: "Series 6"
     type: string
 
     default_value: "Mystic"
