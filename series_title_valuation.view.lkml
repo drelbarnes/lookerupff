@@ -399,7 +399,7 @@ view: series_title_valuation {
           a.*,
           b.number_first_plays,
           c.total_ltv,
-          round(100 * a.avg_cr + 0.01 * b.number_first_plays + log(c.total_ltv), 0) as value_score
+          round(100 * a.avg_cr + 0.01 * b.number_first_plays + 0.1 * log(c.total_ltv), 0) as value_score
         from completion_rate_analysis as a
         left join series_first_plays as b
         on a.series = b.series
