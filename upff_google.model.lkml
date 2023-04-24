@@ -1,10 +1,5 @@
 connection: "google_bigquery_db"
 
-include: "bigquery_viewing_habits.view.lkml"
-explore: bigquery_viewing_habits {
-  label: "Viewing Habits"
-}
-
 include: "bigquery_subscribers_timeupdate.view.lkml"
 include: "bigquery_derived_timeupdate.view.lkml"
 include: "bigquery_derived_views.view.lkml"
@@ -204,6 +199,8 @@ include: "research_active_users.view.lkml"
 include: "user_play_history.view.lkml"
 include: "first_n_plays.view.lkml"
 include: "popular_content_by_series.view.lkml"
+include: "series_title_valuation.view.lkml"
+include: "bigquery_viewing_habits.view.lkml"
 
 # DTC App reporting #
 
@@ -234,8 +231,16 @@ explore: user_play_history {
     }
 }
 
+explore: series_title_valuation {
+  label: "Series Title Valuation"
+}
+
 explore: popular_content_by_series {
-  label: " Popular Content by Series"
+  label: "Popular Content by Series"
+}
+
+explore: bigquery_viewing_habits {
+  label: "Viewing Habits"
 }
 
 explore: first_n_plays {
