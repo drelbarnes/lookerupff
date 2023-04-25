@@ -1,100 +1,136 @@
 view: upff_page_events {
   derived_table: {
-    sql: with site_pages as (
-        select
-        safe_cast(user_id as string) as user_id
-        , safe_cast(anonymous_id as string) as anonymous_id
-        , safe_cast(context_ip as string) as ip_address
-        , safe_cast(context_traits_cross_domain_id as string) as cross_domain_id
-        , "Page Viewed" as event
-        , id
-        , safe_cast(context_campaign_content as string) as utm_content
-        , safe_cast(context_campaign_medium as string) as utm_medium
-        , safe_cast(context_campaign_name as string) as utm_campaign
-        , safe_cast(context_campaign_source as string) as utm_source
-        , safe_cast(context_campaign_term as string) as utm_term
-        , safe_cast(context_page_referrer as string) as referrer
-        , safe_cast(context_page_search as string) as search
-        , safe_cast(title as string) as title
-        , safe_cast(context_page_url as string) as url
-        , safe_cast(context_page_path as string) as path
-        , safe_cast(context_user_agent as string) as user_agent
-        , "web" as platform
-        , timestamp
-        from javascript_upff_home.pages
-        group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19
+    sql: CREATE TEMP FUNCTION URLDECODE(url STRING) AS ((
+        SELECT SAFE_CONVERT_BYTES_TO_STRING(
+          ARRAY_TO_STRING(ARRAY_AGG(
+              IF(STARTS_WITH(y, '%'), FROM_HEX(SUBSTR(y, 2)), CAST(y AS BYTES)) ORDER BY i
+            ), b''))
+        FROM UNNEST(REGEXP_EXTRACT_ALL(url, r"%[0-9a-fA-F]{2}|[^%]+")) AS y WITH OFFSET AS i
+      ));
+      with site_pages as (
+        select *
+        , REPLACE(REGEXP_EXTRACT(search, '(?i)utm_campaign=([^&]+)'), '+', ' ') AS utm_campaign
+        , REPLACE(REGEXP_EXTRACT(search, '(?i)utm_source=([^&]+)'), '+', ' ') AS utm_source
+        , REPLACE(REGEXP_EXTRACT(search, '(?i)utm_medium=([^&]+)'), '+', ' ') AS utm_medium
+        , REPLACE(REGEXP_EXTRACT(search, '(?i)utm_content=([^&]+)'), '+', ' ') AS utm_content
+        , REPLACE(REGEXP_EXTRACT(search, '(?i)utm_term=([^&]+)'), '+', ' ') AS utm_term
+        , coalesce(REPLACE(REGEXP_EXTRACT(search, '(?i)ad_id=([^&]+)'), '+', ' '), REPLACE(REGEXP_EXTRACT(search, '(?i)hsa_ad=([^&]+)'), '+', ' ')) AS ad_id
+        , coalesce(REPLACE(REGEXP_EXTRACT(search, '(?i)adset_id=([^&]+)'), '+', ' '), REPLACE(REGEXP_EXTRACT(search, '(?i)hsa_grp=([^&]+)'), '+', ' ')) AS adset_id
+        , coalesce(REPLACE(REGEXP_EXTRACT(search, '(?i)campaign_id=([^&]+)'), '+', ' '), REPLACE(REGEXP_EXTRACT(search, '(?i)hsa_cam=([^&]+)'), '+', ' ')) AS campaign_id
+        from (
+          select
+          id
+          , timestamp
+          , safe_cast(user_id as string) as user_id
+          , safe_cast(anonymous_id as string) as anonymous_id
+          , safe_cast(context_ip as string) as ip_address
+          , safe_cast(context_traits_cross_domain_id as string) as cross_domain_id
+          , safe_cast(context_user_agent as string) as user_agent
+          , "Page Viewed" as event
+          , "web" as platform
+          , safe_cast(context_page_url as string) as url
+          , URLDECODE(REGEXP_EXTRACT(safe_cast(context_page_url as string), '\\?(.+)')) as search
+          , safe_cast(context_page_referrer as string) as referrer
+          , NET.REG_DOMAIN(safe_cast(context_page_referrer as string)) AS referrer_domain
+          , safe_cast(context_page_title as string) as title
+          , safe_cast(context_page_path as string) as path
+          from javascript_upff_home.pages
+          group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+        )
       )
       , app_pages as (
         select
-        safe_cast(user_id as string) as user_id
-        , safe_cast(anonymous_id as string) as anonymous_id
-        , safe_cast(context_ip as string) as ip_address
-        , safe_cast(context_traits_cross_domain_id as string) as cross_domain_id
-        , "Page Viewed" as event
-        , id
-        , safe_cast(context_campaign_content as string) as utm_content
-        , safe_cast(context_campaign_medium as string) as utm_medium
-        , safe_cast(context_campaign_name as string) as utm_campaign
-        , safe_cast(context_campaign_source as string) as utm_source
-        , safe_cast(context_campaign_term as string) as utm_term
-        , safe_cast(context_page_referrer as string) as referrer
-        , safe_cast(context_page_search as string) as search
-        , safe_cast(title as string) as title
-        , safe_cast(context_page_url as string) as url
-        , safe_cast(context_page_path as string) as path
-        , safe_cast(context_user_agent as string) as user_agent
-        , safe_cast(platform as string) as platform
-        , timestamp
-        from javascript.pages
-        group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19
+        *
+        , REPLACE(REGEXP_EXTRACT(search, '(?i)utm_campaign=([^&]+)'), '+', ' ') AS utm_campaign
+        , REPLACE(REGEXP_EXTRACT(search, '(?i)utm_source=([^&]+)'), '+', ' ') AS utm_source
+        , REPLACE(REGEXP_EXTRACT(search, '(?i)utm_medium=([^&]+)'), '+', ' ') AS utm_medium
+        , REPLACE(REGEXP_EXTRACT(search, '(?i)utm_content=([^&]+)'), '+', ' ') AS utm_content
+        , REPLACE(REGEXP_EXTRACT(search, '(?i)utm_term=([^&]+)'), '+', ' ') AS utm_term
+        , coalesce(REPLACE(REGEXP_EXTRACT(search, '(?i)ad_id=([^&]+)'), '+', ' '), REPLACE(REGEXP_EXTRACT(search, '(?i)hsa_ad=([^&]+)'), '+', ' ')) AS ad_id
+        , coalesce(REPLACE(REGEXP_EXTRACT(search, '(?i)adset_id=([^&]+)'), '+', ' '), REPLACE(REGEXP_EXTRACT(search, '(?i)hsa_grp=([^&]+)'), '+', ' ')) AS adset_id
+        , coalesce(REPLACE(REGEXP_EXTRACT(search, '(?i)campaign_id=([^&]+)'), '+', ' '), REPLACE(REGEXP_EXTRACT(search, '(?i)hsa_cam=([^&]+)'), '+', ' ')) AS campaign_id
+        from (
+          select
+          id
+          , timestamp
+          , safe_cast(user_id as string) as user_id
+          , safe_cast(anonymous_id as string) as anonymous_id
+          , safe_cast(context_ip as string) as ip_address
+          , safe_cast(context_traits_cross_domain_id as string) as cross_domain_id
+          , safe_cast(context_user_agent as string) as user_agent
+          , "Page Viewed" as event
+          , safe_cast(platform as string) as platform
+          , safe_cast(context_page_url as string) as url
+          , URLDECODE(REGEXP_EXTRACT(safe_cast(context_page_url as string), '\\?(.+)')) as search
+          , safe_cast(context_page_referrer as string) as referrer
+          , NET.REG_DOMAIN(safe_cast(context_page_referrer as string)) AS referrer_domain
+          , safe_cast(context_page_title as string) as title
+          , safe_cast(context_page_path as string) as path
+          from javascript.pages
+          group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+        )
       )
       , identifies as (
-        select
-        safe_cast(user_id as string) as user_id
-        , safe_cast(anonymous_id as string) as anonymous_id
-        , safe_cast(context_ip as string) as ip_address
-        , safe_cast(context_traits_cross_domain_id as string) as cross_domain_id
-        , "Identify" as event
-        , id
-        , safe_cast(context_campaign_content as string) as utm_content
-        , safe_cast(context_campaign_medium as string) as utm_medium
-        , safe_cast(context_campaign_name as string) as utm_campaign
-        , safe_cast(context_campaign_source as string) as utm_source
-        , safe_cast(context_campaign_term as string) as utm_term
-        , safe_cast(context_page_referrer as string) as referrer
-        , safe_cast(context_page_search as string) as search
-        , safe_cast(context_page_title as string) as title
-        , safe_cast(context_page_url as string) as url
-        , safe_cast(context_page_path as string) as path
-        , safe_cast(context_user_agent as string) as user_agent
-        , "web" as platform
-        , timestamp
-        from javascript.identifies
-        group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19
+        select *
+        , REPLACE(REGEXP_EXTRACT(search, '(?i)utm_campaign=([^&]+)'), '+', ' ') AS utm_campaign
+        , REPLACE(REGEXP_EXTRACT(search, '(?i)utm_source=([^&]+)'), '+', ' ') AS utm_source
+        , REPLACE(REGEXP_EXTRACT(search, '(?i)utm_medium=([^&]+)'), '+', ' ') AS utm_medium
+        , REPLACE(REGEXP_EXTRACT(search, '(?i)utm_content=([^&]+)'), '+', ' ') AS utm_content
+        , REPLACE(REGEXP_EXTRACT(search, '(?i)utm_term=([^&]+)'), '+', ' ') AS utm_term
+        , coalesce(REPLACE(REGEXP_EXTRACT(search, '(?i)ad_id=([^&]+)'), '+', ' '), REPLACE(REGEXP_EXTRACT(search, '(?i)hsa_ad=([^&]+)'), '+', ' ')) AS ad_id
+        , coalesce(REPLACE(REGEXP_EXTRACT(search, '(?i)adset_id=([^&]+)'), '+', ' '), REPLACE(REGEXP_EXTRACT(search, '(?i)hsa_grp=([^&]+)'), '+', ' ')) AS adset_id
+        , coalesce(REPLACE(REGEXP_EXTRACT(search, '(?i)campaign_id=([^&]+)'), '+', ' '), REPLACE(REGEXP_EXTRACT(search, '(?i)hsa_cam=([^&]+)'), '+', ' ')) AS campaign_id
+        from (
+          select
+          id
+          , timestamp
+          , safe_cast(user_id as string) as user_id
+          , safe_cast(anonymous_id as string) as anonymous_id
+          , safe_cast(context_ip as string) as ip_address
+          , safe_cast(context_traits_cross_domain_id as string) as cross_domain_id
+          , safe_cast(context_user_agent as string) as user_agent
+          , "Page Viewed" as event
+          , "web" as platform
+          , safe_cast(context_page_url as string) as url
+          , URLDECODE(REGEXP_EXTRACT(safe_cast(context_page_url as string), '\\?(.+)')) as search
+          , safe_cast(context_page_referrer as string) as referrer
+          , NET.REG_DOMAIN(safe_cast(context_page_referrer as string)) AS referrer_domain
+          , safe_cast(context_page_title as string) as title
+          , safe_cast(context_page_path as string) as path
+          from javascript.identifies
+          group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+        )
       )
       , order_completed as (
-        select
-        safe_cast(user_id as string) as user_id
-        , safe_cast(anonymous_id as string) as anonymous_id
-        , safe_cast(context_ip as string) as ip_address
-        , safe_cast(context_traits_cross_domain_id as string) as cross_domain_id
-        , "Order Completed" as event
-        , id
-        , safe_cast(context_campaign_content as string) as utm_content
-        , safe_cast(context_campaign_medium as string) as utm_medium
-        , safe_cast(context_campaign_name as string) as utm_campaign
-        , safe_cast(context_campaign_source as string) as utm_source
-        , safe_cast(context_campaign_term as string) as utm_term
-        , safe_cast(context_page_referrer as string) as referrer
-        , safe_cast(null as string) as search
-        , safe_cast(context_page_title as string) as title
-        , safe_cast(context_page_url as string) as url
-        , safe_cast(context_page_path as string) as path
-        , safe_cast(context_user_agent as string) as user_agent
-        , safe_cast(platform as string) as platform
-        , timestamp
+          select *
+        , REPLACE(REGEXP_EXTRACT(search, '(?i)utm_campaign=([^&]+)'), '+', ' ') AS utm_campaign
+        , REPLACE(REGEXP_EXTRACT(search, '(?i)utm_source=([^&]+)'), '+', ' ') AS utm_source
+        , REPLACE(REGEXP_EXTRACT(search, '(?i)utm_medium=([^&]+)'), '+', ' ') AS utm_medium
+        , REPLACE(REGEXP_EXTRACT(search, '(?i)utm_content=([^&]+)'), '+', ' ') AS utm_content
+        , REPLACE(REGEXP_EXTRACT(search, '(?i)utm_term=([^&]+)'), '+', ' ') AS utm_term
+        , coalesce(REPLACE(REGEXP_EXTRACT(search, '(?i)ad_id=([^&]+)'), '+', ' '), REPLACE(REGEXP_EXTRACT(search, '(?i)hsa_ad=([^&]+)'), '+', ' ')) AS ad_id
+        , coalesce(REPLACE(REGEXP_EXTRACT(search, '(?i)adset_id=([^&]+)'), '+', ' '), REPLACE(REGEXP_EXTRACT(search, '(?i)hsa_grp=([^&]+)'), '+', ' ')) AS adset_id
+        , coalesce(REPLACE(REGEXP_EXTRACT(search, '(?i)campaign_id=([^&]+)'), '+', ' '), REPLACE(REGEXP_EXTRACT(search, '(?i)hsa_cam=([^&]+)'), '+', ' ')) AS campaign_id
+        from (
+          select
+          id
+          , timestamp
+          , safe_cast(user_id as string) as user_id
+          , safe_cast(anonymous_id as string) as anonymous_id
+          , safe_cast(context_ip as string) as ip_address
+          , safe_cast(context_traits_cross_domain_id as string) as cross_domain_id
+          , safe_cast(context_user_agent as string) as user_agent
+          , "Page Viewed" as event
+          , "web" as platform
+          , safe_cast(context_page_url as string) as url
+          , URLDECODE(REGEXP_EXTRACT(safe_cast(context_page_url as string), '\\?(.+)')) as search
+          , safe_cast(context_page_referrer as string) as referrer
+          , NET.REG_DOMAIN(safe_cast(context_page_referrer as string)) AS referrer_domain
+          , safe_cast(context_page_title as string) as title
+          , safe_cast(context_page_path as string) as path
         from javascript.order_completed
-        group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19
+        group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+        )
       )
       , page_events as (
         select * from site_pages
@@ -112,52 +148,10 @@ view: upff_page_events {
         , to_hex(sha1(concat(id,safe_cast(timestamp as string)))) as event_id
         from page_events
       )
-      , referrer_domain_p0 as (
-        select event_id
-        , regexp_extract(referrer, r'[a-zA-Z]+\.[a-zA-Z]+\/') as referrer_domain
-        from page_event_ids
-      )
-      , search_params_p0 as (
-        select event_id
-        , split(ltrim(search, "?"), "&") as search_params
-        from page_event_ids
-      )
-      , search_params_p1 as (
-        SELECT event_id, flattened_params
-        FROM search_params_p0 CROSS JOIN search_params_p0.search_params AS flattened_params
-      )
-      , search_params_p2 as (
-        select event_id
-        , split(flattened_params, "=") as parameters
-        from search_params_p1
-      )
-      , search_params_p3 as (
-        SELECT event_id, parameters[safe_offset(0)] as key, parameters[safe_offset(1)] as value
-        from search_params_p2
-      )
-      , search_params_p4 as (
-        select *
-        from search_params_p3
-        PIVOT(string_agg(value) FOR key IN ("ad_id", "adset_id", "campaign_id"))
-      )
-      , clean_page_events as (
-        select a.*
-        , b.referrer_domain
-        , c.ad_id
-        , c.adset_id
-        , c.campaign_id
-        from page_event_ids as a
-        left join referrer_domain_p0 as b
-        on a.event_id = b.event_id
-        left join search_params_p4 as c
-        on a.event_id = c.event_id
-      )
-      -- THIS BLOCK FIXS THE ANONYMOUS ID BUG OF Q222-Q322
-      -- hotfix to stitch app sessions and web sessions together during period that Vimeo OTT messed up Segment anon_id implementation
       , app_session_mapping_p0 as (
         select *
         , lag(timestamp,1) over (partition by user_id order by timestamp) as last_event_0
-        from clean_page_events
+        from page_event_ids
       )
       , app_session_mapping_p1 as (
         select *
@@ -242,7 +236,7 @@ view: upff_page_events {
         , case
           when utm_campaign is not null and (ifnull(last_utm_campaign, '') != utm_campaign) then 1
           when last_event is null or unix_seconds(timestamp) - unix_seconds(last_event) >= (7 * 24 * 60 * 60) then 1
-          when utm_campaign is null and (referrer_domain is not null and referrer_domain != "upfaithandfamily.com/") then 1
+          when utm_campaign is null and (referrer_domain is not null and referrer_domain != "upfaithandfamily.com") then 1
           else 0
           end as is_session_start
         from session_mapping_p1

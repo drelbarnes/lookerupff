@@ -565,7 +565,7 @@ view: upff_multi_platform_attribution {
     type: sum_distinct
     sql_distinct_key: ${ordered_at_date} ;;
     sql: ${TABLE}.spend ;;
-    filters: [date_satifies_trial_period: "yes"]
+    filters: [date_satifies_trial_period: "yes", topic: "customer_product_free_trial_created, customer_product_created"]
     value_format: "$#.00;($#.00)"
   }
 
