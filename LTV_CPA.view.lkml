@@ -22,6 +22,7 @@ view: ltv_cpa{
         report_date
         , app_store_connect_subscribers_total
         , vimeo_ott_subscribers_total
+        , row_number() over (partition by report_date order by timestamp desc) as n
         from
         looker.get_app_store_connect_subs
         where date(sent_at)=current_date
@@ -38,19 +39,17 @@ view: ltv_cpa{
         , a.paying_churn
         , a.paying_created
         , b.total_free_trials
-        -- , b.total_paying
-        , (b.total_paying-c.vimeo_ott_subscribers_total+c.app_store_connect_subscribers_total) as total_paying
+        , coalesce((b.total_paying-c.vimeo_ott_subscribers_total+c.app_store_connect_subscribers_total),b.total_paying)  as total_paying
         from (select * from get_analytics_p0 where n=1) as a
-        inner join (select * from get_analytics_p0 where n=2) as b
+        left join (select * from get_analytics_p0 where n=2) as b
         on date(a.timestamp) = date(b.timestamp)
-        inner join (
+        left join (
           select
           report_date
           , app_store_connect_subscribers_total
           , vimeo_ott_subscribers_total
-          from
-          looker.get_app_store_connect_subs
-          where date(sent_at)=current_date
+          from apple_subs
+          where n = 1
         ) c
         on date(a.timestamp) = date(c.report_date)
       )
