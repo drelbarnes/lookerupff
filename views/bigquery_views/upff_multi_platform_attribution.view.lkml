@@ -561,135 +561,148 @@ view: upff_multi_platform_attribution {
     value_format: "0.##"
   }
 
+  dimension: composite_ad_id {
+    type: string
+    sql: CONCAT(${ad_id}, ${ordered_at_date})  ;;
+  }
+
   measure: spend_total {
     type: sum_distinct
-    sql_distinct_key: ${ordered_at_date} ;;
+    sql_distinct_key: ${composite_ad_id} ;;
     sql: ${TABLE}.spend ;;
     filters: [date_satifies_trial_period: "yes", topic: "customer_product_free_trial_created, customer_product_created"]
     value_format: "$#.00;($#.00)"
   }
 
-  measure: spend_platform_total {
-    type: sum_distinct
-    sql_distinct_key: ${ad_id} ;;
-    sql: ${TABLE}.spend ;;
-    filters: [date_satifies_trial_period: "yes"]
-    value_format: "$#.00;($#.00)"
-  }
+  # measure: spend_total {
+  #   type: sum_distinct
+  #   sql_distinct_key: ${ordered_at_date} ;;
+  #   sql: ${TABLE}.spend ;;
+  #   filters: [date_satifies_trial_period: "yes", topic: "customer_product_free_trial_created, customer_product_created"]
+  #   value_format: "$#.00;($#.00)"
+  # }
+
+  # measure: spend_platform_total {
+  #   type: sum_distinct
+  #   sql_distinct_key: ${ad_id} ;;
+  #   sql: ${TABLE}.spend ;;
+  #   filters: [date_satifies_trial_period: "yes"]
+  #   value_format: "$#.00;($#.00)"
+  # }
 
   measure: social_spend_total {
     type: sum_distinct
-    sql_distinct_key: ${ordered_at_date} ;;
+    sql_distinct_key: ${composite_ad_id} ;;
     sql: ${TABLE}.social_spend ;;
     filters: [date_satifies_trial_period: "yes"]
     value_format: "$#.00;($#.00)"
   }
 
-  measure: social_spend_platform_total {
-    type: sum_distinct
-    sql_distinct_key: ${ad_id} ;;
-    sql: ${TABLE}.social_spend ;;
-    filters: [date_satifies_trial_period: "yes"]
-    value_format: "$#.00;($#.00)"
-  }
+  # measure: social_spend_platform_total {
+  #   type: sum_distinct
+  #   sql_distinct_key: ${ad_id} ;;
+  #   sql: ${TABLE}.social_spend ;;
+  #   filters: [date_satifies_trial_period: "yes"]
+  #   value_format: "$#.00;($#.00)"
+  # }
 
   measure: clicks_total {
     type: sum_distinct
-    sql_distinct_key: ${ordered_at_date} ;;
+    sql_distinct_key: ${composite_ad_id} ;;
     sql: ${TABLE}.clicks ;;
     filters: [date_satifies_trial_period: "yes"]
   }
 
-  measure: clicks_platform_total {
-    type: sum_distinct
-    sql_distinct_key: ${ad_id} ;;
-    sql: ${TABLE}.clicks ;;
-    filters: [date_satifies_trial_period: "yes"]
-  }
+  # measure: clicks_platform_total {
+  #   type: sum_distinct
+  #   sql_distinct_key: ${ad_id} ;;
+  #   sql: ${TABLE}.clicks ;;
+  #   filters: [date_satifies_trial_period: "yes"]
+  # }
 
   measure: engagements_total {
     type: sum_distinct
-    sql_distinct_key: ${ordered_at_date} ;;
+    sql_distinct_key: ${composite_ad_id} ;;
     sql: ${TABLE}.engagements ;;
     filters: [date_satifies_trial_period: "yes"]
   }
 
-  measure: engagements_platform_total {
-    type: sum_distinct
-    sql_distinct_key: ${ad_id} ;;
-    sql: ${TABLE}.engagements ;;
-    filters: [date_satifies_trial_period: "yes"]
-  }
+  # measure: engagements_platform_total {
+  #   type: sum_distinct
+  #   sql_distinct_key: ${ad_id} ;;
+  #   sql: ${TABLE}.engagements ;;
+  #   filters: [date_satifies_trial_period: "yes"]
+  # }
 
   measure: unique_clicks_total {
     type: sum_distinct
-    sql_distinct_key: ${ordered_at_date} ;;
+    sql_distinct_key: ${composite_ad_id} ;;
     sql: ${TABLE}.unique_clicks ;;
     filters: [date_satifies_trial_period: "yes"]
   }
 
-  measure: unique_clicks_platform_total {
-    type: sum_distinct
-    sql_distinct_key: ${ad_id} ;;
-    sql: ${TABLE}.unique_clicks ;;
-    filters: [date_satifies_trial_period: "yes"]
-  }
+  # measure: unique_clicks_platform_total {
+  #   type: sum_distinct
+  #   sql_distinct_key: ${ad_id} ;;
+  #   sql: ${TABLE}.unique_clicks ;;
+  #   filters: [date_satifies_trial_period: "yes"]
+  # }
 
   measure: link_clicks_total {
     type: sum_distinct
-    sql_distinct_key: ${ordered_at_date} ;;
+    sql_distinct_key: ${composite_ad_id} ;;
     sql: ${TABLE}.link_clicks ;;
     filters: [date_satifies_trial_period: "yes"]
   }
 
-  measure: link_clicks_platform_total {
-    type: sum_distinct
-    sql_distinct_key: ${ad_id} ;;
-    sql: ${TABLE}.link_clicks ;;
-    filters: [date_satifies_trial_period: "yes"]
-  }
+  # measure: link_clicks_platform_total {
+  #   type: sum_distinct
+  #   sql_distinct_key: ${ad_id} ;;
+  #   sql: ${TABLE}.link_clicks ;;
+  #   filters: [date_satifies_trial_period: "yes"]
+  # }
 
   measure: frequency_average {
     type: average_distinct
-    sql_distinct_key: ${ordered_at_date} ;;
+    sql_distinct_key: ${composite_ad_id} ;;
     sql: ${TABLE}.frequency ;;
     filters: [date_satifies_trial_period: "yes"]
   }
 
-  measure: frequency_platform_average {
-    type: average_distinct
-    sql_distinct_key: ${ad_id} ;;
-    sql: ${TABLE}.frequency ;;
-    filters: [date_satifies_trial_period: "yes"]
-  }
+  # measure: frequency_platform_average {
+  #   type: average_distinct
+  #   sql_distinct_key: ${ad_id} ;;
+  #   sql: ${TABLE}.frequency ;;
+  #   filters: [date_satifies_trial_period: "yes"]
+  # }
 
   measure: impressions_total {
     type: sum_distinct
-    sql_distinct_key: ${ordered_at_date} ;;
+    sql_distinct_key: ${composite_ad_id} ;;
     sql: ${TABLE}.impressions ;;
     filters: [date_satifies_trial_period: "yes"]
   }
 
-  measure: impressions_platform_total {
-    type: sum_distinct
-    sql_distinct_key: ${ad_id} ;;
-    sql: ${TABLE}.impressions ;;
-    filters: [date_satifies_trial_period: "yes"]
-  }
+  # measure: impressions_platform_total {
+  #   type: sum_distinct
+  #   sql_distinct_key: ${ad_id} ;;
+  #   sql: ${TABLE}.impressions ;;
+  #   filters: [date_satifies_trial_period: "yes"]
+  # }
 
   measure: reach_total {
     type: sum_distinct
-    sql_distinct_key: ${ordered_at_date} ;;
+    sql_distinct_key: ${composite_ad_id} ;;
     sql: ${TABLE}.reach ;;
     filters: [date_satifies_trial_period: "yes"]
   }
 
-  measure: reach_platform_total {
-    type: sum_distinct
-    sql_distinct_key: ${ad_id} ;;
-    sql: ${TABLE}.reach ;;
-    filters: [date_satifies_trial_period: "yes"]
-  }
+  # measure: reach_platform_total {
+  #   type: sum_distinct
+  #   sql_distinct_key: ${ad_id} ;;
+  #   sql: ${TABLE}.reach ;;
+  #   filters: [date_satifies_trial_period: "yes"]
+  # }
 
   dimension_group: ordered_at {
     type: time
