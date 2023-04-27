@@ -231,8 +231,8 @@ view: upff_multi_platform_attribution {
         , spend
         , social_spend
         from facebook_ads.insights
-        where date_start between {% date_start date_filter %}
-        and {% date_end date_filter %}
+        where date_start between TIMESTAMP('2023-03-27 00:00:00')
+        and TIMESTAMP('2023-04-03 00:00:00')
       )
       , google_ads as (
       SELECT
@@ -250,8 +250,27 @@ view: upff_multi_platform_attribution {
       , COALESCE((cost/1000000),0 ) as spend
       , cast(null as int) as social_spend
       from adwords.ad_performance_reports
-      where date_start between {% date_start date_filter %}
-      and {% date_end date_filter %}
+      where date_start between TIMESTAMP('2023-03-27 00:00:00')
+      and TIMESTAMP('2023-04-03 00:00:00')
+      )
+      , google_campaign_manager as (
+      SELECT
+      "Google Campaign Manager" as ad_platform
+      , campaign_id as ad_id
+      , cast(null as int) as clicks
+      , date_start
+      , date_stop
+      , cast(null as int) as frequency
+      , impressions
+      , engagements
+      , cast(null as int) as reach
+      , cast(null as int) as unique_clicks
+      , clicks as link_clicks
+      , COALESCE((cost/1000000),0 ) as spend
+      , cast(null as int) as social_spend
+      from adwords.campaign_performance_reports
+      where date_start between TIMESTAMP('2023-03-27 00:00:00')
+      and TIMESTAMP('2023-04-03 00:00:00')
       )
       , all_platforms_p0 as (
         select
@@ -285,6 +304,22 @@ view: upff_multi_platform_attribution {
         , spend
         , social_spend
         from google_ads
+        union all
+        select
+        ad_platform
+        , ad_id
+        , clicks
+        , date_start
+        , date_stop
+        , frequency
+        , impressions
+        , engagements
+        , reach
+        , unique_clicks
+        , link_clicks
+        , spend
+        , social_spend
+        from google_campaign_manager
       )
       , all_platforms_p1 as (
         SELECT *
@@ -365,7 +400,7 @@ view: upff_multi_platform_attribution {
     inner join conversion_window f
     on a.user_id = f.user_id and a.ordered_at = f.ordered_at
     left join paid_media_metrics g
-    on a.ad_id = g.ad_id and date(a.ordered_at) = date(g.date_start)
+    on coalesce(a.ad_id,a.adset_id,a.campaign_id) = g.ad_id and date(a.ordered_at) = date(g.date_start)
     )
     , mofu_final as (
     select * from final
