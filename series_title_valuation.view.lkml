@@ -392,7 +392,9 @@ view: series_title_valuation {
           a.*,
           b.number_first_plays,
           c.total_ltv,
-          round(100 * a.avg_completion_rate + 0.01 * b.number_first_plays + 0.1 * log(c.total_ltv), 0) as value_score
+          round(100 * a.avg_completion_rate + 0.01 * b.number_first_plays + 0.1 * log(c.total_ltv), 0) as log_value_score,
+          round(100 * a.avg_completion_rate + 0.01 * b.number_first_plays + 0.1 * c.total_ltv, 0) as scaled_value_score,
+          round(a.avg_completion_rate + b.number_first_plays + c.total_ltv, 0) as raw_value_score
         from completion_rate_analysis as a
         left join series_first_plays as b
         on a.series = b.series
@@ -658,12 +660,22 @@ view: series_title_valuation {
       sql: ${TABLE}.total_ltv ;;
     }
 
-    measure: value_score {
+    measure: log_value_score {
       type: sum
-      sql: ${TABLE}.value_score ;;
+      sql: ${TABLE}.log_value_score ;;
+    }
+
+    measure: scaled_value_score {
+      type: sum
+      sql: ${TABLE}.scaled_value_score ;;
+    }
+
+    measure: raw_value_score {
+      type: sum
+      sql: ${TABLE}.raw_value_score ;;
     }
 
     set: detail {
-      fields: [series, avg_completion_rate, number_first_plays, total_ltv, value_score]
+      fields: [series, avg_completion_rate, number_first_plays, total_ltv, log_value_score, scaled_value_score, raw_value_score]
     }
   }
