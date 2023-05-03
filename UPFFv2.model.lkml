@@ -114,6 +114,10 @@ datagroup: upff_acquisition_reporting {
   sql_trigger: SELECT FLOOR((EXTRACT(epoch from GETDATE()) - 60*60*8.5)/(60*60*24)) ;;
 }
 
+datagroup: upff_acquisition_cache_test {
+  max_cache_age: "30 minutes"
+}
+
 
 include: "ios_application_installed.view"
 include: "ios_signupstarted.view"
@@ -131,6 +135,7 @@ explore: application_installed{
 }
 
 explore: analytics_v2 {
+  persist_with: upff_acquisition_cache_test
   join: mailchimp_email_campaigns {
     type:  inner
     sql_on: ${mailchimp_email_campaigns.campaign_date} = ${analytics_v2.timestamp_date};;

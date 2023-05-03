@@ -231,8 +231,6 @@ view: upff_multi_platform_attribution {
         , spend
         , social_spend
         from facebook_ads.insights
-        where date_start between TIMESTAMP('2023-03-27 00:00:00')
-        and TIMESTAMP('2023-04-03 00:00:00')
       )
       , google_ads as (
       SELECT
@@ -250,8 +248,6 @@ view: upff_multi_platform_attribution {
       , COALESCE((cost/1000000),0 ) as spend
       , cast(null as int) as social_spend
       from adwords.ad_performance_reports
-      where date_start between TIMESTAMP('2023-03-27 00:00:00')
-      and TIMESTAMP('2023-04-03 00:00:00')
       )
       , google_campaign_manager as (
       SELECT
@@ -269,8 +265,23 @@ view: upff_multi_platform_attribution {
       , COALESCE((cost/1000000),0 ) as spend
       , cast(null as int) as social_spend
       from adwords.campaign_performance_reports
-      where date_start between TIMESTAMP('2023-03-27 00:00:00')
-      and TIMESTAMP('2023-04-03 00:00:00')
+      )
+      , apple_search as (
+        SELECT
+        "Apple Search" as ad_platform
+        , cast(ad_group_id as string) as ad_id
+        , taps as clicks
+        , date as date_start
+        , date as date_stop
+        , cast(null as int) as frequency
+        , impressions
+        , installs as engagements
+        , cast(null as int) as reach
+        , cast(null as int) as unique_clicks
+        , taps as link_clicks
+        , cost as spend
+        , cast(null as int) as social_spend
+        from customers.apple_search
       )
       , all_platforms_p0 as (
         select
@@ -320,6 +331,22 @@ view: upff_multi_platform_attribution {
         , spend
         , social_spend
         from google_campaign_manager
+        union all
+        select
+        ad_platform
+        , ad_id
+        , clicks
+        , date_start
+        , date_stop
+        , frequency
+        , impressions
+        , engagements
+        , reach
+        , unique_clicks
+        , link_clicks
+        , spend
+        , social_spend
+        from apple_search
       )
       , all_platforms_p1 as (
         SELECT *
