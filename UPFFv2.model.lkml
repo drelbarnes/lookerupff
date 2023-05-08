@@ -178,7 +178,9 @@ explore: heartlandia {}
 
 explore: lifetime_value {}
 explore: churn_texts {}
-explore: ltv_cpa {}
+explore: ltv_cpa {
+  persist_with: upff_acquisition_cache_test
+}
 explore: customer_churn_percent {}
 
 explore: ios_play {}
