@@ -124,7 +124,9 @@ include: "ios_signupstarted.view"
 
 explore: timeupdate {}
 
-explore: daily_spend {}
+explore: daily_spend {
+  persist_with: upff_acquisition_cache_test
+}
 
 explore: application_installed{
   join: ios_signupstarted {
