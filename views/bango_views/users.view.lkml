@@ -121,9 +121,19 @@ view: users {
     sql: ${TABLE}.reseller_key ;;
   }
 
+  dimension: churn_date_difference {
+    type: number
+    hidden: yes
+    sql: DATEDIFF(${date_ended_time},${date_activated_time}) ;;
+  }
+
   dimension_group: timestamp {
     type: time
     sql: ${TABLE}.timestamp ;;
+  }
+
+  dimension: churn_type {
+    type: yesno
   }
 
   measure: count {
@@ -133,13 +143,38 @@ view: users {
 
   measure: free_trials {
     type: count_distinct
-    sql: ${user_id} ;;
+    sql: ${entitlement_id} ;;
     filters: [date_activated_date: "last 14 days"]
+  }
+
+  measure: free_trial_expired {
+    type: count_distinct
+    sql: ${entitlement_id} ;;
+    filters: [churn_date_difference: "<=15"]
+    # date_ended_date - date_activated_date < 15 days
   }
 
   measure: subscribers {
     type: count_distinct
-    sql: ${user_id} ;;
+    sql: ${entitlement_id} ;;
+    hidden: yes
     filters: [date_activated_date: "before 13 days ago"]
+  }
+
+  measure: paying_churn {
+    type: count_distinct
+    sql: ${entitlement_id} ;;
+    filters: [churn_date_difference: ">15"]
+    # date_ended_date - date_activated_date > 15 days
+  }
+
+  measure: paying_subscribers {
+    type: number
+    sql: ${subscribers}-${paying_churn} ;;
+  }
+
+  measure: total_subscribers {
+    type: number
+    sql: ${paying_subscribers} + ${free_trials} ;;
   }
 }
