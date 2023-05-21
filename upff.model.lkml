@@ -71,7 +71,7 @@ include: "/views/bango_views/verizon_events.view.lkml"
 
 datagroup: upff_acquisition_reporting {
   description: "Datagroup for UPFF Acquisition PDTs. Triggers once per day at 9am"
-  sql_trigger: SELECT FLOOR((EXTRACT(epoch from GETDATE()) - 60*60*9)/(60*60*24)) ;;
+  sql_trigger: SELECT FLOOR((EXTRACT(epoch from GETDATE()) - 60*60*8.5)/(60*60*24)) ;;
 }
 
 explore: agm_audiences {
@@ -235,12 +235,6 @@ explore: redshift_marketing_performance {
   }
 }
 
-datagroup: upff_default_datagroup {
-  # sql_trigger: SELECT MAX(id) FROM etl_log;;
-  max_cache_age: "6 hour"
-}
-
-persist_with: upff_default_datagroup
 
 explore: ios_users {
   label: "Web and iOS App Users"

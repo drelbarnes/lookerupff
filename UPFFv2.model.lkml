@@ -110,7 +110,7 @@ datagroup: upff_default_datagroup {
 }
 
 datagroup: upff_acquisition_reporting {
-  description: "Datagroup for UPFF Acquisition PDTs. Triggers once per day at 8am"
+  description: "Datagroup for UPFF Acquisition PDTs. Triggers once per day at 8:30am"
   sql_trigger: SELECT FLOOR((EXTRACT(epoch from GETDATE()) - 60*60*8.5)/(60*60*24)) ;;
 }
 
