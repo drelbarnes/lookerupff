@@ -646,7 +646,25 @@ view: bigquery_viewing_habits {
         where collection = 'Touched by an Angel - Season 1'
         group by 1,2,3
         order by 1,2,3
-        )
+        ),
+
+        habits_hudson_s3 as
+        (
+        select
+        user_id,
+        collection,
+        total_episodes,
+        case
+        when total_episodes = 1 then 'First episode only'
+        when total_episodes > 1 and total_episodes < 8 then 'More than 1 but not all'
+        when total_episodes in (9,10) then 'Series completer'
+        else 'Other or missing incomplete series'
+        end as viewing_habit
+        from sum
+        where collection = 'Hudson & Rex - Season 3'
+        group by 1,2,3
+        order by 1,2,3
+        ),
 
 
 
@@ -664,6 +682,7 @@ view: bigquery_viewing_habits {
     allowed_value: {label: "Heartland - Season 15" value: "heartland_s15"}
     allowed_value: {label: "Hudson & Rex - Season 1" value: "hudson_s1"}
     allowed_value: {label: "Hudson & Rex - Season 2" value: "hudson_s2"}
+    allowed_value: {label: "Hudson & Rex - Season 3" value: "hudson_s3"}
     allowed_value: {label: "800 Words - Season 1" value: "800words_s1"}
     allowed_value: {label: "Wildfire - Season 4" value: "wildfire_s4"}
     allowed_value: {label: "Touched by an Angel - Season 1" value: "touchedbyangel_s1"}
