@@ -679,7 +679,7 @@ view: bigquery_viewing_habits {
         else 'Other or missing incomplete series'
         end as viewing_habit
         from sum
-        where collection = 'Jesus Calling - Season 1'
+        where collection = 'Jesus Calling'
         group by 1,2,3
         order by 1,2,3
         ),
