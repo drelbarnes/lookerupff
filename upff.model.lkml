@@ -69,10 +69,6 @@ include: "/views/monthly_customer_report.view.lkml"
 include: "/views/agm_audiences.view.lkml"
 include: "/views/bango_views/verizon_events.view.lkml"
 
-datagroup: upff_acquisition_reporting {
-  description: "Datagroup for UPFF Acquisition PDTs. Triggers once per day at 9am"
-  sql_trigger: SELECT FLOOR((EXTRACT(epoch from GETDATE()) - 60*60*8.5)/(60*60*24)) ;;
-}
 
 explore: agm_audiences {
   label: "AGM Audiences"
