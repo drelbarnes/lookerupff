@@ -739,6 +739,7 @@ view: bigquery_viewing_habits {
     allowed_value: {label: "Wildfire - Season 4" value: "wildfire_s4"}
     allowed_value: {label: "Touched by an Angel - Season 1" value: "touchedbyangel_s1"}
     allowed_value: {label: "Jesus Calling - Season 1" value: "jesuscalling_s1"}
+    allowed_value: {label: "Jesus Calling - Season 3" value: "jesuscalling_s3"}
     allowed_value: {label: "Ties That Bind - Season 1" value: "tiesthatbind_s1"}
   }
 
