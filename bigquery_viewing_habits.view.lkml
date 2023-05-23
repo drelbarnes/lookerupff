@@ -656,8 +656,8 @@ view: bigquery_viewing_habits {
         total_episodes,
         case
         when total_episodes = 1 then 'First episode only'
-        when total_episodes > 1 and total_episodes < 9 then 'More than 1 but not all'
-        when total_episodes in (9,10) then 'Series completer'
+        when total_episodes > 1 and total_episodes < 7 then 'More than 1 but not all'
+        when total_episodes in (7,8) then 'Series completer'
         else 'Other or missing incomplete series'
         end as viewing_habit
         from sum
