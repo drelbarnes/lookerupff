@@ -467,17 +467,9 @@ explore: http_api_purchase_event
     sql_on: ${http_api_purchase_event.email} = ${redshift_php_get_user_on_email_list.email};;
     relationship: one_to_one
   }
-
-  join: analytics_v2 {
-    type: left_outer
-    sql_on: ${analytics_v2.timestamp_date} = ${http_api_purchase_event.timestamp_date} ;;
-    relationship: one_to_one
-  }
-
 }
 
 
-include: "analytics_v2.view"
 #Delighted.com // Feedback Survey Responses
 explore: delighted_survey_question_answered {
   label: "Delighted Feedback"
@@ -492,13 +484,6 @@ explore: delighted_survey_question_answered {
     type: left_outer
     sql_on: ${delighted_survey_question_answered.user_id} = ${redshift_pixel_api_email_opened.user_id};;
     relationship: one_to_one
-  }
-
-
-  join: analytics_v2 {
-    type:  left_outer
-    sql_on: ${http_api_purchase_event.created_date} = ${analytics_v2.timestamp_date};;
-    relationship: many_to_one
   }
 
   join: mailchimp_email_campaigns {
