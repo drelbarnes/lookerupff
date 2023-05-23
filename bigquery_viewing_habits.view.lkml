@@ -684,6 +684,24 @@ view: bigquery_viewing_habits {
         order by 1,2,3
         ),
 
+        habits_jesuscalling_s3 as
+        (
+        select
+        user_id,
+        collection,
+        total_episodes,
+        case
+        when total_episodes = 1 then 'First episode only'
+        when total_episodes > 1 and total_episodes < 6 then 'More than 1 but not all'
+        when total_episodes in (6,7) then 'Series completer'
+        else 'Other or missing incomplete series'
+        end as viewing_habit
+        from sum
+        where collection = 'Jesus Calling - Season 3'
+        group by 1,2,3
+        order by 1,2,3
+        ),
+
         habits_tiesthatbind_s1 as
         (
         select
