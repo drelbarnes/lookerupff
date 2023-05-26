@@ -1029,807 +1029,1014 @@ view: branch_events {
     datagroup_trigger: upff_daily_refresh_datagroup
   }
   dimension: _id {
+    type: string
     sql: ${TABLE}._id ;;
-    hidden: yes
   }
+
   dimension: anonymous_id {
+    type: string
     sql: ${TABLE}.anonymous_id ;;
-    hidden: yes
   }
+
   dimension: attributed {
+    type: string
     sql: ${TABLE}.attributed ;;
-    hidden: yes
   }
+
   dimension: content_items {
+    type: string
     sql: ${TABLE}.content_items ;;
-    hidden: yes
   }
+
   dimension: context_library_name {
+    type: string
     sql: ${TABLE}.context_library_name ;;
-    hidden: yes
   }
+
   dimension: context_library_version {
+    type: string
     sql: ${TABLE}.context_library_version ;;
-    hidden: yes
   }
+
   dimension: cross_device_ott {
+    type: string
     sql: ${TABLE}.cross_device_ott ;;
-    hidden: yes
   }
+
   dimension: custom_data_gateway {
+    type: string
     sql: ${TABLE}.custom_data_gateway ;;
-    hidden: yes
   }
+
   dimension: custom_data_opt_in {
+    type: string
     sql: ${TABLE}.custom_data_opt_in ;;
-    hidden: yes
   }
+
   dimension: custom_data_segment_anonymous_id {
+    type: string
     sql: ${TABLE}.custom_data_segment_anonymous_id ;;
-    hidden: yes
   }
+
   dimension: custom_data_skan_time_window {
+    type: string
     sql: ${TABLE}.custom_data_skan_time_window ;;
-    hidden: yes
   }
+
   dimension: days_from_install_to_opt_in {
+    type: number
     sql: ${TABLE}.days_from_install_to_opt_in ;;
-    hidden: yes
   }
+
   dimension: days_from_last_attributed_touch_to_event {
+    type: number
     sql: ${TABLE}.days_from_last_attributed_touch_to_event ;;
-    hidden: yes
   }
+
   dimension: deep_linked {
+    type: string
     sql: ${TABLE}.deep_linked ;;
-    hidden: yes
   }
+
   dimension: event {
+    type: string
     sql: ${TABLE}.event ;;
-    hidden: yes
   }
+
   dimension: event_days_from_timestamp {
+    type: number
     sql: ${TABLE}.event_days_from_timestamp ;;
-    hidden: yes
   }
+
   dimension: event_text {
+    type: string
     sql: ${TABLE}.event_text ;;
-    hidden: yes
   }
+
   dimension: event_timestamp {
+    type: number
     sql: ${TABLE}.event_timestamp ;;
-    hidden: yes
   }
+
   dimension: existing_user {
+    type: string
     sql: ${TABLE}.existing_user ;;
-    hidden: yes
   }
+
   dimension: first_event_for_user {
+    type: string
     sql: ${TABLE}.first_event_for_user ;;
-    hidden: yes
   }
+
   dimension: hours_from_last_attributed_touch_to_event {
+    type: number
     sql: ${TABLE}.hours_from_last_attributed_touch_to_event ;;
-    hidden: yes
   }
+
   dimension: id {
+    type: string
     sql: ${TABLE}.id ;;
-    hidden: yes
   }
+
   dimension: install_activity_attributed {
+    type: yesno
     sql: ${TABLE}.install_activity_attributed ;;
-    hidden: yes
   }
+
   dimension: install_activity_data_country_code {
+    type: string
     sql: ${TABLE}.install_activity_data_country_code ;;
-    hidden: yes
   }
+
   dimension: install_activity_event_name {
+    type: string
     sql: ${TABLE}.install_activity_event_name ;;
-    hidden: yes
   }
+
   dimension: install_activity_timestamp {
+    type: number
     sql: ${TABLE}.install_activity_timestamp ;;
-    hidden: yes
   }
+
   dimension: install_activity_touch_data_dollar_3p {
+    type: string
     sql: ${TABLE}.install_activity_touch_data_dollar_3p ;;
-    hidden: yes
   }
+
   dimension: install_activity_touch_data_dollar_fb_data_terms_not_signed {
+    type: yesno
     sql: ${TABLE}.install_activity_touch_data_dollar_fb_data_terms_not_signed ;;
-    hidden: yes
   }
+
   dimension: install_activity_touch_data_dollar_twitter_data_sharing_allowed {
+    type: yesno
     sql: ${TABLE}.install_activity_touch_data_dollar_twitter_data_sharing_allowed ;;
-    hidden: yes
   }
+
   dimension: install_activity_touch_data_tilde_advertising_partner_name {
+    type: string
     sql: ${TABLE}.install_activity_touch_data_tilde_advertising_partner_name ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_3p {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_3p ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_ad_id {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_ad_id ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_ad_name {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_ad_name ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_ad_objective_name {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_ad_objective_name ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_ad_set_id {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_ad_set_id ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_ad_set_name {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_ad_set_name ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_advertising_account_id {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_advertising_account_id ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_advertising_partner_id {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_advertising_partner_id ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_advertising_partner_name {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_advertising_partner_name ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_always_deeplink {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_always_deeplink ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_android_passive_deepview {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_android_passive_deepview ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_android_url {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_android_url ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_api_open_click {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_api_open_click ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_apple_search_ads_attribution_response_iad_adgroup_id {
+    type: number
     sql: ${TABLE}.last_attributed_touch_data_apple_search_ads_attribution_response_iad_adgroup_id ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_apple_search_ads_attribution_response_iad_adgroup_name {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_apple_search_ads_attribution_response_iad_adgroup_name ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_apple_search_ads_attribution_response_iad_attribution {
+    type: yesno
     sql: ${TABLE}.last_attributed_touch_data_apple_search_ads_attribution_response_iad_attribution ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_apple_search_ads_attribution_response_iad_campaign_id {
+    type: number
     sql: ${TABLE}.last_attributed_touch_data_apple_search_ads_attribution_response_iad_campaign_id ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_apple_search_ads_attribution_response_iad_campaign_name {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_apple_search_ads_attribution_response_iad_campaign_name ;;
-    hidden: yes
   }
-  dimension: last_attributed_touch_data_apple_search_ads_attribution_response_iad_click_date {
+
+  dimension_group: last_attributed_touch_data_apple_search_ads_attribution_response_iad_click_date {
+    type: time
+    timeframes: [time, date, week, month, quarter, year]
     sql: ${TABLE}.last_attributed_touch_data_apple_search_ads_attribution_response_iad_click_date ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_apple_search_ads_attribution_response_iad_conversion_type {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_apple_search_ads_attribution_response_iad_conversion_type ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_apple_search_ads_attribution_response_iad_country_or_region {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_apple_search_ads_attribution_response_iad_country_or_region ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_apple_search_ads_attribution_response_iad_keyword {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_apple_search_ads_attribution_response_iad_keyword ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_apple_search_ads_attribution_response_iad_keyword_id {
+    type: number
     sql: ${TABLE}.last_attributed_touch_data_apple_search_ads_attribution_response_iad_keyword_id ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_apple_search_ads_attribution_response_iad_org_id {
+    type: number
     sql: ${TABLE}.last_attributed_touch_data_apple_search_ads_attribution_response_iad_org_id ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_branch_ad_format {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_branch_ad_format ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_campaign {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_campaign ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_campaign_id {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_campaign_id ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_campaign_type {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_campaign_type ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_canonical_url {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_canonical_url ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_channel {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_channel ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_click_browser_fingerprint_browser {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_click_browser_fingerprint_browser ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_click_browser_fingerprint_browser_version {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_click_browser_fingerprint_browser_version ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_click_browser_fingerprint_is_mobile {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_click_browser_fingerprint_is_mobile ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_click_id {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_click_id ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_click_timestamp {
+    type: number
     sql: ${TABLE}.last_attributed_touch_data_click_timestamp ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_collection {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_collection ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_conversion_type {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_conversion_type ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_country_or_region {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_country_or_region ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_creation_source {
+    type: number
     sql: ${TABLE}.last_attributed_touch_data_creation_source ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_creative_id {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_creative_id ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_creative_name {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_creative_name ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_desktop_url {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_desktop_url ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_device_brand_model {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_device_brand_model ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_device_brand_name {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_device_brand_name ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_device_os {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_device_os ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_device_os_version {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_device_os_version ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_dollar_cross_device {
+    type: yesno
     sql: ${TABLE}.last_attributed_touch_data_dollar_cross_device ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_dollar_fb_data_terms_not_signed {
+    type: yesno
     sql: ${TABLE}.last_attributed_touch_data_dollar_fb_data_terms_not_signed ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_dollar_twitter_data_sharing_allowed {
+    type: yesno
     sql: ${TABLE}.last_attributed_touch_data_dollar_twitter_data_sharing_allowed ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_domain {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_domain ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_fallback_url {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_fallback_url ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_fb_data_terms_not_signed {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_fb_data_terms_not_signed ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_fbclid {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_fbclid ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_feature {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_feature ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_gb {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_gb ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_gclid {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_gclid ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_geo_country_code {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_geo_country_code ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_id {
+    type: number
     sql: ${TABLE}.last_attributed_touch_data_id ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_ios_passive_deepview {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_ios_passive_deepview ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_ios_url {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_ios_url ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_is_mobile_data_terms_signed {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_is_mobile_data_terms_signed ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_keyword {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_keyword ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_keyword_id {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_keyword_id ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_keyword_match_type {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_keyword_match_type ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_link_title {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_link_title ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_link_type {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_link_type ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_marketing {
+    type: yesno
     sql: ${TABLE}.last_attributed_touch_data_marketing ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_marketing_title {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_marketing_title ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_matching_ttl_s {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_matching_ttl_s ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_msclkid {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_msclkid ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_og_app_id {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_og_app_id ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_og_description {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_og_description ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_og_image_url {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_og_image_url ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_og_title {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_og_title ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_og_type {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_og_type ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_one_time_use {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_one_time_use ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_organic_search_url {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_organic_search_url ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_placement {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_placement ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_platform_source {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_platform_source ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_referrer {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_referrer ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_secondary_ad_format {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_secondary_ad_format ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_secondary_publisher {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_secondary_publisher ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_tags {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_tags ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_touch_id {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_touch_id ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_touch_subtype {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_touch_subtype ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_tune_publisher_name {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_tune_publisher_name ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_twitter_card {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_twitter_card ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_twitter_description {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_twitter_description ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_twitter_title {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_twitter_title ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_url {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_url ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_user_data_ip {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_user_data_ip ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_user_data_user_agent {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_user_data_user_agent ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_via_features {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_via_features ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_view_through {
+    type: yesno
     sql: ${TABLE}.last_attributed_touch_data_view_through ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_view_time {
+    type: number
     sql: ${TABLE}.last_attributed_touch_data_view_time ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_view_timestamp {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_view_timestamp ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_data_web_only {
+    type: string
     sql: ${TABLE}.last_attributed_touch_data_web_only ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_timestamp {
+    type: number
     sql: ${TABLE}.last_attributed_touch_timestamp ;;
-    hidden: yes
   }
+
   dimension: last_attributed_touch_type {
+    type: string
     sql: ${TABLE}.last_attributed_touch_type ;;
-    hidden: yes
   }
-  dimension: loaded_at {
+
+  dimension_group: loaded_at {
+    type: time
+    timeframes: [time, date, week, month, quarter, year]
     sql: ${TABLE}.loaded_at ;;
-    hidden: yes
   }
+
   dimension: minutes_from_last_attributed_touch_to_event {
+    type: number
     sql: ${TABLE}.minutes_from_last_attributed_touch_to_event ;;
-    hidden: yes
   }
+
   dimension: name {
+    type: string
     sql: ${TABLE}.name ;;
-    hidden: yes
   }
+
   dimension: origin {
+    type: string
     sql: ${TABLE}.origin ;;
-    hidden: yes
   }
-  dimension: original_timestamp {
+
+  dimension_group: original_timestamp {
+    type: time
+    timeframes: [time, date, week, month, quarter, year]
     sql: ${TABLE}.original_timestamp ;;
-    hidden: yes
   }
+
   dimension: ott {
+    type: string
     sql: ${TABLE}.ott ;;
-    hidden: yes
   }
-  dimension: received_at {
+
+  dimension_group: received_at {
+    type: time
+    timeframes: [time, date, week, month, quarter, year]
     sql: ${TABLE}.received_at ;;
-    hidden: yes
   }
+
   dimension: reengagement_activity_attributed {
+    type: yesno
     sql: ${TABLE}.reengagement_activity_attributed ;;
-    hidden: yes
   }
+
   dimension: reengagement_activity_data_country_code {
+    type: string
     sql: ${TABLE}.reengagement_activity_data_country_code ;;
-    hidden: yes
   }
+
   dimension: reengagement_activity_event_name {
+    type: string
     sql: ${TABLE}.reengagement_activity_event_name ;;
-    hidden: yes
   }
+
   dimension: reengagement_activity_timestamp {
+    type: number
     sql: ${TABLE}.reengagement_activity_timestamp ;;
-    hidden: yes
   }
+
   dimension: reengagement_activity_touch_data_dollar_3p {
+    type: string
     sql: ${TABLE}.reengagement_activity_touch_data_dollar_3p ;;
-    hidden: yes
   }
+
   dimension: reengagement_activity_touch_data_dollar_fb_data_terms_not_signed {
+    type: yesno
     sql: ${TABLE}.reengagement_activity_touch_data_dollar_fb_data_terms_not_signed ;;
-    hidden: yes
   }
+
   dimension: reengagement_activity_touch_data_dollar_twitter_data_sharing_allowed {
+    type: yesno
     sql: ${TABLE}.reengagement_activity_touch_data_dollar_twitter_data_sharing_allowed ;;
-    hidden: yes
   }
+
   dimension: reengagement_activity_touch_data_tilde_advertising_partner_name {
+    type: string
     sql: ${TABLE}.reengagement_activity_touch_data_tilde_advertising_partner_name ;;
-    hidden: yes
   }
+
   dimension: referrer_click_timestamp {
+    type: number
     sql: ${TABLE}.referrer_click_timestamp ;;
-    hidden: yes
   }
+
   dimension: seconds_from_install_to_event {
+    type: number
     sql: ${TABLE}.seconds_from_install_to_event ;;
-    hidden: yes
   }
+
   dimension: seconds_from_last_attributed_touch_to_event {
+    type: number
     sql: ${TABLE}.seconds_from_last_attributed_touch_to_event ;;
-    hidden: yes
   }
+
   dimension: seconds_from_last_attributed_touch_to_store_install_begin {
+    type: number
     sql: ${TABLE}.seconds_from_last_attributed_touch_to_store_install_begin ;;
-    hidden: yes
   }
-  dimension: sent_at {
+
+  dimension_group: sent_at {
+    type: time
+    timeframes: [time, date, week, month, quarter, year]
     sql: ${TABLE}.sent_at ;;
-    hidden: yes
   }
+
   dimension: store_install_begin_timestamp {
+    type: number
     sql: ${TABLE}.store_install_begin_timestamp ;;
-    hidden: yes
   }
-  dimension: timestamp {
+
+  dimension_group: timestamp {
+    type: time
+    timeframes: [time, date, week, month, quarter, year]
     sql: ${TABLE}.timestamp ;;
-    hidden: yes
   }
+
   dimension: user_data_aaid {
+    type: string
     sql: ${TABLE}.user_data_aaid ;;
-    hidden: yes
   }
+
   dimension: user_data_android_id {
+    type: string
     sql: ${TABLE}.user_data_android_id ;;
-    hidden: yes
   }
+
   dimension: user_data_app_version {
+    type: string
     sql: ${TABLE}.user_data_app_version ;;
-    hidden: yes
   }
+
   dimension: user_data_brand {
+    type: string
     sql: ${TABLE}.user_data_brand ;;
-    hidden: yes
   }
+
   dimension: user_data_build {
+    type: string
     sql: ${TABLE}.user_data_build ;;
-    hidden: yes
   }
+
   dimension: user_data_carrier_name {
+    type: string
     sql: ${TABLE}.user_data_carrier_name ;;
-    hidden: yes
   }
+
   dimension: user_data_cpu_type {
+    type: string
     sql: ${TABLE}.user_data_cpu_type ;;
-    hidden: yes
   }
+
   dimension: user_data_developer_identity {
+    type: string
     sql: ${TABLE}.user_data_developer_identity ;;
-    hidden: yes
   }
+
   dimension: user_data_disable_ad_network_callouts {
+    type: yesno
     sql: ${TABLE}.user_data_disable_ad_network_callouts ;;
-    hidden: yes
   }
+
   dimension: user_data_environment {
+    type: string
     sql: ${TABLE}.user_data_environment ;;
-    hidden: yes
   }
+
   dimension: user_data_geo_city_code {
+    type: number
     sql: ${TABLE}.user_data_geo_city_code ;;
-    hidden: yes
   }
+
   dimension: user_data_geo_city_en {
+    type: string
     sql: ${TABLE}.user_data_geo_city_en ;;
-    hidden: yes
   }
+
   dimension: user_data_geo_continent_code {
+    type: string
     sql: ${TABLE}.user_data_geo_continent_code ;;
-    hidden: yes
   }
+
   dimension: user_data_geo_country_code {
+    type: string
     sql: ${TABLE}.user_data_geo_country_code ;;
-    hidden: yes
   }
+
   dimension: user_data_geo_country_en {
+    type: string
     sql: ${TABLE}.user_data_geo_country_en ;;
-    hidden: yes
   }
+
   dimension: user_data_geo_dma_code {
+    type: number
     sql: ${TABLE}.user_data_geo_dma_code ;;
-    hidden: yes
   }
+
   dimension: user_data_geo_lat {
+    type: number
     sql: ${TABLE}.user_data_geo_lat ;;
-    hidden: yes
   }
+
   dimension: user_data_geo_lon {
+    type: number
     sql: ${TABLE}.user_data_geo_lon ;;
-    hidden: yes
   }
+
   dimension: user_data_geo_region_code {
+    type: string
     sql: ${TABLE}.user_data_geo_region_code ;;
-    hidden: yes
   }
+
   dimension: user_data_geo_region_en {
+    type: string
     sql: ${TABLE}.user_data_geo_region_en ;;
-    hidden: yes
   }
+
   dimension: user_data_http_referrer {
+    type: string
     sql: ${TABLE}.user_data_http_referrer ;;
-    hidden: yes
   }
+
   dimension: user_data_idfa {
+    type: string
     sql: ${TABLE}.user_data_idfa ;;
-    hidden: yes
   }
+
   dimension: user_data_idfv {
+    type: string
     sql: ${TABLE}.user_data_idfv ;;
-    hidden: yes
   }
+
   dimension: user_data_internet_connection_type {
+    type: string
     sql: ${TABLE}.user_data_internet_connection_type ;;
-    hidden: yes
   }
+
   dimension: user_data_ip {
+    type: string
     sql: ${TABLE}.user_data_ip ;;
-    hidden: yes
   }
+
   dimension: user_data_language {
+    type: string
     sql: ${TABLE}.user_data_language ;;
-    hidden: yes
   }
+
   dimension: user_data_limit_ad_tracking {
+    type: yesno
     sql: ${TABLE}.user_data_limit_ad_tracking ;;
-    hidden: yes
   }
+
   dimension: user_data_model {
+    type: string
     sql: ${TABLE}.user_data_model ;;
-    hidden: yes
   }
+
   dimension: user_data_opted_in {
+    type: yesno
     sql: ${TABLE}.user_data_opted_in ;;
-    hidden: yes
   }
+
   dimension: user_data_opted_in_status {
+    type: string
     sql: ${TABLE}.user_data_opted_in_status ;;
-    hidden: yes
   }
+
   dimension: user_data_os {
+    type: string
     sql: ${TABLE}.user_data_os ;;
-    hidden: yes
   }
+
   dimension: user_data_os_version {
+    type: string
     sql: ${TABLE}.user_data_os_version ;;
-    hidden: yes
   }
+
   dimension: user_data_os_version_android {
+    type: string
     sql: ${TABLE}.user_data_os_version_android ;;
-    hidden: yes
   }
+
   dimension: user_data_past_cross_platform_ids {
+    type: string
     sql: ${TABLE}.user_data_past_cross_platform_ids ;;
-    hidden: yes
   }
+
   dimension: user_data_platform {
+    type: string
     sql: ${TABLE}.user_data_platform ;;
-    hidden: yes
   }
+
   dimension: user_data_private_relay {
+    type: yesno
     sql: ${TABLE}.user_data_private_relay ;;
-    hidden: yes
   }
+
   dimension: user_data_prob_cross_platform_ids {
+    type: string
     sql: ${TABLE}.user_data_prob_cross_platform_ids ;;
-    hidden: yes
   }
+
   dimension: user_data_screen_height {
+    type: number
     sql: ${TABLE}.user_data_screen_height ;;
-    hidden: yes
   }
+
   dimension: user_data_screen_width {
+    type: number
     sql: ${TABLE}.user_data_screen_width ;;
-    hidden: yes
   }
+
   dimension: user_data_sdk_version {
+    type: string
     sql: ${TABLE}.user_data_sdk_version ;;
-    hidden: yes
   }
+
   dimension: user_data_user_agent {
+    type: string
     sql: ${TABLE}.user_data_user_agent ;;
-    hidden: yes
   }
-  dimension: uuid_ts {
+
+  dimension_group: uuid_ts {
+    type: time
+    timeframes: [time, date, week, month, quarter, year]
     sql: ${TABLE}.uuid_ts ;;
-    hidden: yes
   }
+
   dimension: event_data_currency {
+    type: string
     sql: ${TABLE}.event_data_currency ;;
-    hidden: yes
   }
+
   dimension: event_data_description {
+    type: string
     sql: ${TABLE}.event_data_description ;;
-    hidden: yes
   }
+
   dimension: event_data_exchange_rate {
+    type: number
     sql: ${TABLE}.event_data_exchange_rate ;;
-    hidden: yes
   }
+
   dimension: event_data_revenue {
+    type: number
     sql: ${TABLE}.event_data_revenue ;;
-    hidden: yes
   }
+
   dimension: event_data_revenue_in_local_currency {
+    type: number
     sql: ${TABLE}.event_data_revenue_in_local_currency ;;
-    hidden: yes
   }
+
   dimension: event_data_revenue_in_usd {
+    type: number
     sql: ${TABLE}.event_data_revenue_in_usd ;;
-    hidden: yes
   }
+
   dimension: event_data_transaction_id {
+    type: string
     sql: ${TABLE}.event_data_transaction_id ;;
-    hidden: yes
   }
+
   dimension: user_data_browser {
+    type: string
     sql: ${TABLE}.user_data_browser ;;
-    hidden: yes
   }
 }
