@@ -185,6 +185,7 @@ include: "/views/bigquery_views/upff_web_attribution.view.lkml"
 include: "/views/bigquery_views/upff_ios_attribution.view.lkml"
 include: "/views/bigquery_views/upff_android_attribution.view.lkml"
 include: "/views/bigquery_views/upff_multi_platform_attribution.view.lkml"
+include: "/views/bigquery_views/attribution_views/branch_events.view.lkml"
 
 include: "allfirstplay.view.lkml"
 include: "ticket_comments.view.lkml"
@@ -369,6 +370,10 @@ explore: multi_touch_attribution {
 
 explore: vimeo_user_identities {
   label: "Vimeo User Identities"
+}
+
+explore: branch_events {
+  label: "Branch Events"
 }
 
 explore: funnel_performance {
