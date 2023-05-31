@@ -19,8 +19,9 @@ view: ltv_cpa{
       /*Aggregate spend by date*/
       t2 as (
         select date_start as timestamp,
-        sum(spend) as spend
-        from ${daily_spend.SQL_TABLE_NAME} group by date_start
+        spend
+        from ${daily_spend.SQL_TABLE_NAME}
+        group by 1,2
       ),
 
       /*Create rolling 30 day spend*/
