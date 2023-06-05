@@ -1,97 +1,19 @@
 view: daily_spend {
   derived_table: {
-    sql:  with get_analytics_p0 as (
+    sql:  with customers_analytics as (
         select
-        analytics_timestamp as timestamp
-        , existing_free_trials
-        , existing_paying
-        , free_trial_churn
-        , free_trial_converted
-        , free_trial_created
-        , paused_created
-        , paying_churn
-        , paying_created
-        , total_free_trials
-        , total_paying
-        , row_number() over (partition by analytics_timestamp order by sent_at) as n
-        from php.get_analytics
-        where date(sent_at)=current_date
-      )
-      , apple_subs as (
-        select
-        report_date
-        , app_store_connect_subscribers_total
-        , vimeo_ott_subscribers_total
-        , row_number() over (partition by report_date order by timestamp desc) as n
-        from
-        looker.get_app_store_connect_subs
-        where date(sent_at)=current_date
-      )
-      , get_analytics_p1 as (
-        select
-        a.timestamp
-        , a.existing_free_trials
-        , a.existing_paying
-        , a.free_trial_churn
-        , a.free_trial_converted
-        , a.free_trial_created
-        , a.paused_created
-        , a.paying_churn
-        , a.paying_created
-        , b.total_free_trials
-        , coalesce((b.total_paying-c.vimeo_ott_subscribers_total+c.app_store_connect_subscribers_total),b.total_paying)  as total_paying
-        from (select * from get_analytics_p0 where n=1) as a
-        left join (select * from get_analytics_p0 where n=2) as b
-        on date(a.timestamp) = date(b.timestamp)
-        left join (
-          select
-          report_date
-          , app_store_connect_subscribers_total
-          , vimeo_ott_subscribers_total
-          from apple_subs
-          where n = 1
-        ) c
-        on date(a.timestamp) = date(c.report_date)
-      )
-      -- BACK UP SOURCE INCASE OF API OUTAGE
-      , distinct_events as (
-        select distinct user_id
-        , action
-        , status
-        , frequency
-        , to_timestamp(event_created_at, 'YYYY-MM-DD HH24:MI:SS') as event_created_at
-        , to_date(event_created_at, 'YYYY-MM-DD') as event_date
-        , to_date(report_date, 'YYYY-MM-DD') as report_date
-        from customers.all_customers
-        where action = 'subscription'
-      )
-      , total_counts as (
-        select report_date
-        , count(distinct case when status = 'enabled' then user_id end) as total_paying
-        , lag(total_paying, 1) over (order by report_date) as existing_paying
-        , count(distinct case when status = 'free_trial' then user_id end) as total_free_trials
-        , lag(total_free_trials, 1) over (order by report_date) as existing_free_trials
-        from distinct_events
-        group by 1
-      )
-      , customers_analytics as (
-        with p0 as (
-          select get_analytics_p1.timestamp,
-          coalesce(get_analytics_p1.existing_free_trials, total_counts.existing_free_trials) as existing_free_trials,
-          coalesce(get_analytics_p1.existing_paying, total_counts.existing_paying) as existing_paying,
-          get_analytics_p1.free_trial_churn,
-          get_analytics_p1.free_trial_converted,
-          get_analytics_p1.free_trial_created,
-          get_analytics_p1.paused_created,
-          get_analytics_p1.paying_churn,
-          get_analytics_p1.paying_created,
-          coalesce(get_analytics_p1.total_free_trials, total_counts.total_free_trials) as total_free_trials,
-          coalesce(get_analytics_p1.total_paying, total_counts.total_paying) as total_paying
-          from get_analytics_p1
-          full join total_counts
-          on total_counts.report_date = trunc(get_analytics_p1.timestamp)
-        )
-        select * from p0 where date(timestamp) < current_date
+        "timestamp",
+        existing_free_trials,
+        existing_paying,
+        free_trial_churn,
+        free_trial_converted,
+        free_trial_created,
+        paused_created,
+        paying_churn,
+        paying_created,
+        total_free_trials,
+        total_paying
+        from ${analytics_v2.SQL_TABLE_NAME}
       ),
 
       apple_perf as (

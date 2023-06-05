@@ -1,194 +1,27 @@
 view: ltv_cpa{
   derived_table: {
-    sql: with get_analytics_p0 as (
+    sql: with customers_analytics as (
         select
-        analytics_timestamp as timestamp
-        , existing_free_trials
-        , existing_paying
-        , free_trial_churn
-        , free_trial_converted
-        , free_trial_created
-        , paused_created
-        , paying_churn
-        , paying_created
-        , total_free_trials
-        , total_paying
-        , row_number() over (partition by analytics_timestamp order by sent_at) as n
-        from php.get_analytics
-        where date(sent_at)=current_date
-      )
-      , apple_subs as (
-        select
-        report_date
-        , app_store_connect_subscribers_total
-        , vimeo_ott_subscribers_total
-        , row_number() over (partition by report_date order by timestamp desc) as n
-        from
-        looker.get_app_store_connect_subs
-        where date(sent_at)=current_date
-      )
-      , get_analytics_p1 as (
-        select
-        a.timestamp
-        , a.existing_free_trials
-        , a.existing_paying
-        , a.free_trial_churn
-        , a.free_trial_converted
-        , a.free_trial_created
-        , a.paused_created
-        , a.paying_churn
-        , a.paying_created
-        , b.total_free_trials
-        , coalesce((b.total_paying-c.vimeo_ott_subscribers_total+c.app_store_connect_subscribers_total),b.total_paying)  as total_paying
-        from (select * from get_analytics_p0 where n=1) as a
-        left join (select * from get_analytics_p0 where n=2) as b
-        on date(a.timestamp) = date(b.timestamp)
-        left join (
-          select
-          report_date
-          , app_store_connect_subscribers_total
-          , vimeo_ott_subscribers_total
-          from apple_subs
-          where n = 1
-        ) c
-        on date(a.timestamp) = date(c.report_date)
-      )
-      -- BACK UP SOURCE INCASE OF API OUTAGE
-      , distinct_events as (
-        select distinct user_id
-        , action
-        , status
-        , frequency
-        , to_timestamp(event_created_at, 'YYYY-MM-DD HH24:MI:SS') as event_created_at
-        , to_date(event_created_at, 'YYYY-MM-DD') as event_date
-        , to_date(report_date, 'YYYY-MM-DD') as report_date
-        from customers.all_customers
-        where action = 'subscription'
-      )
-      , total_counts as (
-        select report_date
-        , count(distinct case when status = 'enabled' then user_id end) as total_paying
-        , lag(total_paying, 1) over (order by report_date) as existing_paying
-        , count(distinct case when status = 'free_trial' then user_id end) as total_free_trials
-        , lag(total_free_trials, 1) over (order by report_date) as existing_free_trials
-        from distinct_events
-        group by 1
-      )
-      , customers_analytics as (
-        with p0 as (
-          select get_analytics_p1.timestamp,
-          coalesce(get_analytics_p1.existing_free_trials, total_counts.existing_free_trials) as existing_free_trials,
-          coalesce(get_analytics_p1.existing_paying, total_counts.existing_paying) as existing_paying,
-          get_analytics_p1.free_trial_churn,
-          get_analytics_p1.free_trial_converted,
-          get_analytics_p1.free_trial_created,
-          get_analytics_p1.paused_created,
-          get_analytics_p1.paying_churn,
-          get_analytics_p1.paying_created,
-          coalesce(get_analytics_p1.total_free_trials, total_counts.total_free_trials) as total_free_trials,
-          coalesce(get_analytics_p1.total_paying, total_counts.total_paying) as total_paying
-          from get_analytics_p1
-          full join total_counts
-          on total_counts.report_date = trunc(get_analytics_p1.timestamp)
-        )
-        select * from p0 where date(timestamp) < current_date
-      ),
-
-      apple_perf as (
-        select start_date as date_start,
-        sum(total_local_spend_amount) as spend
-        from php.get_apple_search_ads_campaigns
-        group by 1
-      ),
-
-      /*Pull FB and Google Spend*/
-      fb_perf as (
-        select i.date_start,
-        sum(i.spend) as spend
-        from facebook_ads.insights as i
-        group by 1
-      ),
-
-      google_perf as (
-        select apr.date_start,
-        sum(campaigncost) as spend
-        from (
-          select apr.date_start,
-          sum((apr.cost/1000000)) as campaigncost
-          from adwords.campaign_performance_reports as apr
-          group by 1
-        ) as apr
-        inner join (
-          select date_start,
-          sum(COALESCE((cost/1000000),0 )) as spend
-          from adwords.ad_performance_reports
-          group by date_start
-        ) as b
-        on apr.date_start=b.date_start
-        group by 1
-      ),
-
-      /* Adding other marketing spend provided by Ribbow */
-      others_perf as (
-        with p0 as (
-          select date_start
-          , channel
-          , original_timestamp
-          , spend
-          , row_number() over (partition by date_start, channel order by original_timestamp desc) as rn
-          , count(*) as n
-          FROM looker.get_other_marketing_spend
-          group by 1,2,3,4 order by 1 desc,2,3 desc,4
-        )
-        select
-        date_start
-        , sum(spend) as spend
-        from p0
-        where rn = 1
-        and date_start is not null
-        group by 1
-        order by date_start desc
-      ),
-
-      /*Input manual spend for earlier dates*/
-      t1 as (
-        select date_start,
-        case
-          when TO_CHAR(DATE_TRUNC('month', date_start), 'YYYY-MM') = '2018-07' then spend+(1440/31)
-          when TO_CHAR(DATE_TRUNC('month', date_start), 'YYYY-MM') = '2018-06' then spend+(19000/30)
-          when TO_CHAR(DATE_TRUNC('month', date_start ), 'YYYY-MM') = '2018-05' then spend+(10000/31)
-          when TO_CHAR(DATE_TRUNC('month', date_start ), 'YYYY-MM') = '2018-04' then spend+(0/30)
-          when TO_CHAR(DATE_TRUNC('month', date_start ), 'YYYY-MM') = '2018-03' then spend+(22018/31)
-          when TO_CHAR(DATE_TRUNC('month', date_start ), 'YYYY-MM') = '2018-02' then spend+(21565/28)
-          when TO_CHAR(DATE_TRUNC('month', date_start ), 'YYYY-MM') = '2018-01' then spend+(21570/31)
-          when date(date_start) between timestamp '2018-08-11' and timestamp '2018-09-08' then spend+((288.37+87.27)/28)
-          when date(date_start)between timestamp '2018-10-10' and timestamp '2019-04-30' then spend+(total_paying/30)
-          when date(date_start)>'2019-04-30' then spend + 657.03 + (1.5*(free_trial_converted+paying_created))
-          else spend
-        end as spend
-        from google_perf
-        inner join
-        customers_analytics
-        on date(google_perf.date_start)=date(customers_analytics.timestamp)
-        union all
-        select date_start,
-        spend
-        from fb_perf
-        union all
-        select date_start,
-        spend
-        from apple_perf
-        union all
-        select date_start,
-        spend
-        from others_perf
+        "timestamp",
+        existing_free_trials,
+        existing_paying,
+        free_trial_churn,
+        free_trial_converted,
+        free_trial_created,
+        paused_created,
+        paying_churn,
+        paying_created,
+        total_free_trials,
+        total_paying
+        from ${analytics_v2.SQL_TABLE_NAME}
       ),
 
       /*Aggregate spend by date*/
       t2 as (
         select date_start as timestamp,
-        sum(spend) as spend
-        from t1 group by date_start
+        spend
+        from ${daily_spend.SQL_TABLE_NAME}
+        group by 1,2
       ),
 
       /*Create rolling 30 day spend*/

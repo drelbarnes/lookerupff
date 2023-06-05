@@ -1,6 +1,15 @@
 view: analytics_v2 {
   derived_table: {
     sql: with get_analytics_p0 as (
+        with p0 as (
+          select
+          *
+          , case when existing_free_trials is null AND existing_paying is null then 'v2'
+              else 'v1'
+            end as report_version
+          from php.get_analytics
+          where date(sent_at)=current_date
+        )
         select
         analytics_timestamp as timestamp
         , existing_free_trials
@@ -13,9 +22,9 @@ view: analytics_v2 {
         , paying_created
         , total_free_trials
         , total_paying
-        , row_number() over (partition by analytics_timestamp order by sent_at) as n
-        from php.get_analytics
-        where date(sent_at)=current_date
+        , report_version
+        , row_number() over (partition by analytics_timestamp, report_version order by sent_at desc) as n
+        from p0
       )
       , apple_subs as (
         select
@@ -29,19 +38,22 @@ view: analytics_v2 {
       )
       , get_analytics_p1 as (
         select
-        a.timestamp
-        , a.existing_free_trials
-        , a.existing_paying
-        , a.free_trial_churn
-        , a.free_trial_converted
-        , a.free_trial_created
-        , a.paused_created
-        , a.paying_churn
-        , a.paying_created
-        , b.total_free_trials
-        , coalesce((b.total_paying-c.vimeo_ott_subscribers_total+c.app_store_connect_subscribers_total),b.total_paying)  as total_paying
-        from (select * from get_analytics_p0 where n=1) as a
-        left join (select * from get_analytics_p0 where n=2) as b
+        coalesce(a.timestamp, b.timestamp) as timestamp
+        , coalesce(a.existing_free_trials, b.existing_free_trials) as existing_free_trials
+        , coalesce(a.existing_paying, b.existing_paying) as existing_paying
+        , coalesce(a.free_trial_churn, b.free_trial_churn) as free_trial_churn
+        , coalesce(a.free_trial_converted, b.free_trial_converted) as free_trial_converted
+        , coalesce(a.free_trial_created, b.free_trial_created) as free_trial_created
+        , coalesce(a.paused_created, b.paused_created) as paused_created
+        , coalesce(a.paying_churn, b.paying_churn) as paying_churn
+        , coalesce(a.paying_created, b.paying_created) as paying_created
+        , coalesce(b.total_free_trials, a.total_free_trials) as total_free_trials
+        , coalesce(nullif(b.total_paying-c.vimeo_ott_subscribers_total+c.app_store_connect_subscribers_total,-c.vimeo_ott_subscribers_total+c.app_store_connect_subscribers_total)
+          ,nullif(a.total_paying-c.vimeo_ott_subscribers_total+c.app_store_connect_subscribers_total,-c.vimeo_ott_subscribers_total+c.app_store_connect_subscribers_total)) as total_paying
+        , (null-c.vimeo_ott_subscribers_total+c.app_store_connect_subscribers_total) as test
+        , (-c.vimeo_ott_subscribers_total+c.app_store_connect_subscribers_total) as text2
+        from (select * from get_analytics_p0 where report_version = 'v1' and n=1) as a
+        left join (select * from get_analytics_p0 where report_version = 'v2' and n=1) as b
         on date(a.timestamp) = date(b.timestamp)
         left join (
           select
