@@ -204,6 +204,7 @@ include: "series_title_valuation.view.lkml"
 include: "bigquery_viewing_habits.view.lkml"
 include: "heartland_s16_movie_views.view.lkml"
 include: "heartland_s16_series_views.view.lkml"
+include: "heartland_s16_tenure_analysis.view.lkml"
 
 # DTC App reporting #
 
@@ -234,6 +235,9 @@ explore: user_play_history {
     }
 }
 
+explore: heartland_s16_tenure_analysis {
+  label: "Heartland S16 Tenure"
+}
 explore: heartland_s16_movie_views {
   label: "Heartland S16 Viewers"
 }
