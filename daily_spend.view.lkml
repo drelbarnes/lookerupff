@@ -163,6 +163,7 @@ view: daily_spend {
 
   dimension_group: timestamp {
     type: time
+    timeframes: [raw, time, date, day_of_week, week, month]
     sql: ${TABLE}.date_start ;;
   }
 
@@ -184,6 +185,72 @@ view: daily_spend {
       WHEN ${timestamp_day_of_week} = 'Monday' THEN dateadd(days, -6, ${timestamp_date})
       END;;
     datatype: date
+  }
+  ## filter determining time range for all "A" measures
+  filter: timeframe_a {
+    type: date_time
+  }
+
+  ## flag for "A" measures to only include appropriate time range
+  dimension: group_a_yesno {
+    hidden: yes
+    type: yesno
+    sql: {% condition timeframe_a %} ${timestamp_raw} {% endcondition %} ;;
+  }
+
+  ## filtered measure A
+  measure: spend_a {
+    type: sum_distinct
+    sql_distinct_key: ${timestamp_date} ;;
+    sql: ${TABLE}.spend ;;
+    value_format_name: usd
+    filters: [group_a_yesno: "yes"]
+  }
+
+  measure: free_trial_created_a {
+    type: sum_distinct
+    sql_distinct_key: ${timestamp_date} ;;
+    sql: ${TABLE}.free_trial_created ;;
+    filters: [group_a_yesno: "yes"]
+  }
+
+  measure: CPFT_a {
+    type: number
+    sql: ${spend_a}/${free_trial_created_a} ;;
+    value_format_name: usd
+  }
+
+  ## filter determining time range for all "B" measures
+  filter: timeframe_b {
+    type: date_time
+  }
+
+  ## flag for "B" measures to only include appropriate time range
+  dimension: group_b_yesno {
+    hidden: yes
+    type: yesno
+    sql: {% condition timeframe_b %} ${timestamp_raw} {% endcondition %} ;;
+  }
+
+  measure: spend_b {
+    type: sum_distinct
+    sql_distinct_key: ${timestamp_date} ;;
+    sql: ${TABLE}.spend ;;
+    value_format_name: usd
+    filters: [group_b_yesno: "yes"]
+  }
+
+  measure: free_trial_created_b {
+    type: sum_distinct
+    sql_distinct_key: ${timestamp_date} ;;
+    sql: ${TABLE}.free_trial_created ;;
+    filters: [group_b_yesno: "yes"]
+  }
+
+  measure: CPFT_b {
+    type: number
+    sql: ${spend_b}/${free_trial_created_b} ;;
+    value_format_name: usd
   }
 
   measure: channel_spend {
@@ -214,4 +281,5 @@ view: daily_spend {
   set: detail {
     fields: [timestamp_time, spend]
   }
+
 }
