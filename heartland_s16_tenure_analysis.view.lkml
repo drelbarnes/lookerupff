@@ -98,7 +98,7 @@ view: heartland_s16_tenure_analysis {
         from allfirstplay.p0
         where user_id <> '0'
         and regexp_contains(user_id, r'^[0-9]*$')
-        and date(timestamp) >= '2022-01-01'
+        and date(timestamp) >= '2022-05-01'
         and date(timestamp) <= current_date()
         ),
 
@@ -276,7 +276,7 @@ view: heartland_s16_tenure_analysis {
         select count(distinct user_id) as n, 'list' as ds from tenure_analysis
         )
 
-        select * from tenure_analysis
+        select * from tenure_analysis where first_event_date >= '2022-12-01'
 
         -- select * from viewing_list_movies order by views
 
