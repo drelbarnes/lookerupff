@@ -165,7 +165,7 @@ view: heartland_s16_movie_views {
         timestamp
         from plays_less_granular
         where collection = 'Heartland - Season 16'
-        and date(timestamp) is between '2023-05-30' and '2023-05-31'
+        and date(timestamp) between '2023-05-30' and '2023-05-31'
         ),
 
         list_a as
