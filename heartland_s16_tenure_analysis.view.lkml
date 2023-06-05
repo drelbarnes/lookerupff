@@ -225,7 +225,7 @@ view: heartland_s16_tenure_analysis {
         select
         a.*,
         b.paid_months,
-        case when paid_months < tenure then 1 else 0 end as lapse
+        case when paid_months < tenure then 'yes' else 'no' end as lapse
         from list_c as a
         left join list_f as b
         on a.user_id = b.user_id
@@ -346,8 +346,8 @@ view: heartland_s16_tenure_analysis {
       sql: ${TABLE}.paid_months ;;
     }
 
-    measure: lapse {
-      type: sum
+    dimension: lapse {
+      type: string
       sql: ${TABLE}.lapse ;;
     }
 
