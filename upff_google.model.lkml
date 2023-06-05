@@ -202,6 +202,7 @@ include: "first_n_plays.view.lkml"
 include: "popular_content_by_series.view.lkml"
 include: "series_title_valuation.view.lkml"
 include: "bigquery_viewing_habits.view.lkml"
+include: "heartland_s16_movie_views.view.lkml"
 
 # DTC App reporting #
 
@@ -230,6 +231,10 @@ explore: user_play_history {
   always_filter: {
     filters: [user_id: "22620729"]
     }
+}
+
+explore: heartland_s16_movie_views {
+  label: "Heartland S16 Viewers"
 }
 
 explore: series_title_valuation {
