@@ -69,6 +69,7 @@ view: app_installers {
     filters: [group_a_yesno: "yes"]
   }
 
+
   measure: installs_b {
     type: count_distinct
     sql_distinct_key: ${timestamp_date} ;;

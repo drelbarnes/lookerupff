@@ -810,11 +810,29 @@ view: analytics_v2 {
     }
   }
 
+  measure: reacquisitions_b {
+    type: sum
+    sql: ${paying_created};;
+    filters: {
+      field: group_b
+      value: "yes"
+    }
+  }
+
   measure: paid_churn_a {
     type: sum
     sql: ${paying_churn} ;;
     filters: {
       field: group_a
+      value: "yes"
+    }
+  }
+
+  measure: paid_churn_b {
+    type: sum
+    sql: ${paying_churn} ;;
+    filters: {
+      field: group_b
       value: "yes"
     }
   }
@@ -845,6 +863,15 @@ view: analytics_v2 {
     sql: ${free_trial_churn} ;;
     filters: {
       field: group_a
+      value: "yes"
+    }
+  }
+
+  measure: trial_churn_b {
+    type: sum
+    sql: ${free_trial_churn} ;;
+    filters: {
+      field: group_b
       value: "yes"
     }
   }
