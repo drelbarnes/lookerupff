@@ -49,7 +49,7 @@ view: analytics_v2 {
         , coalesce(a.paying_created, b.paying_created) as paying_created
         , coalesce(b.total_free_trials, a.total_free_trials) as total_free_trials
         , coalesce(nullif(b.total_paying-c.vimeo_ott_subscribers_total+c.app_store_connect_subscribers_total,-c.vimeo_ott_subscribers_total+c.app_store_connect_subscribers_total)
-          ,nullif(a.total_paying-c.vimeo_ott_subscribers_total+c.app_store_connect_subscribers_total,-c.vimeo_ott_subscribers_total+c.app_store_connect_subscribers_total)) as total_paying
+          ,nullif(a.total_paying-c.vimeo_ott_subscribers_total+c.app_store_connect_subscribers_total,-c.vimeo_ott_subscribers_total+c.app_store_connect_subscribers_total), b.total_paying, a.total_paying) as total_paying
         , (null-c.vimeo_ott_subscribers_total+c.app_store_connect_subscribers_total) as test
         , (-c.vimeo_ott_subscribers_total+c.app_store_connect_subscribers_total) as text2
         from (select * from get_analytics_p0 where report_version = 'v1' and n=1) as a
