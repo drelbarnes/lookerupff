@@ -98,7 +98,7 @@ view: heartland_s16_series_views {
         from allfirstplay.p0
         where user_id <> '0'
         and regexp_contains(user_id, r'^[0-9]*$')
-        and date(timestamp) >= '2022-01-01'
+        and date(timestamp) >= '2022-05-01'
         and date(timestamp) <= current_date()
         ),
 

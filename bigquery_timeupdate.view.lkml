@@ -20,7 +20,12 @@ a3 as
        date(time_unavailable) as end_date,
        round(duration_seconds/60) as duration,
        promotion
-from php.get_titles as a left join svod_titles.titles_id_mapping as b on a.video_id=b.id inner join a30 on a30.video_id=a.video_id and a30.loaded_at=a.loaded_at),
+from php.get_titles as a
+left join svod_titles.titles_id_mapping as b
+on a.video_id=b.id
+inner join a30
+on a30.video_id=a.video_id
+and a30.loaded_at=a.loaded_at),
 
 a31 as
 (select mysql_roku_firstplays_firstplay_date_date as timestamp,
