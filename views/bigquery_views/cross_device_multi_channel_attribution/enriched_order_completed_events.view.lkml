@@ -1,0 +1,44 @@
+view: enriched_order_completed_events {
+  derived_table: {
+    sql:
+      select
+        anonymous_id,
+        context_app_name,
+        context_app_version,
+        context_ip,
+        context_external_ids,
+        context_library_name,
+        context_library_version,
+        context_traits_email,
+        context_traits_name,
+        context_traits_vimeo_id,
+        context_transaction_product_id,
+        context_user_agent,
+        conversion_type,
+        device,
+        device_id,
+        event,
+        event_text,
+        id,
+        loaded_at,
+        name,
+        original_timestamp,
+        platform,
+        platform_id,
+        platform_version,
+        product_id,
+        received_at,
+        sent_at,
+        session_id,
+        site_id,
+        timestamp,
+        type,
+        user_email,
+        user_id,
+        uuid_ts,
+        view
+      FROM
+        ${upff_order_completed_events.SQL_TABLE_NAME}
+    ;;
+  }
+}
