@@ -476,6 +476,24 @@ view: analytics_v2 {
     description: "Total number of new trials during a time period."
     sql:  ${free_trial_created} ;;
   }
+  measure: new_trials_a {
+    type: sum
+    description: "Total number of new trials during period a."
+    sql:  ${free_trial_created} ;;
+    filters: {
+      field: group_a
+      value: "yes"
+    }
+  }
+  measure: new_trials_b {
+    type: sum
+    description: "Total number of new trials during period b."
+    sql:  ${free_trial_created} ;;
+    filters: {
+      field: group_b
+      value: "yes"
+    }
+  }
 
   dimension: paused_created {
     type: number
@@ -783,6 +801,15 @@ view: analytics_v2 {
     }
   }
 
+  measure: paid_b {
+    type: sum
+    sql:  ${total_paying};;
+    filters: {
+      field: group_b
+      value: "yes"
+    }
+  }
+
   measure: trials_a {
     type: sum
     sql:  ${total_free_trials};;
@@ -1045,5 +1072,74 @@ view: analytics_v2 {
            NULL
        END ;;
   }
+
+  ## PoP dimensions and measures created for H16 analysis
+
+  ## ------------------ HIDDEN HELPER DIMENSIONS  ------------------ ##
+
+  dimension: days_from_start_a {
+    hidden: yes
+    type: number
+    sql: DATEDIFF('day',  {% date_start time_a %}, ${timestamp_date}) ;;
+  }
+
+  dimension: days_from_start_b {
+    hidden: yes
+    type: number
+    sql: DATEDIFF('day',  {% date_start time_b %}, ${timestamp_date}) ;;
+  }
+  ## ------------------ DIMENSIONS TO PLOT ------------------ ##
+
+  dimension: days_from_first_period {
+    label: "Day of Period"
+    description: "Select for Grouping (Rows)"
+    group_label: "Time Comparison Filters"
+    type: number
+    sql:
+            CASE
+            WHEN ${days_from_start_b} >= 0
+            THEN ${days_from_start_b}
+            WHEN ${days_from_start_a} >= 0
+            THEN ${days_from_start_a}
+            END;;
+  }
+
+
+  dimension: period_selected {
+    label: "Period"
+    description: "Select for Comparison (Pivot)"
+    group_label: "Time Comparison Filters"
+    type: string
+    sql:
+            CASE
+                WHEN {% condition time_a %}${timestamp_raw} {% endcondition %}
+                THEN 'Period A'
+                WHEN {% condition time_b %}${timestamp_raw} {% endcondition %}
+                THEN 'Period B'
+                END ;;
+  }
+
+  ## Filtered measures
+
+  # measure: churn_30_days_a {
+  #   type: sum
+  #   sql: ${churn_30_days} ;;
+  #   filters: [period_selected: "Period A"]
+  # }
+  # measure: churn_30_days_b {
+  #   type: sum
+  #   sql: ${churn_30_days} ;;
+  #   filters: [period_selected: "Period B"]
+  # }
+  # measure: paying_30_days_prior_a {
+  #   type: sum
+  #   sql: ${paying_30_days_prior} ;;
+  #   filters: [period_selected: "Period A"]
+  # }
+  # measure: paying_30_days_prior_b {
+  #   type: sum
+  #   sql: ${paying_30_days_prior} ;;
+  #   filters: [period_selected: "Period B"]
+  # }
 
 }
