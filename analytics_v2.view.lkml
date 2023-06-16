@@ -494,7 +494,45 @@ view: analytics_v2 {
       value: "yes"
     }
   }
+  measure: new_paid_a {
+    type: sum
+    description: "Total number of new paids during period a."
+    sql:  ${paying_created} ;;
+    filters: {
+      field: group_a
+      value: "yes"
+    }
+  }
 
+  measure: new_paid_b {
+    type: sum
+    description: "Total number of new paids during period b."
+    sql:  ${paying_created} ;;
+    filters: {
+      field: group_b
+      value: "yes"
+    }
+  }
+
+  measure:  new_paid_total_a {
+    type: sum
+    description: "Total number of new paid subs (reacquisitions) and free trial to paid during period a."
+    sql: ${free_trial_converted}+${paying_created};;
+    filters: {
+      field: group_a
+      value: "yes"
+    }
+  }
+
+  measure:  new_paid_total_b {
+    type: sum
+    description: "Total number of new paid subs (reacquisitions) and free trial to paid during period b."
+    sql: ${free_trial_converted}+${paying_created};;
+    filters: {
+      field: group_b
+      value: "yes"
+    }
+  }
   dimension: paused_created {
     type: number
     sql: ${TABLE}.paused_created ;;
