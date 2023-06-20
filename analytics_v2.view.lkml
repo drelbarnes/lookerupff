@@ -453,7 +453,6 @@ view: analytics_v2 {
   }
 
 
-
   dimension: free_trial_converted {
     type: number
     sql: ${TABLE}.free_trial_converted ;;
@@ -464,7 +463,26 @@ view: analytics_v2 {
     description: "Total number of trials to paid during a time period."
     sql:  ${free_trial_converted} ;;
     drill_fields: [free_trial_converted,timestamp_date]
+  }
 
+  measure: trial_to_paid_a {
+    type: sum
+    description: "Total number of trials to paid during a period a."
+    sql:  ${free_trial_converted} ;;
+    filters: {
+      field: group_a
+      value: "yes"
+    }
+  }
+
+  measure: trial_to_paid_b {
+    type: sum
+    description: "Total number of trials to paid during a period b."
+    sql:  ${free_trial_converted} ;;
+    filters: {
+      field: group_b
+      value: "yes"
+    }
   }
 
   dimension: free_trial_created {
@@ -515,24 +533,29 @@ view: analytics_v2 {
   }
 
   measure:  new_paid_total_a {
-    type: sum
+    type: number
     description: "Total number of new paid subs (reacquisitions) and free trial to paid during period a."
-    sql: ${free_trial_converted}+${paying_created};;
-    filters: {
-      field: group_a
-      value: "yes"
-    }
+    sql: ${trial_to_paid_a}+${new_paid_a};;
   }
 
   measure:  new_paid_total_b {
-    type: sum
+    type: number
     description: "Total number of new paid subs (reacquisitions) and free trial to paid during period b."
-    sql: ${free_trial_converted}+${paying_created};;
-    filters: {
-      field: group_b
-      value: "yes"
-    }
+    sql: ${trial_to_paid_b}+${new_paid_b};;
   }
+
+  measure: net_new_a {
+    type: number
+    description: "Net new subscribers after trial conversions and paying churn during period A"
+    sql: ${trial_to_paid_a}+${new_paid_a}-${paid_churn_a} ;;
+  }
+
+  measure: net_new_b {
+    type: number
+    description: "Net new subscribers after trial conversions and paying churn during period B"
+    sql: ${trial_to_paid_b}+${new_paid_b}-${paid_churn_b} ;;
+  }
+
   dimension: paused_created {
     type: number
     sql: ${TABLE}.paused_created ;;
@@ -1116,16 +1139,20 @@ view: analytics_v2 {
   ## ------------------ HIDDEN HELPER DIMENSIONS  ------------------ ##
 
   dimension: days_from_start_a {
-    hidden: yes
+    hidden: no
+    group_label: "Time Comparison Filters"
     type: number
     sql: DATEDIFF('day',  {% date_start time_a %}, ${timestamp_date}) ;;
   }
 
   dimension: days_from_start_b {
-    hidden: yes
+    hidden: no
+    group_label: "Time Comparison Filters"
     type: number
     sql: DATEDIFF('day',  {% date_start time_b %}, ${timestamp_date}) ;;
   }
+
+
   ## ------------------ DIMENSIONS TO PLOT ------------------ ##
 
   dimension: days_from_first_period {
