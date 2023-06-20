@@ -1184,27 +1184,4 @@ view: analytics_v2 {
                 END ;;
   }
 
-  ## Filtered measures
-
-  # measure: churn_30_days_a {
-  #   type: sum
-  #   sql: ${churn_30_days} ;;
-  #   filters: [period_selected: "Period A"]
-  # }
-  # measure: churn_30_days_b {
-  #   type: sum
-  #   sql: ${churn_30_days} ;;
-  #   filters: [period_selected: "Period B"]
-  # }
-  # measure: paying_30_days_prior_a {
-  #   type: sum
-  #   sql: ${paying_30_days_prior} ;;
-  #   filters: [period_selected: "Period A"]
-  # }
-  # measure: paying_30_days_prior_b {
-  #   type: sum
-  #   sql: ${paying_30_days_prior} ;;
-  #   filters: [period_selected: "Period B"]
-  # }
-
 }
