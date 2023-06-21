@@ -779,19 +779,19 @@ view: analytics_v2 {
   measure: conversion_rate_v2 {
     type: number
     value_format: ".0#\%"
-    sql: 100.0*${trial_to_paid}/${total_new_trials_14_days_prior} ;;
+    sql: 100.0*${trial_to_paid}/NULLIF(${total_new_trials_14_days_prior},0) ;;
   }
 
   measure: conversion_rate_a {
     type: number
     value_format: ".0#\%"
-    sql: 100.0*${trial_to_paid_a}/${total_new_trials_14_days_prior_a} ;;
+    sql: 100.0*${trial_to_paid_a}/NULLIF(${total_new_trials_14_days_prior_a},0) ;;
   }
 
   measure: conversion_rate_b {
     type: number
     value_format: ".0#\%"
-    sql: 100.0*${trial_to_paid_b}/${total_new_trials_14_days_prior_b} ;;
+    sql: 100.0*${trial_to_paid_b}/NULLIF(${total_new_trials_14_days_prior_b},0) ;;
   }
 
   measure: total_free_trial_change {
