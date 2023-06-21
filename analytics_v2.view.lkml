@@ -758,10 +758,40 @@ view: analytics_v2 {
     sql: ${paying_churn}*-1 ;;
   }
 
+  measure: total_new_trials_14_days_prior_a {
+    type: sum
+    sql: ${TABLE}.new_trials_14_days_prior;;
+    filters: {
+      field: group_a
+      value: "yes"
+    }
+  }
+
+  measure: total_new_trials_14_days_prior_b {
+    type: sum
+    sql: ${TABLE}.new_trials_14_days_prior;;
+    filters: {
+      field: group_b
+      value: "yes"
+    }
+  }
+
   measure: conversion_rate_v2 {
     type: number
     value_format: ".0#\%"
     sql: 100.0*${trial_to_paid}/${total_new_trials_14_days_prior} ;;
+  }
+
+  measure: conversion_rate_a {
+    type: number
+    value_format: ".0#\%"
+    sql: 100.0*${trial_to_paid_a}/${total_new_trials_14_days_prior_a} ;;
+  }
+
+  measure: conversion_rate_b {
+    type: number
+    value_format: ".0#\%"
+    sql: 100.0*${trial_to_paid_b}/${total_new_trials_14_days_prior_b} ;;
   }
 
   measure: total_free_trial_change {
@@ -806,11 +836,20 @@ view: analytics_v2 {
       ;;
   }
 
-  measure: free_trial_created_14_days_prior {
+  measure: free_trial_created_14_days_prior_a {
     type: sum
     sql:  ${free_trial_created} ;;
     filters: {
       field: group_a
+      value: "yes"
+    }
+  }
+
+  measure: free_trial_created_14_days_prior_b {
+    type: sum
+    sql:  ${free_trial_created} ;;
+    filters: {
+      field: group_b
       value: "yes"
     }
   }
