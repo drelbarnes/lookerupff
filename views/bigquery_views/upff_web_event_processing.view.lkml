@@ -182,7 +182,7 @@ view: upff_web_event_processing {
       , referrer_domain
       , referrer_search
       , case
-        when utm_source is null and (referrer_domain is null or referrer_domain = "upfaithandfamily.com/") then 0
+        when utm_source is null and (referrer_domain is null or referrer_domain in ("upfaithandfamily.com/", "upfaithandfamily.com")) then 0
         else 1
         end as attribution_flag
       from all_joined_events
@@ -195,7 +195,7 @@ view: upff_web_event_processing {
       select *
       , case
       when (sum(attribution_flag) over (partition by user_id) = 0) then "unknown"
-      when sum(attribution_flag) over (partition by user_id) > 0 and utm_source is null and referrer_domain != "upfaithandfamily.com/" then referrer_domain
+      when sum(attribution_flag) over (partition by user_id) > 0 and utm_source is null and referrer_domain not in ("upfaithandfamily.com/", "upfaithandfamily.com") then referrer_domain
       else utm_source
       end as source
       from final_p0
