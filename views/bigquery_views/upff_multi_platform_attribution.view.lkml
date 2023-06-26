@@ -589,6 +589,12 @@ view: upff_multi_platform_attribution {
     value_format: "0.##"
   }
 
+  measure: free_trial_conversion_rate {
+    type: number
+    sql: 100*${free_trial_conversions}/NULLIF(${free_trial_starts},0) ;;
+    value_format: "#\%"
+  }
+
   measure: paying_total {
     type: number
     sql: ${reacquisitions} + ${free_trial_conversions} ;;
@@ -973,17 +979,30 @@ view: upff_multi_platform_attribution {
         then 'UPtv Linear'
       WHEN LOWER(${TABLE}.source) = 'uptv_movies_app'
         or LOWER(${TABLE}.source) = 'uptv-web'
+        or LOWER(${TABLE}.source) = 'uptv-app'
         or LOWER(${TABLE}.source) = 'uptv'
+        or LOWER(${TABLE}.source) = 'uptv.com'
         then 'UPtv Digital'
       WHEN LOWER(${TABLE}.source) = 'zendesk'
         or LOWER(${TABLE}.source) = 'support'
         then 'Customer Support'
+      WHEN LOWER(${TABLE}.source) = 'google.com'
+        or LOWER(${TABLE}.source) = 'android.gm'
+        or LOWER(${TABLE}.source) = 'bing.com'
+        or LOWER(${TABLE}.source) = 'yahoo.com'
+        or LOWER(${TABLE}.source) = 'duckduckgo.com'
+        then 'Organic Search'
+      WHEN LOWER(${TABLE}.source) = 'facebook.com'
+        or LOWER(${TABLE}.source) = 't.co'
+        or LOWER(${TABLE}.source) = 'youtube.com'
+        then 'Organic Social'
       ELSE 'Others/Unknown'
     END ;;
   }
 
   dimension: marketing_channel {
-    sql: case
+    sql:
+      case
       WHEN LOWER(${TABLE}.utm_medium) LIKE '%facebook_mobile_feed%'
         OR LOWER(${TABLE}.utm_medium) LIKE '%facebook_desktop_feed%'
         OR LOWER(${TABLE}.utm_medium) LIKE '%instagram_feed%'
@@ -994,30 +1013,37 @@ view: upff_multi_platform_attribution {
         OR LOWER(${TABLE}.utm_medium) LIKE '%facebook_right_column%'
         OR LOWER(${TABLE}.utm_medium) LIKE '%facebook_marketplace%'
         OR LOWER(${TABLE}.utm_medium) LIKE '%facebook_instream_video%'
+        OR (LOWER(${TABLE}.utm_medium) LIKE '%paid advertising%' AND ${traffic_source} = "Meta Ads")
+        OR ${traffic_source} = "Organic Social"
         THEN 'Social Media'
       WHEN LOWER(${TABLE}.utm_medium) LIKE '%email%'
         OR LOWER(${TABLE}.utm_medium) LIKE '%eblast%'
         THEN 'Email Marketing'
       WHEN LOWER(${TABLE}.utm_medium) LIKE '%banner%'
         OR LOWER(${TABLE}.utm_medium) LIKE '%display%'
+        OR (LOWER(${TABLE}.utm_medium) LIKE '%paid advertising%' AND ${traffic_source} = "Google Marketing Platform")
         THEN 'Display Marketing'
       WHEN LOWER(${TABLE}.utm_medium) LIKE '%paid advertising%'
         OR LOWER(${TABLE}.utm_medium) LIKE '%search%'
+        OR LOWER(${TABLE}.utm_medium) = "g"
         THEN 'Search Engine Marketing'
+      WHEN LOWER(${TABLE}.utm_medium) LIKE '%pmax%'
+        THEN 'Cross-Platform Marketing'
       WHEN LOWER(${TABLE}.utm_medium) LIKE '%sms%'
         THEN 'SMS Marketing'
       WHEN LOWER(${TABLE}.utm_medium) LIKE '%ytv%'
-        OR LOWER(${TABLE}.utm_medium) LIKE '%pmax%'
         THEN 'Video Marketing'
+      when ${traffic_source} = 'Organic Search'
+        then 'Search Engine Optimization'
       -- when ${TABLE}.utm_medium = '' then 'Website'
       -- when ${TABLE}.utm_medium = '' then 'Content Marketing'
-      -- when ${TABLE}.utm_medium = '' then 'Search Engine Optimization'
+
       -- when ${TABLE}.utm_medium = '' then 'Affiliate Marketing'
       -- when ${TABLE}.utm_medium = '' then 'Influencer Marketing'
       -- when ${TABLE}.utm_medium = '' then 'TV Advertising'
       -- when ${TABLE}.utm_medium = '' then 'Mobile App'
       ELSE 'Others/Unknown'
-      ;;
+      END ;;
   }
 
   set: detail {
