@@ -959,7 +959,7 @@ view: upff_multi_platform_attribution {
     sql: ${TABLE}.social_spend ;;
   }
 
-  dimension: traffic_source {
+  dimension: marketing_platform {
     sql: CASE
       WHEN LOWER(${TABLE}.source) LIKE 'hs_email'
         or LOWER(${TABLE}.source) LIKE 'hs_automation'
@@ -1004,6 +1004,8 @@ view: upff_multi_platform_attribution {
         or LOWER(${TABLE}.source) = 't.co'
         or LOWER(${TABLE}.source) = 'youtube.com'
         then 'Organic Social'
+      WHEN LOWER(${TABLE}.source) = 'seedtag'
+        then 'Seedtag'
       ELSE 'Others/Unknown'
     END ;;
   }
@@ -1021,15 +1023,15 @@ view: upff_multi_platform_attribution {
         OR LOWER(${TABLE}.utm_medium) LIKE '%facebook_right_column%'
         OR LOWER(${TABLE}.utm_medium) LIKE '%facebook_marketplace%'
         OR LOWER(${TABLE}.utm_medium) LIKE '%facebook_instream_video%'
-        OR (LOWER(${TABLE}.utm_medium) LIKE '%paid advertising%' AND ${traffic_source} = "Meta Ads")
-        OR ${traffic_source} = "Organic Social"
+        OR (LOWER(${TABLE}.utm_medium) LIKE '%paid advertising%' AND ${marketing_platform} = "Meta Ads")
+        OR ${marketing_platform} = "Organic Social"
         THEN 'Social Media'
       WHEN LOWER(${TABLE}.utm_medium) LIKE '%email%'
         OR LOWER(${TABLE}.utm_medium) LIKE '%eblast%'
         THEN 'Email Marketing'
       WHEN LOWER(${TABLE}.utm_medium) LIKE '%banner%'
         OR LOWER(${TABLE}.utm_medium) LIKE '%display%'
-        OR (LOWER(${TABLE}.utm_medium) LIKE '%paid advertising%' AND ${traffic_source} = "Google Marketing Platform")
+        OR (LOWER(${TABLE}.utm_medium) LIKE '%paid advertising%' AND ${marketing_platform} = "Google Marketing Platform")
         THEN 'Display Marketing'
       WHEN LOWER(${TABLE}.utm_medium) LIKE '%paid advertising%'
         OR LOWER(${TABLE}.utm_medium) LIKE '%search%'
@@ -1041,7 +1043,7 @@ view: upff_multi_platform_attribution {
         THEN 'SMS Marketing'
       WHEN LOWER(${TABLE}.utm_medium) LIKE '%ytv%'
         THEN 'Video Marketing'
-      when ${traffic_source} = 'Organic Search'
+      when ${marketing_platform} = 'Organic Search'
         then 'Search Engine Optimization'
       -- when ${TABLE}.utm_medium = '' then 'Website'
       -- when ${TABLE}.utm_medium = '' then 'Content Marketing'
