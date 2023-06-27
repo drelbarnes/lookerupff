@@ -399,6 +399,7 @@ view: upff_multi_platform_attribution {
     , a.referrer_domain
     , a.referrer_search
     , a.source
+    , b.n as touch_point
     , b.credit as last_touch
     , c.credit as first_touch
     , d.credit as equal_credit
@@ -458,6 +459,7 @@ view: upff_multi_platform_attribution {
     , a.referrer_domain
     , a.referrer_search
     , a.source
+    , a.touch_point
     , a.last_touch
     , a.first_touch
     , a.equal_credit
@@ -847,6 +849,11 @@ view: upff_multi_platform_attribution {
     sql: ${TABLE}.utm_term ;;
   }
 
+  dimension: touch_point {
+    type: number
+    sql: ${TABLE}.touch_point ;;
+  }
+
   dimension: ad_id {
     type: string
     sql: ${TABLE}.ad_id ;;
@@ -976,6 +983,7 @@ view: upff_multi_platform_attribution {
         or LOWER(${TABLE}.source) = 'bing'
         then 'Bing Ads'
       WHEN LOWER(${TABLE}.source) = 'uptv-linear'
+        or LOWER(${TABLE}.source) = 'linear-uptv'
         then 'UPtv Linear'
       WHEN LOWER(${TABLE}.source) = 'uptv_movies_app'
         or LOWER(${TABLE}.source) = 'uptv-web'
