@@ -376,9 +376,9 @@ view: upff_web_sessions {
   dimension: source {
     sql:
       CASE
-      when ${TABLE}.session_utm_source is null and (${TABLE}.session_referrer is null or ${TABLE}.session_referrer in ("upfaithandfamily.com/", "upfaithandfamily.com"))
+      when ${TABLE}.session_utm_source is null and (${TABLE}.session_referrer is null or ${TABLE}.session_referrer in ("upfaithandfamily.com/", "upfaithandfamily.com", "vhx.tv"))
       then 'unknown'
-      when ${TABLE}.session_utm_source is null and (${TABLE}.session_referrer is not null and ${TABLE}.session_referrer not in ("upfaithandfamily.com/", "upfaithandfamily.com"))
+      when ${TABLE}.session_utm_source is null and (${TABLE}.session_referrer is not null and ${TABLE}.session_referrer not in ("upfaithandfamily.com/", "upfaithandfamily.com", "vhx.tv"))
       then ${TABLE}.session_referrer
       else ${TABLE}.session_utm_source
       END ;;
