@@ -967,8 +967,9 @@ view: upff_multi_platform_attribution {
 
   dimension: marketing_platform {
     sql: CASE
-      WHEN LOWER(${TABLE}.source) LIKE 'hs_email'
-        or LOWER(${TABLE}.source) LIKE 'hs_automation'
+      WHEN LOWER(${TABLE}.source) = 'hs_email'
+        or LOWER(${TABLE}.source) = 'hs_automation'
+        or LOWER(${TABLE}.source) = 'hubspot_upff'
         then 'HubSpot'
       WHEN LOWER(${TABLE}.source) = 'fb'
         or LOWER(${TABLE}.source) = 'facebook'
@@ -1012,6 +1013,8 @@ view: upff_multi_platform_attribution {
         or LOWER(${TABLE}.source) = 't.co'
         or LOWER(${TABLE}.source) = 'youtube.com'
         then 'Organic Social'
+      WHEN LOWER(${TABLE}.source) = 'mntn_upff'
+        then "MNTN"
       WHEN LOWER(${TABLE}.source) = 'seedtag'
         then 'Seedtag'
       WHEN LOWER(${TABLE}.source) = 'unknown'
