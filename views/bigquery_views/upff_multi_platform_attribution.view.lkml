@@ -564,23 +564,29 @@ view: upff_multi_platform_attribution {
     drill_fields: [detail*]
   }
 
-  dimension: date_satifies_trial_period {
+  dimension: ordered_within_date_range {
     type: yesno
     hidden: yes
     sql: {% condition date_filter %} ${TABLE}.ordered_at {% endcondition %} ;;
   }
 
+  measure: distinct_user_count {
+    type: count_distinct
+    sql: ${TABLE}.user_id ;;
+
+  }
+
   measure: free_trial_starts {
     type: sum
     sql: ${TABLE}.{% parameter attribution_model %} ;;
-    filters: [date_satifies_trial_period: "yes", topic: "customer_product_free_trial_created"]
+    filters: [ordered_within_date_range: "yes", topic: "customer_product_free_trial_created"]
     value_format: "0.##"
   }
 
   measure: reacquisitions {
     type: sum
     sql: ${TABLE}.{% parameter attribution_model %} ;;
-    filters: [date_satifies_trial_period: "yes", topic: "customer_product_created"]
+    filters: [ordered_within_date_range: "yes", topic: "customer_product_created"]
     value_format: "0.##"
   }
 
@@ -640,7 +646,7 @@ view: upff_multi_platform_attribution {
     type: sum_distinct
     sql_distinct_key: ${composite_ad_id} ;;
     sql: ${TABLE}.spend ;;
-    filters: [date_satifies_trial_period: "yes", topic: "customer_product_free_trial_created, customer_product_created"]
+    filters: [ordered_within_date_range: "yes", topic: "customer_product_free_trial_created, customer_product_created"]
     value_format: "$#.00;($#.00)"
   }
 
@@ -648,7 +654,7 @@ view: upff_multi_platform_attribution {
   #   type: sum_distinct
   #   sql_distinct_key: ${ordered_at_date} ;;
   #   sql: ${TABLE}.spend ;;
-  #   filters: [date_satifies_trial_period: "yes", topic: "customer_product_free_trial_created, customer_product_created"]
+  #   filters: [ordered_within_date_range: "yes", topic: "customer_product_free_trial_created, customer_product_created"]
   #   value_format: "$#.00;($#.00)"
   # }
 
@@ -656,7 +662,7 @@ view: upff_multi_platform_attribution {
   #   type: sum_distinct
   #   sql_distinct_key: ${ad_id} ;;
   #   sql: ${TABLE}.spend ;;
-  #   filters: [date_satifies_trial_period: "yes"]
+  #   filters: [ordered_within_date_range: "yes"]
   #   value_format: "$#.00;($#.00)"
   # }
 
@@ -664,7 +670,7 @@ view: upff_multi_platform_attribution {
     type: sum_distinct
     sql_distinct_key: ${composite_ad_id} ;;
     sql: ${TABLE}.social_spend ;;
-    filters: [date_satifies_trial_period: "yes"]
+    filters: [ordered_within_date_range: "yes"]
     value_format: "$#.00;($#.00)"
   }
 
@@ -672,7 +678,7 @@ view: upff_multi_platform_attribution {
   #   type: sum_distinct
   #   sql_distinct_key: ${ad_id} ;;
   #   sql: ${TABLE}.social_spend ;;
-  #   filters: [date_satifies_trial_period: "yes"]
+  #   filters: [ordered_within_date_range: "yes"]
   #   value_format: "$#.00;($#.00)"
   # }
 
@@ -680,98 +686,98 @@ view: upff_multi_platform_attribution {
     type: sum_distinct
     sql_distinct_key: ${composite_ad_id} ;;
     sql: ${TABLE}.clicks ;;
-    filters: [date_satifies_trial_period: "yes"]
+    filters: [ordered_within_date_range: "yes"]
   }
 
   # measure: clicks_platform_total {
   #   type: sum_distinct
   #   sql_distinct_key: ${ad_id} ;;
   #   sql: ${TABLE}.clicks ;;
-  #   filters: [date_satifies_trial_period: "yes"]
+  #   filters: [ordered_within_date_range: "yes"]
   # }
 
   measure: engagements_total {
     type: sum_distinct
     sql_distinct_key: ${composite_ad_id} ;;
     sql: ${TABLE}.engagements ;;
-    filters: [date_satifies_trial_period: "yes"]
+    filters: [ordered_within_date_range: "yes"]
   }
 
   # measure: engagements_platform_total {
   #   type: sum_distinct
   #   sql_distinct_key: ${ad_id} ;;
   #   sql: ${TABLE}.engagements ;;
-  #   filters: [date_satifies_trial_period: "yes"]
+  #   filters: [ordered_within_date_range: "yes"]
   # }
 
   measure: unique_clicks_total {
     type: sum_distinct
     sql_distinct_key: ${composite_ad_id} ;;
     sql: ${TABLE}.unique_clicks ;;
-    filters: [date_satifies_trial_period: "yes"]
+    filters: [ordered_within_date_range: "yes"]
   }
 
   # measure: unique_clicks_platform_total {
   #   type: sum_distinct
   #   sql_distinct_key: ${ad_id} ;;
   #   sql: ${TABLE}.unique_clicks ;;
-  #   filters: [date_satifies_trial_period: "yes"]
+  #   filters: [ordered_within_date_range: "yes"]
   # }
 
   measure: link_clicks_total {
     type: sum_distinct
     sql_distinct_key: ${composite_ad_id} ;;
     sql: ${TABLE}.link_clicks ;;
-    filters: [date_satifies_trial_period: "yes"]
+    filters: [ordered_within_date_range: "yes"]
   }
 
   # measure: link_clicks_platform_total {
   #   type: sum_distinct
   #   sql_distinct_key: ${ad_id} ;;
   #   sql: ${TABLE}.link_clicks ;;
-  #   filters: [date_satifies_trial_period: "yes"]
+  #   filters: [ordered_within_date_range: "yes"]
   # }
 
   measure: frequency_average {
     type: average_distinct
     sql_distinct_key: ${composite_ad_id} ;;
     sql: ${TABLE}.frequency ;;
-    filters: [date_satifies_trial_period: "yes"]
+    filters: [ordered_within_date_range: "yes"]
   }
 
   # measure: frequency_platform_average {
   #   type: average_distinct
   #   sql_distinct_key: ${ad_id} ;;
   #   sql: ${TABLE}.frequency ;;
-  #   filters: [date_satifies_trial_period: "yes"]
+  #   filters: [ordered_within_date_range: "yes"]
   # }
 
   measure: impressions_total {
     type: sum_distinct
     sql_distinct_key: ${composite_ad_id} ;;
     sql: ${TABLE}.impressions ;;
-    filters: [date_satifies_trial_period: "yes"]
+    filters: [ordered_within_date_range: "yes"]
   }
 
   # measure: impressions_platform_total {
   #   type: sum_distinct
   #   sql_distinct_key: ${ad_id} ;;
   #   sql: ${TABLE}.impressions ;;
-  #   filters: [date_satifies_trial_period: "yes"]
+  #   filters: [ordered_within_date_range: "yes"]
   # }
 
   measure: reach_total {
     type: sum_distinct
     sql_distinct_key: ${composite_ad_id} ;;
     sql: ${TABLE}.reach ;;
-    filters: [date_satifies_trial_period: "yes"]
+    filters: [ordered_within_date_range: "yes"]
   }
 
   # measure: reach_platform_total {
   #   type: sum_distinct
   #   sql_distinct_key: ${ad_id} ;;
   #   sql: ${TABLE}.reach ;;
-  #   filters: [date_satifies_trial_period: "yes"]
+  #   filters: [ordered_within_date_range: "yes"]
   # }
 
   dimension_group: ordered_at {
