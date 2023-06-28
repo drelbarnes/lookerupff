@@ -1014,7 +1014,9 @@ view: upff_multi_platform_attribution {
         then 'Organic Social'
       WHEN LOWER(${TABLE}.source) = 'seedtag'
         then 'Seedtag'
-      ELSE 'Others/Unknown'
+      WHEN LOWER(${TABLE}.source) = 'unknown'
+        then 'Unknown'
+      ELSE 'Others'
     END ;;
   }
 
