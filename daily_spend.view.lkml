@@ -106,17 +106,17 @@ view: daily_spend {
         , channel
         from others_perf
       )
-      -- pivot then unpivot on the channel to 'create' the records for channels that didn't have any reported spend so that I could forecast into them
+      -- pivot then unpivot on the channel to 'create' the records for channels that dont't have any reported spend so it can be forecasted
       , channel_pivot as (
         select *
         from (select spend, channel, date_start from t1)
-        PIVOT (sum(spend) FOR channel IN ('Apple Search Ads', 'Facebook', 'Bing Ads', 'Google', 'Google Campaign Manager', 'MNTN', 'TikTok', 'Viant'))
+        PIVOT (sum(spend) FOR channel IN ('Apple Search Ads', 'Facebook', 'Bing Ads', 'Google', 'Google Campaign Manager', 'MNTN', 'TikTok', 'Viant', 'Tapjoy'))
       )
       , channel_unpivot as (
         select *
         from channel_pivot
         UNPIVOT include nulls (
-            channel_spend for channel in ("Apple Search Ads", "Facebook", "Bing Ads", "Google", "Google Campaign Manager", "MNTN", "TikTok", "Viant")
+            channel_spend for channel in ("Apple Search Ads", "Facebook", "Bing Ads", "Google", "Google Campaign Manager", "MNTN", "TikTok", "Viant", "Tapjoy")
         )
       )
       -- we then create a spend_partition column that keeps track of the last non null spend value per channel
