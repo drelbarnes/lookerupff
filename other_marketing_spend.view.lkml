@@ -46,7 +46,7 @@ view: other_marketing_spend {
       , tapjoy as (
         select safe_cast(date as timestamp) as date,
         sum(cost) as spend,
-        'Viant' as channel
+        'Tapjoy' as channel
         from (select date, cost from customers.tapjoy group by 1,2)
         group by 1,3
       )
