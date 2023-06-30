@@ -177,4 +177,24 @@ view: users {
     type: number
     sql: ${paying_subscribers} + ${free_trials} ;;
   }
-}
+
+  dimension: today {
+    type: date
+    sql: CURRENT_DATE ;;
+  }
+
+  dimension: ref_date {
+    type: date
+    sql: ${timestamp_date} ;;
+  }
+
+  dimension: date_diff {
+    type: number
+    sql: DATEDIFF(${today},${ref_date}) ;;
+  }
+
+      measure: daily_count {
+      type: number
+      sql: ${paying_subscribers} + ${free_trials} ;;
+    }
+  }
