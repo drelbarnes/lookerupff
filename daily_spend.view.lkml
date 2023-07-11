@@ -106,17 +106,17 @@ view: daily_spend {
         , channel
         from others_perf
       )
-      -- pivot then unpivot on the channel to 'create' the records for channels that didn't have any reported spend so that I could forecast into them
+      -- pivot then unpivot on the channel to 'create' the records for channels that dont't have any reported spend so it can be forecasted
       , channel_pivot as (
         select *
         from (select spend, channel, date_start from t1)
-        PIVOT (sum(spend) FOR channel IN ('Apple Search Ads', 'Facebook', 'Bing Ads', 'Google', 'Google Campaign Manager', 'MNTN', 'TikTok', 'Viant'))
+        PIVOT (sum(spend) FOR channel IN ('Apple Search Ads', 'Facebook', 'Bing Ads', 'Google', 'Google Campaign Manager', 'MNTN', 'TikTok', 'Viant', 'Tapjoy'))
       )
       , channel_unpivot as (
         select *
         from channel_pivot
         UNPIVOT include nulls (
-            channel_spend for channel in ("Apple Search Ads", "Facebook", "Bing Ads", "Google", "Google Campaign Manager", "MNTN", "TikTok", "Viant")
+            channel_spend for channel in ("Apple Search Ads", "Facebook", "Bing Ads", "Google", "Google Campaign Manager", "MNTN", "TikTok", "Viant", "Tapjoy")
         )
       )
       -- we then create a spend_partition column that keeps track of the last non null spend value per channel
@@ -187,15 +187,15 @@ view: daily_spend {
     datatype: date
   }
   ## filter determining time range for all "A" measures
-  filter: timeframe_a {
+  filter: time_a {
     type: date_time
   }
 
   ## flag for "A" measures to only include appropriate time range
-  dimension: group_a_yesno {
+  dimension: group_a {
     hidden: yes
     type: yesno
-    sql: {% condition timeframe_a %} ${timestamp_raw} {% endcondition %} ;;
+    sql: {% condition time_a %} ${timestamp_raw} {% endcondition %} ;;
   }
 
   ## filtered measure A
@@ -204,14 +204,14 @@ view: daily_spend {
     sql_distinct_key: ${timestamp_date} ;;
     sql: ${TABLE}.spend ;;
     value_format_name: usd
-    filters: [group_a_yesno: "yes"]
+    filters: [group_a: "yes"]
   }
 
   measure: free_trial_created_a {
     type: sum_distinct
     sql_distinct_key: ${timestamp_date} ;;
     sql: ${TABLE}.free_trial_created ;;
-    filters: [group_a_yesno: "yes"]
+    filters: [group_a: "yes"]
   }
 
   measure: CPFT_a {
@@ -221,15 +221,15 @@ view: daily_spend {
   }
 
   ## filter determining time range for all "B" measures
-  filter: timeframe_b {
+  filter: time_b {
     type: date_time
   }
 
   ## flag for "B" measures to only include appropriate time range
-  dimension: group_b_yesno {
+  dimension: group_b {
     hidden: yes
     type: yesno
-    sql: {% condition timeframe_b %} ${timestamp_raw} {% endcondition %} ;;
+    sql: {% condition time_b %} ${timestamp_raw} {% endcondition %} ;;
   }
 
   measure: spend_b {
@@ -237,14 +237,14 @@ view: daily_spend {
     sql_distinct_key: ${timestamp_date} ;;
     sql: ${TABLE}.spend ;;
     value_format_name: usd
-    filters: [group_b_yesno: "yes"]
+    filters: [group_b: "yes"]
   }
 
   measure: free_trial_created_b {
     type: sum_distinct
     sql_distinct_key: ${timestamp_date} ;;
     sql: ${TABLE}.free_trial_created ;;
-    filters: [group_b_yesno: "yes"]
+    filters: [group_b: "yes"]
   }
 
   measure: CPFT_b {
@@ -257,6 +257,20 @@ view: daily_spend {
     type: sum
     sql: ${TABLE}.channel_spend ;;
     value_format_name: usd
+  }
+
+  measure: channel_spend_a {
+    type: sum
+    sql: ${TABLE}.channel_spend ;;
+    value_format_name: usd
+    filters: [group_a: "yes"]
+  }
+
+  measure: channel_spend_b {
+    type: sum
+    sql: ${TABLE}.channel_spend ;;
+    value_format_name: usd
+    filters: [group_b: "yes"]
   }
 
   measure: spend {
@@ -280,6 +294,70 @@ view: daily_spend {
 
   set: detail {
     fields: [timestamp_time, spend]
+  }
+
+  ## PoP dimensions and measures created for H16 analysis
+
+  ## ------------------ HIDDEN HELPER DIMENSIONS  ------------------ ##
+
+  dimension: days_from_start_a {
+    hidden: no
+    group_label: "Time Comparison Filters"
+    type: number
+    sql: DATEDIFF('day',  {% date_start time_a %}, ${timestamp_date}) ;;
+  }
+
+  dimension: days_from_start_b {
+    hidden: no
+    group_label: "Time Comparison Filters"
+    type: number
+    sql: DATEDIFF('day',  {% date_start time_b %}, ${timestamp_date}) ;;
+  }
+
+
+  ## ------------------ DIMENSIONS TO PLOT ------------------ ##
+
+  dimension: days_from_first_period {
+    label: "Day of Period"
+    description: "Select for Grouping (Rows)"
+    group_label: "Time Comparison Filters"
+    type: number
+    sql:
+            CASE
+            WHEN ${days_from_start_b} >= 0
+            THEN ${days_from_start_b}
+            WHEN ${days_from_start_a} >= 0
+            THEN ${days_from_start_a}
+            END;;
+  }
+
+
+  dimension: period_selected {
+    label: "Period"
+    description: "Select for Comparison (Pivot)"
+    group_label: "Time Comparison Filters"
+    type: string
+    sql:
+            CASE
+                WHEN {% condition time_a %}${timestamp_raw} {% endcondition %}
+                THEN 'Period A'
+                WHEN {% condition time_b %}${timestamp_raw} {% endcondition %}
+                THEN 'Period B'
+                END ;;
+  }
+
+  dimension: period_selected_2 {
+    label: "Period 2"
+    description: "Select for Comparison (Pivot)"
+    group_label: "Time Comparison Filters"
+    type: string
+    sql:
+            CASE
+            WHEN ${days_from_start_b} >= 0
+                THEN 'Period B'
+            WHEN ${days_from_start_a} >= 0
+                THEN 'Period A'
+            END;;
   }
 
 }

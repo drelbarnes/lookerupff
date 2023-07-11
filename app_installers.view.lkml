@@ -38,6 +38,45 @@ view: app_installers {
     datatype: date
   }
 
+  ## filter determining time range for all "A" measures
+  filter: timeframe_a {
+    type: date_time
+  }
+
+  ## flag for "A" measures to only include appropriate time range
+  dimension: group_a_yesno {
+    hidden: yes
+    type: yesno
+    sql: {% condition timeframe_a %} ${timestamp_raw} {% endcondition %} ;;
+  }
+
+  ## filter determining time range for all "B" measures
+  filter: timeframe_b {
+    type: date_time
+  }
+
+  ## flag for "B" measures to only include appropriate time range
+  dimension: group_b_yesno {
+    hidden: yes
+    type: yesno
+    sql: {% condition timeframe_b %} ${timestamp_raw} {% endcondition %} ;;
+  }
+
+  measure: installs_a {
+    type: count_distinct
+    sql_distinct_key: ${timestamp_date} ;;
+    sql: ${TABLE}.anonymous_id ;;
+    filters: [group_a_yesno: "yes"]
+  }
+
+
+  measure: installs_b {
+    type: count_distinct
+    sql_distinct_key: ${timestamp_date} ;;
+    sql: ${TABLE}.anonymous_id ;;
+    filters: [group_b_yesno: "yes"]
+  }
+
   set: detail {
     fields: [anonymous_id, timestamp_time]
   }

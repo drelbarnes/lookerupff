@@ -185,7 +185,7 @@ include: "/views/bigquery_views/upff_web_attribution.view.lkml"
 include: "/views/bigquery_views/upff_ios_attribution.view.lkml"
 include: "/views/bigquery_views/upff_android_attribution.view.lkml"
 include: "/views/bigquery_views/upff_multi_platform_attribution.view.lkml"
-include: "/views/bigquery_views/attribution_views/branch_events.view.lkml"
+include: "/views/bigquery_views/cross_device_multi_channel_attribution/branch_events.view.lkml"
 
 include: "allfirstplay.view.lkml"
 include: "ticket_comments.view.lkml"

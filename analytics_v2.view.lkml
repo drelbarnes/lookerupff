@@ -49,7 +49,7 @@ view: analytics_v2 {
         , coalesce(a.paying_created, b.paying_created) as paying_created
         , coalesce(b.total_free_trials, a.total_free_trials) as total_free_trials
         , coalesce(nullif(b.total_paying-c.vimeo_ott_subscribers_total+c.app_store_connect_subscribers_total,-c.vimeo_ott_subscribers_total+c.app_store_connect_subscribers_total)
-          ,nullif(a.total_paying-c.vimeo_ott_subscribers_total+c.app_store_connect_subscribers_total,-c.vimeo_ott_subscribers_total+c.app_store_connect_subscribers_total)) as total_paying
+          ,nullif(a.total_paying-c.vimeo_ott_subscribers_total+c.app_store_connect_subscribers_total,-c.vimeo_ott_subscribers_total+c.app_store_connect_subscribers_total), b.total_paying, a.total_paying) as total_paying
         , (null-c.vimeo_ott_subscribers_total+c.app_store_connect_subscribers_total) as test
         , (-c.vimeo_ott_subscribers_total+c.app_store_connect_subscribers_total) as text2
         from (select * from get_analytics_p0 where report_version = 'v1' and n=1) as a
@@ -453,7 +453,6 @@ view: analytics_v2 {
   }
 
 
-
   dimension: free_trial_converted {
     type: number
     sql: ${TABLE}.free_trial_converted ;;
@@ -464,7 +463,26 @@ view: analytics_v2 {
     description: "Total number of trials to paid during a time period."
     sql:  ${free_trial_converted} ;;
     drill_fields: [free_trial_converted,timestamp_date]
+  }
 
+  measure: trial_to_paid_a {
+    type: sum
+    description: "Total number of trials to paid during a period a."
+    sql:  ${free_trial_converted} ;;
+    filters: {
+      field: group_a
+      value: "yes"
+    }
+  }
+
+  measure: trial_to_paid_b {
+    type: sum
+    description: "Total number of trials to paid during a period b."
+    sql:  ${free_trial_converted} ;;
+    filters: {
+      field: group_b
+      value: "yes"
+    }
   }
 
   dimension: free_trial_created {
@@ -475,6 +493,67 @@ view: analytics_v2 {
     type: sum
     description: "Total number of new trials during a time period."
     sql:  ${free_trial_created} ;;
+  }
+  measure: new_trials_a {
+    type: sum
+    description: "Total number of new trials during period a."
+    sql:  ${free_trial_created} ;;
+    filters: {
+      field: group_a
+      value: "yes"
+    }
+  }
+  measure: new_trials_b {
+    type: sum
+    description: "Total number of new trials during period b."
+    sql:  ${free_trial_created} ;;
+    filters: {
+      field: group_b
+      value: "yes"
+    }
+  }
+  measure: new_paid_a {
+    type: sum
+    description: "Total number of new paids during period a."
+    sql:  ${paying_created} ;;
+    filters: {
+      field: group_a
+      value: "yes"
+    }
+  }
+
+  measure: new_paid_b {
+    type: sum
+    description: "Total number of new paids during period b."
+    sql:  ${paying_created} ;;
+    filters: {
+      field: group_b
+      value: "yes"
+    }
+  }
+
+  measure:  new_paid_total_a {
+    type: number
+    description: "Total number of new paid subs (reacquisitions) and free trial to paid during period a."
+    sql: ${trial_to_paid_a}+${new_paid_a};;
+  }
+
+  measure:  new_paid_total_b {
+    type: number
+    description: "Total number of new paid subs (reacquisitions) and free trial to paid during period b."
+    sql: ${trial_to_paid_b}+${new_paid_b};;
+  }
+
+  measure: net_new_a {
+    type: number
+    description: "Net new subscribers after trial conversions and paying churn during period A"
+    sql: ${trial_to_paid_a}+${new_paid_a}-${paid_churn_a} ;;
+  }
+
+  measure: net_new_b {
+    type: number
+    description: "Net new subscribers after trial conversions and paying churn during period B"
+    sql: ${trial_to_paid_b}+${new_paid_b}-${paid_churn_b} ;;
   }
 
   dimension: paused_created {
@@ -679,10 +758,40 @@ view: analytics_v2 {
     sql: ${paying_churn}*-1 ;;
   }
 
+  measure: total_new_trials_14_days_prior_a {
+    type: sum
+    sql: ${TABLE}.new_trials_14_days_prior;;
+    filters: {
+      field: group_a
+      value: "yes"
+    }
+  }
+
+  measure: total_new_trials_14_days_prior_b {
+    type: sum
+    sql: ${TABLE}.new_trials_14_days_prior;;
+    filters: {
+      field: group_b
+      value: "yes"
+    }
+  }
+
   measure: conversion_rate_v2 {
     type: number
     value_format: ".0#\%"
-    sql: 100.0*${trial_to_paid}/${total_new_trials_14_days_prior} ;;
+    sql: 100.0*${trial_to_paid}/NULLIF(${total_new_trials_14_days_prior},0) ;;
+  }
+
+  measure: conversion_rate_a {
+    type: number
+    value_format: ".0#\%"
+    sql: 100.0*${trial_to_paid_a}/NULLIF(${total_new_trials_14_days_prior_a},0) ;;
+  }
+
+  measure: conversion_rate_b {
+    type: number
+    value_format: ".0#\%"
+    sql: 100.0*${trial_to_paid_b}/NULLIF(${total_new_trials_14_days_prior_b},0) ;;
   }
 
   measure: total_free_trial_change {
@@ -727,11 +836,20 @@ view: analytics_v2 {
       ;;
   }
 
-  measure: free_trial_created_14_days_prior {
+  measure: free_trial_created_14_days_prior_a {
     type: sum
     sql:  ${free_trial_created} ;;
     filters: {
       field: group_a
+      value: "yes"
+    }
+  }
+
+  measure: free_trial_created_14_days_prior_b {
+    type: sum
+    sql:  ${free_trial_created} ;;
+    filters: {
+      field: group_b
       value: "yes"
     }
   }
@@ -783,6 +901,15 @@ view: analytics_v2 {
     }
   }
 
+  measure: paid_b {
+    type: sum
+    sql:  ${total_paying};;
+    filters: {
+      field: group_b
+      value: "yes"
+    }
+  }
+
   measure: trials_a {
     type: sum
     sql:  ${total_free_trials};;
@@ -810,11 +937,29 @@ view: analytics_v2 {
     }
   }
 
+  measure: reacquisitions_b {
+    type: sum
+    sql: ${paying_created};;
+    filters: {
+      field: group_b
+      value: "yes"
+    }
+  }
+
   measure: paid_churn_a {
     type: sum
     sql: ${paying_churn} ;;
     filters: {
       field: group_a
+      value: "yes"
+    }
+  }
+
+  measure: paid_churn_b {
+    type: sum
+    sql: ${paying_churn} ;;
+    filters: {
+      field: group_b
       value: "yes"
     }
   }
@@ -845,6 +990,15 @@ view: analytics_v2 {
     sql: ${free_trial_churn} ;;
     filters: {
       field: group_a
+      value: "yes"
+    }
+  }
+
+  measure: trial_churn_b {
+    type: sum
+    sql: ${free_trial_churn} ;;
+    filters: {
+      field: group_b
       value: "yes"
     }
   }
@@ -1017,6 +1171,56 @@ view: analytics_v2 {
          ELSE
            NULL
        END ;;
+  }
+
+  ## PoP dimensions and measures created for H16 analysis
+
+  ## ------------------ HIDDEN HELPER DIMENSIONS  ------------------ ##
+
+  dimension: days_from_start_a {
+    hidden: no
+    group_label: "Time Comparison Filters"
+    type: number
+    sql: DATEDIFF('day',  {% date_start time_a %}, ${timestamp_date}) ;;
+  }
+
+  dimension: days_from_start_b {
+    hidden: no
+    group_label: "Time Comparison Filters"
+    type: number
+    sql: DATEDIFF('day',  {% date_start time_b %}, ${timestamp_date}) ;;
+  }
+
+
+  ## ------------------ DIMENSIONS TO PLOT ------------------ ##
+
+  dimension: days_from_first_period {
+    label: "Day of Period"
+    description: "Select for Grouping (Rows)"
+    group_label: "Time Comparison Filters"
+    type: number
+    sql:
+            CASE
+            WHEN ${days_from_start_b} >= 0
+            THEN ${days_from_start_b}
+            WHEN ${days_from_start_a} >= 0
+            THEN ${days_from_start_a}
+            END;;
+  }
+
+
+  dimension: period_selected {
+    label: "Period"
+    description: "Select for Comparison (Pivot)"
+    group_label: "Time Comparison Filters"
+    type: string
+    sql:
+            CASE
+                WHEN {% condition time_a %}${timestamp_raw} {% endcondition %}
+                THEN 'Period A'
+                WHEN {% condition time_b %}${timestamp_raw} {% endcondition %}
+                THEN 'Period B'
+                END ;;
   }
 
 }

@@ -399,6 +399,7 @@ view: upff_multi_platform_attribution {
     , a.referrer_domain
     , a.referrer_search
     , a.source
+    , b.n as touch_point
     , b.credit as last_touch
     , c.credit as first_touch
     , d.credit as equal_credit
@@ -458,6 +459,7 @@ view: upff_multi_platform_attribution {
     , a.referrer_domain
     , a.referrer_search
     , a.source
+    , a.touch_point
     , a.last_touch
     , a.first_touch
     , a.equal_credit
@@ -562,23 +564,29 @@ view: upff_multi_platform_attribution {
     drill_fields: [detail*]
   }
 
-  dimension: date_satifies_trial_period {
+  dimension: ordered_within_date_range {
     type: yesno
     hidden: yes
     sql: {% condition date_filter %} ${TABLE}.ordered_at {% endcondition %} ;;
   }
 
+  measure: distinct_user_count {
+    type: count_distinct
+    sql: ${TABLE}.user_id ;;
+
+  }
+
   measure: free_trial_starts {
     type: sum
     sql: ${TABLE}.{% parameter attribution_model %} ;;
-    filters: [date_satifies_trial_period: "yes", topic: "customer_product_free_trial_created"]
+    filters: [ordered_within_date_range: "yes", topic: "customer_product_free_trial_created"]
     value_format: "0.##"
   }
 
   measure: reacquisitions {
     type: sum
     sql: ${TABLE}.{% parameter attribution_model %} ;;
-    filters: [date_satifies_trial_period: "yes", topic: "customer_product_created"]
+    filters: [ordered_within_date_range: "yes", topic: "customer_product_created"]
     value_format: "0.##"
   }
 
@@ -587,6 +595,12 @@ view: upff_multi_platform_attribution {
     sql: ${TABLE}.{% parameter attribution_model %} ;;
     filters: [topic: "customer_product_free_trial_converted"]
     value_format: "0.##"
+  }
+
+  measure: free_trial_conversion_rate {
+    type: number
+    sql: 100*${free_trial_conversions}/NULLIF(${free_trial_starts},0) ;;
+    value_format: "#\%"
   }
 
   measure: paying_total {
@@ -632,7 +646,7 @@ view: upff_multi_platform_attribution {
     type: sum_distinct
     sql_distinct_key: ${composite_ad_id} ;;
     sql: ${TABLE}.spend ;;
-    filters: [date_satifies_trial_period: "yes", topic: "customer_product_free_trial_created, customer_product_created"]
+    filters: [ordered_within_date_range: "yes", topic: "customer_product_free_trial_created, customer_product_created"]
     value_format: "$#.00;($#.00)"
   }
 
@@ -640,7 +654,7 @@ view: upff_multi_platform_attribution {
   #   type: sum_distinct
   #   sql_distinct_key: ${ordered_at_date} ;;
   #   sql: ${TABLE}.spend ;;
-  #   filters: [date_satifies_trial_period: "yes", topic: "customer_product_free_trial_created, customer_product_created"]
+  #   filters: [ordered_within_date_range: "yes", topic: "customer_product_free_trial_created, customer_product_created"]
   #   value_format: "$#.00;($#.00)"
   # }
 
@@ -648,7 +662,7 @@ view: upff_multi_platform_attribution {
   #   type: sum_distinct
   #   sql_distinct_key: ${ad_id} ;;
   #   sql: ${TABLE}.spend ;;
-  #   filters: [date_satifies_trial_period: "yes"]
+  #   filters: [ordered_within_date_range: "yes"]
   #   value_format: "$#.00;($#.00)"
   # }
 
@@ -656,7 +670,7 @@ view: upff_multi_platform_attribution {
     type: sum_distinct
     sql_distinct_key: ${composite_ad_id} ;;
     sql: ${TABLE}.social_spend ;;
-    filters: [date_satifies_trial_period: "yes"]
+    filters: [ordered_within_date_range: "yes"]
     value_format: "$#.00;($#.00)"
   }
 
@@ -664,7 +678,7 @@ view: upff_multi_platform_attribution {
   #   type: sum_distinct
   #   sql_distinct_key: ${ad_id} ;;
   #   sql: ${TABLE}.social_spend ;;
-  #   filters: [date_satifies_trial_period: "yes"]
+  #   filters: [ordered_within_date_range: "yes"]
   #   value_format: "$#.00;($#.00)"
   # }
 
@@ -672,98 +686,98 @@ view: upff_multi_platform_attribution {
     type: sum_distinct
     sql_distinct_key: ${composite_ad_id} ;;
     sql: ${TABLE}.clicks ;;
-    filters: [date_satifies_trial_period: "yes"]
+    filters: [ordered_within_date_range: "yes"]
   }
 
   # measure: clicks_platform_total {
   #   type: sum_distinct
   #   sql_distinct_key: ${ad_id} ;;
   #   sql: ${TABLE}.clicks ;;
-  #   filters: [date_satifies_trial_period: "yes"]
+  #   filters: [ordered_within_date_range: "yes"]
   # }
 
   measure: engagements_total {
     type: sum_distinct
     sql_distinct_key: ${composite_ad_id} ;;
     sql: ${TABLE}.engagements ;;
-    filters: [date_satifies_trial_period: "yes"]
+    filters: [ordered_within_date_range: "yes"]
   }
 
   # measure: engagements_platform_total {
   #   type: sum_distinct
   #   sql_distinct_key: ${ad_id} ;;
   #   sql: ${TABLE}.engagements ;;
-  #   filters: [date_satifies_trial_period: "yes"]
+  #   filters: [ordered_within_date_range: "yes"]
   # }
 
   measure: unique_clicks_total {
     type: sum_distinct
     sql_distinct_key: ${composite_ad_id} ;;
     sql: ${TABLE}.unique_clicks ;;
-    filters: [date_satifies_trial_period: "yes"]
+    filters: [ordered_within_date_range: "yes"]
   }
 
   # measure: unique_clicks_platform_total {
   #   type: sum_distinct
   #   sql_distinct_key: ${ad_id} ;;
   #   sql: ${TABLE}.unique_clicks ;;
-  #   filters: [date_satifies_trial_period: "yes"]
+  #   filters: [ordered_within_date_range: "yes"]
   # }
 
   measure: link_clicks_total {
     type: sum_distinct
     sql_distinct_key: ${composite_ad_id} ;;
     sql: ${TABLE}.link_clicks ;;
-    filters: [date_satifies_trial_period: "yes"]
+    filters: [ordered_within_date_range: "yes"]
   }
 
   # measure: link_clicks_platform_total {
   #   type: sum_distinct
   #   sql_distinct_key: ${ad_id} ;;
   #   sql: ${TABLE}.link_clicks ;;
-  #   filters: [date_satifies_trial_period: "yes"]
+  #   filters: [ordered_within_date_range: "yes"]
   # }
 
   measure: frequency_average {
     type: average_distinct
     sql_distinct_key: ${composite_ad_id} ;;
     sql: ${TABLE}.frequency ;;
-    filters: [date_satifies_trial_period: "yes"]
+    filters: [ordered_within_date_range: "yes"]
   }
 
   # measure: frequency_platform_average {
   #   type: average_distinct
   #   sql_distinct_key: ${ad_id} ;;
   #   sql: ${TABLE}.frequency ;;
-  #   filters: [date_satifies_trial_period: "yes"]
+  #   filters: [ordered_within_date_range: "yes"]
   # }
 
   measure: impressions_total {
     type: sum_distinct
     sql_distinct_key: ${composite_ad_id} ;;
     sql: ${TABLE}.impressions ;;
-    filters: [date_satifies_trial_period: "yes"]
+    filters: [ordered_within_date_range: "yes"]
   }
 
   # measure: impressions_platform_total {
   #   type: sum_distinct
   #   sql_distinct_key: ${ad_id} ;;
   #   sql: ${TABLE}.impressions ;;
-  #   filters: [date_satifies_trial_period: "yes"]
+  #   filters: [ordered_within_date_range: "yes"]
   # }
 
   measure: reach_total {
     type: sum_distinct
     sql_distinct_key: ${composite_ad_id} ;;
     sql: ${TABLE}.reach ;;
-    filters: [date_satifies_trial_period: "yes"]
+    filters: [ordered_within_date_range: "yes"]
   }
 
   # measure: reach_platform_total {
   #   type: sum_distinct
   #   sql_distinct_key: ${ad_id} ;;
   #   sql: ${TABLE}.reach ;;
-  #   filters: [date_satifies_trial_period: "yes"]
+  #   filters: [ordered_within_date_range: "yes"]
   # }
 
   dimension_group: ordered_at {
@@ -839,6 +853,11 @@ view: upff_multi_platform_attribution {
   dimension: utm_term {
     type: string
     sql: ${TABLE}.utm_term ;;
+  }
+
+  dimension: touch_point {
+    type: number
+    sql: ${TABLE}.touch_point ;;
   }
 
   dimension: ad_id {
@@ -946,23 +965,108 @@ view: upff_multi_platform_attribution {
     sql: ${TABLE}.social_spend ;;
   }
 
-  dimension: campaign_source {
+  dimension: marketing_platform {
     sql: CASE
-      WHEN ${TABLE}.source IS NULL then 'Unknown'
-      WHEN ${TABLE}.source = 'organic' then 'Unknown'
-      WHEN ${TABLE}.source LIKE 'hs_email' then 'Internal'
-      WHEN ${TABLE}.source LIKE 'hs_automation' then 'Internal'
-      WHEN ${TABLE}.source LIKE '%site.source.name%' then 'Facebook Ads'
-      WHEN ${TABLE}.source LIKE '%site_source_name%' then 'Facebook Ads'
-      WHEN ${TABLE}.source = 'google_ads' then 'Google Ads'
-      WHEN ${TABLE}.source = 'GoogleAds' then 'Google Ads'
-      WHEN ${TABLE}.source = 'fb' then 'Facebook Ads'
-      WHEN ${TABLE}.source = 'facebook' then 'Facebook Ads'
-      WHEN ${TABLE}.source = 'ig' then 'Facebook Ads'
-      WHEN ${TABLE}.source = 'bing_ads' then 'Bing Ads'
-      WHEN ${TABLE}.source = 'an' then 'Facebook Ads'
-      else ${TABLE}.source
+      WHEN LOWER(${TABLE}.source) = 'hs_email'
+        or LOWER(${TABLE}.source) = 'hs_automation'
+        or LOWER(${TABLE}.source) = 'hubspot_upff'
+        then 'HubSpot'
+      WHEN LOWER(${TABLE}.source) = 'fb'
+        or LOWER(${TABLE}.source) = 'facebook'
+        or LOWER(${TABLE}.source) = 'ig'
+        or LOWER(${TABLE}.source) = 'an'
+        or LOWER(${TABLE}.source) LIKE '%site.source.name%'
+        or LOWER(${TABLE}.source) LIKE '%site_source_name%'
+        or LOWER(${TABLE}.source) = 'instagram'
+        then 'Meta Ads'
+      WHEN LOWER(${TABLE}.source) = 'google_ads'
+        or LOWER(${TABLE}.source) = 'googleads'
+        or LOWER(${TABLE}.source) = 'google adwords'
+        then 'Google Ads'
+      WHEN LOWER(${TABLE}.source) = 'google marketing platform'
+        or LOWER(${TABLE}.source) = 'dv360_upff'
+        then 'Google Marketing Platform'
+      WHEN LOWER(${TABLE}.source) = 'bing_ads'
+        or LOWER(${TABLE}.source) = 'bing_upff'
+        or LOWER(${TABLE}.source) = 'bing'
+        then 'Bing Ads'
+      WHEN LOWER(${TABLE}.source) = 'uptv-linear'
+        or LOWER(${TABLE}.source) = 'linear-uptv'
+        then 'UPtv Linear'
+      WHEN LOWER(${TABLE}.source) = 'uptv_movies_app'
+        or LOWER(${TABLE}.source) = 'uptv-web'
+        or LOWER(${TABLE}.source) = 'uptv-app'
+        or LOWER(${TABLE}.source) = 'uptv'
+        or LOWER(${TABLE}.source) = 'uptv.com'
+        then 'UPtv Digital'
+      WHEN LOWER(${TABLE}.source) = 'zendesk'
+        or LOWER(${TABLE}.source) = 'support'
+        then 'Customer Support'
+      WHEN LOWER(${TABLE}.source) = 'google.com'
+        or LOWER(${TABLE}.source) = 'android.gm'
+        or LOWER(${TABLE}.source) = 'bing.com'
+        or LOWER(${TABLE}.source) = 'yahoo.com'
+        or LOWER(${TABLE}.source) = 'duckduckgo.com'
+        then 'Organic Search'
+      WHEN LOWER(${TABLE}.source) = 'facebook.com'
+        or LOWER(${TABLE}.source) = 'instagram.com'
+        or LOWER(${TABLE}.source) = 't.co'
+        or LOWER(${TABLE}.source) = 'youtube.com'
+        then 'Organic Social'
+      WHEN LOWER(${TABLE}.source) = 'mntn_upff'
+        then "MNTN"
+      WHEN LOWER(${TABLE}.source) = 'seedtag'
+        then 'Seedtag'
+      WHEN LOWER(${TABLE}.source) = 'unknown'
+        then 'Unknown'
+      ELSE 'Others'
     END ;;
+  }
+
+  dimension: marketing_channel {
+    sql:
+      case
+      WHEN LOWER(${TABLE}.utm_medium) LIKE '%facebook_mobile_feed%'
+        OR LOWER(${TABLE}.utm_medium) LIKE '%facebook_desktop_feed%'
+        OR LOWER(${TABLE}.utm_medium) LIKE '%instagram_feed%'
+        OR LOWER(${TABLE}.utm_medium) LIKE '%instagram_stories%'
+        OR LOWER(${TABLE}.utm_medium) LIKE '%instagram_reels%'
+        OR LOWER(${TABLE}.utm_medium) LIKE '%instagram_profile_feed%'
+        OR LOWER(${TABLE}.utm_medium) LIKE '%facebook_stories%'
+        OR LOWER(${TABLE}.utm_medium) LIKE '%facebook_right_column%'
+        OR LOWER(${TABLE}.utm_medium) LIKE '%facebook_marketplace%'
+        OR LOWER(${TABLE}.utm_medium) LIKE '%facebook_instream_video%'
+        OR (LOWER(${TABLE}.utm_medium) LIKE '%paid advertising%' AND ${marketing_platform} = "Meta Ads")
+        OR ${marketing_platform} = "Organic Social"
+        THEN 'Social Media'
+      WHEN LOWER(${TABLE}.utm_medium) LIKE '%email%'
+        OR LOWER(${TABLE}.utm_medium) LIKE '%eblast%'
+        THEN 'Email Marketing'
+      WHEN LOWER(${TABLE}.utm_medium) LIKE '%banner%'
+        OR LOWER(${TABLE}.utm_medium) LIKE '%display%'
+        OR (LOWER(${TABLE}.utm_medium) LIKE '%paid advertising%' AND ${marketing_platform} = "Google Marketing Platform")
+        THEN 'Display Marketing'
+      WHEN LOWER(${TABLE}.utm_medium) LIKE '%paid advertising%'
+        OR LOWER(${TABLE}.utm_medium) LIKE '%search%'
+        OR LOWER(${TABLE}.utm_medium) = "g"
+        THEN 'Search Engine Marketing'
+      WHEN LOWER(${TABLE}.utm_medium) LIKE '%pmax%'
+        THEN 'Cross-Platform Marketing'
+      WHEN LOWER(${TABLE}.utm_medium) LIKE '%sms%'
+        THEN 'SMS Marketing'
+      WHEN LOWER(${TABLE}.utm_medium) LIKE '%ytv%'
+        THEN 'Video Marketing'
+      when ${marketing_platform} = 'Organic Search'
+        then 'Search Engine Optimization'
+      -- when ${TABLE}.utm_medium = '' then 'Website'
+      -- when ${TABLE}.utm_medium = '' then 'Content Marketing'
+
+      -- when ${TABLE}.utm_medium = '' then 'Affiliate Marketing'
+      -- when ${TABLE}.utm_medium = '' then 'Influencer Marketing'
+      -- when ${TABLE}.utm_medium = '' then 'TV Advertising'
+      -- when ${TABLE}.utm_medium = '' then 'Mobile App'
+      ELSE 'Others/Unknown'
+      END ;;
   }
 
   set: detail {
