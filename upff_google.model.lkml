@@ -360,6 +360,11 @@ explore: upff_android_attribution {
 
 explore: upff_multi_platform_attribution {
   label: "UPFF Multi Platform Attribution"
+  join: upff_web_sessions {
+    type: left_outer
+    sql_on: ${upff_multi_platform_attribution.session_id} = ${upff_web_sessions.session_id} ;;
+    relationship: many_to_many
+  }
 }
 
 explore: customer_record {
