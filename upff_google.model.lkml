@@ -205,6 +205,7 @@ include: "bigquery_viewing_habits.view.lkml"
 include: "heartland_s16_movie_views.view.lkml"
 include: "heartland_s16_series_views.view.lkml"
 include: "heartland_s16_tenure_analysis.view.lkml"
+include: "set_cancellations.view.lkml"
 
 # DTC App reporting #
 
@@ -233,6 +234,10 @@ explore: user_play_history {
   always_filter: {
     filters: [user_id: "22620729"]
     }
+}
+
+explore: set_cancellations {
+  label: "Set Cancellations"
 }
 
 explore: heartland_s16_tenure_analysis {
