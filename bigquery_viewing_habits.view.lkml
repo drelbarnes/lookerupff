@@ -558,6 +558,24 @@ view: bigquery_viewing_habits {
         order by 1,2,3
         ),
 
+        habits_heartland_s16 as
+        (
+        select
+        user_id,
+        collection,
+        total_episodes,
+        case
+        when total_episodes = 1 then 'First episode only'
+        when total_episodes > 1 and total_episodes < 8 then 'More than 1 but not all'
+        when total_episodes in (8,9,10) then 'Series completer'
+        else 'Other or missing'
+        end as viewing_habit
+        from sum
+        where collection = 'Heartland - Season 16'
+        group by 1,2,3
+        order by 1,2,3
+        ),
+
         habits_hudson_s1 as
         (
         select
@@ -732,6 +750,7 @@ view: bigquery_viewing_habits {
     allowed_value: {label: "Heartland - Season 13" value: "heartland_s13"}
     allowed_value: {label: "Heartland - Season 14" value: "heartland_s14"}
     allowed_value: {label: "Heartland - Season 15" value: "heartland_s15"}
+    allowed_value: {label: "Heartland - Season 16" value: "heartland_s16"}
     allowed_value: {label: "Hudson & Rex - Season 1" value: "hudson_s1"}
     allowed_value: {label: "Hudson & Rex - Season 2" value: "hudson_s2"}
     allowed_value: {label: "Hudson & Rex - Season 3" value: "hudson_s3"}
