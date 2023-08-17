@@ -376,7 +376,8 @@ view: upff_multi_platform_attribution {
     )
     , final as (
     select
-    a.ordered_at
+    a.session_id
+    , a.ordered_at
     , a.session_start
     , f.conversion_window
     , a.user_id
@@ -437,7 +438,8 @@ view: upff_multi_platform_attribution {
     )
     , bofu_final as (
     select
-    a.ordered_at
+    a.session_id
+    , a.ordered_at
     , a.session_start
     , a.conversion_window
     , a.user_id
@@ -779,6 +781,11 @@ view: upff_multi_platform_attribution {
   #   sql: ${TABLE}.reach ;;
   #   filters: [ordered_within_date_range: "yes"]
   # }
+
+  dimension: session_id {
+    type: string
+    sql: ${TABLE}.session_id ;;
+  }
 
   dimension_group: ordered_at {
     type: time

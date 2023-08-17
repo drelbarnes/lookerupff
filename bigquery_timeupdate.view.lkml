@@ -12,7 +12,7 @@ a3 as
        case when metadata_season_name in ('Season 1','Season 2','Season 3') then concat(metadata_series_name,'-',metadata_season_name)
             when metadata_season_name is null then metadata_movie_name
             else metadata_season_name end as collection,
-       season_number as season,
+       metadata_season_number as season,
        a.title,
        a.video_id as id,
        episode_number as episode,
