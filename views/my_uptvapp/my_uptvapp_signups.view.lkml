@@ -1,5 +1,5 @@
-view: my_aspire_signups {
-  sql_table_name: aspire_app.signed_up ;;
+view: my_uptvapp_signups {
+  sql_table_name: my_uptv_dev.signed_up ;;
 
   dimension: anonymous_id {
     type: string
@@ -73,7 +73,7 @@ view: my_aspire_signups {
     sql: ${TABLE}.context_library_version ;;
   }
 
-  dimension: context_network_cellular {
+    dimension: context_network_cellular {
     type: string
     sql: ${TABLE}.context_network_cellular ;;
   }
@@ -273,9 +273,9 @@ view: my_aspire_signups {
   }
 
   dimension: context_device_tracking_status {
-    type: string
-    sql: ${TABLE}.context_device_tracking_status ;;
-  }
+      type: string
+      sql: ${TABLE}.context_device_tracking_status ;;
+    }
 
   dimension: context_event_transformed {
     type: string
@@ -300,4 +300,4 @@ view: my_aspire_signups {
     type: string
     sql: ${TABLE}.context_instance_id ;;
   }
-}
+  }
