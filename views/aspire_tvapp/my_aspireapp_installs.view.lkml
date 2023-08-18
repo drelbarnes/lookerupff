@@ -1,4 +1,4 @@
-view: my_aspire_installs {
+view: my_aspireapp_installs {
     sql_table_name: aspire_app_application_installed ;;
 
     dimension: anonymous_id {

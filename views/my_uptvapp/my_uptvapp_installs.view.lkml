@@ -41,10 +41,12 @@ view: my_uptv_installs {
       type: string
       sql: ${TABLE}.context_device_manufacturer ;;
     }
+
     dimension: context_device_model {
       type: string
       sql: ${TABLE}.context_device_model ;;
     }
+
     dimension: context_device_name {
       type: string
       sql: ${TABLE}.context_device_name ;;
@@ -69,6 +71,7 @@ view: my_uptv_installs {
       type: string
       sql: ${TABLE}.context_library_version ;;
     }
+
     dimension: context_locale {
       type: string
       sql: ${TABLE}.context_locale ;;
@@ -157,7 +160,6 @@ view: my_uptv_installs {
       sql: ${TABLE}.received_at ;;
     }
 
-
     dimension_group: sent_at {
       type: time
       timeframes: [
@@ -208,7 +210,7 @@ view: my_uptv_installs {
     dimension: context_screen_density {
       type: string
       sql: ${TABLE}.context_screen_density ;;
-          }
+    }
 
     dimension: user_id {
       type: string
