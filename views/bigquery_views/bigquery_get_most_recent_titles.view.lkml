@@ -1,4 +1,4 @@
-view: bigquery_get_titles {
+view: bigquery_get_most_recent_titles {
   # Or, you could make this view a derived table, like this:
   derived_table: {
     sql: with p0 as (
@@ -103,17 +103,26 @@ view: bigquery_get_titles {
   }
 
   dimension_group: date {
+    group_label: "Published"
     type: time
     sql: ${TABLE}.date ;;
   }
 
   dimension_group: end_date {
+    group_label: "Published"
     type: time
     sql: ${TABLE}.end_date ;;
   }
 
-  dimension_group: duration {
+  dimension_group: live {
+    group_label: "Published"
     type: duration
+    sql_start: ${TABLE}.date ;;
+    sql_end: ${TABLE}.end_date ;;
+  }
+
+  dimension: duration {
+    type: number
     sql: ${TABLE}.duration ;;
   }
 

@@ -206,6 +206,7 @@ include: "heartland_s16_movie_views.view.lkml"
 include: "heartland_s16_series_views.view.lkml"
 include: "heartland_s16_tenure_analysis.view.lkml"
 include: "set_cancellations.view.lkml"
+include: "/views/bigquery_views/bigquery_get_most_recent_titles.view.lkml"
 
 # DTC App reporting #
 
@@ -224,6 +225,10 @@ datagroup: upff_daily_refresh_datagroup {
 }
 
 # Explores #
+
+explore: bigquery_get_most_recent_titles {
+  label: "bigquery_get_most_recent_titles"
+}
 
 explore: app_store_connect_aggregate {
   label: "App Store Connect Subs"
