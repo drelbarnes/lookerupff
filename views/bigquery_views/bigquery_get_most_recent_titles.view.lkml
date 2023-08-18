@@ -4,7 +4,7 @@ view: bigquery_get_most_recent_titles {
     sql: with p0 as (
         SELECT
         *
-        , row_number() over (partition by video_id, is_available order by timestamp desc) as n
+        , row_number() over (partition by video_id order by timestamp desc) as n
         FROM php.get_titles
       )
       select
