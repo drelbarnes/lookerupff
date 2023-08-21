@@ -35,6 +35,7 @@ include: "analytics_v2.view"
 include: "mailchimp_email_campaigns.view"
 include: "delighted_survey_question_answered.view"
 include: "/views/customer_file_subscriber_counts.view.lkml"
+include: "/views/appstoreconnect_sub_counts.view.lkml"
 
 explore: redshift_exec_summary_metrics {
   label: "Exec Summary Metrics"
@@ -140,6 +141,10 @@ explore: application_installed{
 }
 
 explore: customer_file_subscriber_counts {
+  persist_with: upff_customer_file_reporting
+}
+
+explore: appstoreconnect_sub_counts {
   persist_with: upff_customer_file_reporting
 }
 
