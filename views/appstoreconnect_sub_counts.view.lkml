@@ -57,7 +57,9 @@ view: appstoreconnect_sub_counts {
     ORDER BY report_date DESC
     )
     select * from outer_query order by report_date
-      ;;
+    ;;
+    datagroup_trigger: upff_customer_file_reporting
+    distribution_style: all
   }
 
   dimension: ios {

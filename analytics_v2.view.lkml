@@ -26,15 +26,24 @@ view: analytics_v2 {
         , row_number() over (partition by analytics_timestamp, report_version order by sent_at desc) as n
         from p0
       )
+      --, apple_subs as (
+      --  select
+      --  report_date
+      --  , app_store_connect_subscribers_total
+      --  , vimeo_ott_subscribers_total
+      --  , row_number() over (partition by report_date order by timestamp desc) as n
+      --  from
+      --  looker.get_app_store_connect_subs
+      --  where date(sent_at)=current_date
+      --)
       , apple_subs as (
         select
-        report_date
-        , app_store_connect_subscribers_total
-        , vimeo_ott_subscribers_total
-        , row_number() over (partition by report_date order by timestamp desc) as n
-        from
-        looker.get_app_store_connect_subs
-        where date(sent_at)=current_date
+        a.report_date
+        , a.ios+a.tvos as vimeo_ott_subscribers_total
+        , b.ios + b.tvos as app_store_connect_subscribers_total
+        from ${customer_file_subscriber_counts.SQL_TABLE_NAME} as a
+        left join ${appstoreconnect_sub_counts.SQL_TABLE_NAME} as b
+        on a.report_date = b.report_date
       )
       , get_analytics_p1 as (
         select
@@ -61,7 +70,6 @@ view: analytics_v2 {
           , app_store_connect_subscribers_total
           , vimeo_ott_subscribers_total
           from apple_subs
-          where n = 1
         ) c
         on date(a.timestamp) = date(c.report_date)
       )
