@@ -206,6 +206,7 @@ include: "heartland_s16_movie_views.view.lkml"
 include: "heartland_s16_series_views.view.lkml"
 include: "heartland_s16_tenure_analysis.view.lkml"
 include: "set_cancellations.view.lkml"
+include: "bigquery_meta_offline_events.view.lkml"
 
 # DTC App reporting #
 
@@ -224,6 +225,10 @@ datagroup: upff_daily_refresh_datagroup {
 }
 
 # Explores #
+
+explore: bigquery_meta_offline_events {
+  label: "Meta Offline Events"
+}
 
 explore: app_store_connect_aggregate {
   label: "App Store Connect Subs"
