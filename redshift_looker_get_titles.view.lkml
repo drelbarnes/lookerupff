@@ -1,7 +1,43 @@
 view: redshift_looker_get_titles {
   derived_table: {
-    sql: SELECT distinct title, video_id, max(timestamp) as timestamp, is_available, additional_images_aspect_ratio_1_1_medium FROM php.get_titles GROUP BY 1,2,4,5
-      ;;
+    sql:
+    with p0 as (
+      SELECT
+      title
+      , "timestamp"
+      , video_id
+      , is_available
+      , media_type
+      , metadata_episode_number
+      , metadata_movie_name
+      , metadata_primary_genre
+      , metadata_season_name
+      , metadata_season_number
+      , metadata_secondary_genre
+      , metadata_series_name
+      , plans
+      , plays_count
+      , row_number() over (partition by video_id order by timestamp desc) as n
+      FROM php.get_titles
+    )
+    select
+    title
+    , "timestamp"
+    , video_id
+    , is_available
+    , media_type
+    , metadata_episode_number
+    , metadata_movie_name
+    , metadata_primary_genre
+    , metadata_season_name
+    , metadata_season_number
+    , metadata_secondary_genre
+    , metadata_series_name
+    , plans
+    , plays_count
+    from p0
+    where n=1
+    ;;
   }
 
   measure: count {
@@ -15,7 +51,7 @@ view: redshift_looker_get_titles {
   }
 
   dimension: video_id {
-    type: number
+    type: string
     sql: ${TABLE}.video_id ;;
   }
 
@@ -24,14 +60,59 @@ view: redshift_looker_get_titles {
     sql: ${TABLE}.timestamp ;;
   }
 
-  dimension: 1_1_medium_image {
-    type: string
-    sql:  ${TABLE}.additional_images_aspect_ratio_1_1_medium ;;
-  }
-
   dimension: is_available {
     type: yesno
     sql: ${TABLE}.is_available ;;
+  }
+
+  dimension: media_type {
+    type: string
+    sql: ${TABLE}.media_type ;;
+  }
+
+  dimension: metadata_episode_number {
+    type: string
+    sql: ${TABLE}.metadata_episode_number ;;
+  }
+
+  dimension: metadata_movie_name {
+    type: string
+    sql: ${TABLE}.metadata_movie_name ;;
+  }
+
+  dimension: metadata_primary_genre {
+    type: string
+    sql: ${TABLE}.metadata_primary_genre ;;
+  }
+
+  dimension: metadata_season_name {
+    type: string
+    sql: ${TABLE}.metadata_season_name ;;
+  }
+
+  dimension: metadata_season_number {
+    type: string
+    sql: ${TABLE}.metadata_season_number ;;
+  }
+
+  dimension: metadata_secondary_genre {
+    type: string
+    sql: ${TABLE}.metadata_secondary_genre ;;
+  }
+
+  dimension: metadata_series_name {
+    type: string
+    sql: ${TABLE}.metadata_series_name ;;
+  }
+
+  dimension: plans {
+    type: string
+    sql: ${TABLE}.plans ;;
+  }
+
+  dimension: plays_count {
+    type: number
+    sql: ${TABLE}.plays_count ;;
   }
 
   set: detail {
