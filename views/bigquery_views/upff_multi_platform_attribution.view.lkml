@@ -989,6 +989,8 @@ view: upff_multi_platform_attribution {
       WHEN LOWER(${TABLE}.source) = 'google_ads'
         or LOWER(${TABLE}.source) = 'googleads'
         or LOWER(${TABLE}.source) = 'google adwords'
+        or LOWER(${TABLE}.source) = 'pmax_upff'
+        or LOWER(${TABLE}.source) = 'youtube_upff'
         then 'Google Ads'
       WHEN LOWER(${TABLE}.source) = 'google marketing platform'
         or LOWER(${TABLE}.source) = 'dv360_upff'
@@ -1024,6 +1026,8 @@ view: upff_multi_platform_attribution {
         then "MNTN"
       WHEN LOWER(${TABLE}.source) = 'seedtag'
         then 'Seedtag'
+      WHEN LOWER(${TABLE}.source) = 'cj_uptv'
+        then 'CJ'
       WHEN LOWER(${TABLE}.source) = 'unknown'
         then 'Unknown'
       ELSE 'Others'
