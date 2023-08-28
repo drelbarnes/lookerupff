@@ -210,6 +210,7 @@ include: "/views/bigquery_views/bigquery_get_most_recent_titles.view.lkml"
 include: "bigquery_meta_offline_events.view.lkml"
 
 include: "/views/uptv_web/uptv_page_events.view.lkml"
+include: "/views/uptv_web/uptv_web_sessions.view.lkml"
 
 # DTC App reporting #
 
@@ -228,6 +229,10 @@ datagroup: upff_daily_refresh_datagroup {
 }
 
 # Explores #
+
+explore: uptv_web_sessions {
+  label: "UPtv Web Sessions"
+}
 
 explore: uptv_page_events {
   label: "UPtv Page Events"
