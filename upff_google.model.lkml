@@ -209,6 +209,8 @@ include: "set_cancellations.view.lkml"
 include: "/views/bigquery_views/bigquery_get_most_recent_titles.view.lkml"
 include: "bigquery_meta_offline_events.view.lkml"
 
+include: "/views/uptv_web/uptv_page_events.view.lkml"
+
 # DTC App reporting #
 
 include: "/views/bigquery_views/app_store_connect_aggregate.view.lkml"
@@ -226,6 +228,10 @@ datagroup: upff_daily_refresh_datagroup {
 }
 
 # Explores #
+
+explore: uptv_page_events {
+  label: "UPtv Page Events"
+}
 
 explore: bigquery_meta_offline_events {
   label: "Meta Offline Events"
