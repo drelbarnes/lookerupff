@@ -34,6 +34,8 @@ include: "redshift_exec_summary_metrics.view.lkml"
 include: "analytics_v2.view"
 include: "mailchimp_email_campaigns.view"
 include: "delighted_survey_question_answered.view"
+include: "/views/customer_file_subscriber_counts.view.lkml"
+include: "/views/appstoreconnect_sub_counts.view.lkml"
 
 explore: redshift_exec_summary_metrics {
   label: "Exec Summary Metrics"
@@ -109,6 +111,12 @@ datagroup: upff_default_datagroup {
   max_cache_age: "6 hour"
 }
 
+datagroup: upff_customer_file_reporting {
+  description: "Datagroup for UPFF Customer File PDTs. Triggers once per day at 8:15am"
+  sql_trigger: SELECT FLOOR((EXTRACT(epoch from GETDATE()) - 60*60*8.25)/(60*60*24)) ;;
+  max_cache_age: "5 minutes"
+}
+
 datagroup: upff_acquisition_reporting {
   description: "Datagroup for UPFF Acquisition PDTs. Triggers once per day at 9:15am"
   sql_trigger: SELECT FLOOR((EXTRACT(epoch from GETDATE()) - 60*60*9.25)/(60*60*24)) ;;
@@ -130,6 +138,14 @@ explore: application_installed{
     sql_on: ${application_installed.anonymous_id} = ${ios_signupstarted.anonymous_id} ;;
     relationship: one_to_one
   }
+}
+
+explore: customer_file_subscriber_counts {
+  persist_with: upff_customer_file_reporting
+}
+
+explore: appstoreconnect_sub_counts {
+  persist_with: upff_customer_file_reporting
 }
 
 explore: analytics_v2 {
