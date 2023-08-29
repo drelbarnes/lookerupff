@@ -67,8 +67,9 @@ view: svod_sub_counts {
       sql: ${TABLE}.month ;;
     }
 
-    dimension: sub_counts {
-      type: number
+    measure: sub_counts {
+      type: sum
+      value_format: "#,##0"
       sql: ${TABLE}.sub_counts ;;
     }
 
