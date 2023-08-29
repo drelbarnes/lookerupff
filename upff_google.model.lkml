@@ -209,6 +209,7 @@ include: "set_cancellations.view.lkml"
 include: "/views/bigquery_views/bigquery_get_most_recent_titles.view.lkml"
 include: "bigquery_meta_offline_events.view.lkml"
 include: "svod_titles_index.view.lkml"
+include: "svod_sub_counts.view.lkml"
 
 include: "/views/uptv_web/uptv_page_events.view.lkml"
 include: "/views/uptv_web/uptv_web_sessions.view.lkml"
@@ -271,6 +272,10 @@ explore: heartland_s16_movie_views {
 
 explore: heartland_s16_series_views {
   label: "Heartland S16 Viewers 2"
+}
+
+explore: svod_sub_counts {
+  label: "SVOD Sub Counts"
 }
 
 explore: series_title_valuation {
