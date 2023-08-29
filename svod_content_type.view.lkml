@@ -15,7 +15,7 @@ view: svod_content_type {
               group by 1,2,3,4,5
               )
 
-              select * from views ;;
+              select * from views where content_type is not null ;;
     }
 
     measure: count {
