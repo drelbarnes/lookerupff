@@ -176,6 +176,7 @@ view: svod_titles_index {
 
     measure: index {
       type: sum
+      value_format: "0"
       sql: ${TABLE}.index ;;
     }
 
