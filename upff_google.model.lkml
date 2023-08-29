@@ -210,6 +210,7 @@ include: "/views/bigquery_views/bigquery_get_most_recent_titles.view.lkml"
 include: "bigquery_meta_offline_events.view.lkml"
 include: "svod_titles_index.view.lkml"
 include: "svod_sub_counts.view.lkml"
+include: "svod_view_counts.view.lkml"
 
 include: "/views/uptv_web/uptv_page_events.view.lkml"
 include: "/views/uptv_web/uptv_web_sessions.view.lkml"
@@ -276,6 +277,10 @@ explore: heartland_s16_series_views {
 
 explore: svod_sub_counts {
   label: "SVOD Sub Counts"
+}
+
+explore: svod_view_counts {
+  label: "SVOD View Counts"
 }
 
 explore: series_title_valuation {
