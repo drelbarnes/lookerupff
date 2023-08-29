@@ -156,13 +156,13 @@ view: svod_titles_index {
 
     measure: total_views {
       type: sum
-      value_format: "0"
+      value_format: "#,##0"
       sql: ${TABLE}.total_views ;;
     }
 
     measure: sum_views {
       type: sum
-      value_format: "0"
+      value_format: "#,##0"
       sql: ${TABLE}.sum_views ;;
     }
 
