@@ -208,6 +208,7 @@ include: "heartland_s16_tenure_analysis.view.lkml"
 include: "set_cancellations.view.lkml"
 include: "/views/bigquery_views/bigquery_get_most_recent_titles.view.lkml"
 include: "bigquery_meta_offline_events.view.lkml"
+include: "svod_titles_index.view.lkml"
 
 include: "/views/uptv_web/uptv_page_events.view.lkml"
 include: "/views/uptv_web/uptv_web_sessions.view.lkml"
@@ -286,6 +287,10 @@ explore: bigquery_viewing_habits {
 
 explore: first_n_plays {
   label: "First N Plays"
+}
+
+explore: svod_titles_index {
+  label: "SVOD Titles Index"
 }
 
 explore: research_active_users {
