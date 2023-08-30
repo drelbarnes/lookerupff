@@ -232,6 +232,12 @@ datagroup: upff_daily_refresh_datagroup {
   sql_trigger: SELECT CURRENT_DATE() ;;
 }
 
+datagroup: upff_analytics_datagroup {
+  max_cache_age: "12 hours"
+  description: "Datagroup for Allfirstplay and Timeupdate. Triggers twice per day"
+  sql_trigger: SELECT CURRENT_DATE() ;;
+}
+
 # Explores #
 
 explore: uptv_web_sessions {
