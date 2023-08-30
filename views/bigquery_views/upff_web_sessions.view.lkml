@@ -388,7 +388,7 @@ view: upff_web_sessions {
     sql: CASE
       WHEN LOWER(${source}) = 'hs_email'
         or LOWER(${source}) = 'hs_automation'
-        or LOWER(${source}}.session_utm_source) = 'hubspot_upff'
+        or LOWER(${source}) = 'hubspot_upff'
         then 'HubSpot'
       WHEN LOWER(${source}) = 'fb'
         or LOWER(${source}) = 'facebook'
