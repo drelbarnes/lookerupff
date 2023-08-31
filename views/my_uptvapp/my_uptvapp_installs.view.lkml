@@ -1,4 +1,4 @@
-view: my_uptv_installs {
+view: my_uptvapp_installs {
     sql_table_name: my_uptv_dev.application_installed ;;
 
     dimension: anonymous_id {
@@ -6,10 +6,10 @@ view: my_uptv_installs {
       sql: ${TABLE}.anonymous_id ;;
     }
 
-    measure: total_anonymous_ids {
+    measure: total_distinct_installs {
       type: count_distinct
       sql: ${anonymous_id} ;;
-      description: "Total number of anonymous users."
+      description: "Total number of installs."
     }
 
     dimension: build {
