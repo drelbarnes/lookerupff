@@ -251,6 +251,12 @@ view: my_uptvapp_signups {
     type: string
     sql: ${TABLE}.user_email ;;
   }
+  measure: total_distinct_user_email {
+    type: count_distinct
+    sql: ${user_email} ;;
+    description: "number of distinct user emails."
+    drill_fields: [opt_in_communications]
+  }
 
   dimension: view {
     type: string
@@ -294,6 +300,19 @@ view: my_uptvapp_signups {
   dimension: email {
     type: string
     sql: ${TABLE}.email ;;
+  }
+
+  measure: total_distinct_emails {
+    type: count_distinct
+    sql: ${email} ;;
+  description: "number of distinct email."
+  drill_fields: [opt_in_communications]
+  }
+
+  measure: total_signups {
+    type: number
+    sql: ${total_distinct_emails}+${total_distinct_user_email} ;;
+    description: "number of distinct signups."
   }
 
   dimension: context_instance_id {
