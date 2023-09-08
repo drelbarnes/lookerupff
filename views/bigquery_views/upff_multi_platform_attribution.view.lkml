@@ -31,6 +31,7 @@ view: upff_multi_platform_attribution {
         , campaign_id
         , referrer_domain
         , referrer_search
+        , landing_page
         , source
         from ${upff_web_event_processing.SQL_TABLE_NAME}
         where session_start > timestamp_sub(ordered_at, INTERVAL {% parameter attribution_window %} DAY)
@@ -59,6 +60,7 @@ view: upff_multi_platform_attribution {
         , campaign_id
         , referrer_domain
         , referrer_search
+        , landing_page
         , source
         from ${upff_ios_event_processing.SQL_TABLE_NAME}
         where session_start > timestamp_sub(ordered_at, INTERVAL {% parameter attribution_window %} DAY)
@@ -87,6 +89,7 @@ view: upff_multi_platform_attribution {
         , campaign_id
         , referrer_domain
         , referrer_search
+        , landing_page
         , source
         from ${upff_android_event_processing.SQL_TABLE_NAME}
         where session_start > timestamp_sub(ordered_at, INTERVAL {% parameter attribution_window %} DAY)
@@ -399,6 +402,7 @@ view: upff_multi_platform_attribution {
     , a.user_agent
     , a.referrer_domain
     , a.referrer_search
+    , a.landing_page
     , a.source
     , b.n as touch_point
     , b.credit as last_touch
@@ -460,6 +464,7 @@ view: upff_multi_platform_attribution {
     , a.user_agent
     , a.referrer_domain
     , a.referrer_search
+    , a.landing_page
     , a.source
     , a.touch_point
     , a.last_touch
@@ -895,6 +900,11 @@ view: upff_multi_platform_attribution {
   dimension: referrer_search {
     type: string
     sql: ${TABLE}.referrer_search ;;
+  }
+
+  dimension: landing_page {
+    type: string
+    sql: ${TABLE}.landing_page ;;
   }
 
   dimension: source {

@@ -286,6 +286,7 @@ view: upff_ios_event_processing {
         , campaign_id
         , referrer_domain
         , referrer_search
+        , landing_page
         , utm_content
         , utm_medium
         , utm_campaign
@@ -294,7 +295,7 @@ view: upff_ios_event_processing {
         , source
         from final_p1
         where source is not null
-        group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24
+        group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25
       )
       select *, row_number() over (order by ordered_at) as row from attributable_events;;
     datagroup_trigger: upff_daily_refresh_datagroup
@@ -419,6 +420,11 @@ view: upff_ios_event_processing {
   dimension: referrer_search {
     type: string
     sql: ${TABLE}.referrer_search ;;
+  }
+
+  dimension: landing_page {
+    type: string
+    sql: ${TABLE}.landing_page ;;
   }
 
   dimension: user_agent {

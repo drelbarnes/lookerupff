@@ -252,6 +252,11 @@ explore: uptv_page_events {
 
 explore: my_uptvapp_installs {
   label: "My UPtv Installs"
+  join: my_uptvapp_signups {
+    type: left_outer
+    sql_on: ${my_uptvapp_installs.anonymous_id}=${my_uptvapp_signups.anonymous_id} ;;
+    relationship: one_to_one
+  }
 }
 
 explore: my_uptvapp_signups {
