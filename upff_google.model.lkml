@@ -212,6 +212,7 @@ include: "svod_titles_index.view.lkml"
 include: "svod_sub_counts.view.lkml"
 include: "svod_view_counts.view.lkml"
 include: "svod_content_type.view.lkml"
+include: "first_n_plays_v2.view.lkml"
 
 include: "/views/uptv_web/uptv_page_events.view.lkml"
 include: "/views/uptv_web/uptv_web_sessions.view.lkml"
@@ -323,6 +324,10 @@ explore: bigquery_viewing_habits {
 
 explore: first_n_plays {
   label: "First N Plays"
+}
+
+explore: first_n_plays_v2 {
+  label: "First N Plays V2"
 }
 
 explore: svod_titles_index {
