@@ -30,7 +30,7 @@ view: aspiretv_web_sessions {
       , url
       , path
       , platform
-      from ${uptv_page_events.SQL_TABLE_NAME}
+      from ${aspiretv_page_events.SQL_TABLE_NAME}
     )
     , sessions_p0 as (
       with first_values as (
@@ -377,9 +377,9 @@ view: aspiretv_web_sessions {
   dimension: source {
     sql:
     CASE
-    when ${TABLE}.session_utm_source is null and (${TABLE}.session_referrer is null or ${TABLE}.session_referrer in ("upfaithandfamily.com/", "upfaithandfamily.com", "vhx.tv"))
+    when ${TABLE}.session_utm_source is null and (${TABLE}.session_referrer is null or ${TABLE}.session_referrer in ("aspire.tv/", "aspire.tv"))
     then 'unknown'
-    when ${TABLE}.session_utm_source is null and (${TABLE}.session_referrer is not null and ${TABLE}.session_referrer not in ("upfaithandfamily.com/", "upfaithandfamily.com", "vhx.tv"))
+    when ${TABLE}.session_utm_source is null and (${TABLE}.session_referrer is not null and ${TABLE}.session_referrer not in ("aspire.tv/", "aspire.tv"))
     then ${TABLE}.session_referrer
     else ${TABLE}.session_utm_source
     END ;;
@@ -389,7 +389,7 @@ view: aspiretv_web_sessions {
     sql: CASE
             WHEN LOWER(${source}) = 'hs_email'
               or LOWER(${source}) = 'hs_automation'
-              or LOWER(${source}) = 'hubspot_upff'
+              or LOWER(${source}) = 'hubspot_aspire'
               then 'HubSpot'
             WHEN LOWER(${source}) = 'fb'
               or LOWER(${source}) = 'facebook'
@@ -402,25 +402,25 @@ view: aspiretv_web_sessions {
             WHEN LOWER(${source}) = 'google_ads'
               or LOWER(${source}) = 'googleads'
               or LOWER(${source}) = 'google adwords'
-              or LOWER(${source}) = 'pmax_upff'
-              or LOWER(${source}) = 'youtube_upff'
+              or LOWER(${source}) = 'pmax_aspire'
+              or LOWER(${source}) = 'youtube_aspire'
               then 'Google Ads'
             WHEN LOWER(${source}) = 'google marketing platform'
-              or LOWER(${source}) = 'dv360_upff'
+              or LOWER(${source}) = 'dv360_aspire'
               then 'Google Marketing Platform'
             WHEN LOWER(${source}) = 'bing_ads'
-              or LOWER(${source}) = 'bing_upff'
+              or LOWER(${source}) = 'bing_aspire'
               or LOWER(${source}) = 'bing'
               then 'Bing Ads'
-            WHEN LOWER(${source}) = 'uptv-linear'
-              or LOWER(${source}) = 'linear-uptv'
-              then 'UPtv Linear'
-            WHEN LOWER(${source}) = 'uptv_movies_app'
-              or LOWER(${source}) = 'uptv-web'
-              or LOWER(${source}) = 'uptv-app'
-              or LOWER(${source}) = 'uptv'
-              or LOWER(${source}) = 'uptv.com'
-              then 'UPtv Digital'
+            WHEN LOWER(${source}) = 'aspiretv-linear'
+              or LOWER(${source}) = 'linear-aspiretv'
+              then 'aspiretv Linear'
+            WHEN LOWER(${source}) = 'aspiretv_movies_app'
+              or LOWER(${source}) = 'aspiretv-web'
+              or LOWER(${source}) = 'aspiretv-app'
+              or LOWER(${source}) = 'aspiretv'
+              or LOWER(${source}) = 'aspire.tv'
+              then 'aspiretv Digital'
             WHEN LOWER(${source}) = 'zendesk'
               or LOWER(${source}) = 'support'
               then 'Customer Support'
@@ -435,11 +435,11 @@ view: aspiretv_web_sessions {
               or LOWER(${source}) = 't.co'
               or LOWER(${source}) = 'youtube.com'
               then 'Organic Social'
-            WHEN LOWER(${source}) = 'mntn_upff'
+            WHEN LOWER(${source}) = 'mntn_aspire'
               then "MNTN"
             WHEN LOWER(${source}) = 'seedtag'
               then 'Seedtag'
-            WHEN LOWER(${source}) = 'cj_uptv'
+            WHEN LOWER(${source}) = 'cj_aspiretv'
               then 'CJ'
             WHEN LOWER(${source}) = 'unknown'
               then 'Unknown'
