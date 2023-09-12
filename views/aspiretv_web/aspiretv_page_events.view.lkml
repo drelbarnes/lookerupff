@@ -24,7 +24,6 @@ view: aspiretv_page_events {
           , safe_cast(user_id as string) as user_id
           , safe_cast(anonymous_id as string) as anonymous_id
           , safe_cast(context_ip as string) as ip_address
-          , safe_cast(context_traits_cross_domain_id as string) as cross_domain_id
           , safe_cast(context_user_agent as string) as user_agent
           , "Page Viewed" as event
           , "web" as platform
@@ -35,7 +34,7 @@ view: aspiretv_page_events {
           , safe_cast(context_page_title as string) as title
           , safe_cast(context_page_path as string) as path
           from `up-faith-and-family-216419.javascript_aspire_tv.pages`
-          group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+          group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14
         )
       )
       -- DATA CLEANING AND PROCESSING
@@ -51,7 +50,6 @@ view: aspiretv_page_events {
         , anonymous_id
         , user_id
         , ip_address
-        , cross_domain_id
         , event
         , event_id
         , referrer
@@ -72,7 +70,7 @@ view: aspiretv_page_events {
         , platform
         from page_event_ids_p0
         where event in ("Page Viewed","Order Completed")
-        group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
+        group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22
       )
       -- END OF BLOCK
       , session_mapping_p0 as (
@@ -158,7 +156,6 @@ view: aspiretv_page_events {
         timestamp
         , anonymous_id
         , ip_address
-        , cross_domain_id
         , user_id
         , event
         , event_id
@@ -184,7 +181,7 @@ view: aspiretv_page_events {
         , user_agent
         , platform
         from session_ids_p2
-        group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28
+        group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27
         )
         select * from session_ids_p3;;
       datagroup_trigger: upff_daily_refresh_datagroup
@@ -215,11 +212,6 @@ view: aspiretv_page_events {
     dimension: ip_address {
       type: string
       sql: ${TABLE}.ip_address ;;
-    }
-
-    dimension: cross_domain_id {
-      type: string
-      sql: ${TABLE}.cross_domain_id ;;
     }
 
     dimension: event {
@@ -361,7 +353,6 @@ view: aspiretv_page_events {
         user_id,
         anonymous_id,
         ip_address,
-        cross_domain_id,
         event,
         utm_content,
         utm_medium,
