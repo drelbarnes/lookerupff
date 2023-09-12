@@ -7,7 +7,6 @@ view: aspiretv_web_sessions {
       , anonymous_id
       , ip_address
       , user_agent
-      , cross_domain_id
       , user_id
       , event
       , event_id
