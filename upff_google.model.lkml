@@ -218,6 +218,7 @@ include: "/views/uptv_web/uptv_page_events.view.lkml"
 include: "/views/uptv_web/uptv_web_sessions.view.lkml"
 include: "/views/my_uptvapp/my_uptvapp_installs.view.lkml"
 include: "/views/my_uptvapp/my_uptvapp_signups.view.lkml"
+include: "/views/aspiretv_web/aspiretv_page_events.view.lkml"
 
 # DTC App reporting #
 
@@ -242,6 +243,10 @@ datagroup: upff_analytics_datagroup {
 }
 
 # Explores #
+
+explore: aspiretv_page_events {
+  label: "aspiretv_page_events"
+}
 
 explore: uptv_web_sessions {
   label: "UPtv Web Sessions"
