@@ -1,5 +1,5 @@
 view: my_aspireapp_installs {
-    sql_table_name: aspire_app_application_installed ;;
+    sql_table_name: aspire_app.application_installed ;;
 
     dimension: anonymous_id {
       type: string
