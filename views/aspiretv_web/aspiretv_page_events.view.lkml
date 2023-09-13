@@ -1,6 +1,6 @@
 view: aspiretv_page_events {
-    derived_table: {
-      sql: CREATE TEMP FUNCTION URLDECODE(url STRING) AS ((
+  derived_table: {
+    sql: CREATE TEMP FUNCTION URLDECODE(url STRING) AS ((
         SELECT SAFE_CONVERT_BYTES_TO_STRING(
           ARRAY_TO_STRING(ARRAY_AGG(
               IF(STARTS_WITH(y, '%'), FROM_HEX(SUBSTR(y, 2)), CAST(y AS BYTES)) ORDER BY i
@@ -28,7 +28,7 @@ view: aspiretv_page_events {
           , "Page Viewed" as event
           , "web" as platform
           , safe_cast(context_page_url as string) as url
-          , URLDECODE(REGEXP_EXTRACT(safe_cast(context_page_url as string), 'Error! Hyperlink reference not valid.')) as search
+          , URLDECODE(REGEXP_EXTRACT(safe_cast(context_page_url as string), '\\?(.+)')) as search
           , safe_cast(context_page_referrer as string) as referrer
           , NET.REG_DOMAIN(safe_cast(context_page_referrer as string)) AS referrer_domain
           , safe_cast(context_page_title as string) as title
