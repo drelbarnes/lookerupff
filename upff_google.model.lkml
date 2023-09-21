@@ -218,6 +218,10 @@ include: "/views/uptv_web/uptv_page_events.view.lkml"
 include: "/views/uptv_web/uptv_web_sessions.view.lkml"
 include: "/views/my_uptvapp/my_uptvapp_installs.view.lkml"
 include: "/views/my_uptvapp/my_uptvapp_signups.view.lkml"
+include: "/views/aspire_tvapp/my_aspireapp_installs.view.lkml"
+include: "/views/aspire_tvapp/my_aspireapp_signups.view.lkml"
+include: "/views/aspiretv_web/aspiretv_page_events.view.lkml"
+include: "/views/aspiretv_web/aspiretv_web_sessions.view.lkml"
 
 # DTC App reporting #
 
@@ -243,6 +247,22 @@ datagroup: upff_analytics_datagroup {
 
 # Explores #
 
+explore: aspiretv_page_events {
+  label: "aspiretv_page_events"
+}
+
+explore: aspiretv_web_sessions {
+  label: "aspiretv_web_sessions"
+}
+
+explore: my_aspireapp_installs {
+  label: "my_aspireapp_installs"
+}
+
+explore: my_aspireapp_signups {
+  label: "my_aspireapp_signups"
+}
+
 explore: uptv_web_sessions {
   label: "UPtv Web Sessions"
 }
@@ -253,6 +273,11 @@ explore: uptv_page_events {
 
 explore: my_uptvapp_installs {
   label: "My UPtv Installs"
+  join: my_uptvapp_signups {
+    type: left_outer
+    sql_on: ${my_uptvapp_installs.anonymous_id}=${my_uptvapp_signups.anonymous_id} ;;
+    relationship: one_to_one
+  }
 }
 
 explore: my_uptvapp_signups {
