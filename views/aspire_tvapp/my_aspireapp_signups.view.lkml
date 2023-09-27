@@ -300,7 +300,7 @@ view: my_aspireapp_signups {
 
   dimension: email {
     type: string
-    sql: ${TABLE}.email ;;
+    sql: ${TABLE}.user_email ;;
   }
 
   measure: total_distinct_emails {
