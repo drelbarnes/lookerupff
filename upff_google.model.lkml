@@ -255,12 +255,21 @@ explore: aspiretv_web_sessions {
   label: "aspiretv_web_sessions"
 }
 
-explore: my_aspireapp_installs {
-  label: "my_aspireapp_installs"
-}
+# explore: my_aspireapp_installs {
+ # label: "my_aspireapp_installs"
+# }
 
 explore: my_aspireapp_signups {
   label: "my_aspireapp_signups"
+}
+
+explore: my_aspireapp_installs {
+  label: "My aspiretv Installs"
+  join: my_aspireapp_signups {
+    type: left_outer
+    sql_on: ${my_aspireapp_installs.anonymous_id}=${my_aspireapp_signups.anonymous_id} ;;
+    relationship: one_to_one
+  }
 }
 
 explore: uptv_web_sessions {
