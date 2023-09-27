@@ -305,7 +305,7 @@ view: my_aspireapp_signups {
 
   measure: total_distinct_emails {
     type: count_distinct
-    sql: ${email} ;;
+    sql: ${user_email} ;;
     description: "number of distinct email."
     drill_fields: [opt_in_communications]
   }
