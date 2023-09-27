@@ -364,7 +364,7 @@ union all
             end as Quarter
 from a4 as a;;
 
-datagroup_trigger: upff_analytics_datagroup
+
   }
 
   dimension: video_id {
