@@ -312,7 +312,7 @@ view: my_aspireapp_signups {
 
   measure: total_signups {
     type: number
-    sql: ${total_distinct_emails}+${total_distinct_user_email} ;;
+    sql: ${total_distinct_user_email} ;;
     description: "number of distinct signups."
   }
 
