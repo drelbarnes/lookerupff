@@ -199,6 +199,7 @@ include: "hudson_rex_s2_e19.view.lkml"
 include: "research_active_users.view.lkml"
 include: "user_play_history.view.lkml"
 include: "first_n_plays.view.lkml"
+include: "first_n_plays_v3.view.lkml"
 include: "popular_content_by_series.view.lkml"
 include: "series_title_valuation.view.lkml"
 include: "bigquery_viewing_habits.view.lkml"
@@ -357,6 +358,10 @@ explore: first_n_plays {
 
 explore: first_n_plays_v2 {
   label: "First N Plays V2"
+}
+
+explore: first_n_plays_v3 {
+  label: "First N Plays V3"
 }
 
 explore: svod_titles_index {
