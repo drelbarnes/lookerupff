@@ -218,7 +218,7 @@ view: my_aspireapp_signups {
   }
 
   dimension: opt_in_communications {
-    type: string
+    type: yesno
     sql: ${TABLE}.opt_in_communications ;;
   }
 
@@ -303,17 +303,32 @@ view: my_aspireapp_signups {
     sql: ${TABLE}.email ;;
   }
 
-  measure: total_distinct_emails {
+  measure: total_distinct_user_email_optins {
     type: count_distinct
     sql: ${user_email} ;;
     description: "number of distinct email."
+    filters: [opt_in_communications: "yes"]
     drill_fields: [opt_in_communications]
   }
 
   measure: total_signups {
     type: number
-    sql: ${total_distinct_emails}+${total_distinct_user_email} ;;
+    sql: ${total_distinct_user_email} ;;
     description: "number of distinct signups."
+  }
+
+  measure: total_opt_ins {
+    type: number
+    sql: ${total_distinct_user_email_optins} ;;
+    description: "number of distinct email opt-ins."
+  }
+
+  measure: opt_in_rate {
+    label: "Opt-in %"
+    type: number
+    sql: CASE WHEN ${total_signups} = 0 THEN NULL ELSE ${total_opt_ins}/${total_signups} END ;;
+    value_format: "0.00%"
+    description: "Portion of sign ups that opted into marketing emails."
   }
 
   dimension: context_instance_id {
