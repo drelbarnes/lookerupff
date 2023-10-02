@@ -362,7 +362,9 @@ union all
             DATE_SUB(date(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY)), INTERVAL 4 QUARTER) then "YAGO Quarter"
             else "NA"
             end as Quarter
-from a4 as a;;
+from a4 as a
+datagroup_trigger: upff_daily_refresh_datagroup
+;;
 
 
   }
