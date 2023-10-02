@@ -380,7 +380,7 @@ from a left join cc on a.user_id=cc.user_id left join svod_titles.promos as c on
 
 ;;
 
-    datagroup_trigger: upff_daily_refresh_datagroup
+    datagroup_trigger: upff_analytics_datagroup
   }
 
 dimension: winback {
