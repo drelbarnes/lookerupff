@@ -377,10 +377,10 @@ select a.user_id,
             end as Quarter
 from a left join cc on a.user_id=cc.user_id left join svod_titles.promos as c on a.video_id=c.video_id
 /* where a.user_id<>'0' */
-datagroup_trigger: upff_daily_refresh_datagroup
+
 ;;
 
-
+    datagroup_trigger: upff_daily_refresh_datagroup
   }
 
 dimension: winback {
