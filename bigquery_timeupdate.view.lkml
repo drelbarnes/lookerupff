@@ -363,10 +363,11 @@ union all
             else "NA"
             end as Quarter
 from a4 as a
-datagroup_trigger: upff_daily_refresh_datagroup
+
 
 ;;
 
+datagroup_trigger: upff_daily_refresh_datagroup
 
   }
 
