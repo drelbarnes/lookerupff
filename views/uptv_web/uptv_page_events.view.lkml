@@ -29,13 +29,14 @@ view: uptv_page_events {
           , "Page Viewed" as event
           , "web" as platform
           , safe_cast(context_page_url as string) as url
+          , NET.HOST(safe_cast(context_page_url as string)) AS url_domain
           , URLDECODE(REGEXP_EXTRACT(safe_cast(context_page_url as string), '\\?(.+)')) as search
           , safe_cast(context_page_referrer as string) as referrer
           , NET.REG_DOMAIN(safe_cast(context_page_referrer as string)) AS referrer_domain
           , safe_cast(context_page_title as string) as title
           , safe_cast(context_page_path as string) as path
           from `up-faith-and-family-216419.javascript_up_tv.pages`
-          group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+          group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16
         )
       )
       -- DATA CLEANING AND PROCESSING
@@ -67,12 +68,13 @@ view: uptv_page_events {
         , utm_term
         , title
         , url
+        , url_domain
         , path
         , user_agent
         , platform
         from page_event_ids_p0
         where event in ("Page Viewed","Order Completed")
-        group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
+        group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24
       )
       -- END OF BLOCK
       , session_mapping_p0 as (
@@ -180,11 +182,12 @@ view: uptv_page_events {
         , utm_term
         , title
         , url
+        , url_domain
         , path
         , user_agent
         , platform
         from session_ids_p2
-        group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28
+        group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29
       )
       select * from session_ids_p3;;
     datagroup_trigger: upff_daily_refresh_datagroup
@@ -297,6 +300,11 @@ view: uptv_page_events {
     sql: ${TABLE}.url ;;
   }
 
+  dimension: url_domain {
+    type: string
+    sql: ${TABLE}.url_domain ;;
+  }
+
   dimension: path {
     type: string
     sql: ${TABLE}.path ;;
@@ -371,6 +379,7 @@ view: uptv_page_events {
       referrer,
       title,
       url,
+      url_domain,
       path,
       user_agent,
       session_id,
