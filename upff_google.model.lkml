@@ -133,6 +133,7 @@ include: "bigquery_push_notification.view.lkml"
 include: "promos1q21.view.lkml"
 include: "bigquery_mobile_installs.view.lkml"
 include: "bigquery_php_get_email_campaigns.view.lkml"
+include: "bigquery_allfirstplay_legacy.view.lkml"
 
 include: "most_recent_purchase_events.view"
 include: "max_churn_score.view"
@@ -300,6 +301,10 @@ explore: bigquery_meta_offline_events {
 
 explore: bigquery_get_most_recent_titles {
   label: "bigquery_get_most_recent_titles"
+}
+
+explore: bigquery_allfirstplay_legacy {
+  label: "Bigquery Allfirstplay Legacy"
 }
 
 explore: app_store_connect_aggregate {
