@@ -230,6 +230,10 @@ include: "/views/aspiretv_web/aspiretv_web_sessions.view.lkml"
 
 include: "/views/bigquery_views/app_store_connect_aggregate.view.lkml"
 
+# Gaither TV+ #
+
+include: "brightcove_revenue_events.view.lkml"
+
 # Test Views #
 
 include: "/views/testing_views/hubspot_bogo_testing.view.lkml"
@@ -249,6 +253,10 @@ datagroup: upff_analytics_datagroup {
 }
 
 # Explores #
+
+explore: brightcove_revenue_events {
+  label: "Brightcove Revenue Events"
+}
 
 explore: aspiretv_page_events {
   label: "aspiretv_page_events"
