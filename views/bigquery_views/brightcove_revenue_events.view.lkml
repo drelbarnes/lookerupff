@@ -12,6 +12,16 @@ view: brightcove_revenue_events {
         content_subscription_currency_code as currency
         FROM `up-faith-and-family-216419.chargebee_webhook_events.subscription_renewed`
       )
+      , p1 as (
+        SELECT
+        content_subscription_id AS subscription_id,
+        DATE(TIMESTAMP_SECONDS(content_invoice_date)) AS date,
+        DATE(TIMESTAMP_SECONDS(content_subscription_current_term_start)) AS term_start_date,
+        DATE(TIMESTAMP_SECONDS(content_subscription_current_term_end)) AS term_end_date,
+        SAFE.PARSE_JSON(content_subscription_subscription_items) as content_subscription_subscription_items,
+        content_subscription_currency_code as currency
+        FROM `up-faith-and-family-216419.chargebee_webhook_events.subscription_activated`
+      )
       select
       subscription_id,
       date,
@@ -21,6 +31,16 @@ view: brightcove_revenue_events {
       json_value(content_subscription_subscription_item.amount) as revenue_amount,
       currency
       from p0, unnest(json_query_array(content_subscription_subscription_items)) as content_subscription_subscription_item
+      union all
+      select
+      subscription_id,
+      date,
+      term_start_date,
+      term_end_date,
+      json_value(content_subscription_subscription_item.item_price_id) as product_id,
+      json_value(content_subscription_subscription_item.amount) as revenue,
+      currency
+      from p1, unnest(json_query_array(content_subscription_subscription_items)) as content_subscription_subscription_item
       ;;
   }
 

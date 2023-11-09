@@ -232,7 +232,8 @@ include: "/views/bigquery_views/app_store_connect_aggregate.view.lkml"
 
 # Gaither TV+ #
 
-include: "brightcove_revenue_events.view.lkml"
+include: "/views/bigquery_views/brightcove_revenue_events.view.lkml"
+include: "/views/bigquery_views/brightcove_subscription_events.view.lkml"
 
 # Test Views #
 
@@ -253,6 +254,10 @@ datagroup: upff_analytics_datagroup {
 }
 
 # Explores #
+
+explore: brightcove_subscription_events {
+  label: "Brightcove Subscription Events"
+}
 
 explore: brightcove_revenue_events {
   label: "Brightcove Revenue Events"
