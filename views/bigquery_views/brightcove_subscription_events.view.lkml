@@ -13,7 +13,8 @@ view: brightcove_subscription_events {
         content_subscription_billing_period_unit as subscription_unit,
         CASE WHEN content_customer_promotional_credits > 0 then true else FALSE end as special_offer,
         content_subscription_currency_code as unit_price_currency,
-        false as is_involuntary
+        false as is_involuntary,
+        false as is_reconnect
       FROM
         `up-faith-and-family-216419.chargebee_webhook_events.subscription_created`
       )
@@ -29,7 +30,8 @@ view: brightcove_subscription_events {
         content_subscription_billing_period_unit as subscription_unit,
         CASE WHEN content_customer_promotional_credits > 0 then true else FALSE end as special_offer,
         content_subscription_currency_code as unit_price_currency,
-        case when content_subscription_cancel_reason in ("") then true else false end as is_involuntary
+        case when content_subscription_cancel_reason in ("") then true else false end as is_involuntary,
+        false as is_reconnect
       FROM
         `up-faith-and-family-216419.chargebee_webhook_events.subscription_cancelled`
       )
@@ -45,7 +47,8 @@ view: brightcove_subscription_events {
         content_subscription_billing_period_unit as subscription_unit,
         CASE WHEN content_customer_promotional_credits > 0 then true else FALSE end as special_offer,
         content_subscription_currency_code as unit_price_currency,
-        false as is_involuntary
+        false as is_involuntary,
+        false as is_reconnect
       FROM
         `up-faith-and-family-216419.chargebee_webhook_events.subscription_activated`
       )
@@ -61,7 +64,8 @@ view: brightcove_subscription_events {
       --   content_subscription_billing_period_unit as subscription_unit,
       --   CASE WHEN content_customer_promotional_credits > 0 then true else FALSE end as special_offer,
       --   content_subscription_currency_code as unit_price_currency,
-      --   false as is_involuntary
+      --   false as is_involuntary,
+      --   false as is_reconnect
       -- FROM
       --   `up-faith-and-family-216419.chargebee_webhook_events.subscription_reactivated`
       -- )
@@ -73,10 +77,12 @@ view: brightcove_subscription_events {
       active_end_date,
       json_value(content_subscription_subscription_item.item_price_id) as product_name,
       json_value(content_subscription_subscription_item.amount) as unit_price,
+      subscription_unit,
       channel,
       special_offer,
       unit_price_currency,
-      is_involuntary
+      is_involuntary,
+      is_reconnect
       from p0, unnest(json_query_array(content_subscription_subscription_items)) as content_subscription_subscription_item
       UNION ALL
       select
@@ -87,10 +93,12 @@ view: brightcove_subscription_events {
       active_end_date,
       json_value(content_subscription_subscription_item.item_price_id) as product_name,
       json_value(content_subscription_subscription_item.amount) as unit_price,
+      subscription_unit,
       channel,
       special_offer,
       unit_price_currency,
-      is_involuntary
+      is_involuntary,
+      is_reconnect
       from p1, unnest(json_query_array(content_subscription_subscription_items)) as content_subscription_subscription_item
       union all
       select
@@ -101,10 +109,12 @@ view: brightcove_subscription_events {
       active_end_date,
       json_value(content_subscription_subscription_item.item_price_id) as product_name,
       json_value(content_subscription_subscription_item.amount) as unit_price,
+      subscription_unit,
       channel,
       special_offer,
       unit_price_currency,
-      is_involuntary
+      is_involuntary,
+      is_reconnect
       from p2, unnest(json_query_array(content_subscription_subscription_items)) as content_subscription_subscription_item
       -- union all
       -- select
@@ -119,7 +129,8 @@ view: brightcove_subscription_events {
       -- special_offer,
       -- unit_price_currency,
       -- is_involuntary
-      -- from p4, unnest(json_query_array(content_subscription_subscription_items)) as content_subscription_subscription_item ;;
+      -- from p4, unnest(json_query_array(content_subscription_subscription_items)) as content_subscription_subscription_item
+      ;;
   }
 
   dimension: customer_id {
