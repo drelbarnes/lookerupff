@@ -28,6 +28,7 @@ view: uptv_web_sessions {
       , search
       , title
       , url
+      , url_domain
       , path
       , platform
       from ${uptv_page_events.SQL_TABLE_NAME}
@@ -42,6 +43,7 @@ view: uptv_web_sessions {
         , first_value(event_id) over (partition by session_id order by event_number) as event_id
         , first_value(timestamp) over (partition by session_id order by event_number) as session_start
         , first_value(timestamp) over (partition by session_id order by event_number desc) as session_end
+        , first_value(url_domain) over (partition by session_id order by event_number) as landing_page_domain
         , first_value(path) over (partition by session_id order by event_number) as landing_page
         , first_value(path) over (partition by session_id order by event_number desc) as exit_page
         , first_value(is_conversion ignore nulls) over (partition by session_id order by is_conversion desc) as conversion
@@ -51,7 +53,7 @@ view: uptv_web_sessions {
           end as bounce
         from page_events
       )
-      select * from first_values group by 1,2,3,4,5,6,7,8,9,10,11
+      select * from first_values group by 1,2,3,4,5,6,7,8,9,10,11,12
     )
     , sessions_p1 as (
       with sessions_utm_values as (
@@ -180,6 +182,7 @@ view: uptv_web_sessions {
       , a.session_start
       , a.session_end
       , a.landing_page
+      , a.landing_page_domain
       , a.exit_page
       , a.conversion
       , a.bounce
@@ -210,7 +213,7 @@ view: uptv_web_sessions {
       left join sessions_p4 e on a.session_id = e.session_id
       left join sessions_p5 f on a.session_id = f.session_id
       left join sessions_p6 g on a.session_id = g.session_id
-      group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+      group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32
     )
     select * from sessions_final where session_id is not null ;;
     datagroup_trigger: upff_daily_refresh_datagroup
@@ -248,6 +251,10 @@ view: uptv_web_sessions {
   dimension: landing_page {
     type: string
     sql: ${TABLE}.landing_page ;;
+  }
+  dimension: landing_page_domain {
+    type: string
+    sql: ${TABLE}.landing_page_domain ;;
   }
   dimension: exit_page {
     type: string
@@ -508,6 +515,7 @@ view: uptv_web_sessions {
       , ip_address
       , user_agent
       , landing_page
+      , landing_page_domain
       , exit_page
       , conversion
       , bounce

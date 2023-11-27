@@ -133,6 +133,8 @@ include: "bigquery_push_notification.view.lkml"
 include: "promos1q21.view.lkml"
 include: "bigquery_mobile_installs.view.lkml"
 include: "bigquery_php_get_email_campaigns.view.lkml"
+include: "bigquery_allfirstplay_legacy.view.lkml"
+include: "bigquery_timeupdate_legacy.view.lkml"
 
 include: "most_recent_purchase_events.view"
 include: "max_churn_score.view"
@@ -228,6 +230,11 @@ include: "/views/aspiretv_web/aspiretv_web_sessions.view.lkml"
 
 include: "/views/bigquery_views/app_store_connect_aggregate.view.lkml"
 
+# Gaither TV+ #
+
+include: "/views/bigquery_views/brightcove_revenue_events.view.lkml"
+include: "/views/bigquery_views/brightcove_subscription_events.view.lkml"
+
 # Test Views #
 
 include: "/views/testing_views/hubspot_bogo_testing.view.lkml"
@@ -247,6 +254,14 @@ datagroup: upff_analytics_datagroup {
 }
 
 # Explores #
+
+explore: brightcove_subscription_events {
+  label: "Brightcove Subscription Events"
+}
+
+explore: brightcove_revenue_events {
+  label: "Brightcove Revenue Events"
+}
 
 explore: aspiretv_page_events {
   label: "aspiretv_page_events"
@@ -300,6 +315,14 @@ explore: bigquery_meta_offline_events {
 
 explore: bigquery_get_most_recent_titles {
   label: "bigquery_get_most_recent_titles"
+}
+
+explore: bigquery_allfirstplay_legacy {
+  label: "Bigquery Allfirstplay Legacy"
+}
+
+explore: bigquery_timeupdate_legacy {
+  label: "Bigquery Timeupdate Legacy"
 }
 
 explore: app_store_connect_aggregate {
