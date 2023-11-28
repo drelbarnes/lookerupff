@@ -110,13 +110,13 @@ view: daily_spend {
       , channel_pivot as (
         select *
         from (select spend, channel, date_start from t1)
-        PIVOT (sum(spend) FOR channel IN ('Apple Search Ads', 'Facebook', 'Bing Ads', 'Google', 'Google Campaign Manager', 'MNTN', 'TikTok', 'Viant', 'Tapjoy'))
+        PIVOT (sum(spend) FOR channel IN ('Apple Search Ads', 'Facebook', 'Bing Ads', 'Google', 'Google Campaign Manager', 'MNTN', 'TikTok', 'Viant', 'Tapjoy', 'Samsung'))
       )
       , channel_unpivot as (
         select *
         from channel_pivot
         UNPIVOT include nulls (
-            channel_spend for channel in ("Apple Search Ads", "Facebook", "Bing Ads", "Google", "Google Campaign Manager", "MNTN", "TikTok", "Viant", "Tapjoy")
+            channel_spend for channel in ("Apple Search Ads", "Facebook", "Bing Ads", "Google", "Google Campaign Manager", "MNTN", "TikTok", "Viant", "Tapjoy", "Samsung")
         )
       )
       -- we then create a spend_partition column that keeps track of the last non null spend value per channel
