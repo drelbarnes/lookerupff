@@ -245,5 +245,6 @@ view: chargebee_webhook_events {
       , content_customer_updated_at as updated_at
       from `up-faith-and-family-216419.chargebee_webhook_events.subscription_cancelled`
       ;;
+    datagroup_trigger: upff_daily_refresh_datagroup
   }
 }
