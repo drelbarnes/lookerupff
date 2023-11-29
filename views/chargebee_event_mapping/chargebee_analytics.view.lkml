@@ -97,34 +97,39 @@ view: chargebee_analytics {
     sql: ${TABLE}.date ;;
   }
 
-  dimension: free_trial_created {
-    type: number
+  measure: free_trial_created {
+    type: sum
     sql: ${TABLE}.free_trial_created ;;
   }
 
-  dimension: free_trial_converted {
-    type: number
+  measure: free_trial_converted {
+    type: sum
     sql: ${TABLE}.free_trial_converted ;;
   }
 
-  dimension: paying_created {
-    type: number
+  measure: paying_created {
+    type: sum
     sql: ${TABLE}.paying_created ;;
   }
 
-  dimension: paying_churn {
-    type: number
+  measure: paying_churn {
+    type: sum
     sql: ${TABLE}.paying_churn ;;
   }
 
-  dimension: total_paying {
-    type: number
+  measure: total_paying {
+    type: sum
     sql: ${TABLE}.total_paying ;;
   }
 
-  dimension: total_free_trials {
-    type: number
+  measure: total_free_trials {
+    type: sum
     sql: ${TABLE}.total_free_trials ;;
+  }
+
+  measure: total_subscribers {
+    type: number
+    sql: ${total_free_trials} + ${total_paying} ;;
   }
 
   measure: count {
