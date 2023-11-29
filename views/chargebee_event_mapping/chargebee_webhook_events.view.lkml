@@ -30,7 +30,7 @@ view: chargebee_webhook_events {
       , safe_cast(null as string) as subscription_price
       , safe_cast(null as string) as subscription_status
       , content_customer_updated_at as updated_at
-      from `up-faith-and-family-216419.chargebee_dev_2_s_dpdcmh_vqn_60_tr_ql6_fz_gu_ci_7vi.customer_created`
+      from `up-faith-and-family-216419.chargebee_webhook_events.customer_created`
       union all
       select
       timestamp
@@ -59,7 +59,7 @@ view: chargebee_webhook_events {
       , safe_cast(null as string) as subscription_price
       , content_subscription_status as subscription_status
       , content_customer_updated_at as updated_at
-      from `up-faith-and-family-216419.chargebee_dev_2_s_dpdcmh_vqn_60_tr_ql6_fz_gu_ci_7vi.subscription_created`
+      from `up-faith-and-family-216419.chargebee_webhook_events.subscription_created`
       where content_subscription_status = "in_trial"
       union all
       select
@@ -89,7 +89,7 @@ view: chargebee_webhook_events {
       , safe_cast(null as string) as subscription_price
       , content_subscription_status as subscription_status
       , content_customer_updated_at as updated_at
-      from `up-faith-and-family-216419.chargebee_dev_2_s_dpdcmh_vqn_60_tr_ql6_fz_gu_ci_7vi.subscription_created`
+      from `up-faith-and-family-216419.chargebee_webhook_events.subscription_created`
       where content_subscription_status = "active"
       union all
       select
@@ -120,7 +120,7 @@ view: chargebee_webhook_events {
       , safe_cast(null as string) as subscription_price
       , content_subscription_status as subscription_status
       , content_customer_updated_at as updated_at
-      from `up-faith-and-family-216419.chargebee_dev_2_s_dpdcmh_vqn_60_tr_ql6_fz_gu_ci_7vi.subscription_activated`
+      from `up-faith-and-family-216419.chargebee_webhook_events.subscription_activated`
       union all
       select
       timestamp
@@ -150,7 +150,7 @@ view: chargebee_webhook_events {
       , safe_cast(null as string) as subscription_price
       , content_subscription_status as subscription_status
       , content_customer_updated_at as updated_at
-      from `up-faith-and-family-216419.chargebee_dev_2_s_dpdcmh_vqn_60_tr_ql6_fz_gu_ci_7vi.subscription_renewed`
+      from `up-faith-and-family-216419.chargebee_webhook_events.subscription_renewed`
       union all
       select
       timestamp
@@ -180,7 +180,7 @@ view: chargebee_webhook_events {
       , safe_cast(null as string) as subscription_price
       , content_subscription_status as subscription_status
       , content_customer_updated_at as updated_at
-      from `up-faith-and-family-216419.chargebee_dev_2_s_dpdcmh_vqn_60_tr_ql6_fz_gu_ci_7vi.payment_failed`
+      from `up-faith-and-family-216419.chargebee_webhook_events.payment_failed`
       union all
       select
       timestamp
@@ -210,7 +210,7 @@ view: chargebee_webhook_events {
       , safe_cast(null as string) as subscription_price
       , content_subscription_status as subscription_status
       , content_customer_updated_at as updated_at
-      from `up-faith-and-family-216419.chargebee_dev_2_s_dpdcmh_vqn_60_tr_ql6_fz_gu_ci_7vi.subscription_cancellation_scheduled`
+      from `up-faith-and-family-216419.chargebee_webhook_events.subscription_cancellation_scheduled`
       union all
       -- TODO: Create "customer_product_expired" event for failed charge related cancellations using the "cancel_reason" field.
       -- Enumeration of reasons ("Product Unsatisfactory", "Service Unsatisfactory", "Order Change", "Other", "Not Paid", "No Card", "Fraud Review Failed", "Non Compliant EU Customer", "Tax Calculation Failed", "Currency Incompatible With Gateway", "Non Compliant Customer")
@@ -243,7 +243,7 @@ view: chargebee_webhook_events {
       , safe_cast(null as string) as subscription_price
       , content_subscription_status as subscription_status
       , content_customer_updated_at as updated_at
-      from `up-faith-and-family-216419.chargebee_dev_2_s_dpdcmh_vqn_60_tr_ql6_fz_gu_ci_7vi.subscription_cancelled`
+      from `up-faith-and-family-216419.chargebee_webhook_events.subscription_cancelled`
       ;;
   }
 }
