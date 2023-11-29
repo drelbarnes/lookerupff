@@ -11,12 +11,12 @@ view: chargebee_webhook_events {
       , safe_cast(null as string) as country
       , content_customer_created_at as created_at
       , content_customer_email as email
-      , content_customer_first_name as first_name
-      , content_customer_last_name as last_name
+      , content_card_first_name as first_name
+      , content_card_last_name as last_name
       -- Will the customer resource be created by the subscription resource?
       , safe_cast(null as date) as last_payment_date
       , content_customer_cs_marketing_opt_in as marketing_opt_in
-      , CONCAT(content_customer_first_name, ' ', content_customer_last_name) as name
+      , CONCAT(content_card_first_name, ' ', content_card_last_name) as name
       , safe_cast(null as date) as next_payment_date
       , safe_cast(null as string) as plan
       , "web" as platform
@@ -41,11 +41,11 @@ view: chargebee_webhook_events {
       , safe_cast(null as string) as country
       , content_customer_created_at as created_at
       , content_customer_email as email
-      , content_customer_first_name as first_name
-      , content_customer_last_name as last_name
+      , content_card_first_name as first_name
+      , content_card_last_name as last_name
       , safe_cast(null as date) as last_payment_date
       , content_customer_cs_marketing_opt_in as marketing_opt_in
-      , CONCAT(content_customer_first_name, ' ', content_customer_last_name) as name
+      , CONCAT(content_card_first_name, ' ', content_card_last_name) as name
       , safe_cast(null as date) as next_payment_date
       , safe_cast(null as string) as plan
       , "web" as platform
@@ -71,11 +71,11 @@ view: chargebee_webhook_events {
       , safe_cast(null as string) as country
       , content_customer_created_at as created_at
       , content_customer_email as email
-      , content_customer_first_name as first_name
-      , content_customer_last_name as last_name
+      , content_card_first_name as first_name
+      , content_card_last_name as last_name
       , safe_cast(null as date) as last_payment_date
       , content_customer_cs_marketing_opt_in as marketing_opt_in
-      , CONCAT(content_customer_first_name, ' ', content_customer_last_name) as name
+      , CONCAT(content_card_first_name, ' ', content_card_last_name) as name
       , safe_cast(null as date) as next_payment_date
       , safe_cast(null as string) as plan
       , "web" as platform
@@ -161,12 +161,12 @@ view: chargebee_webhook_events {
       , safe_cast(null as string) as country
       , content_customer_created_at as created_at
       , content_customer_email as email
-      , content_customer_first_name as first_name
-      , content_customer_last_name as last_name
+      , content_card_first_name as first_name
+      , content_card_last_name as last_name
       , safe_cast(null as date) as last_payment_date
       -- event doesn't contain marketing opt in
       , safe_cast(null as boolean) as marketing_opt_in
-      , CONCAT(content_customer_first_name, ' ', content_customer_last_name) as name
+      , CONCAT(content_card_first_name, ' ', content_card_last_name) as name
       , safe_cast(null as date) as next_payment_date
       , safe_cast(null as string) as plan
       , "web" as platform
@@ -224,12 +224,12 @@ view: chargebee_webhook_events {
       , safe_cast(null as string) as country
       , content_customer_created_at as created_at
       , content_customer_email as email
-      , content_customer_first_name as first_name
-      , content_customer_last_name as last_name
+      , content_card_first_name as first_name
+      , content_card_last_name as last_name
       , safe_cast(null as date) as last_payment_date
       -- event doesn't contain marketing opt in
       , safe_cast(null as boolean) as marketing_opt_in
-      , CONCAT(content_customer_first_name, ' ', content_customer_last_name) as name
+      , CONCAT(content_card_first_name, ' ', content_card_last_name) as name
       , safe_cast(null as date) as next_payment_date
       , safe_cast(null as string) as plan
       , "web" as platform
