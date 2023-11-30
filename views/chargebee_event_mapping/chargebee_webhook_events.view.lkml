@@ -2,6 +2,7 @@ view: chargebee_webhook_events {
   derived_table: {
     sql: select
       timestamp
+      , id
       , user_id
       , "customer_created" as event
       -- do we want to blend attribution data?
@@ -34,6 +35,7 @@ view: chargebee_webhook_events {
       union all
       select
       timestamp
+      , id
       , user_id
       , "customer_product_free_trial_created" as event
       , safe_cast(null as string) as campaign
@@ -57,13 +59,14 @@ view: chargebee_webhook_events {
       , safe_cast(null as boolean) as subscribed_to_site
       , safe_cast(null as string) as subscription_frequency
       , safe_cast(null as string) as subscription_price
-      , content_subscription_status as subscription_status
+      , "free_trial" as subscription_status
       , content_customer_updated_at as updated_at
       from `up-faith-and-family-216419.chargebee_webhook_events.subscription_created`
       where content_subscription_status = "in_trial"
       union all
       select
       timestamp
+      , id
       , user_id
       , "customer_product_created" as event
       , safe_cast(null as string) as campaign
@@ -87,13 +90,14 @@ view: chargebee_webhook_events {
       , safe_cast(null as boolean) as subscribed_to_site
       , safe_cast(null as string) as subscription_frequency
       , safe_cast(null as string) as subscription_price
-      , content_subscription_status as subscription_status
+      , "enabled" as subscription_status
       , content_customer_updated_at as updated_at
       from `up-faith-and-family-216419.chargebee_webhook_events.subscription_created`
       where content_subscription_status = "active"
       union all
       select
       timestamp
+      , id
       , user_id
       , "customer_product_free_trial_converted" as event
       , safe_cast(null as string) as campaign
@@ -118,12 +122,13 @@ view: chargebee_webhook_events {
       , safe_cast(null as boolean) as subscribed_to_site
       , safe_cast(null as string) as subscription_frequency
       , safe_cast(null as string) as subscription_price
-      , content_subscription_status as subscription_status
+      , "enabled" as subscription_status
       , content_customer_updated_at as updated_at
       from `up-faith-and-family-216419.chargebee_webhook_events.subscription_activated`
       union all
       select
       timestamp
+      , id
       , user_id
       , "customer_product_renewed" as event
       , safe_cast(null as string) as campaign
@@ -148,12 +153,13 @@ view: chargebee_webhook_events {
       , safe_cast(null as boolean) as subscribed_to_site
       , safe_cast(null as string) as subscription_frequency
       , safe_cast(null as string) as subscription_price
-      , content_subscription_status as subscription_status
+      , "enabled" as subscription_status
       , content_customer_updated_at as updated_at
       from `up-faith-and-family-216419.chargebee_webhook_events.subscription_renewed`
       union all
       select
       timestamp
+      , id
       , user_id
       , "customer_product_charge_failed" as event
       , safe_cast(null as string) as campaign
@@ -178,12 +184,13 @@ view: chargebee_webhook_events {
       , safe_cast(null as boolean) as subscribed_to_site
       , safe_cast(null as string) as subscription_frequency
       , safe_cast(null as string) as subscription_price
-      , content_subscription_status as subscription_status
+      , "enabled" as subscription_status
       , content_customer_updated_at as updated_at
       from `up-faith-and-family-216419.chargebee_webhook_events.payment_failed`
       union all
       select
       timestamp
+      , id
       , user_id
       , "customer_product_set_cancellation" as event
       , safe_cast(null as string) as campaign
@@ -208,7 +215,7 @@ view: chargebee_webhook_events {
       , safe_cast(null as boolean) as subscribed_to_site
       , safe_cast(null as string) as subscription_frequency
       , safe_cast(null as string) as subscription_price
-      , content_subscription_status as subscription_status
+      , "enabled" as subscription_status
       , content_customer_updated_at as updated_at
       from `up-faith-and-family-216419.chargebee_webhook_events.subscription_cancellation_scheduled`
       union all
@@ -217,6 +224,7 @@ view: chargebee_webhook_events {
       -- Note: "customer_product_disabled" triggers for Vimeo OTT API users. Therefore, it will trigger for chargebee users. No need to map over, but we should merge events instead.
       select
       timestamp
+      , id
       , user_id
       , "customer_product_cancelled" as event
       , safe_cast(null as string) as campaign
@@ -241,7 +249,7 @@ view: chargebee_webhook_events {
       , safe_cast(null as boolean) as subscribed_to_site
       , safe_cast(null as string) as subscription_frequency
       , safe_cast(null as string) as subscription_price
-      , content_subscription_status as subscription_status
+      , "cancelled" as subscription_status
       , content_customer_updated_at as updated_at
       from `up-faith-and-family-216419.chargebee_webhook_events.subscription_cancelled`
       ;;
