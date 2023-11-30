@@ -76,7 +76,7 @@ view: chargebee_analytics {
     )
     , outer_query as (
       select
-      webhook_analytics.date as date
+      timestamp(webhook_analytics.date) as date
       , free_trial_created
       , free_trial_converted
       , paying_created
@@ -89,11 +89,21 @@ view: chargebee_analytics {
     )
     select * from outer_query order by date
     ;;
-    datagroup_trigger: upff_daily_refresh_datagroup
+    datagroup_trigger: chargebee_reporting
   }
 
   dimension_group: date {
     type: time
+    timeframes: [
+      raw,
+      time,
+      date,
+      day_of_week,
+      week,
+      month,
+      quarter,
+      year
+    ]
     sql: ${TABLE}.date ;;
   }
 

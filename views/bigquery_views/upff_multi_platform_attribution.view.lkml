@@ -996,18 +996,32 @@ view: upff_multi_platform_attribution {
         or LOWER(${TABLE}.source) LIKE '%site_source_name%'
         or LOWER(${TABLE}.source) = 'instagram'
         then 'Meta Ads'
-      WHEN LOWER(${TABLE}.source) = 'google_ads'
+      WHEN (
+          LOWER(${TABLE}.source) = 'google_ads'
+          and (LOWER(${TABLE}.utm_medium) = 'g' or LOWER(${TABLE}.utm_medium) = 'search' or LOWER(${TABLE}.utm_medium) = 's')
+        )
         or LOWER(${TABLE}.source) = 'googleads'
         or LOWER(${TABLE}.source) = 'google adwords'
-        or LOWER(${TABLE}.source) = 'pmax_upff'
-        or LOWER(${TABLE}.source) = 'youtube_upff'
-        then 'Google Ads'
+        then 'Google Search'
+      WHEN LOWER(${TABLE}.source) = 'pmax_upff'
+        or (
+          LOWER(${TABLE}.source) = 'google_ads'
+          and LOWER(${TABLE}.utm_medium) = 'pmax'
+        )
+        then 'Google PMax'
+      WHEN LOWER(${TABLE}.source) = 'youtube_upff'
+        or (
+          LOWER(${TABLE}.source) = 'google_ads'
+          and (LOWER(${TABLE}.utm_medium) = 'ytv' or LOWER(${TABLE}.utm_medium) = 'x')
+        )
+        then 'Google Display'
       WHEN LOWER(${TABLE}.source) = 'google marketing platform'
         or LOWER(${TABLE}.source) = 'dv360_upff'
         then 'Google Marketing Platform'
       WHEN LOWER(${TABLE}.source) = 'bing_ads'
         or LOWER(${TABLE}.source) = 'bing_upff'
         or LOWER(${TABLE}.source) = 'bing'
+        or LOWER(${TABLE}.source) = 'bing ads'
         then 'Bing Ads'
       WHEN LOWER(${TABLE}.source) = 'uptv-linear'
         or LOWER(${TABLE}.source) = 'linear-uptv'
@@ -1018,6 +1032,10 @@ view: upff_multi_platform_attribution {
         or LOWER(${TABLE}.source) = 'uptv'
         or LOWER(${TABLE}.source) = 'uptv.com'
         then 'UPtv Digital'
+      WHEN LOWER(${TABLE}.source) = 'aspire-linear'
+        then 'aspire TV Linear'
+      WHEN LOWER(${TABLE}.source) = 'aspire.tv'
+        then 'aspire TV Digital'
       WHEN LOWER(${TABLE}.source) = 'zendesk'
         or LOWER(${TABLE}.source) = 'support'
         then 'Customer Support'

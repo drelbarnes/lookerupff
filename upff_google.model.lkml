@@ -255,6 +255,12 @@ datagroup: upff_analytics_datagroup {
   sql_trigger: SELECT CURRENT_DATE() ;;
 }
 
+datagroup: chargebee_reporting {
+  description: "Datagroup for Chargebee PDTs. Triggers once per day at 8:15am"
+  sql_trigger: SELECT CAST(FORMAT_TIMESTAMP('%F', TIMESTAMP_ADD(CURRENT_TIMESTAMP(), INTERVAL -495 MINUTE)) AS STRING) ;;
+  max_cache_age: "5 minutes"
+}
+
 # Explores #
 
 explore: chargebee_webhook_events {
