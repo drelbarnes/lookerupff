@@ -987,6 +987,7 @@ view: upff_multi_platform_attribution {
       WHEN LOWER(${TABLE}.source) = 'hs_email'
         or LOWER(${TABLE}.source) = 'hs_automation'
         or LOWER(${TABLE}.source) = 'hubspot_upff'
+        or LOWER(${TABLE}.source) = 'hubspot_uptv'
         then 'HubSpot'
       WHEN LOWER(${TABLE}.source) = 'fb'
         or LOWER(${TABLE}.source) = 'facebook'
