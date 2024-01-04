@@ -3,6 +3,18 @@ view: chargebee_analytics {
     sql: with webhook_events as (
         select * from ${chargebee_webhook_events.SQL_TABLE_NAME}
       )
+      , vimeo_webhook_events as (
+        with events as (
+          select *
+          , row_number() over (partition by user_id, created_at order by created_at desc, timestamp desc) as rn
+          from ${gtv_vimeo_webhook_events.SQL_TABLE_NAME}
+        )
+        , events_1 as (
+          select * from events
+          -- where rn=1
+        )
+        select * from events_1
+      )
       , p0 as (
         SELECT
         uploaded_at
@@ -23,39 +35,6 @@ view: chargebee_analytics {
         left join webhook_events b
         on a.customer_id = b.user_id and a.uploaded_at = date(b.timestamp)
       )
-      , p1 as (
-        select
-        *
-        , lag(subscription_status,1) over (partition by subscription_id order by uploaded_at) as previous_status
-        from p0
-      )
-      , p2 as (
-        select *
-        , sum(case when (rn=1 and subscription_status = previous_status) then 0 else 1 end) over (partition by subscription_id order by uploaded_at) as status_group
-        from p1
-      )
-      , customer_record as (
-          select
-          uploaded_at
-          , subscription_id
-        , max(subscription_status) over (partition by subscription_id, status_group) as status
-        , sum(ifnull(status_group / nullif(status_group,0),1)) over (partition by subscription_id, status_group order by uploaded_at) as days_at_status
-        , count(status_group) over (partition by subscription_id, status_group) as total_days_at_status
-        from p2
-      )
-      , customer_record_analytics as (
-        select
-        uploaded_at
-        ,count(case when days_at_status = 1 and status = "in_trial" then status end) as free_trial_created
-        -- , count(case when days_at_status = 1 and status = "" then status end) as free_trial_churn
-        -- , count(case when days_at_status = 1 and status = "" then status end) as paying_created
-        , count(case when days_at_status = 1 and status = "active" then status end) as free_trial_converted
-        , count(case when days_at_status = 1 and status = "cancelled" then status end) as paying_churn
-        , count(case when (status = 'active' or status = 'non_renewing') then 1 else null end) as total_paying
-        , count(case when (status = 'in_trial') then 1 else null end) as total_free_trials
-        from customer_record
-        group by 1 order by 1
-      )
     , totals as (
       select
       uploaded_at
@@ -64,28 +43,46 @@ view: chargebee_analytics {
       from p0
       group by 1 order by 1
     )
-    , webhook_analytics as (
+    , chargebee_webhook_analytics as (
       select
       date(timestamp) as date
+      , "web" as platform
       ,count(case when (event = 'customer_product_free_trial_created') then 1 else null end) as free_trial_created
       , count(case when (event = 'customer_product_free_trial_converted') then 1 else null end) as free_trial_converted
       , count(case when (event = 'customer_product_created') then 1 else null end) as paying_created
       , count(case when (event = 'customer_product_cancelled') then 1 else null end) as paying_churn
       from webhook_events
-      group by 1 order by 1
+      group by 1,2 order by 1
+    )
+    , vimeo_webhook_analytics as (
+      select
+      date(timestamp) as date
+      , platform
+      ,count(case when (event = 'customer_product_free_trial_created') then 1 else null end) as free_trial_created
+      , count(case when (event = 'customer_product_free_trial_converted') then 1 else null end) as free_trial_converted
+      , count(case when (event = 'customer_product_created') then 1 else null end) as paying_created
+      , count(case when (event = 'customer_product_cancelled') then 1 else null end) as paying_churn
+      from vimeo_webhook_events
+      group by 1,2 order by 1
+    )
+    , unionized_analytics as (
+      select * from chargebee_webhook_analytics
+      union all
+      select * from vimeo_webhook_analytics
     )
     , outer_query as (
       select
-      timestamp(webhook_analytics.date) as date
+      timestamp(a.date) as date
+      , platform
       , free_trial_created
       , free_trial_converted
       , paying_created
       , paying_churn
       , total_paying
       , total_free_trials
-      from webhook_analytics
-      left join totals
-      on webhook_analytics.date = totals.uploaded_at
+      from unionized_analytics as a
+      left join totals as b
+      on a.date = b.uploaded_at
     )
     select * from outer_query order by date
     ;;
@@ -105,6 +102,11 @@ view: chargebee_analytics {
       year
     ]
     sql: ${TABLE}.date ;;
+  }
+
+  dimension: platform {
+    type: string
+    sql: ${TABLE}.platform ;;
   }
 
   measure: free_trial_created {

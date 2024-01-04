@@ -236,6 +236,7 @@ include: "/views/bigquery_views/brightcove_revenue_events.view.lkml"
 include: "/views/bigquery_views/brightcove_subscription_events.view.lkml"
 include: "/views/chargebee_event_mapping/chargebee_webhook_events.view.lkml"
 include: "/views/chargebee_event_mapping/chargebee_analytics.view.lkml"
+include: "/views/chargebee_event_mapping/gtv_vimeo_webhook_events.view.lkml"
 
 # Test Views #
 
