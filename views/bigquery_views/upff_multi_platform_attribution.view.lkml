@@ -33,6 +33,7 @@ view: upff_multi_platform_attribution {
         , referrer_search
         , landing_page
         , source
+        , promotion_code
         from ${upff_web_event_processing.SQL_TABLE_NAME}
         where session_start > timestamp_sub(ordered_at, INTERVAL {% parameter attribution_window %} DAY)
         union all
@@ -62,6 +63,7 @@ view: upff_multi_platform_attribution {
         , referrer_search
         , landing_page
         , source
+        , safe_cast(null as string) as promotion_code
         from ${upff_ios_event_processing.SQL_TABLE_NAME}
         where session_start > timestamp_sub(ordered_at, INTERVAL {% parameter attribution_window %} DAY)
         union all
@@ -91,6 +93,7 @@ view: upff_multi_platform_attribution {
         , referrer_search
         , landing_page
         , source
+        , safe_cast(null as string) as promotion_code
         from ${upff_android_event_processing.SQL_TABLE_NAME}
         where session_start > timestamp_sub(ordered_at, INTERVAL {% parameter attribution_window %} DAY)
       )
@@ -404,6 +407,7 @@ view: upff_multi_platform_attribution {
     , a.referrer_search
     , a.landing_page
     , a.source
+    , a.promotion_code
     , b.n as touch_point
     , b.credit as last_touch
     , c.credit as first_touch
@@ -466,6 +470,7 @@ view: upff_multi_platform_attribution {
     , a.referrer_search
     , a.landing_page
     , a.source
+    , a.promotion_code
     , a.touch_point
     , a.last_touch
     , a.first_touch
@@ -912,6 +917,10 @@ view: upff_multi_platform_attribution {
     sql: ${TABLE}.source ;;
   }
 
+  dimension: promotion_code {
+    type: string
+    sql: ${TABLE}.promotion_code ;;
+  }
   dimension: last_touch {
     type: number
     sql: ${TABLE}.last_touch ;;
