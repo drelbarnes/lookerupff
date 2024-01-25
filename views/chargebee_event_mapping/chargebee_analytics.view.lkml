@@ -63,6 +63,7 @@ view: chargebee_analytics {
       , count(case when (event = 'customer_product_created') then 1 else null end) as paying_created
       , count(case when (event = 'customer_product_cancelled') then 1 else null end) as paying_churn
       from vimeo_webhook_events
+      where platform != "web"
       group by 1,2 order by 1
     )
     , unionized_analytics as (

@@ -32,6 +32,7 @@ include: "redshift_marketing_installs.view.lkml"
 include: "redshift_ribbow_agency_fee.view.lkml"
 include: "redshift_exec_summary_metrics.view.lkml"
 include: "analytics_v2.view"
+include: "analytics_v3.view.lkml"
 include: "mailchimp_email_campaigns.view"
 include: "delighted_survey_question_answered.view"
 include: "/views/customer_file_subscriber_counts.view.lkml"
@@ -160,6 +161,9 @@ explore: analytics_v2 {
     sql_on: ${analytics_v2.timestamp_date}=${daily_spend_v2.timestamp_date} ;;
     relationship: one_to_one
   }
+}
+
+explore: analytics_v3 {
 }
 
 include: "javascript_subscribed.view"
