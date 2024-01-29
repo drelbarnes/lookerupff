@@ -33,6 +33,7 @@ view: upff_multi_platform_attribution {
         , referrer_search
         , landing_page
         , source
+        , promotion_code
         from ${upff_web_event_processing.SQL_TABLE_NAME}
         where session_start > timestamp_sub(ordered_at, INTERVAL {% parameter attribution_window %} DAY)
         union all
@@ -62,6 +63,7 @@ view: upff_multi_platform_attribution {
         , referrer_search
         , landing_page
         , source
+        , safe_cast(null as string) as promotion_code
         from ${upff_ios_event_processing.SQL_TABLE_NAME}
         where session_start > timestamp_sub(ordered_at, INTERVAL {% parameter attribution_window %} DAY)
         union all
@@ -91,6 +93,7 @@ view: upff_multi_platform_attribution {
         , referrer_search
         , landing_page
         , source
+        , safe_cast(null as string) as promotion_code
         from ${upff_android_event_processing.SQL_TABLE_NAME}
         where session_start > timestamp_sub(ordered_at, INTERVAL {% parameter attribution_window %} DAY)
       )
@@ -404,6 +407,7 @@ view: upff_multi_platform_attribution {
     , a.referrer_search
     , a.landing_page
     , a.source
+    , a.promotion_code
     , b.n as touch_point
     , b.credit as last_touch
     , c.credit as first_touch
@@ -466,6 +470,7 @@ view: upff_multi_platform_attribution {
     , a.referrer_search
     , a.landing_page
     , a.source
+    , a.promotion_code
     , a.touch_point
     , a.last_touch
     , a.first_touch
@@ -912,6 +917,10 @@ view: upff_multi_platform_attribution {
     sql: ${TABLE}.source ;;
   }
 
+  dimension: promotion_code {
+    type: string
+    sql: ${TABLE}.promotion_code ;;
+  }
   dimension: last_touch {
     type: number
     sql: ${TABLE}.last_touch ;;
@@ -987,6 +996,7 @@ view: upff_multi_platform_attribution {
       WHEN LOWER(${TABLE}.source) = 'hs_email'
         or LOWER(${TABLE}.source) = 'hs_automation'
         or LOWER(${TABLE}.source) = 'hubspot_upff'
+        or LOWER(${TABLE}.source) = 'hubspot_uptv'
         then 'HubSpot'
       WHEN LOWER(${TABLE}.source) = 'fb'
         or LOWER(${TABLE}.source) = 'facebook'
@@ -996,18 +1006,32 @@ view: upff_multi_platform_attribution {
         or LOWER(${TABLE}.source) LIKE '%site_source_name%'
         or LOWER(${TABLE}.source) = 'instagram'
         then 'Meta Ads'
-      WHEN LOWER(${TABLE}.source) = 'google_ads'
+      WHEN (
+          LOWER(${TABLE}.source) = 'google_ads'
+          and (LOWER(${TABLE}.utm_medium) = 'g' or LOWER(${TABLE}.utm_medium) = 'search' or LOWER(${TABLE}.utm_medium) = 's')
+        )
         or LOWER(${TABLE}.source) = 'googleads'
         or LOWER(${TABLE}.source) = 'google adwords'
-        or LOWER(${TABLE}.source) = 'pmax_upff'
-        or LOWER(${TABLE}.source) = 'youtube_upff'
-        then 'Google Ads'
+        then 'Google Search'
+      WHEN LOWER(${TABLE}.source) = 'pmax_upff'
+        or (
+          LOWER(${TABLE}.source) = 'google_ads'
+          and LOWER(${TABLE}.utm_medium) = 'pmax'
+        )
+        then 'Google PMax'
+      WHEN LOWER(${TABLE}.source) = 'youtube_upff'
+        or (
+          LOWER(${TABLE}.source) = 'google_ads'
+          and (LOWER(${TABLE}.utm_medium) = 'ytv' or LOWER(${TABLE}.utm_medium) = 'x')
+        )
+        then 'Google Display'
       WHEN LOWER(${TABLE}.source) = 'google marketing platform'
         or LOWER(${TABLE}.source) = 'dv360_upff'
         then 'Google Marketing Platform'
       WHEN LOWER(${TABLE}.source) = 'bing_ads'
         or LOWER(${TABLE}.source) = 'bing_upff'
         or LOWER(${TABLE}.source) = 'bing'
+        or LOWER(${TABLE}.source) = 'bing ads'
         then 'Bing Ads'
       WHEN LOWER(${TABLE}.source) = 'uptv-linear'
         or LOWER(${TABLE}.source) = 'linear-uptv'
@@ -1018,6 +1042,10 @@ view: upff_multi_platform_attribution {
         or LOWER(${TABLE}.source) = 'uptv'
         or LOWER(${TABLE}.source) = 'uptv.com'
         then 'UPtv Digital'
+      WHEN LOWER(${TABLE}.source) = 'aspire-linear'
+        then 'aspire TV Linear'
+      WHEN LOWER(${TABLE}.source) = 'aspire.tv'
+        then 'aspire TV Digital'
       WHEN LOWER(${TABLE}.source) = 'zendesk'
         or LOWER(${TABLE}.source) = 'support'
         then 'Customer Support'

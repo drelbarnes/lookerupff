@@ -421,6 +421,7 @@ view: uptv_web_sessions {
               then 'Bing Ads'
             WHEN LOWER(${source}) = 'uptv-linear'
               or LOWER(${source}) = 'linear-uptv'
+              or LOWER(${source}) = 'linear_uptv'
               then 'UPtv Linear'
             WHEN LOWER(${source}) = 'uptv_movies_app'
               or LOWER(${source}) = 'uptv-web'

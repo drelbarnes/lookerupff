@@ -35,6 +35,7 @@ view: upff_web_event_processing {
           else "yearly"
           end as plan_type
         , platform
+        , promotion_code
         from ${vimeo_webhook_events.SQL_TABLE_NAME}
         where event in ("customer_product_created", "customer_product_free_trial_created")
         and platform = "web"
@@ -45,7 +46,7 @@ view: upff_web_event_processing {
         , row_number() over (partition by user_id, date(timestamp)) as n
         from p0
       )
-      select timestamp, user_id, email, topic, plan_type, platform
+      select timestamp, user_id, email, topic, plan_type, platform, promotion_code
       from p1
       where n = 1
     )
@@ -96,6 +97,7 @@ view: upff_web_event_processing {
       , a.platform
       , b.plan_type
       , b.topic
+      , b.promotion_code
       from order_completed_events as a
       left join webhook_events as b
       on a.user_id = b.user_id and date(a.ordered_at) = date(b.timestamp)
@@ -112,6 +114,7 @@ view: upff_web_event_processing {
       , web_orders.plan_type
       , web_orders.platform
       , web_orders.topic
+      , web_orders.promotion_code
       , web_events.*
       , to_hex(sha1(concat(safe_cast(web_events.ip_address as string),safe_cast(web_events.user_agent as string)))) as user_agent_id
       from web_orders
@@ -126,6 +129,7 @@ view: upff_web_event_processing {
         , web_orders.plan_type
         , web_orders.platform
         , web_orders.topic
+        , web_orders.promotion_code
         , web_events.*
         , to_hex(sha1(concat(safe_cast(web_events.ip_address as string),safe_cast(web_events.user_agent as string)))) as user_agent_id
         from web_orders
@@ -181,6 +185,7 @@ view: upff_web_event_processing {
       , landing_page
       , referrer_domain
       , referrer_search
+      , promotion_code
       , case
         when utm_source is null and (referrer_domain is null or referrer_domain in ("upfaithandfamily.com/", "upfaithandfamily.com", "vhx.tv")) then 0
         else 1
@@ -189,7 +194,7 @@ view: upff_web_event_processing {
       where session_start is not null
       and session_start < ordered_at
       and session_start >= timestamp_sub(ordered_at, INTERVAL 30 DAY)
-      group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25
+      group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26
     )
     , final_p1 as (
       select *
@@ -227,9 +232,10 @@ view: upff_web_event_processing {
       , referrer_search
       , landing_page
       , source
+      , promotion_code
       from final_p1
       where source is not null
-      group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25
+      group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26
     )
       select *, row_number() over (order by ordered_at) as row from attributable_events
        ;;
@@ -372,6 +378,11 @@ view: upff_web_event_processing {
     sql: ${TABLE}.source ;;
   }
 
+  dimension: promotion_code {
+    type: string
+    sql: ${TABLE}.promotion_code ;;
+  }
+
   set: detail {
     fields: [
       ordered_at_time,
@@ -397,7 +408,8 @@ view: upff_web_event_processing {
       referrer_search,
       user_agent,
       source,
-      row
+      row,
+      promotion_code
     ]
   }
 }
