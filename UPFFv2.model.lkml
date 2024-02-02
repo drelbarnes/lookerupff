@@ -37,6 +37,7 @@ include: "mailchimp_email_campaigns.view"
 include: "delighted_survey_question_answered.view"
 include: "/views/customer_file_subscriber_counts.view.lkml"
 include: "/views/appstoreconnect_sub_counts.view.lkml"
+include: "/views/chargebee_event_mapping/gaithertvplus_analytics.view.lkml"
 
 explore: redshift_exec_summary_metrics {
   label: "Exec Summary Metrics"
@@ -165,6 +166,8 @@ explore: analytics_v2 {
 
 explore: analytics_v3 {
 }
+
+explore: gaithertvplus_analytics {}
 
 include: "javascript_subscribed.view"
 explore: subscribed {}
