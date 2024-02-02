@@ -394,11 +394,11 @@ view: gaithertvplus_analytics {
       , (a.free_trial_converted + b.free_trial_converted) as free_trial_converted
       , a.free_trial_churn + b.free_trial_churn as free_trial_churn
       -- , NULL::INTEGER as paused_created
-      , (a.paying_created - b.free_trial_created) as paying_created
-      , (a.paying_churn - b.free_trial_churn) as paying_churn
+      , greatest(0, a.paying_created - b.free_trial_created - a.free_trial_converted) as paying_created
+      , greatest(0, a.paying_churn - b.free_trial_churn) as paying_churn
       -- Need to figure chargebee trials out
       , a.total_free_trials + c.total_free_trials as total_free_trials
-      , (a.total_paying - c.total_free_trials) as total_paying
+      , greatest(0, a.total_paying - c.total_free_trials) as total_paying
       from (select * from get_analytics_p0 where report_version = 2 and n=1) as a
       left join chargebee_webhook_analytics as b
       on date(a.timestamp) = b."date"
@@ -429,20 +429,41 @@ view: gaithertvplus_analytics {
       , lag(total_paying_roku, 1) over (order by report_date) as existing_paying_roku
       , count(distinct case when status = 'free_trial' and platform = 'roku' then user_id end) as total_free_trials_roku
       , lag(total_free_trials_roku, 1) over (order by report_date) as existing_free_trials_roku
-      , count(distinct case when status = 'enabled' and platform in ('ios','tvos') then user_id end) as total_paying_ios
+      , count(distinct case when status = 'enabled' and platform = 'ios' then user_id end) as total_paying_ios
       , lag(total_paying_ios, 1) over (order by report_date) as existing_paying_ios
-      , count(distinct case when status = 'free_trial' and platform in ('ios','tvos') then user_id end) as total_free_trials_ios
+      , count(distinct case when status = 'free_trial' and platform = 'ios' then user_id end) as total_free_trials_ios
       , lag(total_free_trials_ios, 1) over (order by report_date) as existing_free_trials_ios
-      , count(distinct case when status = 'enabled' and platform in ('android','android_tv') then user_id end) as total_paying_android
+      , count(distinct case when status = 'enabled' and platform = 'tvos' then user_id end) as total_paying_tvos
+      , lag(total_paying_tvos, 1) over (order by report_date) as existing_paying_tvos
+      , count(distinct case when status = 'free_trial' and platform = 'tvos' then user_id end) as total_free_trials_tvos
+      , lag(total_free_trials_tvos, 1) over (order by report_date) as existing_free_trials_tvos
+      , count(distinct case when status = 'enabled' and platform = 'android' then user_id end) as total_paying_android
       , lag(total_paying_android, 1) over (order by report_date) as existing_paying_android
-      , count(distinct case when status = 'free_trial' and platform in ('android','android_tv') then user_id end) as total_free_trials_android
+      , count(distinct case when status = 'free_trial' and platform = 'android' then user_id end) as total_free_trials_android
       , lag(total_free_trials_android, 1) over (order by report_date) as existing_free_trials_android
+      , count(distinct case when status = 'enabled' and platform = 'android_tv' then user_id end) as total_paying_android_tv
+      , lag(total_paying_android_tv, 1) over (order by report_date) as existing_paying_android_tv
+      , count(distinct case when status = 'free_trial' and platform = 'android_tv' then user_id end) as total_free_trials_android_tv
+      , lag(total_free_trials_android_tv, 1) over (order by report_date) as existing_free_trials_android_tv
       , count(distinct case when status = 'enabled' and platform = 'amazon_fire_tv' then user_id end) as total_paying_fire_tv
       , lag(total_paying_fire_tv, 1) over (order by report_date) as existing_paying_fire_tv
       , count(distinct case when status = 'free_trial' and platform = 'amazon_fire_tv' then user_id end) as total_free_trials_fire_tv
       , lag(total_free_trials_fire_tv, 1) over (order by report_date) as existing_free_trials_fire_tv
       from distinct_events
       group by 1
+    )
+    , latest_date AS (
+    SELECT MAX(report_date) AS latest_report_date FROM total_counts
+    )
+    -- AS OF 02/02/2024. Update Monthly
+    , app_platform_offsets as (
+      select
+      (205 - total_paying_ios - total_paying_tvos) as apple_offset
+      , (124 - total_paying_android - total_paying_android_tv) as android_offset
+      , (1214 - total_paying_roku) as roku_offset
+      , (460 - total_paying_fire_tv) as fire_tv_offset
+      from total_counts, latest_date
+      where total_counts.report_date = latest_date.latest_report_date
     )
     , customers_analytics as (
       with p0 as (
@@ -456,34 +477,34 @@ view: gaithertvplus_analytics {
         get_analytics_p1.paying_churn,
         get_analytics_p1.paying_created,
         get_analytics_p1.total_free_trials as total_free_trials,
-        (get_analytics_p1.total_paying+61+62) as total_paying
-        from get_analytics_p1
+        (get_analytics_p1.total_paying+apple_offset+android_offset+roku_offset+fire_tv_offset) as total_paying
+        from get_analytics_p1, app_platform_offsets
         -- full join total_counts
         -- on total_counts.report_date = trunc(get_analytics_p1.timestamp)
       )
       select * from p0 where date(timestamp) < current_date
     ),
 
-    a as (select a.timestamp, ROW_NUMBER() OVER(ORDER BY a.timestamp desc) AS Row
-    from customers_analytics as a),
+      a as (select a.timestamp, ROW_NUMBER() OVER(ORDER BY a.timestamp desc) AS Row
+      from customers_analytics as a),
 
-    b as (select a.timestamp,total_paying,ROW_NUMBER() OVER(ORDER BY a.timestamp desc) AS Row
-    from customers_analytics as a where a.timestamp < (DATEADD(day,-30, DATE_TRUNC('day',GETDATE()) ))),
+      b as (select a.timestamp,total_paying,ROW_NUMBER() OVER(ORDER BY a.timestamp desc) AS Row
+      from customers_analytics as a where a.timestamp < (DATEADD(day,-30, DATE_TRUNC('day',GETDATE()) ))),
 
-    c as (select a.timestamp,total_paying as paying_30_days_prior from a inner join b on a.row=b.row),
+      c as (select a.timestamp,total_paying as paying_30_days_prior from a inner join b on a.row=b.row),
 
-    d as ((select a1.timestamp, a1.paying_churn+sum(coalesce(a2.paying_churn,0)) as churn_30_days, a1.paying_churn+sum(coalesce(a2.paying_created,0)) as winback_30_days
-    from customers_analytics as a1
-    left join customers_analytics as a2 on datediff(day,a2.timestamp,a1.timestamp)<=29 and datediff(day,a2.timestamp,a1.timestamp)>0
-    group by a1.timestamp,a1.paying_churn)),
+      d as ((select a1.timestamp, a1.paying_churn+sum(coalesce(a2.paying_churn,0)) as churn_30_days, a1.paying_churn+sum(coalesce(a2.paying_created,0)) as winback_30_days
+      from customers_analytics as a1
+      left join customers_analytics as a2 on datediff(day,a2.timestamp,a1.timestamp)<=29 and datediff(day,a2.timestamp,a1.timestamp)>0
+      group by a1.timestamp,a1.paying_churn)),
 
-    e as (select c.timestamp, cast(paying_30_days_prior as decimal) as paying_30_days_prior,
-    cast(churn_30_days as decimal) as churn_30_days,
-    cast(paying_30_days_prior as decimal)/cast(churn_30_days as decimal) as churn_30_day_percent,
-    cast(winback_30_days as decimal) as winback_30_days
-    from c inner join d on c.timestamp=d.timestamp),
+      e as (select c.timestamp, cast(paying_30_days_prior as decimal) as paying_30_days_prior,
+      cast(churn_30_days as decimal) as churn_30_days,
+      cast(paying_30_days_prior as decimal)/cast(churn_30_days as decimal) as churn_30_day_percent,
+      cast(winback_30_days as decimal) as winback_30_days
+      from c inner join d on c.timestamp=d.timestamp),
 
-    f as (select *, sum((49000-(total_paying))/nullif((365-day_of_year),0)) OVER (PARTITION by cast(datepart(month,date(timestamp)) as varchar) order by timestamp asc rows between unbounded preceding and current row) as Running_Free_Trial_Target
+      f as (select *, sum((49000-(total_paying))/nullif((365-day_of_year),0)) OVER (PARTITION by cast(datepart(month,date(timestamp)) as varchar) order by timestamp asc rows between unbounded preceding and current row) as Running_Free_Trial_Target
       from (select *, SUM(free_trial_created) OVER (PARTITION by cast(datepart(month,date(timestamp)) as varchar) order by timestamp asc rows between unbounded preceding and current row) AS Running_Free_Trials
       from (select distinct * from (select a.*,
       case when extract(YEAR from a.timestamp)='2018' then 795+((49000-795)*(cast(datepart(dayofyear,date(a.timestamp)) as integer)-1)/365)
@@ -526,8 +547,8 @@ view: gaithertvplus_analytics {
       (select dateadd(day,-14,timestamp) as timestamp from customers_analytics )) as b on a.rownum=b.rownum)) as a
       left join customers.churn_reasons_aggregated as b on a.timestamp=b."timestamp")) as a))
 
-    , outer_query as (
-        select f.*,paying_30_days_prior,churn_30_days,churn_30_day_percent,winback_30_days from e inner join f on e.timestamp=f.timestamp
+      , outer_query as (
+      select f.*,paying_30_days_prior,churn_30_days,churn_30_day_percent,winback_30_days from e inner join f on e.timestamp=f.timestamp
       )
       select * from outer_query order by timestamp
       ;;
@@ -548,6 +569,18 @@ view: gaithertvplus_analytics {
     sql: ${TABLE}.timestamp ;;
   }
 
+  dimension: ios_tvos_subscriber_offset {
+    sql:  ;;
+  }
+
+  dimension: total_paying {
+    sql: ${TABLE}.total_paying ;;
+  }
+
+  dimension: total_free_trials {
+    sql: ${TABLE}.total_free_trials ;;
+  }
+
   dimension: free_trial_created {
     sql: ${TABLE}.free_trial_created ;;
   }
@@ -562,6 +595,16 @@ view: gaithertvplus_analytics {
 
   dimension: paying_churn {
     sql: ${TABLE}.paying_churn ;;
+  }
+
+  measure: total_paid {
+    type: sum
+    sql: ${total_paying} ;;
+  }
+
+  measure: total_trials {
+    type: sum
+    sql: ${total_free_trials} ;;
   }
 
   measure: new_trials {
