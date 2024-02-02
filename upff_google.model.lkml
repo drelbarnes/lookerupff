@@ -220,6 +220,8 @@ include: "first_n_plays_v2.view.lkml"
 include: "/views/uptv_web/uptv_page_events.view.lkml"
 include: "/views/uptv_web/uptv_web_sessions.view.lkml"
 include: "/views/my_uptvapp/my_uptvapp_installs.view.lkml"
+include: "/views/my_uptvapp/my_uptvapp_activity.view.lkml"
+include: "/views/my_uptvapp/my_uptvapp_identifies.view.lkml"
 include: "/views/my_uptvapp/my_uptvapp_signups.view.lkml"
 include: "/views/aspire_tvapp/my_aspireapp_installs.view.lkml"
 include: "/views/aspire_tvapp/my_aspireapp_signups.view.lkml"
@@ -324,6 +326,14 @@ explore: my_uptvapp_installs {
 
 explore: my_uptvapp_signups {
   label: "My UPtv Signups"
+}
+
+explore: my_uptvapp_activity {
+  label: "My UPtv Activity"
+}
+
+explore: my_uptvapp_identifies {
+  label: "My UPtv Identifies"
 }
 
 explore: bigquery_meta_offline_events {
