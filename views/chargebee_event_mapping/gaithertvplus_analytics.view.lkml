@@ -585,6 +585,12 @@ view: gaithertvplus_analytics {
     sql: ${TABLE}.free_trial_created ;;
   }
 
+  dimension: new_trials_14_days_prior{
+    type: number
+    sql: ${TABLE}.new_trials_14_days_prior;;
+  }
+
+
   dimension: free_trial_converted {
     sql: ${TABLE}.free_trial_converted ;;
   }
@@ -607,31 +613,60 @@ view: gaithertvplus_analytics {
     sql: ${total_free_trials} ;;
   }
 
+  measure: total_count {
+    type: number
+    sql: ${total_paid}+${total_trials} ;;
+  }
+
   measure: new_trials {
     type: sum
     description: "Total number of new trials during a time period."
     sql:  ${free_trial_created} ;;
   }
 
+  measure: total_new_trials_14_days_prior {
+    type: sum
+    sql: ${TABLE}.new_trials_14_days_prior;;
+  }
+
   measure: trial_to_paid {
     type: sum
     description: "Total number of trials to paid during a time period."
     sql:  ${free_trial_converted} ;;
-    drill_fields: [free_trial_converted,timestamp_date]
+  }
+
+  measure: conversion_rate_v2 {
+    type: number
+    value_format: ".0#\%"
+    sql: 100.0*${trial_to_paid}/NULLIF(${total_new_trials_14_days_prior},0) ;;
   }
 
   measure: new_paid {
     type: sum
     description: "Total number of new paids during a time period."
     sql:  ${paying_created} ;;
-    drill_fields: [paying_created,timestamp_date]
+  }
+
+  measure:  new_paid_total{
+    type: sum
+    description: "Total number of new paid subs (reacquisitions) and free trial to paid."
+    sql: ${free_trial_converted}+${paying_created};;
   }
 
   measure: new_cancelled_paid {
     type: sum
     description: "Total number of cancelled paid subs during a time period."
     sql:  ${paying_churn} ;;
-    drill_fields: [timestamp_date, paying_churn]
+  }
+
+  measure: cancelled_subs {
+    type: sum
+    sql: ${paying_churn}*-1 ;;
+  }
+
+  measure: net_subscriber_growth{
+    type: number
+    sql: ${new_paid_total}+${cancelled_subs} ;;
   }
 
   measure: end_of_month_subs {
