@@ -227,6 +227,7 @@ include: "/views/aspire_tvapp/my_aspireapp_installs.view.lkml"
 include: "/views/aspire_tvapp/my_aspireapp_signups.view.lkml"
 include: "/views/aspiretv_web/aspiretv_page_events.view.lkml"
 include: "/views/aspiretv_web/aspiretv_web_sessions.view.lkml"
+include: "/views/aspire_tvapp/my_aspireapp_activity.view.lkml"
 
 # DTC App reporting #
 
@@ -288,6 +289,10 @@ explore: aspiretv_page_events {
 
 explore: aspiretv_web_sessions {
   label: "aspiretv_web_sessions"
+}
+
+explore: my_aspireapp_activity {
+  label: "my aspireapp activity"
 }
 
 # explore: my_aspireapp_installs {
