@@ -295,10 +295,6 @@ explore: my_aspireapp_activity {
   label: "my aspireapp activity"
 }
 
-# explore: my_aspireapp_installs {
- # label: "my_aspireapp_installs"
-# }
-
 explore: my_aspireapp_signups {
   label: "my_aspireapp_signups"
 }
