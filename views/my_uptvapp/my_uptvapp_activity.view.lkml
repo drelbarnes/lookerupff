@@ -194,6 +194,12 @@ view: my_uptvapp_activity {
       sql: ${TABLE}.timestamp ;;
     }
 
+    measure: 30_Days_Date {
+    label: "30_Days_Date"
+    type: date
+    sql: DATEADD(DAY,-30,GETDATE())  }
+    }
+
     dimension_group: uuid_ts {
       type: time
       timeframes: [
