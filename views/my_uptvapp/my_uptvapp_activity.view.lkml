@@ -228,8 +228,8 @@ view: my_uptvapp_activity {
       sql: ${TABLE}.context_protocols_source_id ;;
     }
 
-    dimension: context_instant_id {
+    dimension: context_instance_id {
       type: string
-      sql: ${TABLE}.context_instant_id ;;
+      sql: ${TABLE}.context_instance_id ;;
     }
   }
