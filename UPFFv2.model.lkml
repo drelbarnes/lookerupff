@@ -33,6 +33,7 @@ include: "redshift_ribbow_agency_fee.view.lkml"
 include: "redshift_exec_summary_metrics.view.lkml"
 include: "analytics_v2.view"
 include: "analytics_v3.view.lkml"
+include: "analytics_upff_targets.view.lkml"
 include: "mailchimp_email_campaigns.view"
 include: "delighted_survey_question_answered.view"
 include: "/views/customer_file_subscriber_counts.view.lkml"
@@ -166,6 +167,11 @@ explore: analytics_v2 {
 }
 
 explore: analytics_v3 {
+  join: analytics_upff_targets {
+    type: left_outer
+    sql_on: ${analytics_v3.timestamp_month} = ${analytics_upff_targets.month} ;;
+    relationship: many_to_many
+  }
 }
 
 explore: gaithertvplus_analytics {}

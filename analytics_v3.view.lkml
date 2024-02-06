@@ -285,6 +285,12 @@ view: analytics_v3 {
         {% else %}
         , NULL::INTEGER as comparison_paying_created_running_total
         {% endif %}
+        , SUM(paying_churn) OVER (ORDER BY "timestamp" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS paying_churn_running_total
+        {% if user_defined_compare_to_range._is_filtered %}
+        , SUM(comparison_paying_churn) OVER (ORDER BY "timestamp" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS comparison_paying_churn_running_total
+        {% else %}
+        , NULL::INTEGER as comparison_paying_churn_running_total
+        {% endif %}
         from filtered_rows
       )
       select fr.*
@@ -300,6 +306,8 @@ view: analytics_v3 {
       , ma.comparison_free_trial_converted_ma
       , em.paying_created_running_total
       , em.comparison_paying_created_running_total
+      , em.paying_churn_running_total
+      , em.comparison_paying_churn_running_total
       from filtered_rows fr
       join expanded_metrics em
       on fr."timestamp" = em."timestamp"
@@ -324,6 +332,12 @@ view: analytics_v3 {
   dimension_group: timestamp {
     type: time
     sql: ${TABLE}."timestamp" ;;
+  }
+
+  dimension: datestamp {
+    type: date
+    primary_key: yes
+    sql: date(${TABLE}."timestamp") ;;
   }
 
   dimension_group: comparison_timestamp {
@@ -479,11 +493,23 @@ view: analytics_v3 {
     sql: ${TABLE}.paying_churn ;;
   }
 
+  dimension: paying_churn_running_total {
+    type: number
+    sql: ${TABLE}.paying_churn_running_total ;;
+  }
+
   dimension: comparison_paying_churn {
     type: number
     group_label: "Comparison Dimensions"
     group_item_label: "Paying Churn"
     sql: ${TABLE}.comparison_paying_churn ;;
+  }
+
+  dimension: comparison_paying_churn_running_total {
+    type: number
+    group_label: "Comparison Dimensions"
+    group_item_label: "Paying Churn (running total)"
+    sql: ${TABLE}.comparison_paying_churn_running_total ;;
   }
 
   dimension: paused_created {
@@ -807,19 +833,97 @@ view: analytics_v3 {
     sql:  ${comparison_paying_created_running_total} ;;
   }
 
+  measure: paid_churn {
+    type: sum
+    sql: ${paying_churn} ;;
+  }
+
+  measure: paid_churn_running_total {
+    type: sum
+    label: "Paid Churn (running total)"
+    sql: ${paying_churn_running_total} ;;
+  }
+
   measure: churn_30_days_ {
     type: sum
+    label: "Churn 30 Days"
     sql: ${churn_30_days} ;;
   }
 
   measure: paying_30_days_prior_ {
     type: sum
+    label: "Paying_30_days_prior"
     sql: ${paying_30_days_prior} ;;
   }
 
-  measure: churn_30_day_percent_a {
+  measure: churn_30_day_percent {
     type: sum
+    label: "Churn Rate"
     sql: ${churn_30_days}/${paying_30_days_prior};;
     value_format_name: percent_1
+  }
+
+  measure: comparison_paid_churn {
+    type: sum
+    group_label: "Comparison Measures"
+    group_item_label: "Paid Churn"
+    description: "Total number of churned subscribers during comparison period."
+    sql:  ${comparison_paying_churn} ;;
+  }
+
+  measure: comparison_paid_churn_running_total {
+    type: sum
+    group_label: "Comparison Measures"
+    group_item_label: "Paid Churn (running total)"
+    sql:  ${comparison_paying_churn_running_total} ;;
+  }
+
+  measure: comparison_churn_30_days_ {
+    type: sum
+    group_label: "Comparison Measures"
+    group_item_label: "Churn 30 Days"
+    sql: ${comparison_churn_30_days} ;;
+  }
+
+  measure: comparison_paying_30_days_prior_ {
+    type: sum
+    group_label: "Comparison Measures"
+    group_item_label: "Paying_30_days_prior"
+    sql: ${comparison_paying_30_days_prior} ;;
+  }
+
+  measure: comparison_churn_30_day_percent {
+    type: sum
+    group_label: "Comparison Measures"
+    group_item_label: "Churn Rate"
+    sql: ${comparison_churn_30_days}/${comparison_paying_30_days_prior};;
+    value_format_name: percent_1
+  }
+
+  measure: net_new {
+    type: number
+    description: "Net new subscribers after trial conversions and paying churn during period"
+    sql: ${trial_to_paid}+${new_paid}-${paid_churn} ;;
+  }
+
+  measure: comparison_net_new {
+    type: number
+    group_label: "Comparison Measures"
+    group_item_label: "Net new"
+    description: "Net new subscribers after trial conversions and paying churn during comparison period"
+    sql: ${comparison_trial_to_paid}+${comparison_new_paid}-${comparison_paid_churn} ;;
+  }
+
+  measure: net_new_running_total {
+    type: sum
+    label: "Net new (running total)"
+    sql: ${free_trial_converted_running_total}+${paying_created_running_total}-${paying_churn_running_total} ;;
+  }
+
+  measure: comparison_net_new_running_total {
+    type: sum
+    group_label: "Comparison Measures"
+    group_item_label: "Net new (running total)"
+    sql: ${comparison_free_trial_converted_running_total}+${comparison_paying_created_running_total}-${comparison_paying_churn_running_total} ;;
   }
 }
