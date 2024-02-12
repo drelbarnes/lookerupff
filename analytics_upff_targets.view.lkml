@@ -96,6 +96,7 @@ view: analytics_upff_targets {
 
   measure: avg_paid_conversion_rate {
     type: average
+    value_format_name: percent_2
     sql: ${paid_conversion_rate} ;;
   }
 

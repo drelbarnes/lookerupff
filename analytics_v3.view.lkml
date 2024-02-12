@@ -757,15 +757,15 @@ view: analytics_v3 {
   measure: conversion_rate {
     type: number
     label: "Free Trial Conversion Rate"
-    value_format: ".0#\%"
-    sql: 100.0*${trial_to_paid}/NULLIF(${total_new_trials_14_days_prior},0) ;;
+    value_format_name: percent_2
+    sql: ${trial_to_paid}/NULLIF(${total_new_trials_14_days_prior},0) ;;
   }
 
   measure: conversion_rate_moving_avg {
     type: number
     label: "Free Trial Conversion Rate (moving average)"
-    value_format: ".0#\%"
-    sql: 100.0*${trial_to_paid_moving_avg}/NULLIF(${new_trials_14_days_prior_moving_avg},0) ;;
+    value_format_name: percent_2
+    sql: ${trial_to_paid_moving_avg}/NULLIF(${new_trials_14_days_prior_moving_avg},0) ;;
   }
 
   measure: comparison_trial_to_paid {
@@ -794,16 +794,16 @@ view: analytics_v3 {
     type: number
     group_label: "Comparison Measures"
     group_item_label: "Free Trial Conversion Rate"
-    value_format: ".0#\%"
-    sql: 100.0*${comparison_trial_to_paid}/NULLIF(${comparison_total_new_trials_14_days_prior},0) ;;
+    value_format_name: percent_2
+    sql: ${comparison_trial_to_paid}/NULLIF(${comparison_total_new_trials_14_days_prior},0) ;;
   }
 
   measure: comparison_conversion_rate_moving_avg {
     type: number
     group_label: "Comparison Measures"
     group_item_label: "Free Trial Conversion Rate (moving average)"
-    value_format: ".0#\%"
-    sql: 100.0*${comparison_trial_to_paid_moving_avg}/NULLIF(${comparison_new_trials_14_days_prior_moving_avg},0) ;;
+    value_format_name: percent_2
+    sql: ${comparison_trial_to_paid_moving_avg}/NULLIF(${comparison_new_trials_14_days_prior_moving_avg},0) ;;
   }
 
   measure: new_paid {
