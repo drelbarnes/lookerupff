@@ -34,6 +34,7 @@ include: "redshift_exec_summary_metrics.view.lkml"
 include: "analytics_v2.view"
 include: "analytics_v3.view.lkml"
 include: "/views/redshift_views/vimeo_ott_webhook_events.view.lkml"
+include: "/views/redshift_views/vimeo_ott_subscriber_events.view.lkml"
 include: "analytics_upff_targets.view.lkml"
 include: "mailchimp_email_campaigns.view"
 include: "delighted_survey_question_answered.view"
@@ -176,6 +177,8 @@ explore: analytics_v3 {
 }
 
 explore: vimeo_ott_webhook_events {}
+
+explore: vimeo_ott_subscriber_events {}
 
 explore: gaithertvplus_analytics {}
 explore: gaithertvplus_app_installers {}
