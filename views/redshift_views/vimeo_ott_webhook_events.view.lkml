@@ -56,7 +56,7 @@ view: vimeo_ott_webhook_events {
       select "timestamp", user_id, event, campaign, city, country, created_at, null::VARCHAR as email, null::VARCHAR as first_name, null::VARCHAR as last_name, last_payment_date, marketing_opt_in, null::VARCHAR as name, next_payment_date, plan, platform, promotion_code, referrer, region, registered_to_site, source, subscribed_to_site, subscription_frequency, subscription_price, subscription_status, updated_at
       from vimeo_ott_webhook.customer_deleted
     )
-    select *, row_number() over (order by timestamp, user_id) as row from purchase_events where platform in ("tvos", "android_tv", "ios", "amazon_fire_tv", "web", "android", "roku")
+    select *, row_number() over (order by "timestamp", user_id) as row from purchase_events where platform in ('tvos', 'android_tv', 'ios', 'amazon_fire_tv', 'web', 'android', 'roku')
     ;;
     datagroup_trigger: upff_acquisition_reporting
     distribution_style: all
