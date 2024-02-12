@@ -10,69 +10,71 @@ view: vimeo_ott_subscriber_events {
           from ${vimeo_ott_webhook_events.SQL_TABLE_NAME}
           where event != 'customer_created'
         )
-        , max_events as (
-        select user_id, subscription_status, event, platform, subscription_frequency, "timestamp", row_number() over (partition by user_id, platform, date("timestamp") order by timestamp desc) as rn
-        from purchase_events
-        )
-        , distinct_events_p0 as (
-        select user_id, subscription_status, event, platform, subscription_frequency, "timestamp"
-        from max_events
-        where rn = 1
-        )
-        , distinct_events as (
-        select *
-        , LAG(event) OVER (PARTITION BY user_id, platform ORDER BY "timestamp") AS previous_event
-        from distinct_events_p0
-        )
-        , users as (
-        select user_id, platform, min(date("timestamp")) as min_date, max(date("timestamp")) as max_date from purchase_events group by user_id, platform
-        )
-        , dates as (
-        select date("timestamp") as "date" from purchase_events
-        group by 1
-        )
-        , exploded_dates_per_user as (
-        SELECT a.user_id, a.platform, d."date"
-        FROM users a
-        JOIN dates d ON d."date" >= a.min_date
-        AND d."date" <= a.max_date
-        )
-        , join_events as (
-          select a."date", a.user_id, b."timestamp", b.subscription_status, b.event, b.previous_event, b.platform, b.subscription_frequency
-          from exploded_dates_per_user as a
-          left join distinct_events as b
-          on a.user_id = b.user_id and a."date" = date(b."timestamp") and a.platform = b.platform
-        )
-        , customer_record_p0 as (
-          select "date"
-          , "timestamp"
-          , user_id
-          , max(subscription_status) over (partition by user_id, status_group) as subscription_status
-          , max(event) over (partition by user_id, status_group) as event
-          , max(previous_event) over (partition by user_id, status_group) as previous_event
-          , max(platform) over (partition by user_id, status_group) as platform
-          , max(subscription_frequency) over (partition by user_id, status_group) as subscription_frequency
-          -- , sum(coalesce(status_group / nullif(status_group,0),1)) over (partition by user_id, status_group order by "date" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) as days_at_status
-          -- , count(status_group) over (partition by user_id, status_group) as total_days_at_status
-          -- , null as days_on_record
-          from (
-            select *, count(subscription_status) over (partition by user_id order by "date" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) as status_group from join_events
-          )
-        )
-        , customer_record as (
-          select
-          "date",
-          "timestamp",
-          user_id,
-          subscription_status,
-          event,
-          previous_event,
-          platform,
-          subscription_frequency
-          from customer_record_p0
-          group by 1,2,3,4,5,6,7,8
-        )
-      select *, row_number() over (order by "timestamp") as row from customer_record where "timestamp" is not null
+      , max_events as (
+      select user_id, subscription_status, event, platform, subscription_frequency, "timestamp", row_number() over (partition by user_id, platform, date("timestamp") order by timestamp desc) as rn
+      from purchase_events
+      )
+      , distinct_events_p0 as (
+      select user_id, subscription_status, event, platform, subscription_frequency, date("timestamp") as date, "timestamp"
+      from max_events
+      where rn = 1
+      )
+      , distinct_events as (
+      select *
+      , LAG(event) OVER (PARTITION BY user_id, platform ORDER BY "date") AS previous_event
+      from distinct_events_p0
+      )
+      , users as (
+      select user_id, platform, min(date("timestamp")) as min_date, current_date as max_date from purchase_events group by user_id, platform
+      )
+      , dates as (
+      select date("timestamp") as "date" from ${vimeo_ott_webhook_events.SQL_TABLE_NAME}
+      group by 1
+      )
+      , exploded_dates_per_user as (
+      SELECT a.user_id, a.platform, d."date"
+      FROM users a
+      JOIN dates d ON d."date" >= a.min_date
+      AND d."date" <= a.max_date
+      )
+      , join_events as (
+        select a."date", a.user_id, b."timestamp", b.subscription_status, b.event, b.previous_event, b.platform, b.subscription_frequency
+        from exploded_dates_per_user as a
+        left join distinct_events as b
+        on a.user_id = b.user_id and a."date" = b."date" and a.platform = b.platform
+        group by 1,2,3,4,5,6,7,8
+      )
+      , status_groups as (
+        select *, count(subscription_status) over (partition by user_id order by "date", "timestamp" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) as status_group from join_events
+      )
+      , customer_record_p0 as (
+        select "date"
+        , user_id
+        , max("timestamp") over (partition by user_id, status_group) as event_timestamp
+        , max(subscription_status) over (partition by user_id, status_group) as subscription_status
+        , max(event) over (partition by user_id, status_group) as event
+        , max(previous_event) over (partition by user_id, status_group) as previous_event
+        , max(platform) over (partition by user_id, status_group) as platform
+        , max(subscription_frequency) over (partition by user_id, status_group) as subscription_frequency
+        -- , sum(coalesce(status_group / nullif(status_group,0),1)) over (partition by user_id, status_group order by "date" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) as days_at_status
+        -- , count(status_group) over (partition by user_id, status_group) as total_days_at_status
+        -- , null as days_on_record
+        from status_groups
+      )
+      , customer_record as (
+        select
+        "date",
+        user_id,
+        event_timestamp,
+        subscription_status,
+        event,
+        previous_event,
+        platform,
+        subscription_frequency
+        from customer_record_p0
+        group by 1,2,3,4,5,6,7,8
+      )
+      select *, row_number() over (order by "date") as row from customer_record where "date" is not null
        ;;
       datagroup_trigger: upff_acquisition_reporting
       distribution_style: all
