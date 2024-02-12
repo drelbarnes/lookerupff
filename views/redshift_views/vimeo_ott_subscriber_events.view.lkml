@@ -15,17 +15,17 @@ view: vimeo_ott_subscriber_events {
         from purchase_events
         )
         , distinct_events_p0 as (
-        select user_id, subscription_status, event, platform, subscription_frequency, date("timestamp") as date
+        select user_id, subscription_status, event, platform, subscription_frequency, "timestamp"
         from max_events
         where rn = 1
         )
         , distinct_events as (
         select *
-        , LAG(event) OVER (PARTITION BY user_id, platform ORDER BY "date") AS previous_event
+        , LAG(event) OVER (PARTITION BY user_id, platform ORDER BY "timestamp") AS previous_event
         from distinct_events_p0
         )
         , users as (
-        select user_id, platform, min(date("timestamp")) as min_date, current_date as max_date from purchase_events group by user_id, platform
+        select user_id, platform, min(date("timestamp")) as min_date, max(date("timestamp")) as max_date from purchase_events group by user_id, platform
         )
         , dates as (
         select date("timestamp") as "date" from purchase_events
@@ -38,13 +38,14 @@ view: vimeo_ott_subscriber_events {
         AND d."date" <= a.max_date
         )
         , join_events as (
-          select a."date", a.user_id, b.subscription_status, b.event, b.previous_event, b.platform, b.subscription_frequency
+          select a."date", a.user_id, b."timestamp", b.subscription_status, b.event, b.previous_event, b.platform, b.subscription_frequency
           from exploded_dates_per_user as a
           left join distinct_events as b
-          on a.user_id = b.user_id and a."date" = b."date" and a.platform = b.platform
+          on a.user_id = b.user_id and a."date" = date(b."timestamp") and a.platform = b.platform
         )
         , customer_record_p0 as (
-          select "date" as "timestamp"
+          select "date"
+          , "timestamp"
           , user_id
           , max(subscription_status) over (partition by user_id, status_group) as subscription_status
           , max(event) over (partition by user_id, status_group) as event
@@ -60,6 +61,7 @@ view: vimeo_ott_subscriber_events {
         )
         , customer_record as (
           select
+          "date",
           "timestamp",
           user_id,
           subscription_status,
@@ -68,7 +70,7 @@ view: vimeo_ott_subscriber_events {
           platform,
           subscription_frequency
           from customer_record_p0
-          group by 1,2,3,4,5,6,7
+          group by 1,2,3,4,5,6,7,8
         )
       select *, row_number() over (order by "timestamp") as row from customer_record where "timestamp" is not null
        ;;
@@ -84,6 +86,11 @@ view: vimeo_ott_subscriber_events {
   dimension_group: timestamp {
     type: time
     sql: ${TABLE}.timestamp ;;
+  }
+
+  dimension: date {
+    type: date
+    sql: ${TABLE}.date ;;
   }
 
   dimension: user_id {
