@@ -36,6 +36,11 @@ view: vimeo_ott_subscriber_events {
         WHERE
             rn = 1
     ),
+    charge_failed_flags as (
+      select *
+      , CASE WHEN event = 'customer_product_charge_failed' and previous_event = 'customer_product_charge_failed' THEN TRUE ELSE FALSE END AS charge_failed_flag
+      from distinct_events
+    ),
     users AS (
         SELECT
             user_id,
@@ -51,7 +56,7 @@ view: vimeo_ott_subscriber_events {
         SELECT
             DISTINCT "timestamp"::date AS "date"
         FROM
-            ${vimeo_ott_webhook_events.SQL_TABLE_NAME}
+            looker_scratch.lr$rmz7c1707750471194_vimeo_ott_webhook_events
     ),
     exploded_dates_per_user AS (
         SELECT
@@ -76,7 +81,7 @@ view: vimeo_ott_subscriber_events {
             de.subscription_frequency
         FROM
             exploded_dates_per_user ed
-            LEFT JOIN distinct_events de ON ed.user_id = de.user_id AND ed."date" = de."date" AND ed.platform = de.platform
+            LEFT JOIN (select * from charge_failed_flags where charge_failed_flag is false) de ON ed.user_id = de.user_id AND ed."date" = de."date" AND ed.platform = de.platform
     )
       , status_groups AS (
         SELECT
