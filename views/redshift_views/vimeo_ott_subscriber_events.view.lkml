@@ -56,7 +56,7 @@ view: vimeo_ott_subscriber_events {
         SELECT
             DISTINCT "timestamp"::date AS "date"
         FROM
-            looker_scratch.lr$rmz7c1707750471194_vimeo_ott_webhook_events
+            ${vimeo_ott_webhook_events.SQL_TABLE_NAME}
     ),
     exploded_dates_per_user AS (
         SELECT
@@ -120,7 +120,7 @@ view: vimeo_ott_subscriber_events {
             customer_record_p0
           group by 1,2,3,4,5,6,7,8
       )
-      select *, row_number() over (order by "date") as row from customer_record where "date" is not null
+      select *, MD5(user_id || platform || event_timestamp::text) AS unique_id from customer_record where "date" is not null
        ;;
       datagroup_trigger: upff_acquisition_reporting
       distribution_style: all
