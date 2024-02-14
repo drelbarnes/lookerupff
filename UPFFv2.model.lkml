@@ -118,8 +118,8 @@ datagroup: upff_default_datagroup {
 }
 
   datagroup: upff_event_processing {
-    description: "Datagroup for UPFF Customer File PDTs. Triggers once per day at 8:15am"
-    sql_trigger: SELECT FLOOR((EXTRACT(epoch from GETDATE()) - 60*60*9)/(60*60*24)) ;;
+    description: "Datagroup for UPFF Webhooks. Triggers once per day at 3am"
+    sql_trigger: SELECT FLOOR((EXTRACT(epoch from GETDATE()) - 60*60*3)/(60*60*24)) ;;
     max_cache_age: "5 minutes"
   }
 
