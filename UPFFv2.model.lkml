@@ -36,6 +36,7 @@ include: "analytics_v3.view.lkml"
 include: "/views/redshift_views/vimeo_ott_webhook_events.view.lkml"
 include: "/views/redshift_views/vimeo_ott_subscriber_events.view.lkml"
 include: "/views/redshift_views/vimeo_ott_customer_record.view.lkml"
+include: "/views/redshift_views/vimeo_ott_customer_record_analytics.view.lkml"
 include: "analytics_upff_targets.view.lkml"
 include: "mailchimp_email_campaigns.view"
 include: "delighted_survey_question_answered.view"
@@ -181,6 +182,11 @@ explore: analytics_v3 {
     sql_on: ${analytics_v3.timestamp_month} = ${analytics_upff_targets.month} ;;
     relationship: many_to_many
   }
+  join: vimeo_ott_customer_record_analytics {
+    type: left_outer
+    sql_on: ${analytics_v3.datestamp} = ${vimeo_ott_customer_record_analytics.datestamp} ;;
+    relationship: one_to_many
+  }
 }
 
 explore: vimeo_ott_webhook_events {}
@@ -188,6 +194,8 @@ explore: vimeo_ott_webhook_events {}
 explore: vimeo_ott_subscriber_events {}
 
 explore: vimeo_ott_customer_record {}
+
+explore: vimeo_ott_customer_record_analytics {}
 
 explore: gaithertvplus_analytics {}
 explore: gaithertvplus_app_installers {}
