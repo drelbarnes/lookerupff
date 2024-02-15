@@ -58,7 +58,7 @@ view: vimeo_ott_webhook_events {
     )
     select *, row_number() over (order by "timestamp", user_id) as row from purchase_events where platform in ('tvos', 'android_tv', 'ios', 'amazon_fire_tv', 'web', 'android', 'roku')
     ;;
-    datagroup_trigger: upff_acquisition_reporting
+    datagroup_trigger: upff_event_processing
     distribution_style: all
   }
 
