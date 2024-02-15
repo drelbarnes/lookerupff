@@ -180,7 +180,7 @@ explore: analytics_v3 {
   join: analytics_upff_targets {
     type: left_outer
     sql_on: ${analytics_v3.timestamp_month} = ${analytics_upff_targets.month} ;;
-    relationship: many_to_many
+    relationship: many_to_one
   }
   join: vimeo_ott_customer_record_analytics {
     type: left_outer

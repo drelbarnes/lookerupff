@@ -33,6 +33,8 @@ view: vimeo_ott_customer_record_analytics {
       )
       select * from expanded_analytics
       ;;
+    datagroup_trigger: upff_event_processing
+    distribution_style: all
   }
 
   dimension_group: timestamp {
@@ -145,7 +147,7 @@ view: vimeo_ott_customer_record_analytics {
     type: number
     label: "Free Trial Conversion Rate"
     value_format_name: percent_2
-    sql: ${trial_to_paid}/NULLIF(${total_new_trials_14_days_prior},0) ;;
+    sql: ${trial_to_paid}*1.0/NULLIF(${total_new_trials_14_days_prior},0) ;;
   }
 
   measure: new_paid {
@@ -154,9 +156,21 @@ view: vimeo_ott_customer_record_analytics {
     sql:  ${paying_created} ;;
   }
 
+  measure: gross_new {
+    type: number
+    description: "Total number of new paying subs during period, before paying churn"
+    sql: ${new_paid}+${trial_to_paid} ;;
+  }
+
   measure: paid_churn {
     type: sum
     sql: ${paying_churn} ;;
+  }
+
+  measure: net_new {
+    type: number
+    description: "Net new subscribers after trial conversions and paying churn during period"
+    sql: ${trial_to_paid}+${new_paid}-${paid_churn} ;;
   }
 
   measure: churn_30_days_ {
@@ -167,15 +181,15 @@ view: vimeo_ott_customer_record_analytics {
 
   measure: paying_30_days_prior_ {
     type: sum
-    label: "Paying_30_days_prior"
+    label: "Paying 30 days prior"
     sql: ${paying_30_days_prior} ;;
   }
 
   measure: churn_30_day_percent {
-    type: sum
-    label: "Churn Rate"
-    sql: ${churn_30_days}/${paying_30_days_prior};;
-    value_format_name: percent_1
+    type: number
+    label: "Monthly Churn Rate"
+    sql: ${churn_30_days_}*1.0/NULLIF(${paying_30_days_prior_},0);;
+    value_format_name: percent_2
   }
 
   measure: churn_365_days_ {
@@ -186,15 +200,15 @@ view: vimeo_ott_customer_record_analytics {
 
   measure: paying_365_days_prior_ {
     type: sum
-    label: "Paying_365_days_prior"
+    label: "Paying 365 days prior"
     sql: ${paying_365_days_prior} ;;
   }
 
   measure: churn_365_day_percent {
-    type: sum
-    label: "Churn Rate"
-    sql: ${churn_365_days}/${paying_365_days_prior};;
-    value_format_name: percent_1
+    type: number
+    label: "Yearly Churn Rate"
+    sql: ${churn_365_days_}*1.0/NULLIF(${paying_365_days_prior_},0);;
+    value_format_name: percent_2
   }
 
 }

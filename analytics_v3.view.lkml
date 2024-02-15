@@ -758,14 +758,14 @@ view: analytics_v3 {
     type: number
     label: "Free Trial Conversion Rate"
     value_format_name: percent_2
-    sql: ${trial_to_paid}/NULLIF(${total_new_trials_14_days_prior},0) ;;
+    sql: ${trial_to_paid}*1.0/NULLIF(${total_new_trials_14_days_prior}, 0) ;;
   }
 
   measure: conversion_rate_moving_avg {
     type: number
     label: "Free Trial Conversion Rate (moving average)"
     value_format_name: percent_2
-    sql: ${trial_to_paid_moving_avg}/NULLIF(${new_trials_14_days_prior_moving_avg},0) ;;
+    sql: ${trial_to_paid_moving_avg}*1.0/NULLIF(${new_trials_14_days_prior_moving_avg},0) ;;
   }
 
   measure: comparison_trial_to_paid {
@@ -795,7 +795,7 @@ view: analytics_v3 {
     group_label: "Comparison Measures"
     group_item_label: "Free Trial Conversion Rate"
     value_format_name: percent_2
-    sql: ${comparison_trial_to_paid}/NULLIF(${comparison_total_new_trials_14_days_prior},0) ;;
+    sql: ${comparison_trial_to_paid}*1.0/NULLIF(${comparison_total_new_trials_14_days_prior},0) ;;
   }
 
   measure: comparison_conversion_rate_moving_avg {
@@ -803,7 +803,7 @@ view: analytics_v3 {
     group_label: "Comparison Measures"
     group_item_label: "Free Trial Conversion Rate (moving average)"
     value_format_name: percent_2
-    sql: ${comparison_trial_to_paid_moving_avg}/NULLIF(${comparison_new_trials_14_days_prior_moving_avg},0) ;;
+    sql: ${comparison_trial_to_paid_moving_avg}*1.0/NULLIF(${comparison_new_trials_14_days_prior_moving_avg},0) ;;
   }
 
   measure: new_paid {
@@ -833,6 +833,18 @@ view: analytics_v3 {
     sql:  ${comparison_paying_created_running_total} ;;
   }
 
+  measure: gross_new {
+    type: number
+    description: "Total number of new paying subs during period, before paying churn"
+    sql: ${new_paid}+${trial_to_paid} ;;
+  }
+
+  measure: comparison_gross_new {
+    type: number
+    description: "Total number of new paying subs during comparison period, before paying churn"
+    sql: ${comparison_new_paid}+${comparison_trial_to_paid} ;;
+  }
+
   measure: paid_churn {
     type: sum
     sql: ${paying_churn} ;;
@@ -859,8 +871,8 @@ view: analytics_v3 {
   measure: churn_30_day_percent {
     type: sum
     label: "Churn Rate"
-    sql: ${churn_30_days}/${paying_30_days_prior};;
-    value_format_name: percent_1
+    sql: ${churn_30_days}*1.0/${paying_30_days_prior};;
+    value_format_name: percent_2
   }
 
   measure: comparison_paid_churn {
@@ -896,8 +908,8 @@ view: analytics_v3 {
     type: sum
     group_label: "Comparison Measures"
     group_item_label: "Churn Rate"
-    sql: ${comparison_churn_30_days}/${comparison_paying_30_days_prior};;
-    value_format_name: percent_1
+    sql: ${comparison_churn_30_days}*1.0/${comparison_paying_30_days_prior};;
+    value_format_name: percent_2
   }
 
   measure: net_new {
