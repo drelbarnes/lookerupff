@@ -662,6 +662,62 @@ view: analytics_v3 {
     value_format: "$#.00;($#.00)"
   }
 
+  measure: paying_subscriber_count {
+    label: "Total Paying"
+    type: sum
+    sql: ${total_paying} ;;
+  }
+
+  measure: comparison_paying_subscriber_count {
+    type: sum
+    group_label: "Comparison Measures"
+    group_item_label: "Total Paying"
+    sql: ${comparison_total_paying} ;;
+  }
+
+  measure: free_trialist_count {
+    label: "Total Free Trials"
+    type: sum
+    sql: ${total_free_trials} ;;
+  }
+
+  measure: comparison_free_trialist_count {
+    type: sum
+    group_label: "Comparison Measures"
+    group_item_label: "Total Free Trials"
+    sql: ${comparison_total_free_trials} ;;
+  }
+
+  measure: average_cpa {
+    type: average
+    label: "CPA"
+    sql: ${cpa} ;;
+    value_format: "$#.00;($#.00)"
+  }
+
+  measure: comparison_average_cpa {
+    type: average
+    group_label: "Comparison Dimensions"
+    group_item_label: "CPA"
+    sql: ${comparison_cpa} ;;
+    value_format: "$#.00;($#.00)"
+  }
+
+  measure: average_ltv {
+    type: average
+    label: "LTV"
+    sql: ${ltv} ;;
+    value_format: "$#.00;($#.00)"
+  }
+
+  measure: comparison_average_ltv {
+    type: average
+    group_label: "Comparison Dimensions"
+    group_item_label: "LTV"
+    sql: ${comparison_ltv} ;;
+    value_format: "$#.00;($#.00)"
+  }
+
   measure: new_trials {
     type: sum
     label: "New Trials"
