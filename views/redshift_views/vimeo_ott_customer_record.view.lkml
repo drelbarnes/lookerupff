@@ -27,13 +27,14 @@ view: vimeo_ott_customer_record {
           previous_event,
           oe.platform as event_platform,
           subscription_frequency,
-          subscription_status
+          subscription_status,
+          next_payment_date
         FROM
           ranked_subscriptions rs
           left join customer_record oe
           on rs.user_id = oe.user_id and rs.platform = oe.platform
           and date(oe."date") = date(rs.report_date)
-        GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14
+        GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
       )
       , state_changes_p1 as (
         select *,
@@ -157,5 +158,10 @@ view: vimeo_ott_customer_record {
   dimension: state_change {
     type: string
     sql: ${TABLE}.state_change ;;
+  }
+
+  dimension_group: next_payment_date {
+    type: time
+    sql: ${TABLE}.next_payment_date ;;
   }
 }

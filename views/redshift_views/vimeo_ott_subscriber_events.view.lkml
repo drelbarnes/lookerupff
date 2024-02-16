@@ -8,6 +8,7 @@ view: vimeo_ott_subscriber_events {
         event,
         platform,
         COALESCE(NULLIF(subscription_frequency, 'custom'), 'monthly') AS subscription_frequency,
+        next_payment_date,
         "timestamp"
     FROM
         ${vimeo_ott_webhook_events.SQL_TABLE_NAME}
@@ -28,6 +29,7 @@ view: vimeo_ott_subscriber_events {
             event,
             platform,
             subscription_frequency,
+            next_payment_date,
             "timestamp"::date AS "date",
             "timestamp",
             LAG(event) OVER (PARTITION BY user_id, platform ORDER BY "timestamp") AS previous_event
@@ -78,7 +80,8 @@ view: vimeo_ott_subscriber_events {
             de.event,
             de.previous_event,
             de.platform,
-            de.subscription_frequency
+            de.subscription_frequency,
+            de.next_payment_date
         FROM
             exploded_dates_per_user ed
             LEFT JOIN (select * from charge_failed_flags where charge_failed_flag is false) de ON ed.user_id = de.user_id AND ed."date" = de."date" AND ed.platform = de.platform
@@ -100,11 +103,12 @@ view: vimeo_ott_subscriber_events {
               LAST_VALUE(previous_event IGNORE NULLS) OVER (PARTITION BY user_id, status_group) AS previous_event,
               LAST_VALUE(platform IGNORE NULLS) OVER (PARTITION BY user_id, status_group) AS platform,
               LAST_VALUE(subscription_frequency IGNORE NULLS) OVER (PARTITION BY user_id, status_group) AS subscription_frequency,
+              LAST_VALUE(next_payment_date IGNORE NULLS) OVER (PARTITION BY user_id, status_group) AS next_payment_date,
               status_group
           FROM
               status_groups
           GROUP BY
-              "date", "timestamp", subscription_status, event, previous_event, platform, subscription_frequency, user_id, status_group
+              "date", "timestamp", subscription_status, event, previous_event, platform, subscription_frequency, user_id, status_group, next_payment_date
       ),
       customer_record AS (
           SELECT
@@ -115,10 +119,11 @@ view: vimeo_ott_subscriber_events {
             event,
             previous_event,
             platform,
-            subscription_frequency
+            subscription_frequency,
+            next_payment_date
           FROM
             customer_record_p0
-          group by 1,2,3,4,5,6,7,8
+          group by 1,2,3,4,5,6,7,8,9
       )
       select *, MD5(user_id || platform || "date"::text) AS unique_id from customer_record where "date" is not null
        ;;

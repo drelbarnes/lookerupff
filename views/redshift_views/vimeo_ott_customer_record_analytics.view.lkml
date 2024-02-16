@@ -14,7 +14,8 @@ view: vimeo_ott_customer_record_analytics {
           COUNT(DISTINCT CASE WHEN sc.state_change = 'paused_created' THEN sc.user_id END) AS paused_created,
           -- Correct the calculation for total_paying and total_free_trials
           COUNT(DISTINCT CASE WHEN sc.status = 'enabled' THEN sc.user_id END) AS total_paying,
-          COUNT(DISTINCT CASE WHEN sc.status = 'free_trial' THEN sc.user_id END) AS total_free_trials
+          COUNT(DISTINCT CASE WHEN sc.status = 'free_trial' THEN sc.user_id END) AS total_free_trials,
+          COUNT(DISTINCT CASE WHEN date(sc.next_payment_date) = date(sc.report_date)-1 THEN sc.user_id END) AS total_billing_count
         FROM
           ${vimeo_ott_customer_record.SQL_TABLE_NAME} sc
         GROUP BY
@@ -66,6 +67,11 @@ view: vimeo_ott_customer_record_analytics {
   dimension: total_paying {
     type: number
     sql: ${TABLE}.total_paying ;;
+  }
+
+  dimension: total_billing_count {
+    type: number
+    sql: ${TABLE}.total_billing_count ;;
   }
 
   dimension: free_trial_created {
@@ -209,6 +215,12 @@ view: vimeo_ott_customer_record_analytics {
     label: "Yearly Churn Rate"
     sql: ${churn_365_days_}*1.0/NULLIF(${paying_365_days_prior_},0);;
     value_format_name: percent_2
+  }
+
+  measure: users_billed {
+    type: sum
+    label: "Users Billed"
+    sql: ${total_billing_count};;
   }
 
 }
