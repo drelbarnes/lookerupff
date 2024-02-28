@@ -1,6 +1,6 @@
 view: my_uptvapp_activity {
 
-    sql_table_name: my_uptv_dev.application_opened ;;
+  sql_table_name: my_uptv_dev.application_opened ;;
 
     dimension: anonymous_id {
       type: string
