@@ -268,38 +268,54 @@ view: analytics_v3 {
         select
         "timestamp"
         , SUM(free_trial_created) OVER (ORDER BY "timestamp" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS free_trial_created_running_total
+        , SUM(free_trial_created) OVER (partition by year, month ORDER BY "timestamp" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS free_trial_created_monthly_running_total
         {% if user_defined_compare_to_range._is_filtered %}
         , SUM(comparison_free_trial_created) OVER (ORDER BY "timestamp" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS comparison_free_trial_created_running_total
         {% else %}
         , NULL::INTEGER as comparison_free_trial_created_running_total
         {% endif %}
         , SUM(free_trial_converted) OVER (ORDER BY "timestamp" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS free_trial_converted_running_total
+        , SUM(free_trial_converted) OVER (partition by year, month ORDER BY "timestamp" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS free_trial_converted_monthly_running_total
         {% if user_defined_compare_to_range._is_filtered %}
         , SUM(comparison_free_trial_converted) OVER (ORDER BY "timestamp" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS comparison_free_trial_converted_running_total
         {% else %}
         , NULL::INTEGER as comparison_free_trial_converted_running_total
         {% endif %}
         , SUM(paying_created) OVER (ORDER BY "timestamp" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS paying_created_running_total
+        , SUM(paying_created) OVER (partition by year, month ORDER BY "timestamp" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS paying_created_monthly_running_total
         {% if user_defined_compare_to_range._is_filtered %}
         , SUM(comparison_paying_created) OVER (ORDER BY "timestamp" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS comparison_paying_created_running_total
         {% else %}
         , NULL::INTEGER as comparison_paying_created_running_total
         {% endif %}
+        , SUM(paying_churn) OVER (ORDER BY "timestamp" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS paying_churn_running_total
+        , SUM(paying_churn) OVER (partition by year, month ORDER BY "timestamp" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS paying_churn_monthly_running_total
+        {% if user_defined_compare_to_range._is_filtered %}
+        , SUM(comparison_paying_churn) OVER (ORDER BY "timestamp" ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS comparison_paying_churn_running_total
+        {% else %}
+        , NULL::INTEGER as comparison_paying_churn_running_total
+        {% endif %}
         from filtered_rows
       )
       select fr.*
       , em.free_trial_created_running_total
+      , em.free_trial_created_monthly_running_total
       , ma.free_trial_created_ma
       , ma.new_trials_14_days_prior_ma
       , em.comparison_free_trial_created_running_total
       , ma.comparison_free_trial_created_ma
       , ma.comparison_new_trials_14_days_prior_ma
       , em.free_trial_converted_running_total
+      , em.free_trial_converted_monthly_running_total
       , ma.free_trial_converted_ma
       , em.comparison_free_trial_converted_running_total
       , ma.comparison_free_trial_converted_ma
       , em.paying_created_running_total
+      , em.paying_created_monthly_running_total
       , em.comparison_paying_created_running_total
+      , em.paying_churn_running_total
+      , em.paying_churn_monthly_running_total
+      , em.comparison_paying_churn_running_total
       from filtered_rows fr
       join expanded_metrics em
       on fr."timestamp" = em."timestamp"
@@ -324,6 +340,12 @@ view: analytics_v3 {
   dimension_group: timestamp {
     type: time
     sql: ${TABLE}."timestamp" ;;
+  }
+
+  dimension: datestamp {
+    type: date
+    primary_key: yes
+    sql: date(${TABLE}."timestamp") ;;
   }
 
   dimension_group: comparison_timestamp {
@@ -364,6 +386,11 @@ view: analytics_v3 {
   dimension: free_trial_created_running_total {
     type: number
     sql: ${TABLE}.free_trial_created_running_total ;;
+  }
+
+  dimension: free_trial_created_monthly_running_total {
+    type: number
+    sql: ${TABLE}.free_trial_created_monthly_running_total ;;
   }
 
   dimension: free_trial_created_ma {
@@ -414,6 +441,11 @@ view: analytics_v3 {
     sql: ${TABLE}.free_trial_converted_running_total ;;
   }
 
+  dimension: free_trial_converted_monthly_running_total {
+    type: number
+    sql: ${TABLE}.free_trial_converted_monthly_running_total ;;
+  }
+
   dimension: free_trial_converted_ma {
     type: number
     sql: ${TABLE}.free_trial_converted_ma ;;
@@ -460,6 +492,11 @@ view: analytics_v3 {
     sql: ${TABLE}.paying_created_running_total ;;
   }
 
+  dimension: paying_created_monthly_running_total {
+    type: number
+    sql: ${TABLE}.paying_created_monthly_running_total ;;
+  }
+
   dimension: comparison_paying_created {
     type: number
     group_label: "Comparison Dimensions"
@@ -479,11 +516,28 @@ view: analytics_v3 {
     sql: ${TABLE}.paying_churn ;;
   }
 
+  dimension: paying_churn_running_total {
+    type: number
+    sql: ${TABLE}.paying_churn_running_total ;;
+  }
+
+  dimension: paying_churn_monthly_running_total {
+    type: number
+    sql: ${TABLE}.paying_churn_monthly_running_total ;;
+  }
+
   dimension: comparison_paying_churn {
     type: number
     group_label: "Comparison Dimensions"
     group_item_label: "Paying Churn"
     sql: ${TABLE}.comparison_paying_churn ;;
+  }
+
+  dimension: comparison_paying_churn_running_total {
+    type: number
+    group_label: "Comparison Dimensions"
+    group_item_label: "Paying Churn (running total)"
+    sql: ${TABLE}.comparison_paying_churn_running_total ;;
   }
 
   dimension: paused_created {
@@ -636,6 +690,62 @@ view: analytics_v3 {
     value_format: "$#.00;($#.00)"
   }
 
+  measure: paying_subscriber_count {
+    label: "Total Paying"
+    type: sum
+    sql: ${total_paying} ;;
+  }
+
+  measure: comparison_paying_subscriber_count {
+    type: sum
+    group_label: "Comparison Measures"
+    group_item_label: "Total Paying"
+    sql: ${comparison_total_paying} ;;
+  }
+
+  measure: free_trialist_count {
+    label: "Total Free Trials"
+    type: sum
+    sql: ${total_free_trials} ;;
+  }
+
+  measure: comparison_free_trialist_count {
+    type: sum
+    group_label: "Comparison Measures"
+    group_item_label: "Total Free Trials"
+    sql: ${comparison_total_free_trials} ;;
+  }
+
+  measure: average_cpa {
+    type: average
+    label: "CPA"
+    sql: ${cpa} ;;
+    value_format: "$#.00;($#.00)"
+  }
+
+  measure: comparison_average_cpa {
+    type: average
+    group_label: "Comparison Dimensions"
+    group_item_label: "CPA"
+    sql: ${comparison_cpa} ;;
+    value_format: "$#.00;($#.00)"
+  }
+
+  measure: average_ltv {
+    type: average
+    label: "LTV"
+    sql: ${ltv} ;;
+    value_format: "$#.00;($#.00)"
+  }
+
+  measure: comparison_average_ltv {
+    type: average
+    group_label: "Comparison Dimensions"
+    group_item_label: "LTV"
+    sql: ${comparison_ltv} ;;
+    value_format: "$#.00;($#.00)"
+  }
+
   measure: new_trials {
     type: sum
     label: "New Trials"
@@ -654,6 +764,13 @@ view: analytics_v3 {
     label: "New Trials (Running Total)"
     sql: ${free_trial_created_running_total} ;;
   }
+
+  measure: new_trials_monthly_running_total {
+    type: sum
+    label: "New Trials (Monthly Running Total)"
+    sql: ${free_trial_created_monthly_running_total} ;;
+  }
+
 
   measure: new_trials_moving_avg {
     type: average
@@ -722,6 +839,12 @@ view: analytics_v3 {
     sql: ${free_trial_converted_running_total} ;;
   }
 
+  measure: trial_to_paid_monthly_running_total {
+    type: sum
+    label: "Trial to Paid (monthly running total)"
+    sql: ${free_trial_converted_monthly_running_total} ;;
+  }
+
   measure: trial_to_paid_moving_avg {
     type: average
     label: "Trial to Paid (moving average)"
@@ -731,15 +854,15 @@ view: analytics_v3 {
   measure: conversion_rate {
     type: number
     label: "Free Trial Conversion Rate"
-    value_format: ".0#\%"
-    sql: 100.0*${trial_to_paid}/NULLIF(${total_new_trials_14_days_prior},0) ;;
+    value_format_name: percent_2
+    sql: ${trial_to_paid}*1.0/NULLIF(${total_new_trials_14_days_prior}, 0) ;;
   }
 
   measure: conversion_rate_moving_avg {
     type: number
     label: "Free Trial Conversion Rate (moving average)"
-    value_format: ".0#\%"
-    sql: 100.0*${trial_to_paid_moving_avg}/NULLIF(${new_trials_14_days_prior_moving_avg},0) ;;
+    value_format_name: percent_2
+    sql: ${trial_to_paid_moving_avg}*1.0/NULLIF(${new_trials_14_days_prior_moving_avg},0) ;;
   }
 
   measure: comparison_trial_to_paid {
@@ -768,16 +891,16 @@ view: analytics_v3 {
     type: number
     group_label: "Comparison Measures"
     group_item_label: "Free Trial Conversion Rate"
-    value_format: ".0#\%"
-    sql: 100.0*${comparison_trial_to_paid}/NULLIF(${comparison_total_new_trials_14_days_prior},0) ;;
+    value_format_name: percent_2
+    sql: ${comparison_trial_to_paid}*1.0/NULLIF(${comparison_total_new_trials_14_days_prior},0) ;;
   }
 
   measure: comparison_conversion_rate_moving_avg {
     type: number
     group_label: "Comparison Measures"
     group_item_label: "Free Trial Conversion Rate (moving average)"
-    value_format: ".0#\%"
-    sql: 100.0*${comparison_trial_to_paid_moving_avg}/NULLIF(${comparison_new_trials_14_days_prior_moving_avg},0) ;;
+    value_format_name: percent_2
+    sql: ${comparison_trial_to_paid_moving_avg}*1.0/NULLIF(${comparison_new_trials_14_days_prior_moving_avg},0) ;;
   }
 
   measure: new_paid {
@@ -790,6 +913,12 @@ view: analytics_v3 {
     type: sum
     label: "New Paid (running total)"
     sql: ${paying_created_running_total} ;;
+  }
+
+  measure: new_paid_monthly_running_total {
+    type: sum
+    label: "New Paid (monthly running total)"
+    sql: ${paying_created_monthly_running_total} ;;
   }
 
   measure: comparison_new_paid {
@@ -807,19 +936,133 @@ view: analytics_v3 {
     sql:  ${comparison_paying_created_running_total} ;;
   }
 
+  measure: gross_new {
+    type: number
+    description: "Total number of new paying subs during period, before paying churn"
+    sql: ${new_paid}+${trial_to_paid} ;;
+  }
+
+  measure: gross_new_running_total {
+    type: sum
+    label: "Gross new (running total)"
+    sql: ${free_trial_converted_running_total}+${paying_created_running_total} ;;
+  }
+
+  measure: gross_new_monthly_running_total {
+    type: sum
+    label: "Gross new (monthly running total)"
+    sql: ${free_trial_converted_monthly_running_total}+${paying_created_monthly_running_total} ;;
+  }
+
+  measure: comparison_gross_new {
+    type: number
+    description: "Total number of new paying subs during comparison period, before paying churn"
+    sql: ${comparison_new_paid}+${comparison_trial_to_paid} ;;
+  }
+
+  measure: paid_churn {
+    type: sum
+    sql: ${paying_churn} ;;
+  }
+
+  measure: paid_churn_running_total {
+    type: sum
+    label: "Paid Churn (running total)"
+    sql: ${paying_churn_running_total} ;;
+  }
+
+  measure: paid_churn_monthly_running_total {
+    type: sum
+    label: "Paid Churn (monthly_running total)"
+    sql: ${paying_churn_monthly_running_total} ;;
+  }
+
   measure: churn_30_days_ {
     type: sum
+    label: "Churn 30 Days"
     sql: ${churn_30_days} ;;
   }
 
   measure: paying_30_days_prior_ {
     type: sum
+    label: "Paying_30_days_prior"
     sql: ${paying_30_days_prior} ;;
   }
 
-  measure: churn_30_day_percent_a {
+  measure: churn_30_day_percent {
     type: sum
-    sql: ${churn_30_days}/${paying_30_days_prior};;
-    value_format_name: percent_1
+    label: "Churn Rate"
+    sql: ${churn_30_days}*1.0/${paying_30_days_prior};;
+    value_format_name: percent_2
+  }
+
+  measure: comparison_paid_churn {
+    type: sum
+    group_label: "Comparison Measures"
+    group_item_label: "Paid Churn"
+    description: "Total number of churned subscribers during comparison period."
+    sql:  ${comparison_paying_churn} ;;
+  }
+
+  measure: comparison_paid_churn_running_total {
+    type: sum
+    group_label: "Comparison Measures"
+    group_item_label: "Paid Churn (running total)"
+    sql:  ${comparison_paying_churn_running_total} ;;
+  }
+
+  measure: comparison_churn_30_days_ {
+    type: sum
+    group_label: "Comparison Measures"
+    group_item_label: "Churn 30 Days"
+    sql: ${comparison_churn_30_days} ;;
+  }
+
+  measure: comparison_paying_30_days_prior_ {
+    type: sum
+    group_label: "Comparison Measures"
+    group_item_label: "Paying_30_days_prior"
+    sql: ${comparison_paying_30_days_prior} ;;
+  }
+
+  measure: comparison_churn_30_day_percent {
+    type: sum
+    group_label: "Comparison Measures"
+    group_item_label: "Churn Rate"
+    sql: ${comparison_churn_30_days}*1.0/${comparison_paying_30_days_prior};;
+    value_format_name: percent_2
+  }
+
+  measure: net_new {
+    type: number
+    description: "Net new subscribers after trial conversions and paying churn during period"
+    sql: ${trial_to_paid}+${new_paid}-${paid_churn} ;;
+  }
+
+  measure: comparison_net_new {
+    type: number
+    group_label: "Comparison Measures"
+    group_item_label: "Net new"
+    description: "Net new subscribers after trial conversions and paying churn during comparison period"
+    sql: ${comparison_trial_to_paid}+${comparison_new_paid}-${comparison_paid_churn} ;;
+  }
+
+  measure: net_new_running_total {
+    type: sum
+    label: "Net new (running total)"
+    sql: ${free_trial_converted_running_total}+${paying_created_running_total}-${paying_churn_running_total} ;;
+  }
+
+  measure: net_new_monthly_running_total {
+    type: sum
+    label: "Net new (monthly running total)"
+    sql: ${free_trial_converted_monthly_running_total}+${paying_created_monthly_running_total}-${paying_churn_monthly_running_total} ;;
+  }
+
+  measure: comparison_net_new_running_total {
+    type: sum
+    group_label: "Comparison Measures"
+    group_item_label: "Net new (running total)"
+    sql: ${comparison_free_trial_converted_running_total}+${comparison_paying_created_running_total}-${comparison_paying_churn_running_total} ;;
   }
 }
