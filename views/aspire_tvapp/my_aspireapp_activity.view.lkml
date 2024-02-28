@@ -194,11 +194,6 @@ view: my_aspireapp_activity {
       sql: ${TABLE}.timestamp ;;
     }
 
-  measure: days {
-    type: number
-    sql: ${TABLE}.timestamp - now() ;;
-    description: "days since last Open"
-  }
     dimension_group: uuid_ts {
       type: time
       timeframes: [
