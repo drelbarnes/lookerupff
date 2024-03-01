@@ -35,7 +35,7 @@ a as
        SUM(paying_churn) OVER (PARTITION by cast(datepart(month,date(timestamp)) as varchar) order by timestamp asc rows between unbounded preceding and current row) AS Running_paid_churn
 
 from customers_analytics as a
-where extract(year from timestamp)=2023
+--where extract(year from timestamp)=2023
 group by 1,
          free_trial_created,
          free_trial_converted,
