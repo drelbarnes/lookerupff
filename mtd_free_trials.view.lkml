@@ -29,13 +29,13 @@ a as
        free_trial_created,
        total_paying,
        total_free_trials,
-       SUM(free_trial_created) OVER (PARTITION by cast(datepart(month,date(timestamp)) as varchar) order by timestamp asc rows between unbounded preceding and current row) AS Running_Free_Trials,
-       SUM(free_trial_converted) OVER (PARTITION by cast(datepart(month,date(timestamp)) as varchar) order by timestamp asc rows between unbounded preceding and current row) AS Running_Paid_Conversions,
-       SUM(paying_created) OVER (PARTITION by cast(datepart(month,date(timestamp)) as varchar) order by timestamp asc rows between unbounded preceding and current row) AS Running_reacquisitions,
-       SUM(paying_churn) OVER (PARTITION by cast(datepart(month,date(timestamp)) as varchar) order by timestamp asc rows between unbounded preceding and current row) AS Running_paid_churn
+       SUM(free_trial_created) OVER (PARTITION by cast(datepart(year,date(timestamp)) as varchar), cast(datepart(month,date(timestamp)) as varchar) order by timestamp asc rows between unbounded preceding and current row) AS Running_Free_Trials,
+       SUM(free_trial_converted) OVER (PARTITION by cast(datepart(year,date(timestamp)) as varchar), cast(datepart(month,date(timestamp)) as varchar) order by timestamp asc rows between unbounded preceding and current row) AS Running_Paid_Conversions,
+       SUM(paying_created) OVER (PARTITION by cast(datepart(year,date(timestamp)) as varchar), cast(datepart(month,date(timestamp)) as varchar) order by timestamp asc rows between unbounded preceding and current row) AS Running_reacquisitions,
+       SUM(paying_churn) OVER (PARTITION by cast(datepart(year,date(timestamp)) as varchar), cast(datepart(month,date(timestamp)) as varchar) order by timestamp asc rows between unbounded preceding and current row) AS Running_paid_churn
 
 from customers_analytics as a
---where extract(year from timestamp)=2023
+-- where extract(year from timestamp)=2024
 group by 1,
          free_trial_created,
          free_trial_converted,
