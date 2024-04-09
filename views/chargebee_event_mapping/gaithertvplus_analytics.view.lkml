@@ -1,489 +1,1176 @@
 view: gaithertvplus_analytics {
   derived_table: {
     sql: with get_analytics_p0 as (
-      with p0 as (
+        with p0 as (
+          select
+          *
+          , 2 as report_version
+          from php_gaithertv.get_analytics
+          where date(sent_at)=current_date
+        )
         select
-        *
-        , 2 as report_version
-        from php_gaithertv.get_analytics
-        where date(sent_at)=current_date
+        analytics_timestamp as timestamp
+        , NULL::INTEGER as existing_free_trials
+        , NULL::INTEGER as existing_paying
+        , free_trial_churn
+        , free_trial_converted
+        , free_trial_created
+        -- , NULL::INTEGER as paused_created
+        , paying_churn
+        , paying_created
+        , total_free_trials
+        , total_paying
+        , report_version
+        , row_number() over (partition by analytics_timestamp, report_version order by sent_at desc) as n
+        from p0
       )
-      select
-      analytics_timestamp as timestamp
-      , NULL::INTEGER as existing_free_trials
-      , NULL::INTEGER as existing_paying
-      , free_trial_churn
-      , free_trial_converted
-      , free_trial_created
-      -- , NULL::INTEGER as paused_created
-      , paying_churn
-      , paying_created
-      , total_free_trials
-      , total_paying
-      , report_version
-      , row_number() over (partition by analytics_timestamp, report_version order by sent_at desc) as n
-      from p0
-    )
-    , chargebee_webhook_events as (
+      , events as (
+        /*                            */
+        /*      CUSTOMER CREATED      */
+        /*                            */
         select
-        "timestamp"
-        , id
-        , user_id
+        "timestamp"::TIMESTAMP
+        , id::VARCHAR
+        , content_customer_id::VARCHAR as customer_id
+        , null::VARCHAR as subscription_id
         , 'customer_created' as event
         -- do we want to blend attribution data?
         , null::VARCHAR as campaign
         -- do we want to blend geolocation?
         , null::VARCHAR as city
-        , null::VARCHAR as country
-        , content_customer_created_at as created_at
-        , content_customer_email as email
-        , content_card_first_name as first_name
-        , content_card_last_name as last_name
+        , content_customer_billing_address_country::VARCHAR as country
+        , null::VARCHAR as coupon_code
+        , (TIMESTAMP 'epoch' + content_customer_created_at * INTERVAL '1 second') AS created_at
+        , content_customer_email::VARCHAR as email
+        , content_card_first_name::VARCHAR as first_name
+        , content_card_last_name::VARCHAR as last_name
         -- Will the customer resource be created by the subscription resource?
-        , null::DATE as last_payment_date
-        , content_customer_cs_marketing_opt_in as marketing_opt_in
-        , content_card_first_name || ' ' || content_card_last_name AS name
-        , null::DATE as next_payment_date
+        , null::TIMESTAMP as last_payment_date
+        , content_customer_cs_marketing_opt_in::BOOLEAN as marketing_opt_in
+        , content_card_first_name::VARCHAR || ' ' || content_card_last_name::VARCHAR AS name
+        , null::TIMESTAMP as next_payment_date
         , null::VARCHAR as plan
         , 'web' as platform
         , null::VARCHAR as promotion_code
         , null::VARCHAR as referrer
-        , null::VARCHAR as region
+        , content_customer_billing_address_state_code::VARCHAR as region
         , null::BOOLEAN as registered_to_site
         , 'chargebee' as source
         , null::BOOLEAN as subscribed_to_site
         , null::VARCHAR as subscription_frequency
-        , null::VARCHAR as subscription_price
+        , null::INT as subscription_price
         , null::VARCHAR as subscription_status
-        , content_customer_updated_at as updated_at
+        , (TIMESTAMP 'epoch' + content_customer_updated_at * INTERVAL '1 second') AS updated_at
         from chargebee_webhook_events.customer_created
         union all
+        /*                            */
+        /*      CUSTOMER DELETED      */
+        /*                            */
         select
-        "timestamp"
-        , id
-        , user_id
-        , 'customer_product_free_trial_created' as event
+        "timestamp"::TIMESTAMP
+        , id::VARCHAR
+        , content_customer_id::VARCHAR as customer_id
+        , null::VARCHAR as subscription_id
+        , 'customer_deleted' as event
+        -- do we want to blend attribution data?
         , null::VARCHAR as campaign
+        -- do we want to blend geolocation?
         , null::VARCHAR as city
-        , null::VARCHAR as country
-        , content_customer_created_at as created_at
-        , content_customer_email as email
-        , content_card_first_name as first_name
-        , content_card_last_name as last_name
-        , null::DATE as last_payment_date
-        , content_customer_cs_marketing_opt_in as marketing_opt_in
-        , content_card_first_name || ' ' || content_card_last_name AS name
-        , null::DATE as next_payment_date
+        , content_customer_billing_address_country::VARCHAR as country
+        , null::VARCHAR as coupon_code
+        , (TIMESTAMP 'epoch' + content_customer_created_at * INTERVAL '1 second') AS created_at
+        , content_customer_email::VARCHAR as email
+        , content_card_first_name::VARCHAR as first_name
+        , content_card_last_name::VARCHAR as last_name
+        -- Will the customer resource be created by the subscription resource?
+        , null::TIMESTAMP as last_payment_date
+        , content_customer_cs_marketing_opt_in::BOOLEAN as marketing_opt_in
+        , content_card_first_name::VARCHAR || ' ' || content_card_last_name::VARCHAR AS name
+        , null::TIMESTAMP as next_payment_date
         , null::VARCHAR as plan
         , 'web' as platform
         , null::VARCHAR as promotion_code
         , null::VARCHAR as referrer
+        -- , content_customer_billing_address_state_code::VARCHAR as region
         , null::VARCHAR as region
         , null::BOOLEAN as registered_to_site
         , 'chargebee' as source
         , null::BOOLEAN as subscribed_to_site
         , null::VARCHAR as subscription_frequency
-        , null::VARCHAR as subscription_price
-        , 'free_trial' as subscription_status
-        , content_customer_updated_at as updated_at
-        from chargebee_webhook_events.subscription_created
-        where content_subscription_status = 'in_trial'
+        , null::INT as subscription_price
+        , null::VARCHAR as subscription_status
+        , (TIMESTAMP 'epoch' + content_customer_updated_at * INTERVAL '1 second') AS updated_at
+        from chargebee_webhook_events.customer_deleted
         union all
+        /*                            */
+        /*      CUSTOMER UPDATED      */
+        /*                            */
         select
-        "timestamp"
-        , id
-        , user_id
-        , 'customer_product_created' as event
+        "timestamp"::TIMESTAMP
+        , id::VARCHAR
+        , content_customer_id::VARCHAR as customer_id
+        , null::VARCHAR as subscription_id
+        , 'customer_updated' as event
+        -- do we want to blend attribution data?
         , null::VARCHAR as campaign
+        -- do we want to blend geolocation?
         , null::VARCHAR as city
-        , null::VARCHAR as country
-        , content_customer_created_at as created_at
-        , content_customer_email as email
-        , content_card_first_name as first_name
-        , content_card_last_name as last_name
-        , null::DATE as last_payment_date
-        , content_customer_cs_marketing_opt_in as marketing_opt_in
-        , content_card_first_name || ' ' || content_card_last_name AS name
-        , null::DATE as next_payment_date
+        , content_customer_billing_address_country::VARCHAR as country
+        , null::VARCHAR as coupon_code
+        , (TIMESTAMP 'epoch' + content_customer_created_at * INTERVAL '1 second') AS created_at
+        , content_customer_email::VARCHAR as email
+        , content_card_first_name::VARCHAR as first_name
+        , content_card_last_name::VARCHAR as last_name
+        -- Will the customer resource be created by the subscription resource?
+        , null::TIMESTAMP as last_payment_date
+        , content_customer_cs_marketing_opt_in::BOOLEAN as marketing_opt_in
+        , content_card_first_name::VARCHAR || ' ' || content_card_last_name::VARCHAR AS name
+        , null::TIMESTAMP as next_payment_date
         , null::VARCHAR as plan
         , 'web' as platform
         , null::VARCHAR as promotion_code
         , null::VARCHAR as referrer
-        , null::VARCHAR as region
+        , content_customer_billing_address_state_code::VARCHAR as region
         , null::BOOLEAN as registered_to_site
         , 'chargebee' as source
         , null::BOOLEAN as subscribed_to_site
         , null::VARCHAR as subscription_frequency
-        , null::VARCHAR as subscription_price
-        , 'enabled' as subscription_status
-        , content_customer_updated_at as updated_at
-        from chargebee_webhook_events.subscription_created
-        where content_subscription_status = 'active'
+        , null::INT as subscription_price
+        , null::VARCHAR as subscription_status
+        , (TIMESTAMP 'epoch' + content_customer_updated_at * INTERVAL '1 second') AS updated_at
+        from chargebee_webhook_events.customer_changed
         union all
+        /*                                        */
+        /*        CUSTOMER PRODUCT CREATED        */
+        /*  CUSTOMER PRODUCT FREE TRIAL CREATED   */
+        /*                                        */
         select
-        "timestamp"
-        , id
-        , user_id
+        "timestamp"::TIMESTAMP
+        , id::VARCHAR
+        , content_customer_id::VARCHAR as customer_id
+        , content_subscription_id::VARCHAR as subscription_id
+        , CASE
+            WHEN event  = 'subscription_created' AND content_subscription_status = 'in_trial' THEN 'customer_product_free_trial_created'
+            ELSE 'customer_product_created'
+          END AS event
+        , null::VARCHAR as campaign
+        , null::VARCHAR as city
+        , content_customer_billing_address_country::VARCHAR as country
+        -- , content_coupons_0_coupon_code as coupon_code
+        , null::VARCHAR as coupon_code
+        , (TIMESTAMP 'epoch' + content_customer_created_at * INTERVAL '1 second') AS created_at
+        , content_customer_email::VARCHAR as email
+        , content_card_first_name::VARCHAR as first_name
+        , content_card_last_name::VARCHAR as last_name
+        , null::TIMESTAMP as last_payment_date
+        , content_customer_cs_marketing_opt_in::BOOLEAN as marketing_opt_in
+        , content_card_first_name::VARCHAR || ' ' || content_card_last_name::VARCHAR AS name
+        , (TIMESTAMP 'epoch' + content_subscription_next_billing_at * INTERVAL '1 second') AS next_payment_date
+        , coalesce(
+          content_subscription_subscription_items_0_item_price_id::VARCHAR, json_extract_path_text(
+            json_extract_array_element_text(
+              content_subscription_subscription_items, 0
+            ),'item_price_id'
+          )::VARCHAR
+        ) as plan
+        , content_subscription_channel::VARCHAR as platform
+        -- , content_coupons_0_coupon_id as promotion_code
+        , null::VARCHAR as promotion_code
+        , null::VARCHAR as referrer
+        , content_customer_billing_address_state_code::VARCHAR as region
+        , null::BOOLEAN as registered_to_site
+        , 'chargebee' as source
+        , null::BOOLEAN as subscribed_to_site
+        , CASE content_subscription_billing_period_unit
+              WHEN 'month' THEN 'monthly'
+              WHEN 'year' THEN 'yearly'
+              ELSE content_subscription_billing_period_unit::VARCHAR
+          END AS subscription_frequency
+        , coalesce(
+          content_subscription_subscription_items_0_unit_price::INT, json_extract_path_text(
+            json_extract_array_element_text(
+              content_subscription_subscription_items, 0
+            ),'unit_price'
+          )::INT
+        ) as subscription_price
+        , CASE content_subscription_status
+              WHEN 'active' THEN 'enabled'
+              WHEN 'in_trial' THEN 'free_trial'
+              WHEN 'cancelled' THEN 'cancelled'
+              WHEN 'non_renewing' THEN 'non_renewing'
+              WHEN 'disabled' THEN 'disabled'
+              WHEN 'paused' THEN 'paused'
+              ELSE 'unknown' -- Default case if no match is found
+            END AS subscription_status
+        , (TIMESTAMP 'epoch' + content_customer_updated_at * INTERVAL '1 second') AS updated_at
+        from chargebee_webhook_events.subscription_created
+        union all
+        /*                                        */
+        /*  CUSTOMER PRODUCT FREE TRIAL CONVERTED */
+        /*                                        */
+          select
+        "timestamp"::TIMESTAMP
+        , id::VARCHAR
+        , content_customer_id::VARCHAR as customer_id
+        , content_subscription_id::VARCHAR as subscription_id
         , 'customer_product_free_trial_converted' as event
         , null::VARCHAR as campaign
         , null::VARCHAR as city
-        , null::VARCHAR as country
-        , content_customer_created_at as created_at
-        , content_customer_email as email
-        -- Event doesn't contain customer names for some reason
-        , null::VARCHAR as first_name
-        , null::VARCHAR as last_name
-        , null::DATE as last_payment_date
-        , content_customer_cs_marketing_opt_in as marketing_opt_in
-        , null::VARCHAR as name
-        , null::DATE as next_payment_date
-        , null::VARCHAR as plan
-        , 'web' as platform
+        , content_customer_billing_address_country::VARCHAR as country
+        -- , content_coupons_0_coupon_code as coupon_code
+        , null::VARCHAR as coupon_code
+        , (TIMESTAMP 'epoch' + content_customer_created_at * INTERVAL '1 second') AS created_at
+        , content_customer_email::VARCHAR as email
+        , content_card_first_name::VARCHAR as first_name
+        , content_card_last_name::VARCHAR as last_name
+        , (TIMESTAMP 'epoch' + content_invoice_paid_at * INTERVAL '1 second') AS last_payment_date
+        -- , null::TIMESTAMP as last_payment_date
+        , content_customer_cs_marketing_opt_in::BOOLEAN as marketing_opt_in
+        , content_card_first_name::VARCHAR || ' ' || content_card_last_name::VARCHAR AS name
+        , (TIMESTAMP 'epoch' + content_subscription_next_billing_at * INTERVAL '1 second') AS next_payment_date
+        , coalesce(
+          content_subscription_subscription_items_0_item_price_id::VARCHAR, json_extract_path_text(
+            json_extract_array_element_text(
+              content_subscription_subscription_items, 0
+            ),'item_price_id'
+          )::VARCHAR
+        ) as plan
+        , content_subscription_channel::VARCHAR as platform
+        -- , content_coupons_0_coupon_id as promotion_code
         , null::VARCHAR as promotion_code
         , null::VARCHAR as referrer
-        , null::VARCHAR as region
+        , content_customer_billing_address_state_code::VARCHAR as region
         , null::BOOLEAN as registered_to_site
         , 'chargebee' as source
         , null::BOOLEAN as subscribed_to_site
-        , null::VARCHAR as subscription_frequency
-        , null::VARCHAR as subscription_price
-        , 'enabled' as subscription_status
-        , content_customer_updated_at as updated_at
+        , CASE content_subscription_billing_period_unit
+              WHEN 'month' THEN 'monthly'
+              WHEN 'year' THEN 'yearly'
+              ELSE content_subscription_billing_period_unit::VARCHAR
+          END AS subscription_frequency
+        , coalesce(
+          content_subscription_subscription_items_0_unit_price::INT, json_extract_path_text(
+            json_extract_array_element_text(
+              content_subscription_subscription_items, 0
+            ),'unit_price'
+          )::INT
+        ) as subscription_price
+        , CASE content_subscription_status
+              WHEN 'active' THEN 'enabled'
+              WHEN 'in_trial' THEN 'free_trial'
+              WHEN 'cancelled' THEN 'cancelled'
+              WHEN 'non_renewing' THEN 'non_renewing'
+              WHEN 'disabled' THEN 'disabled'
+              WHEN 'paused' THEN 'paused'
+              ELSE 'unknown' -- Default case if no match is found
+            END AS subscription_status
+        , (TIMESTAMP 'epoch' + content_customer_updated_at * INTERVAL '1 second') AS updated_at
         from chargebee_webhook_events.subscription_activated
+        where content_subscription_due_invoices_count = 0
         union all
+        /*                                        */
+        /*  CUSTOMER PRODUCT FREE TRIAL CONVERTED */
+        /*                DUNNING                 */
+        /*                                        */
+          select
+        a."timestamp"::TIMESTAMP
+        , a.id::VARCHAR
+        , a.content_customer_id::VARCHAR as customer_id
+        , a.content_subscription_id::VARCHAR as subscription_id
+        , 'customer_product_free_trial_converted' as event
+        , null::VARCHAR as campaign
+        , null::VARCHAR as city
+        , a.content_customer_billing_address_country::VARCHAR as country
+        -- , content_coupons_0_coupon_code as coupon_code
+        , null::VARCHAR as coupon_code
+        , (TIMESTAMP 'epoch' + a.content_customer_created_at * INTERVAL '1 second') AS created_at
+        , a.content_customer_email::VARCHAR as email
+        , a.content_card_first_name::VARCHAR as first_name
+        , a.content_card_last_name::VARCHAR as last_name
+        , (TIMESTAMP 'epoch' + a.content_invoice_paid_at * INTERVAL '1 second') AS last_payment_date
+        -- , null::TIMESTAMP as last_payment_date
+        , a.content_customer_cs_marketing_opt_in::BOOLEAN as marketing_opt_in
+        , a.content_card_first_name::VARCHAR || ' ' || a.content_card_last_name::VARCHAR AS name
+        , (TIMESTAMP 'epoch' + a.content_subscription_next_billing_at * INTERVAL '1 second') AS next_payment_date
+        , coalesce(
+          a.content_subscription_subscription_items_0_item_price_id::VARCHAR, json_extract_path_text(
+            json_extract_array_element_text(
+              a.content_subscription_subscription_items, 0
+            ),'item_price_id'
+          )::VARCHAR
+        ) as plan
+        , a.content_subscription_channel::VARCHAR as platform
+        -- , content_coupons_0_coupon_id as promotion_code
+        , null::VARCHAR as promotion_code
+        , null::VARCHAR as referrer
+        , a.content_customer_billing_address_state_code::VARCHAR as region
+        , null::BOOLEAN as registered_to_site
+        , 'chargebee' as source
+        , null::BOOLEAN as subscribed_to_site
+        , CASE a.content_subscription_billing_period_unit
+              WHEN 'month' THEN 'monthly'
+              WHEN 'year' THEN 'yearly'
+              ELSE a.content_subscription_billing_period_unit::VARCHAR
+          END AS subscription_frequency
+        , coalesce(
+          a.content_subscription_subscription_items_0_unit_price::INT, json_extract_path_text(
+            json_extract_array_element_text(
+              a.content_subscription_subscription_items, 0
+            ),'unit_price'
+          )::INT
+        ) as subscription_price
+        , CASE a.content_subscription_status
+              WHEN 'active' THEN 'enabled'
+              WHEN 'in_trial' THEN 'free_trial'
+              WHEN 'cancelled' THEN 'cancelled'
+              WHEN 'non_renewing' THEN 'non_renewing'
+              WHEN 'disabled' THEN 'disabled'
+              WHEN 'paused' THEN 'paused'
+              ELSE 'unknown' -- Default case if no match is found
+          END AS subscription_status
+        , (TIMESTAMP 'epoch' + a.content_customer_updated_at * INTERVAL '1 second') AS updated_at
+        from chargebee_webhook_events.subscription_activated a
+        inner join chargebee_webhook_events.payment_succeeded b
+        on a.content_invoice_id = b. content_invoice_id
+        where a.content_subscription_due_invoices_count >= 1
+        union all
+        /*                                        */
+        /*        CUSTOMER PRODUCT CREATED        */
+        /*              REACQUISITION             */
+        /*                                        */
         select
-        "timestamp"
-        , id
-        , user_id
+        "timestamp"::TIMESTAMP
+        , id::VARCHAR
+        , content_customer_id::VARCHAR as customer_id
+        , content_subscription_id::VARCHAR as subscription_id
         , 'customer_product_created' as event
         , null::VARCHAR as campaign
         , null::VARCHAR as city
-        , null::VARCHAR as country
-        , content_customer_created_at as created_at
-        , content_customer_email as email
-        -- Event doesn't contain customer names for some reason
-        , null::VARCHAR as first_name
-        , null::VARCHAR as last_name
-        , null::DATE as last_payment_date
-        , content_customer_cs_marketing_opt_in as marketing_opt_in
-        , null::VARCHAR as name
-        , null::DATE as next_payment_date
-        , null::VARCHAR as plan
-        , 'web' as platform
+        , content_customer_billing_address_country::VARCHAR as country
+        -- , content_coupons_0_coupon_code as coupon_code
+        , null::VARCHAR as coupon_code
+        , (TIMESTAMP 'epoch' + content_customer_created_at * INTERVAL '1 second') AS created_at
+        , content_customer_email::VARCHAR as email
+        , content_card_first_name::VARCHAR as first_name
+        , content_card_last_name::VARCHAR as last_name
+        , (TIMESTAMP 'epoch' + content_invoice_paid_at * INTERVAL '1 second') AS last_payment_date
+        , content_customer_cs_marketing_opt_in::BOOLEAN as marketing_opt_in
+        , content_card_first_name::VARCHAR || ' ' || content_card_last_name::VARCHAR AS name
+        , (TIMESTAMP 'epoch' + content_subscription_next_billing_at * INTERVAL '1 second') AS next_payment_date
+        , coalesce(
+          content_subscription_subscription_items_0_item_price_id::VARCHAR, json_extract_path_text(
+            json_extract_array_element_text(
+              content_subscription_subscription_items, 0
+            ),'item_price_id'
+          )::VARCHAR
+        ) as plan
+        , content_subscription_channel::VARCHAR as platform
+        -- , content_coupons_0_coupon_id as promotion_code
         , null::VARCHAR as promotion_code
         , null::VARCHAR as referrer
-        , null::VARCHAR as region
+        , content_customer_billing_address_state_code::VARCHAR as region
         , null::BOOLEAN as registered_to_site
         , 'chargebee' as source
         , null::BOOLEAN as subscribed_to_site
-        , null::VARCHAR as subscription_frequency
-        , null::VARCHAR as subscription_price
-        , 'enabled' as subscription_status
-        , content_customer_updated_at as updated_at
+        , CASE content_subscription_billing_period_unit
+              WHEN 'month' THEN 'monthly'
+              WHEN 'year' THEN 'yearly'
+              ELSE content_subscription_billing_period_unit::VARCHAR
+          END AS subscription_frequency
+        , coalesce(
+          content_subscription_subscription_items_0_unit_price::INT, json_extract_path_text(
+            json_extract_array_element_text(
+              content_subscription_subscription_items, 0
+            ),'unit_price'
+          )::INT
+        ) as subscription_price
+        , CASE content_subscription_status
+              WHEN 'active' THEN 'enabled'
+              WHEN 'in_trial' THEN 'free_trial'
+              WHEN 'cancelled' THEN 'cancelled'
+              WHEN 'non_renewing' THEN 'non_renewing'
+              WHEN 'disabled' THEN 'disabled'
+              WHEN 'paused' THEN 'paused'
+              ELSE 'unknown' -- Default case if no match is found
+            END AS subscription_status
+        , (TIMESTAMP 'epoch' + content_customer_updated_at * INTERVAL '1 second') AS updated_at
         from chargebee_webhook_events.subscription_reactivated
+        /*                                        */
+        /*        CUSTOMER PRODUCT RENEWED        */
+        /*                                        */
         union all
         select
-        "timestamp"
-        , id
-        , user_id
+        "timestamp"::TIMESTAMP
+        , id::VARCHAR
+        , content_customer_id::VARCHAR as customer_id
+        , content_subscription_id::VARCHAR as subscription_id
         , 'customer_product_renewed' as event
         , null::VARCHAR as campaign
         , null::VARCHAR as city
-        , null::VARCHAR as country
-        , content_customer_created_at as created_at
-        , content_customer_email as email
-        -- event doesn't contain user names
-        , null::VARCHAR as first_name
-        , null::VARCHAR as last_name
-        , null::DATE as last_payment_date
-        , content_customer_cs_marketing_opt_in as marketing_opt_in
-        , null::VARCHAR as name
-        , null::DATE as next_payment_date
-        , null::VARCHAR as plan
-        , 'web' as platform
+        , content_customer_billing_address_country::VARCHAR as country
+        -- , content_coupons_0_coupon_code as coupon_code
+        , null::VARCHAR as coupon_code
+        , (TIMESTAMP 'epoch' + content_customer_created_at * INTERVAL '1 second') AS created_at
+        , content_customer_email::VARCHAR as email
+        , content_card_first_name::VARCHAR as first_name
+        , content_card_last_name::VARCHAR as last_name
+        , (TIMESTAMP 'epoch' + content_invoice_paid_at * INTERVAL '1 second') AS last_payment_date
+        , content_customer_cs_marketing_opt_in::BOOLEAN as marketing_opt_in
+        , content_card_first_name::VARCHAR || ' ' || content_card_last_name::VARCHAR AS name
+        , (TIMESTAMP 'epoch' + content_subscription_next_billing_at * INTERVAL '1 second') AS next_payment_date
+        , coalesce(
+          content_subscription_subscription_items_0_item_price_id::VARCHAR, json_extract_path_text(
+            json_extract_array_element_text(
+              content_subscription_subscription_items, 0
+            ),'item_price_id'
+          )::VARCHAR
+        ) as plan
+        , content_subscription_channel::VARCHAR as platform
+        -- , content_coupons_0_coupon_id::VARCHAR as promotion_code
         , null::VARCHAR as promotion_code
         , null::VARCHAR as referrer
-        , null::VARCHAR as region
+        , content_customer_billing_address_state_code::VARCHAR as region
         , null::BOOLEAN as registered_to_site
         , 'chargebee' as source
         , null::BOOLEAN as subscribed_to_site
-        , null::VARCHAR as subscription_frequency
-        , null::VARCHAR as subscription_price
-        , 'enabled' as subscription_status
-        , content_customer_updated_at as updated_at
+        , CASE content_subscription_billing_period_unit
+              WHEN 'month' THEN 'monthly'
+              WHEN 'year' THEN 'yearly'
+              ELSE content_subscription_billing_period_unit::VARCHAR
+          END AS subscription_frequency
+        , coalesce(
+          content_subscription_subscription_items_0_unit_price::INT, json_extract_path_text(
+            json_extract_array_element_text(
+              content_subscription_subscription_items, 0
+            ),'unit_price'
+          )::INT
+        ) as subscription_price
+        , CASE content_subscription_status
+              WHEN 'active' THEN 'enabled'
+              WHEN 'in_trial' THEN 'free_trial'
+              WHEN 'cancelled' THEN 'cancelled'
+              WHEN 'non_renewing' THEN 'non_renewing'
+              WHEN 'disabled' THEN 'disabled'
+              WHEN 'paused' THEN 'paused'
+              ELSE 'unknown' -- Default case if no match is found
+            END AS subscription_status
+        , (TIMESTAMP 'epoch' + content_customer_updated_at * INTERVAL '1 second') AS updated_at
         from chargebee_webhook_events.subscription_renewed
         union all
+        /*                                        */
+        /*      CUSTOMER PRODUCT CANCELLED        */
+        /*  CUSTOMER PRODUCT FREE TRIAL EXPIRED   */
+        /*                                        */
         select
-        "timestamp"
-        , id
-        , user_id
+        "timestamp"::TIMESTAMP
+        , id::VARCHAR
+        , content_customer_id::VARCHAR as customer_id
+        , content_subscription_id::VARCHAR as subscription_id
+        , CASE
+            WHEN (content_subscription_cancelled_at - content_subscription_trial_end) < 10000 THEN 'customer_product_free_trial_expired'
+            ELSE 'customer_product_cancelled'
+          END AS event
+        , null::VARCHAR as campaign
+        , null::VARCHAR as city
+        , content_customer_billing_address_country::VARCHAR as country
+        -- , content_coupons_0_coupon_code as coupon_code
+        , null::VARCHAR as coupon_code
+        , (TIMESTAMP 'epoch' + content_customer_created_at * INTERVAL '1 second') AS created_at
+        , content_customer_email::VARCHAR as email
+        , content_card_first_name::VARCHAR as first_name
+        , content_card_last_name::VARCHAR as last_name
+        , (TIMESTAMP 'epoch' + content_subscription_current_term_start * INTERVAL '1 second') AS last_payment_date
+        -- , content_subscription_current_term_start:: as last_payment_date
+        , content_customer_cs_marketing_opt_in::BOOLEAN as marketing_opt_in
+        , content_card_first_name::VARCHAR || ' ' || content_card_last_name::VARCHAR AS name
+        , null::TIMESTAMP as next_payment_date
+        -- , (TIMESTAMP 'epoch' + content_subscription_next_billing_at * INTERVAL '1 second') AS next_payment_date
+        , coalesce(
+          content_subscription_subscription_items_0_item_price_id::VARCHAR, json_extract_path_text(
+            json_extract_array_element_text(
+              content_subscription_subscription_items, 0
+            ),'item_price_id'
+          )::VARCHAR
+        ) as plan
+        , content_subscription_channel::VARCHAR as platform
+        -- , content_coupons_0_coupon_id as promotion_code
+        , null::VARCHAR as promotion_code
+        , null::VARCHAR as referrer
+        , content_customer_billing_address_state_code::VARCHAR as region
+        , null::BOOLEAN as registered_to_site
+        , 'chargebee' as source
+        , null::BOOLEAN as subscribed_to_site
+        , CASE content_subscription_billing_period_unit
+              WHEN 'month' THEN 'monthly'
+              WHEN 'year' THEN 'yearly'
+              ELSE content_subscription_billing_period_unit::VARCHAR
+          END AS subscription_frequency
+        , coalesce(
+          content_subscription_subscription_items_0_unit_price::INT, json_extract_path_text(
+            json_extract_array_element_text(
+              content_subscription_subscription_items, 0
+            ),'unit_price'
+          )::INT
+        ) as subscription_price
+        , CASE content_subscription_status
+              WHEN 'active' THEN 'enabled'
+              WHEN 'in_trial' THEN 'free_trial'
+              WHEN 'cancelled' THEN 'cancelled'
+              WHEN 'non_renewing' THEN 'non_renewing'
+              WHEN 'disabled' THEN 'disabled'
+              WHEN 'paused' THEN 'paused'
+              ELSE 'unknown' -- Default case if no match is found
+            END AS subscription_status
+        , (TIMESTAMP 'epoch' + content_customer_updated_at * INTERVAL '1 second') AS updated_at
+        from chargebee_webhook_events.subscription_cancelled
+        where content_subscription_cancel_reason_code not in ('Not Paid', 'No Card', 'Fraud Review Failed', 'Non Compliant EU Customer', 'Tax Calculation Failed', 'Currency incompatible with Gateway', 'Non Compliant Customer')
+        union all
+        /*                                        */
+        /*      CUSTOMER PRODUCT CANCELLED        */
+        /*  CUSTOMER PRODUCT FREE TRIAL EXPIRED   */
+        /*                DUNNING                 */
+        /*                                        */
+        select
+        "timestamp"::TIMESTAMP
+        , id::VARCHAR
+        , content_customer_id::VARCHAR as customer_id
+        , content_subscription_id::VARCHAR as subscription_id
+        , CASE -- if cancelled less that 28 days since activating, free_trial expired.
+            WHEN (content_subscription_cancelled_at - content_subscription_activated_at) < 2419200 THEN 'customer_product_free_trial_expired'
+            ELSE 'customer_product_cancelled'
+          END AS event
+        , null::VARCHAR as campaign
+        , null::VARCHAR as city
+        , content_customer_billing_address_country::VARCHAR as country
+        -- , content_coupons_0_coupon_code as coupon_code
+        , null::VARCHAR as coupon_code
+        , (TIMESTAMP 'epoch' + content_customer_created_at * INTERVAL '1 second') AS created_at
+        , content_customer_email::VARCHAR as email
+        , content_card_first_name::VARCHAR as first_name
+        , content_card_last_name::VARCHAR as last_name
+        , (TIMESTAMP 'epoch' + content_subscription_current_term_start * INTERVAL '1 second') AS last_payment_date
+        -- , content_subscription_current_term_start:: as last_payment_date
+        , content_customer_cs_marketing_opt_in::BOOLEAN as marketing_opt_in
+        , content_card_first_name::VARCHAR || ' ' || content_card_last_name::VARCHAR AS name
+        , null::TIMESTAMP as next_payment_date
+        -- , (TIMESTAMP 'epoch' + content_subscription_next_billing_at * INTERVAL '1 second') AS next_payment_date
+        , coalesce(
+          content_subscription_subscription_items_0_item_price_id::VARCHAR, json_extract_path_text(
+            json_extract_array_element_text(
+              content_subscription_subscription_items, 0
+            ),'item_price_id'
+          )::VARCHAR
+        ) as plan
+        , content_subscription_channel::VARCHAR as platform
+        -- , content_coupons_0_coupon_id as promotion_code
+        , null::VARCHAR as promotion_code
+        , null::VARCHAR as referrer
+        , content_customer_billing_address_state_code::VARCHAR as region
+        , null::BOOLEAN as registered_to_site
+        , 'chargebee' as source
+        , null::BOOLEAN as subscribed_to_site
+        , CASE content_subscription_billing_period_unit
+              WHEN 'month' THEN 'monthly'
+              WHEN 'year' THEN 'yearly'
+              ELSE content_subscription_billing_period_unit::VARCHAR
+          END AS subscription_frequency
+        , coalesce(
+          content_subscription_subscription_items_0_unit_price::INT, json_extract_path_text(
+            json_extract_array_element_text(
+              content_subscription_subscription_items, 0
+            ),'unit_price'
+          )::INT
+        ) as subscription_price
+        , 'expired'as subscription_status
+        , (TIMESTAMP 'epoch' + content_customer_updated_at * INTERVAL '1 second') AS updated_at
+        from chargebee_webhook_events.subscription_cancelled
+        where content_subscription_cancel_reason_code in ('Not Paid', 'No Card', 'Fraud Review Failed', 'Non Compliant EU Customer', 'Tax Calculation Failed', 'Currency incompatible with Gateway', 'Non Compliant Customer')
+        union all
+        /*                                        */
+        /*        CUSTOMER PRODUCT PAUSED         */
+        /*                                        */
+        select
+        "timestamp"::TIMESTAMP
+        , id::VARCHAR
+        , content_customer_id::VARCHAR as customer_id
+        , content_subscription_id::VARCHAR as subscription_id
+        , 'customer_product_paused' event
+        , null::VARCHAR as campaign
+        , null::VARCHAR as city
+        , content_customer_billing_address_country::VARCHAR as country
+        -- , content_coupons_0_coupon_code as coupon_code
+        , null::VARCHAR as coupon_code
+        , (TIMESTAMP 'epoch' + content_customer_created_at * INTERVAL '1 second') AS created_at
+        , content_customer_email::VARCHAR as email
+        , content_card_first_name::VARCHAR as first_name
+        , content_card_last_name::VARCHAR as last_name
+        , (TIMESTAMP 'epoch' + content_subscription_current_term_start * INTERVAL '1 second') AS last_payment_date
+        -- , content_subscription_current_term_start:: as last_payment_date
+        , content_customer_cs_marketing_opt_in::BOOLEAN as marketing_opt_in
+        , content_card_first_name::VARCHAR || ' ' || content_card_last_name::VARCHAR AS name
+        , null::TIMESTAMP as next_payment_date
+        -- , (TIMESTAMP 'epoch' + content_subscription_next_billing_at * INTERVAL '1 second') AS next_payment_date
+        , coalesce(
+          content_subscription_subscription_items_0_item_price_id::VARCHAR, json_extract_path_text(
+            json_extract_array_element_text(
+              content_subscription_subscription_items, 0
+            ),'item_price_id'
+          )::VARCHAR
+        ) as plan
+        , content_subscription_channel::VARCHAR as platform
+        -- , content_coupons_0_coupon_id as promotion_code
+        , null::VARCHAR as promotion_code
+        , null::VARCHAR as referrer
+        , content_customer_billing_address_state_code::VARCHAR as region
+        , null::BOOLEAN as registered_to_site
+        , 'chargebee' as source
+        , null::BOOLEAN as subscribed_to_site
+        , CASE content_subscription_billing_period_unit
+              WHEN 'month' THEN 'monthly'
+              WHEN 'year' THEN 'yearly'
+              ELSE content_subscription_billing_period_unit::VARCHAR
+          END AS subscription_frequency
+        , coalesce(
+          content_subscription_subscription_items_0_unit_price::INT, json_extract_path_text(
+            json_extract_array_element_text(
+              content_subscription_subscription_items, 0
+            ),'unit_price'
+          )::INT
+        ) as subscription_price
+        , CASE content_subscription_status
+              WHEN 'active' THEN 'enabled'
+              WHEN 'in_trial' THEN 'free_trial'
+              WHEN 'cancelled' THEN 'cancelled'
+              WHEN 'non_renewing' THEN 'non_renewing'
+              WHEN 'disabled' THEN 'disabled'
+              WHEN 'paused' THEN 'paused'
+              ELSE 'unknown' -- Default case if no match is found
+            END AS subscription_status
+        , (TIMESTAMP 'epoch' + content_customer_updated_at * INTERVAL '1 second') AS updated_at
+        from chargebee_webhook_events.subscription_paused
+        union all
+        /*                                        */
+        /*        CUSTOMER PRODUCT RESUMED        */
+        /*                                        */
+        select
+        "timestamp"::TIMESTAMP
+        , id::VARCHAR
+        , content_customer_id::VARCHAR as customer_id
+        , content_subscription_id::VARCHAR as subscription_id
+        , 'customer_product_resumed' event
+        , null::VARCHAR as campaign
+        , null::VARCHAR as city
+        , content_customer_billing_address_country::VARCHAR as country
+        -- , content_coupons_0_coupon_code as coupon_code
+        , null::VARCHAR as coupon_code
+        , (TIMESTAMP 'epoch' + content_customer_created_at * INTERVAL '1 second') AS created_at
+        , content_customer_email::VARCHAR as email
+        , content_card_first_name::VARCHAR as first_name
+        , content_card_last_name::VARCHAR as last_name
+        , (TIMESTAMP 'epoch' + content_subscription_current_term_start * INTERVAL '1 second') AS last_payment_date
+        -- , content_subscription_current_term_start:: as last_payment_date
+        , content_customer_cs_marketing_opt_in::BOOLEAN as marketing_opt_in
+        , content_card_first_name::VARCHAR || ' ' || content_card_last_name::VARCHAR AS name
+        -- , null::TIMESTAMP as next_payment_date
+        , (TIMESTAMP 'epoch' + content_subscription_next_billing_at * INTERVAL '1 second') AS next_payment_date
+        , coalesce(
+          content_subscription_subscription_items_0_item_price_id::VARCHAR, json_extract_path_text(
+            json_extract_array_element_text(
+              content_subscription_subscription_items, 0
+            ),'item_price_id'
+          )::VARCHAR
+        ) as plan
+        , content_subscription_channel::VARCHAR as platform
+        -- , content_coupons_0_coupon_id as promotion_code
+        , null::VARCHAR as promotion_code
+        , null::VARCHAR as referrer
+        , content_customer_billing_address_state_code::VARCHAR as region
+        , null::BOOLEAN as registered_to_site
+        , 'chargebee' as source
+        , null::BOOLEAN as subscribed_to_site
+        , CASE content_subscription_billing_period_unit
+              WHEN 'month' THEN 'monthly'
+              WHEN 'year' THEN 'yearly'
+              ELSE content_subscription_billing_period_unit::VARCHAR
+          END AS subscription_frequency
+        , coalesce(
+          content_subscription_subscription_items_0_unit_price::INT, json_extract_path_text(
+            json_extract_array_element_text(
+              content_subscription_subscription_items, 0
+            ),'unit_price'
+          )::INT
+        ) as subscription_price
+        , CASE content_subscription_status
+              WHEN 'active' THEN 'enabled'
+              WHEN 'in_trial' THEN 'free_trial'
+              WHEN 'cancelled' THEN 'cancelled'
+              WHEN 'non_renewing' THEN 'non_renewing'
+              WHEN 'disabled' THEN 'disabled'
+              WHEN 'paused' THEN 'paused'
+              ELSE 'unknown' -- Default case if no match is found
+            END AS subscription_status
+        , (TIMESTAMP 'epoch' + content_customer_updated_at * INTERVAL '1 second') AS updated_at
+        from chargebee_webhook_events.subscription_resumed
+        union all
+        /*                                        */
+        /*      CUSTOMER PRODUCT CHARGE FAILED    */
+        /*                                        */
+        select
+        "timestamp"::TIMESTAMP
+        , id::VARCHAR
+        , content_customer_id::VARCHAR as customer_id
+        , content_subscription_id::VARCHAR as subscription_id
         , 'customer_product_charge_failed' as event
         , null::VARCHAR as campaign
         , null::VARCHAR as city
-        , null::VARCHAR as country
-        , content_customer_created_at as created_at
-        , content_customer_email as email
-        , content_card_first_name as first_name
-        , content_card_last_name as last_name
-        , null::DATE as last_payment_date
-        -- event doesn't contain marketing opt in
-        , null::BOOLEAN as marketing_opt_in
-        , content_card_first_name || ' ' || content_card_last_name AS name
-        , null::DATE as next_payment_date
-        , null::VARCHAR as plan
-        , 'web' as platform
+        , content_customer_billing_address_country::VARCHAR as country
+        -- , content_coupons_0_coupon_code as coupon_code
+        , null::VARCHAR as coupon_code
+        , (TIMESTAMP 'epoch' + content_customer_created_at * INTERVAL '1 second') AS created_at
+        , content_customer_email::VARCHAR as email
+        , content_card_first_name::VARCHAR as first_name
+        , content_card_last_name::VARCHAR as last_name
+        , (TIMESTAMP 'epoch' + content_transaction_updated_at * INTERVAL '1 second') AS last_payment_date
+        , content_customer_cs_marketing_opt_in::BOOLEAN as marketing_opt_in
+        , content_card_first_name::VARCHAR || ' ' || content_card_last_name::VARCHAR AS name
+        , (TIMESTAMP 'epoch' + content_subscription_next_billing_at * INTERVAL '1 second') AS next_payment_date
+        , coalesce(
+          content_subscription_subscription_items_0_item_price_id::VARCHAR, json_extract_path_text(
+            json_extract_array_element_text(
+              content_subscription_subscription_items, 0
+            ),'item_price_id'
+          )::VARCHAR
+        ) as plan
+        , content_subscription_channel::VARCHAR as platform
+        -- , content_coupons_0_coupon_id::VARCHAR as promotion_code
         , null::VARCHAR as promotion_code
         , null::VARCHAR as referrer
-        , null::VARCHAR as region
+        , content_customer_billing_address_state_code::VARCHAR as region
         , null::BOOLEAN as registered_to_site
         , 'chargebee' as source
         , null::BOOLEAN as subscribed_to_site
-        , null::VARCHAR as subscription_frequency
-        , null::VARCHAR as subscription_price
-        , 'enabled' as subscription_status
-        , content_customer_updated_at as updated_at
+        , CASE content_subscription_billing_period_unit
+              WHEN 'month' THEN 'monthly'
+              WHEN 'year' THEN 'yearly'
+              ELSE content_subscription_billing_period_unit::VARCHAR
+          END AS subscription_frequency
+        , coalesce(
+          content_subscription_subscription_items_0_unit_price::INT, json_extract_path_text(
+            json_extract_array_element_text(
+              content_subscription_subscription_items, 0
+            ),'unit_price'
+          )::INT
+        ) as subscription_price
+        , CASE content_subscription_status
+              WHEN 'active' THEN 'enabled'
+              WHEN 'in_trial' THEN 'free_trial'
+              WHEN 'cancelled' THEN 'cancelled'
+              WHEN 'non_renewing' THEN 'non_renewing'
+              WHEN 'disabled' THEN 'disabled'
+              WHEN 'paused' THEN 'paused'
+              ELSE 'unknown' -- Default case if no match is found
+            END AS subscription_status
+        , (TIMESTAMP 'epoch' + content_customer_updated_at * INTERVAL '1 second') AS updated_at
         from chargebee_webhook_events.payment_failed
         union all
+        /*                                        */
+        /*    CUSTOMER PRODUCT SET CANCELLATION   */
+        /*                                        */
         select
-        "timestamp"
-        , id
-        , user_id
-        , 'customer_product_set_cancellation' as event
+        "timestamp"::TIMESTAMP
+        , id::VARCHAR
+        , content_customer_id::VARCHAR as customer_id
+        , content_subscription_id::VARCHAR as subscription_id
+        , 'customer_product_set_cancellation' event
         , null::VARCHAR as campaign
         , null::VARCHAR as city
-        , null::VARCHAR as country
-        , content_customer_created_at as created_at
-        , content_customer_email as email
-        -- event doesn't contain names
-        , null::VARCHAR as first_name
-        , null::VARCHAR as last_name
-        , null::DATE as last_payment_date
-        , content_customer_cs_marketing_opt_in as marketing_opt_in
-        , null::VARCHAR as name
-        , null::DATE as next_payment_date
-        , null::VARCHAR as plan
-        , 'web' as platform
+        , content_customer_billing_address_country::VARCHAR as country
+        -- , content_coupons_0_coupon_code as coupon_code
+        , null::VARCHAR as coupon_code
+        , (TIMESTAMP 'epoch' + content_customer_created_at * INTERVAL '1 second') AS created_at
+        , content_customer_email::VARCHAR as email
+        , content_card_first_name::VARCHAR as first_name
+        , content_card_last_name::VARCHAR as last_name
+        , (TIMESTAMP 'epoch' + content_subscription_current_term_start * INTERVAL '1 second') AS last_payment_date
+        -- , content_subscription_current_term_start:: as last_payment_date
+        , content_customer_cs_marketing_opt_in::BOOLEAN as marketing_opt_in
+        , content_card_first_name::VARCHAR || ' ' || content_card_last_name::VARCHAR AS name
+        , null::TIMESTAMP as next_payment_date
+        -- , (TIMESTAMP 'epoch' + content_subscription_next_billing_at * INTERVAL '1 second') AS next_payment_date
+        , coalesce(
+          content_subscription_subscription_items_0_item_price_id::VARCHAR, json_extract_path_text(
+            json_extract_array_element_text(
+              content_subscription_subscription_items, 0
+            ),'item_price_id'
+          )::VARCHAR
+        ) as plan
+        , content_subscription_channel::VARCHAR as platform
+        -- , content_coupons_0_coupon_id as promotion_code
         , null::VARCHAR as promotion_code
         , null::VARCHAR as referrer
-        , null::VARCHAR as region
+        , content_customer_billing_address_state_code::VARCHAR as region
         , null::BOOLEAN as registered_to_site
         , 'chargebee' as source
         , null::BOOLEAN as subscribed_to_site
-        , null::VARCHAR as subscription_frequency
-        , null::VARCHAR as subscription_price
-        , 'enabled' as subscription_status
-        , content_customer_updated_at as updated_at
+        , CASE content_subscription_billing_period_unit
+              WHEN 'month' THEN 'monthly'
+              WHEN 'year' THEN 'yearly'
+              ELSE content_subscription_billing_period_unit::VARCHAR
+          END AS subscription_frequency
+        , coalesce(
+          content_subscription_subscription_items_0_unit_price::INT, json_extract_path_text(
+            json_extract_array_element_text(
+              content_subscription_subscription_items, 0
+            ),'unit_price'
+          )::INT
+        ) as subscription_price
+        , CASE content_subscription_status
+              WHEN 'active' THEN 'enabled'
+              WHEN 'in_trial' THEN 'free_trial'
+              WHEN 'cancelled' THEN 'cancelled'
+              WHEN 'non_renewing' THEN 'non_renewing'
+              WHEN 'disabled' THEN 'disabled'
+              WHEN 'paused' THEN 'paused'
+              ELSE 'unknown' -- Default case if no match is found
+            END AS subscription_status
+        , (TIMESTAMP 'epoch' + content_customer_updated_at * INTERVAL '1 second') AS updated_at
         from chargebee_webhook_events.subscription_cancellation_scheduled
         union all
-        -- TODO: Create 'customer_product_expired' event for failed charge related cancellations using the 'cancel_reason' field.
-        -- Enumeration of reasons ('Product Unsatisfactory', 'Service Unsatisfactory', 'Order Change', 'Other', 'Not Paid', 'No Card', 'Fraud Review Failed', 'Non Compliant EU Customer', 'Tax Calculation Failed', 'Currency Incompatible With Gateway', 'Non Compliant Customer')
-        -- Note: 'customer_product_disabled' triggers for Vimeo OTT API users. Therefore, it will trigger for chargebee users. No need to map over, but we should merge events instead.
+        /*                                          */
+        /*  CUSTOMER PRODUCT UNDO SET CANCELLATION  */
+        /*                                          */
         select
-        "timestamp"
-        , id
-        , user_id
-        , 'customer_product_cancelled' as event
+        "timestamp"::TIMESTAMP
+        , id::VARCHAR
+        , content_customer_id::VARCHAR as customer_id
+        , content_subscription_id::VARCHAR as subscription_id
+        , 'customer_product_undo_set_cancellation' event
         , null::VARCHAR as campaign
         , null::VARCHAR as city
-        , null::VARCHAR as country
-        , content_customer_created_at as created_at
-        , content_customer_email as email
-        , content_card_first_name as first_name
-        , content_card_last_name as last_name
-        , null::DATE as last_payment_date
-        -- event doesn't contain marketing opt in
-        , null::BOOLEAN as marketing_opt_in
-        , content_card_first_name || ' ' || content_card_last_name AS name
-        , null::DATE as next_payment_date
-        , null::VARCHAR as plan
-        , 'web' as platform
+        , content_customer_billing_address_country::VARCHAR as country
+        -- , content_coupons_0_coupon_code as coupon_code
+        , null::VARCHAR as coupon_code
+        , (TIMESTAMP 'epoch' + content_customer_created_at * INTERVAL '1 second') AS created_at
+        , content_customer_email::VARCHAR as email
+        , content_card_first_name::VARCHAR as first_name
+        , content_card_last_name::VARCHAR as last_name
+        , (TIMESTAMP 'epoch' + content_subscription_current_term_start * INTERVAL '1 second') AS last_payment_date
+        -- , content_subscription_current_term_start:: as last_payment_date
+        , content_customer_cs_marketing_opt_in::BOOLEAN as marketing_opt_in
+        , content_card_first_name::VARCHAR || ' ' || content_card_last_name::VARCHAR AS name
+        -- , null::TIMESTAMP as next_payment_date
+        , (TIMESTAMP 'epoch' + content_subscription_next_billing_at * INTERVAL '1 second') AS next_payment_date
+        , coalesce(
+          content_subscription_subscription_items_0_item_price_id::VARCHAR, json_extract_path_text(
+            json_extract_array_element_text(
+              content_subscription_subscription_items, 0
+            ),'item_price_id'
+          )::VARCHAR
+        ) as plan
+        , content_subscription_channel::VARCHAR as platform
+        -- , content_coupons_0_coupon_id as promotion_code
         , null::VARCHAR as promotion_code
         , null::VARCHAR as referrer
-        , null::VARCHAR as region
+        , content_customer_billing_address_state_code::VARCHAR as region
         , null::BOOLEAN as registered_to_site
         , 'chargebee' as source
         , null::BOOLEAN as subscribed_to_site
-        , null::VARCHAR as subscription_frequency
-        , null::VARCHAR as subscription_price
-        , 'cancelled' as subscription_status
-        , content_customer_updated_at as updated_at
-        from chargebee_webhook_events.subscription_cancelled
-        where (content_subscription_cancelled_at - content_subscription_trial_end) > 10000
+        , CASE content_subscription_billing_period_unit
+              WHEN 'month' THEN 'monthly'
+              WHEN 'year' THEN 'yearly'
+              ELSE content_subscription_billing_period_unit::VARCHAR
+          END AS subscription_frequency
+        , coalesce(
+          content_subscription_subscription_items_0_unit_price::INT, json_extract_path_text(
+            json_extract_array_element_text(
+              content_subscription_subscription_items, 0
+            ),'unit_price'
+          )::INT
+        ) as subscription_price
+        , CASE content_subscription_status
+              WHEN 'active' THEN 'enabled'
+              WHEN 'in_trial' THEN 'free_trial'
+              WHEN 'cancelled' THEN 'cancelled'
+              WHEN 'non_renewing' THEN 'non_renewing'
+              WHEN 'disabled' THEN 'disabled'
+              WHEN 'paused' THEN 'paused'
+              ELSE 'unknown' -- Default case if no match is found
+            END AS subscription_status
+        , (TIMESTAMP 'epoch' + content_customer_updated_at * INTERVAL '1 second') AS updated_at
+        from chargebee_webhook_events.subscription_scheduled_cancellation_removed
         union all
-        -- TODO: Create 'customer_product_expired' event for failed charge related cancellations using the 'cancel_reason' field.
-        -- Enumeration of reasons ('Product Unsatisfactory', 'Service Unsatisfactory', 'Order Change', 'Other', 'Not Paid', 'No Card', 'Fraud Review Failed', 'Non Compliant EU Customer', 'Tax Calculation Failed', 'Currency Incompatible With Gateway', 'Non Compliant Customer')
-        -- Note: 'customer_product_disabled' triggers for Vimeo OTT API users. Therefore, it will trigger for chargebee users. No need to map over, but we should merge events instead.
+        /*                                        */
+        /*      CUSTOMER PRODUCT SET PAUSED       */
+        /*                                        */
         select
-        "timestamp"
-        , id
-        , user_id
-        , 'customer_product_free_trial_expired' as event
+        "timestamp"::TIMESTAMP
+        , id::VARCHAR
+        , content_customer_id::VARCHAR as customer_id
+        , content_subscription_id::VARCHAR as subscription_id
+        , 'customer_product_set_paused' event
         , null::VARCHAR as campaign
         , null::VARCHAR as city
-        , null::VARCHAR as country
-        , content_customer_created_at as created_at
-        , content_customer_email as email
-        , content_card_first_name as first_name
-        , content_card_last_name as last_name
-        , null::DATE as last_payment_date
-        -- event doesn't contain marketing opt in
-        , null::BOOLEAN as marketing_opt_in
-        , content_card_first_name || ' ' || content_card_last_name AS name
-        , null::DATE as next_payment_date
-        , null::VARCHAR as plan
-        , 'web' as platform
+        , content_customer_billing_address_country::VARCHAR as country
+        -- , content_coupons_0_coupon_code as coupon_code
+        , null::VARCHAR as coupon_code
+        , (TIMESTAMP 'epoch' + content_customer_created_at * INTERVAL '1 second') AS created_at
+        , content_customer_email::VARCHAR as email
+        , content_card_first_name::VARCHAR as first_name
+        , content_card_last_name::VARCHAR as last_name
+        , (TIMESTAMP 'epoch' + content_subscription_current_term_start * INTERVAL '1 second') AS last_payment_date
+        -- , content_subscription_current_term_start:: as last_payment_date
+        , content_customer_cs_marketing_opt_in::BOOLEAN as marketing_opt_in
+        , content_card_first_name::VARCHAR || ' ' || content_card_last_name::VARCHAR AS name
+        -- , null::TIMESTAMP as next_payment_date
+        , (TIMESTAMP 'epoch' + content_subscription_next_billing_at * INTERVAL '1 second') AS next_payment_date
+        , coalesce(
+          content_subscription_subscription_items_0_item_price_id::VARCHAR, json_extract_path_text(
+            json_extract_array_element_text(
+              content_subscription_subscription_items, 0
+            ),'item_price_id'
+          )::VARCHAR
+        ) as plan
+        , content_subscription_channel::VARCHAR as platform
+        -- , content_coupons_0_coupon_id as promotion_code
         , null::VARCHAR as promotion_code
         , null::VARCHAR as referrer
-        , null::VARCHAR as region
+        , content_customer_billing_address_state_code::VARCHAR as region
         , null::BOOLEAN as registered_to_site
         , 'chargebee' as source
         , null::BOOLEAN as subscribed_to_site
-        , null::VARCHAR as subscription_frequency
-        , null::VARCHAR as subscription_price
-        , 'cancelled' as subscription_status
-        , content_customer_updated_at as updated_at
-        from chargebee_webhook_events.subscription_cancelled
-        where (content_subscription_cancelled_at - content_subscription_trial_end) < 10000
-    )
-    , chargebee_webhook_analytics as (
-      select
-      date(timestamp) as date
-      , 'web' as platform
-      ,count(case when (event = 'customer_product_free_trial_created') then 1 else null end) as free_trial_created
-      , count(case when (event = 'customer_product_free_trial_converted') then 1 else null end) as free_trial_converted
-      , count(case when (event = 'customer_product_free_trial_expired') then 1 else null end) as free_trial_churn
-      , count(case when (event = 'customer_product_created') then 1 else null end) as paying_created
-      , count(case when (event = 'customer_product_cancelled') then 1 else null end) as paying_churn
-      from chargebee_webhook_events
-      group by 1,2 order by 1
-    )
-    , p0 as (
-        SELECT
-        uploaded_at
-        , subscription_id
-        , customer_id
-        , a.subscription_status as status
-        , subscription_subscription_items_0_object
-        , subscription_subscription_items_0_item_type
-        , subscription_subscription_items_0_unit_price
-        , subscription_subscription_items_0_item_price_id
-        , subscription_subscription_items_1_object
-        , subscription_subscription_items_1_item_type
-        , subscription_subscription_items_1_unit_price
-        , subscription_subscription_items_1_item_price_id
-        , row_number() over (partition by subscription_id,uploaded_at order by uploaded_at desc, b."timestamp" desc) as rn
-        , b.*
-        FROM http_api.chargebee_subscriptions a
-        left join chargebee_webhook_events b
-        on a.customer_id = b.user_id and a.uploaded_at = date(b."timestamp")
+        , CASE content_subscription_billing_period_unit
+              WHEN 'month' THEN 'monthly'
+              WHEN 'year' THEN 'yearly'
+              ELSE content_subscription_billing_period_unit::VARCHAR
+          END AS subscription_frequency
+        , coalesce(
+          content_subscription_subscription_items_0_unit_price::INT, json_extract_path_text(
+            json_extract_array_element_text(
+              content_subscription_subscription_items, 0
+            ),'unit_price'
+          )::INT
+        ) as subscription_price
+        , CASE content_subscription_status
+              WHEN 'active' THEN 'enabled'
+              WHEN 'in_trial' THEN 'free_trial'
+              WHEN 'cancelled' THEN 'cancelled'
+              WHEN 'non_renewing' THEN 'non_renewing'
+              WHEN 'disabled' THEN 'disabled'
+              WHEN 'paused' THEN 'paused'
+              ELSE 'unknown' -- Default case if no match is found
+            END AS subscription_status
+        , (TIMESTAMP 'epoch' + content_customer_updated_at * INTERVAL '1 second') AS updated_at
+        from chargebee_webhook_events.subscription_pause_scheduled
+        union all
+        /*                                        */
+        /*      CUSTOMER PRODUCT SET PAUSED       */
+        /*                                        */
+        select
+        "timestamp"::TIMESTAMP
+        , id::VARCHAR
+        , content_customer_id::VARCHAR as customer_id
+        , content_subscription_id::VARCHAR as subscription_id
+        , 'customer_product_undo_set_paused' event
+        , null::VARCHAR as campaign
+        , null::VARCHAR as city
+        , content_customer_billing_address_country::VARCHAR as country
+        -- , content_coupons_0_coupon_code as coupon_code
+        , null::VARCHAR as coupon_code
+        , (TIMESTAMP 'epoch' + content_customer_created_at * INTERVAL '1 second') AS created_at
+        , content_customer_email::VARCHAR as email
+        , content_card_first_name::VARCHAR as first_name
+        , content_card_last_name::VARCHAR as last_name
+        , (TIMESTAMP 'epoch' + content_subscription_current_term_start * INTERVAL '1 second') AS last_payment_date
+        -- , content_subscription_current_term_start:: as last_payment_date
+        , content_customer_cs_marketing_opt_in::BOOLEAN as marketing_opt_in
+        , content_card_first_name::VARCHAR || ' ' || content_card_last_name::VARCHAR AS name
+        -- , null::TIMESTAMP as next_payment_date
+        , (TIMESTAMP 'epoch' + content_subscription_next_billing_at * INTERVAL '1 second') AS next_payment_date
+        , coalesce(
+          content_subscription_subscription_items_0_item_price_id::VARCHAR, json_extract_path_text(
+            json_extract_array_element_text(
+              content_subscription_subscription_items, 0
+            ),'item_price_id'
+          )::VARCHAR
+        ) as plan
+        , content_subscription_channel::VARCHAR as platform
+        -- , content_coupons_0_coupon_id as promotion_code
+        , null::VARCHAR as promotion_code
+        , null::VARCHAR as referrer
+        , content_customer_billing_address_state_code::VARCHAR as region
+        , null::BOOLEAN as registered_to_site
+        , 'chargebee' as source
+        , null::BOOLEAN as subscribed_to_site
+        , CASE content_subscription_billing_period_unit
+              WHEN 'month' THEN 'monthly'
+              WHEN 'year' THEN 'yearly'
+              ELSE content_subscription_billing_period_unit::VARCHAR
+          END AS subscription_frequency
+        , coalesce(
+          content_subscription_subscription_items_0_unit_price::INT, json_extract_path_text(
+            json_extract_array_element_text(
+              content_subscription_subscription_items, 0
+            ),'unit_price'
+          )::INT
+        ) as subscription_price
+        , CASE content_subscription_status
+              WHEN 'active' THEN 'enabled'
+              WHEN 'in_trial' THEN 'free_trial'
+              WHEN 'cancelled' THEN 'cancelled'
+              WHEN 'non_renewing' THEN 'non_renewing'
+              WHEN 'disabled' THEN 'disabled'
+              WHEN 'paused' THEN 'paused'
+              ELSE 'unknown' -- Default case if no match is found
+            END AS subscription_status
+        , (TIMESTAMP 'epoch' + content_customer_updated_at * INTERVAL '1 second') AS updated_at
+        from chargebee_webhook_events.subscription_scheduled_pause_removed
       )
-    , chargebee_totals as (
-      select
-      uploaded_at
-      , count(case when (status = 'active' or status = 'non_renewing') then 1 else null end) as total_paying
-      , count(case when (status = 'in_trial') then 1 else null end) as total_free_trials
-      from p0
-      group by 1 order by 1
-    )
-    , get_analytics_p1 as (
-      select
-      a.timestamp as timestamp
-      , existing_free_trials
-      , existing_paying
-      , (a.free_trial_created + b.free_trial_created) as free_trial_created
-      , (a.free_trial_converted + b.free_trial_converted) as free_trial_converted
-      , a.free_trial_churn + b.free_trial_churn as free_trial_churn
-      -- , NULL::INTEGER as paused_created
-      , greatest(0, a.paying_created - b.free_trial_created - a.free_trial_converted) as paying_created
-      , greatest(0, a.paying_churn - b.free_trial_churn) as paying_churn
-      -- Need to figure chargebee trials out
-      , a.total_free_trials + c.total_free_trials as total_free_trials
-      , greatest(0, a.total_paying - c.total_free_trials) as total_paying
-      from (select * from get_analytics_p0 where report_version = 2 and n=1) as a
-      left join chargebee_webhook_analytics as b
-      on date(a.timestamp) = b."date"
-      left join chargebee_totals as c
-      on date(a.timestamp) = date(c.uploaded_at)
-    )
-    -- BACK UP SOURCE INCASE OF API OUTAGE
-    , distinct_events as (
-      select distinct user_id
-      , action
-      , status
-      , platform
-      , frequency
-      , to_timestamp(customer_created_at, 'YYYY-MM-DD HH24:MI:SS') as customer_created_at
-      , to_timestamp(event_created_at, 'YYYY-MM-DD HH24:MI:SS') as event_created_at
-      , to_date(event_created_at, 'YYYY-MM-DD') as event_date
-      , to_date(report_date, 'YYYY-MM-DD') as report_date
-      from customers.gaithertvplus_all_customers
-      where action = 'subscription'
-    )
-    , total_counts as (
-      select report_date
-      , count(distinct case when status = 'enabled' and platform = 'api' then user_id end) as total_paying_api
-      , lag(total_paying_api, 1) over (order by report_date) as existing_paying
-      , count(distinct case when status = 'free_trial' and platform = 'api' then user_id end) as total_free_trials_api
-      , lag(total_free_trials_api, 1) over (order by report_date) as existing_free_trials_api
-      , count(distinct case when status = 'enabled' and platform = 'roku' then user_id end) as total_paying_roku
-      , lag(total_paying_roku, 1) over (order by report_date) as existing_paying_roku
-      , count(distinct case when status = 'free_trial' and platform = 'roku' then user_id end) as total_free_trials_roku
-      , lag(total_free_trials_roku, 1) over (order by report_date) as existing_free_trials_roku
-      , count(distinct case when status = 'enabled' and platform = 'ios' then user_id end) as total_paying_ios
-      , lag(total_paying_ios, 1) over (order by report_date) as existing_paying_ios
-      , count(distinct case when status = 'free_trial' and platform = 'ios' then user_id end) as total_free_trials_ios
-      , lag(total_free_trials_ios, 1) over (order by report_date) as existing_free_trials_ios
-      , count(distinct case when status = 'enabled' and platform = 'tvos' then user_id end) as total_paying_tvos
-      , lag(total_paying_tvos, 1) over (order by report_date) as existing_paying_tvos
-      , count(distinct case when status = 'free_trial' and platform = 'tvos' then user_id end) as total_free_trials_tvos
-      , lag(total_free_trials_tvos, 1) over (order by report_date) as existing_free_trials_tvos
-      , count(distinct case when status = 'enabled' and platform = 'android' then user_id end) as total_paying_android
-      , lag(total_paying_android, 1) over (order by report_date) as existing_paying_android
-      , count(distinct case when status = 'free_trial' and platform = 'android' then user_id end) as total_free_trials_android
-      , lag(total_free_trials_android, 1) over (order by report_date) as existing_free_trials_android
-      , count(distinct case when status = 'enabled' and platform = 'android_tv' then user_id end) as total_paying_android_tv
-      , lag(total_paying_android_tv, 1) over (order by report_date) as existing_paying_android_tv
-      , count(distinct case when status = 'free_trial' and platform = 'android_tv' then user_id end) as total_free_trials_android_tv
-      , lag(total_free_trials_android_tv, 1) over (order by report_date) as existing_free_trials_android_tv
-      , count(distinct case when status = 'enabled' and platform = 'amazon_fire_tv' then user_id end) as total_paying_fire_tv
-      , lag(total_paying_fire_tv, 1) over (order by report_date) as existing_paying_fire_tv
-      , count(distinct case when status = 'free_trial' and platform = 'amazon_fire_tv' then user_id end) as total_free_trials_fire_tv
-      , lag(total_free_trials_fire_tv, 1) over (order by report_date) as existing_free_trials_fire_tv
-      from distinct_events
-      group by 1
-    )
-    , latest_date AS (
-    SELECT MAX(report_date) AS latest_report_date FROM total_counts
-    )
-    -- AS OF 02/02/2024. Update Monthly
-    , app_platform_offsets as (
-      select
-      (205 - total_paying_ios - total_paying_tvos) as apple_offset
-      , (124 - total_paying_android - total_paying_android_tv) as android_offset
-      , (1214 - total_paying_roku) as roku_offset
-      , (460 - total_paying_fire_tv) as fire_tv_offset
-      from total_counts, latest_date
-      where total_counts.report_date = latest_date.latest_report_date
-    )
-    , customers_analytics as (
-      with p0 as (
-        select get_analytics_p1.timestamp,
-        -- coalesce(get_analytics_p1.existing_free_trials, total_counts.existing_free_trials) as existing_free_trials,
-        -- coalesce(get_analytics_p1.existing_paying, total_counts.existing_paying) as existing_paying,
-        get_analytics_p1.free_trial_churn,
-        get_analytics_p1.free_trial_converted,
-        get_analytics_p1.free_trial_created,
-        -- get_analytics_p1.paused_created,
-        get_analytics_p1.paying_churn,
-        get_analytics_p1.paying_created,
-        get_analytics_p1.total_free_trials as total_free_trials,
-        (get_analytics_p1.total_paying+apple_offset+android_offset+roku_offset+fire_tv_offset) as total_paying
-        from get_analytics_p1, app_platform_offsets
-        -- full join total_counts
-        -- on total_counts.report_date = trunc(get_analytics_p1.timestamp)
+      , gaithertv_events as (
+        select * from events
+        WHERE plan LIKE '%GaitherTV%'
       )
-      select * from p0 where date(timestamp) < current_date
-    ),
+      , chargebee_webhook_analytics as (
+        select
+        date(timestamp) as date
+        , 'web' as platform
+        ,count(case when (event = 'customer_product_free_trial_created') then 1 else null end) as free_trial_created
+        , count(case when (event = 'customer_product_free_trial_converted') then 1 else null end) as free_trial_converted
+        , count(case when (event = 'customer_product_free_trial_expired') then 1 else null end) as free_trial_churn
+        , count(case when (event = 'customer_product_created') then 1 else null end) as paying_created
+        , count(case when (event = 'customer_product_cancelled') then 1 else null end) as paying_churn
+        , count(case when (event = 'customer_product_paused') then 1 else null end) as paused_created
+        from gaithertv_events
+        group by 1,2 order by 1
+      )
+      , subs as (
+        with p0 as (
+          SELECT
+          uploaded_at
+          , subscription_id
+          , customer_id
+          , subscription_status as status
+          , subscription_subscription_items_0_object
+          , subscription_subscription_items_0_item_type
+          , subscription_subscription_items_0_unit_price
+          , subscription_subscription_items_0_item_price_id
+          FROM http_api.chargebee_subscriptions
+          WHERE subscription_subscription_items_0_item_price_id LIKE '%GaitherTV%'
+          )
+          select
+          a.*
+          , b.*
+          , row_number() over (partition by a.subscription_id,uploaded_at order by uploaded_at desc, b."timestamp" desc) as rn
+          from p0 a
+          left join gaithertv_events b
+          on a.customer_id = b.customer_id and a.uploaded_at = date(b."timestamp")
+        )
+          , chargebee_totals as (
+            select
+            uploaded_at
+            , count(case when (status = 'active' or status = 'non_renewing') then 1 else null end) as total_paying
+            , count(case when (status = 'in_trial') then 1 else null end) as total_free_trials
+            from subs
+            group by 1 order by 1
+          )
+          , get_analytics_p1 as (
+            select
+            a.timestamp as timestamp
+            , existing_free_trials
+            , existing_paying
+            , (a.free_trial_created + b.free_trial_created) as free_trial_created
+            , (a.free_trial_converted + b.free_trial_converted) as free_trial_converted
+            , a.free_trial_churn + b.free_trial_churn as free_trial_churn
+            -- , NULL::INTEGER as paused_created
+            , greatest(0, a.paying_created - b.free_trial_created - a.free_trial_converted) as paying_created
+            , greatest(0, a.paying_churn - b.free_trial_churn) as paying_churn
+            -- Need to figure chargebee trials out
+            , a.total_free_trials + c.total_free_trials as total_free_trials
+            , greatest(0, a.total_paying - c.total_free_trials) as total_paying
+            from (select * from get_analytics_p0 where report_version = 2 and n=1) as a
+            left join chargebee_webhook_analytics as b
+            on date(a.timestamp) = b."date"
+            left join chargebee_totals as c
+            on date(a.timestamp) = date(c.uploaded_at)
+          )
+          -- BACK UP SOURCE INCASE OF API OUTAGE
+          , distinct_events as (
+            select distinct user_id
+            , action
+            , status
+            , platform
+            , frequency
+            , to_timestamp(customer_created_at, 'YYYY-MM-DD HH24:MI:SS') as customer_created_at
+            , to_timestamp(event_created_at, 'YYYY-MM-DD HH24:MI:SS') as event_created_at
+            , to_date(event_created_at, 'YYYY-MM-DD') as event_date
+            , to_date(report_date, 'YYYY-MM-DD') as report_date
+            from customers.gaithertvplus_all_customers
+            where action = 'subscription'
+          )
+          , total_counts as (
+            select report_date
+            , count(distinct case when status = 'enabled' and platform = 'api' then user_id end) as total_paying_api
+            , lag(total_paying_api, 1) over (order by report_date) as existing_paying
+            , count(distinct case when status = 'free_trial' and platform = 'api' then user_id end) as total_free_trials_api
+            , lag(total_free_trials_api, 1) over (order by report_date) as existing_free_trials_api
+            , count(distinct case when status = 'enabled' and platform = 'roku' then user_id end) as total_paying_roku
+            , lag(total_paying_roku, 1) over (order by report_date) as existing_paying_roku
+            , count(distinct case when status = 'free_trial' and platform = 'roku' then user_id end) as total_free_trials_roku
+            , lag(total_free_trials_roku, 1) over (order by report_date) as existing_free_trials_roku
+            , count(distinct case when status = 'enabled' and platform = 'ios' then user_id end) as total_paying_ios
+            , lag(total_paying_ios, 1) over (order by report_date) as existing_paying_ios
+            , count(distinct case when status = 'free_trial' and platform = 'ios' then user_id end) as total_free_trials_ios
+            , lag(total_free_trials_ios, 1) over (order by report_date) as existing_free_trials_ios
+            , count(distinct case when status = 'enabled' and platform = 'tvos' then user_id end) as total_paying_tvos
+            , lag(total_paying_tvos, 1) over (order by report_date) as existing_paying_tvos
+            , count(distinct case when status = 'free_trial' and platform = 'tvos' then user_id end) as total_free_trials_tvos
+            , lag(total_free_trials_tvos, 1) over (order by report_date) as existing_free_trials_tvos
+            , count(distinct case when status = 'enabled' and platform = 'android' then user_id end) as total_paying_android
+            , lag(total_paying_android, 1) over (order by report_date) as existing_paying_android
+            , count(distinct case when status = 'free_trial' and platform = 'android' then user_id end) as total_free_trials_android
+            , lag(total_free_trials_android, 1) over (order by report_date) as existing_free_trials_android
+            , count(distinct case when status = 'enabled' and platform = 'android_tv' then user_id end) as total_paying_android_tv
+            , lag(total_paying_android_tv, 1) over (order by report_date) as existing_paying_android_tv
+            , count(distinct case when status = 'free_trial' and platform = 'android_tv' then user_id end) as total_free_trials_android_tv
+            , lag(total_free_trials_android_tv, 1) over (order by report_date) as existing_free_trials_android_tv
+            , count(distinct case when status = 'enabled' and platform = 'amazon_fire_tv' then user_id end) as total_paying_fire_tv
+            , lag(total_paying_fire_tv, 1) over (order by report_date) as existing_paying_fire_tv
+            , count(distinct case when status = 'free_trial' and platform = 'amazon_fire_tv' then user_id end) as total_free_trials_fire_tv
+            , lag(total_free_trials_fire_tv, 1) over (order by report_date) as existing_free_trials_fire_tv
+            from distinct_events
+            group by 1
+          )
+          , latest_date AS (
+          SELECT MAX(report_date) AS latest_report_date FROM total_counts
+          )
+          -- AS OF 02/02/2024. Update Monthly
+          , app_platform_offsets as (
+            select
+            (205 - total_paying_ios - total_paying_tvos) as apple_offset
+            , (124 - total_paying_android - total_paying_android_tv) as android_offset
+            , (1214 - total_paying_roku) as roku_offset
+            , (460 - total_paying_fire_tv) as fire_tv_offset
+            from total_counts, latest_date
+            where total_counts.report_date = latest_date.latest_report_date
+          )
+          , customers_analytics as (
+            with p0 as (
+              select get_analytics_p1.timestamp,
+              -- coalesce(get_analytics_p1.existing_free_trials, total_counts.existing_free_trials) as existing_free_trials,
+              -- coalesce(get_analytics_p1.existing_paying, total_counts.existing_paying) as existing_paying,
+              get_analytics_p1.free_trial_churn,
+              get_analytics_p1.free_trial_converted,
+              get_analytics_p1.free_trial_created,
+              -- get_analytics_p1.paused_created,
+              get_analytics_p1.paying_churn,
+              get_analytics_p1.paying_created,
+              get_analytics_p1.total_free_trials as total_free_trials,
+              (get_analytics_p1.total_paying+apple_offset+android_offset+roku_offset+fire_tv_offset) as total_paying
+              from get_analytics_p1, app_platform_offsets
+              -- full join total_counts
+              -- on total_counts.report_date = trunc(get_analytics_p1.timestamp)
+            )
+            select * from p0 where date(timestamp) < current_date
+          ),
 
       a as (select a.timestamp, ROW_NUMBER() OVER(ORDER BY a.timestamp desc) AS Row
       from customers_analytics as a),
