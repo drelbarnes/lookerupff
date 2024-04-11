@@ -58,7 +58,7 @@ view: ltv_cpa{
         select t5.timestamp,
         spend_30_days,
         conversions_30_days,
-        cast(spend_30_days as decimal)/cast(conversions_30_days as decimal) as CPA
+        cast(spend_30_days as decimal) / NULLIF(cast(conversions_30_days as decimal), 0) as CPA
         from t4 inner join t5 on t4.row=t5.row
       ),
 
@@ -67,8 +67,8 @@ view: ltv_cpa{
         select a.*,
         prior_31_days_subs,
         case
-          when date(a.timestamp)>'2020-08-18' then 4.1/(cast(churn_30_days as decimal)/cast(prior_31_days_subs as decimal))
-          else 3.69/(cast(churn_30_days as decimal)/cast(prior_31_days_subs as decimal))
+          when date(a.timestamp)>'2020-08-18' then 4.1 / NULLIF((cast(churn_30_days as decimal) / NULLIF(cast(prior_31_days_subs as decimal), 0)), 0)
+          else 3.69 / NULLIF((cast(churn_30_days as decimal) / NULLIF(cast(prior_31_days_subs as decimal), 0)), 0)
         end as LTV
         from (
           select a1.timestamp,
@@ -124,7 +124,7 @@ view: ltv_cpa{
         select t8.*,
         cpa_4_week_avg,
         ltv_4_week_avg,
-        ltv_4_week_avg/cpa_4_week_avg as ltv_cpa_ratio_4_week_avg
+        ltv_4_week_avg / NULLIF(cpa_4_week_avg, 0) as ltv_cpa_ratio_4_week_avg
         from t8
         inner join t9
         on t8.timestamp=t9.timestamp
