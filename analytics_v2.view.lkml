@@ -1059,15 +1059,29 @@ view: analytics_v2 {
             where date(sent_at)=current_date
           )
           select
-          analytics_timestamp as timestamp
+          analytics_timestamp as "timestamp"
           , existing_free_trials
           , existing_paying
           , free_trial_churn
           , free_trial_converted
           , free_trial_created
           , paused_created
-          , paying_churn
-          , paying_created
+          -- , paying_churn
+          , case
+            when date(analytics_timestamp) = '2024-04-20' then paying_churn-36455
+            when date(analytics_timestamp) = '2024-04-18' then paying_churn-44853
+            when date(analytics_timestamp) = '2024-04-17' then paying_churn-55194
+            when date(analytics_timestamp) = '2024-04-16' then paying_churn-15351
+            else paying_churn
+            end as paying_churn
+          -- , paying_created
+          , case
+            when date(analytics_timestamp) = '2024-04-20' then paying_created-36455
+            when date(analytics_timestamp) = '2024-04-18' then paying_created-44853
+            when date(analytics_timestamp) = '2024-04-17' then paying_created-55194
+            when date(analytics_timestamp) = '2024-04-16' then paying_created-15351
+            else paying_created
+            end as paying_created
           , total_free_trials
           , total_paying
           , report_version
