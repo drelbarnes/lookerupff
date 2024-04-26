@@ -44,6 +44,7 @@ include: "/views/customer_file_subscriber_counts.view.lkml"
 include: "/views/appstoreconnect_sub_counts.view.lkml"
 include: "/views/chargebee_event_mapping/gaithertvplus_analytics.view.lkml"
 include: "/views/chargebee_event_mapping/gaithertvplus_app_installers.view.lkml"
+include: "/views/chargebee_event_mapping/chargebee_webhook_events.view.lkml"
 
 explore: redshift_exec_summary_metrics {
   label: "Exec Summary Metrics"
@@ -199,6 +200,8 @@ explore: vimeo_ott_customer_record_analytics {}
 
 explore: gaithertvplus_analytics {}
 explore: gaithertvplus_app_installers {}
+
+explore: chargebee_webhook_events {}
 
 include: "javascript_subscribed.view"
 explore: subscribed {}
