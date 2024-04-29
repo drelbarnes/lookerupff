@@ -283,28 +283,96 @@ view: analytics_v2 {
       high_price,
       other
       from
-      ((select a.*,cast(datepart(week,date(timestamp)) as varchar) as Week,
-      cast(datepart(month,date(timestamp)) as varchar) as Month,
-      cast(datepart(Quarter,date(timestamp)) as varchar) as Quarter,
-      cast(datepart(Year,date(timestamp)) as varchar) as Year,
-      new_trials_14_days_prior from
-      (select *, row_number() over(order by timestamp desc) as rownum from customers_analytics) as a
-      left join
       (
+        (
           select
+          a.*
+          ,cast(datepart(week,date(timestamp)) as varchar) as Week,
+          cast(datepart(month,date(timestamp)) as varchar) as Month,
+          cast(datepart(Quarter,date(timestamp)) as varchar) as Quarter,
+          cast(datepart(Year,date(timestamp)) as varchar) as Year,
+          case
+            when timestamp < '2024-04-26' then b.new_trials_14_days_prior
+            when timestamp >= '2024-04-26' and timestamp < '2024-05-04' then b.new_trials_14_days_prior + d.new_trials_7_days_prior
+            when timestamp >= '2024-05-04' then b.new_trials_14_days_prior - e.new_trials_14_days_prior + d.new_trials_7_days_prior
+            end as new_trials_14_days_prior
+          /* Pre-trial length change period dimension
+          b.new_trials_14_days_prior
+          */
+          /* Trial length changed on Web only period dimension
+          case
+            when timestamp < '2024-04-27' then b.new_trials_14_days_prior
+            when timestamp >= '2024-04-27' and timestamp < '2024-05-04' then b.new_trials_14_days_prior + d.new_trials_7_days_prior
+            when timestamp >= '2024-05-04' then b.new_trials_14_days_prior - e.new_trials_14_days_prior + d.new_trials_7_days_prior
+            end as new_trials_14_days_prior
+          */
+          /* Trial length changed on all platforms period dimension
+          case
+            when timestamp < '2024-04-27' then b.new_trials_14_days_prior
+            when timestamp >= '2024-04-27' and timestamp < '2024-05-04' then b.new_trials_14_days_prior + d.new_trials_7_days_prior
+            when timestamp >= '2024-05-04' and timestamp < {PLATFORM_CHANGE_DATE} then b.new_trials_14_days_prior - e.new_trials_14_days_prior + d.new_trials_7_days_prior
+            end as new_trials_14_days_prior
+            when timestamp >= {PLATFORM_CHANGE_DATE} and timestamp < dateadd(day, 14, {PLATFORM_CHANGE_DATE}) then INSERT TRANSITION LOGIC HERE
+            when timestamp >= dateadd(day, 14, {PLATFORM_CHANGE_DATE}) then c.new_trials_7_days_prior
+          */
+          from
+          (
+            select *, row_number() over(order by timestamp desc) as rownum from customers_analytics
+          ) as a
+          left join
+          (
+            select
               free_trial_created as new_trials_14_days_prior,
               row_number() over(order by timestamp desc) as rownum
-          from customers_analytics
-          where timestamp in (
+            from customers_analytics
+            where timestamp in (
               select
-                  case
-                      when timestamp <= '2024-04-26' then dateadd(day, -14, timestamp)
-                      else dateadd(day, -7, timestamp)
-                  end as timestamp
+              dateadd(day, -14, timestamp) as timestamp
               from customers_analytics
-          )
-      ) as b
-      on a.rownum=b.rownum)) as a
+            )
+          ) as b
+          on a.rownum=b.rownum
+          left join
+          (
+            select
+              free_trial_created as new_trials_7_days_prior,
+              row_number() over(order by timestamp desc) as rownum
+            from customers_analytics
+            where timestamp in (
+              select
+              dateadd(day, -7, timestamp) as timestamp
+              from customers_analytics
+              )
+          ) as c
+          on a.rownum=c.rownum
+          left join
+          (
+            select
+              free_trial_created as new_trials_7_days_prior,
+              row_number() over(order by date desc) as rownum
+            from chargebee_webhook_analytics
+            where date in (
+              select
+              date(dateadd(day, -7, timestamp)) as date
+              from customers_analytics
+              )
+          ) as d
+          on a.rownum=d.rownum
+          left join
+          (
+            select
+              free_trial_created as new_trials_14_days_prior,
+              row_number() over(order by date desc) as rownum
+            from chargebee_webhook_analytics
+            where date in (
+              select
+              date(dateadd(day, -14, timestamp)) as date
+              from customers_analytics
+              )
+          ) as e
+          on a.rownum=e.rownum
+        )
+      ) as a
       left join customers.churn_reasons_aggregated as b on a.timestamp=b.timestamp)) as a))
       , outer_query as (
         select f.*,paying_30_days_prior,churn_30_days,churn_30_day_percent,winback_30_days from e inner join f on e.timestamp=f.timestamp
@@ -1105,7 +1173,7 @@ view: analytics_v2 {
 
   measure: churn_30_day_percent_a {
     type: sum
-    sql: ${churn_30_days}/${paying_30_days_prior};;
+    sql: ${churn_30_days}/NULLIF(${paying_30_days_prior}, 0);;
     value_format_name: percent_1
     filters: {
       field: group_a
@@ -1116,7 +1184,7 @@ view: analytics_v2 {
 
   measure: churn_30_day_percent_b {
     type: sum
-    sql: ${churn_30_days}/${paying_30_days_prior};;
+    sql: ${churn_30_days}/NULLIF(${paying_30_days_prior}, 0);;
     value_format_name: percent_1
     filters: {
       field: group_b
