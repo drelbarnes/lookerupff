@@ -50,6 +50,13 @@ view: other_marketing_spend {
         from (select date, cost from customers.tapjoy group by 1,2)
         group by 1,3
       )
+      , samsung as (
+        select safe_cast(date as timestamp) as date,
+        sum(spend) as spend,
+        'Samsung' as channel
+        from (select date, spend from customers.samsung group by 1,2)
+        group by 1,3
+      )
       , all_spend as (
         select date,
         spend,
@@ -85,11 +92,15 @@ view: other_marketing_spend {
         , spend
         , channel
         from tapjoy
+        union all
+        select date
+        , spend
+        , channel
+        from samsung
       )
       SELECT * FROM `up-faith-and-family-216419.http_api.other_marketing_spend`
       union all
       select cast(date as date), spend, channel from all_spend
-
       ;;
   }
 

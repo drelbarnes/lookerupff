@@ -1,118 +1,237 @@
 view: analytics_v2 {
   derived_table: {
-    sql: with get_analytics_p0 as (
+    sql: with upff_events as (
+        select * from ${chargebee_webhook_events.SQL_TABLE_NAME}
+        WHERE plan LIKE '%UP-Faith-Family%'
+      )
+      , chargebee_webhook_analytics as (
+        select
+        date(timestamp) as date
+        , 'web' as platform
+        ,count(case when (event = 'customer_product_free_trial_created') then 1 else null end) as free_trial_created
+        , count(case when (event = 'customer_product_free_trial_converted') then 1 else null end) as free_trial_converted
+        , count(case when (event = 'customer_product_free_trial_expired') then 1 else null end) as free_trial_churn
+        , count(case when (event = 'customer_product_created') then 1 else null end) as paying_created
+        , count(case when (event = 'customer_product_cancelled') then 1 else null end) as paying_churn
+        , count(case when (event = 'customer_product_paused') then 1 else null end) as paused_created
+        from upff_events
+        group by 1,2 order by 1
+      )
+      , subs as (
         with p0 as (
+          SELECT
+          uploaded_at
+          , subscription_id
+          , customer_id
+          , subscription_status as status
+          , subscription_subscription_items_0_object
+          , subscription_subscription_items_0_item_type
+          , subscription_subscription_items_0_unit_price
+          , subscription_subscription_items_0_item_price_id
+          FROM http_api.chargebee_subscriptions
+          WHERE subscription_subscription_items_0_item_price_id LIKE '%UP-Faith-Family%'
+          )
           select
-          *
-          , case when existing_free_trials is null AND existing_paying is null then 'v2'
-              else 'v1'
-            end as report_version
-          from php.get_analytics
-          where date(sent_at)=current_date
+          a.*
+          , b.*
+          , row_number() over (partition by a.subscription_id,uploaded_at order by uploaded_at desc, b."timestamp" desc) as rn
+          from p0 a
+          left join upff_events b
+          on a.customer_id = b.customer_id and a.uploaded_at = date(b."timestamp")
         )
+      , chargebee_totals as (
         select
-        analytics_timestamp as timestamp
-        , existing_free_trials
-        , existing_paying
-        , free_trial_churn
-        , free_trial_converted
-        , free_trial_created
-        , paused_created
-        , paying_churn
-        , paying_created
-        , total_free_trials
-        , total_paying
-        , report_version
-        , row_number() over (partition by analytics_timestamp, report_version order by sent_at desc) as n
-        from p0
+        uploaded_at
+        , count(case when (status = 'active' or status = 'non_renewing') then 1 else null end) as total_paying
+        , count(case when (status = 'in_trial') then 1 else null end) as total_free_trials
+        from subs
+        group by 1 order by 1
       )
-      --, apple_subs as (
-      --  select
-      --  report_date
-      --  , app_store_connect_subscribers_total
-      --  , vimeo_ott_subscribers_total
-      --  , row_number() over (partition by report_date order by timestamp desc) as n
-      --  from
-      --  looker.get_app_store_connect_subs
-      --  where date(sent_at)=current_date
-      --)
-      , apple_subs as (
-        select
-        a.report_date
-        , a.ios+a.tvos as vimeo_ott_subscribers_total
-        , b.ios + b.tvos as app_store_connect_subscribers_total
-        from ${customer_file_subscriber_counts.SQL_TABLE_NAME} as a
-        left join ${appstoreconnect_sub_counts.SQL_TABLE_NAME} as b
-        on a.report_date = b.report_date
-      )
-      , get_analytics_p1 as (
-        select
-        coalesce(a.timestamp, b.timestamp) as timestamp
-        , coalesce(a.existing_free_trials, b.existing_free_trials) as existing_free_trials
-        , coalesce(a.existing_paying, b.existing_paying) as existing_paying
-        , coalesce(a.free_trial_churn, b.free_trial_churn) as free_trial_churn
-        , coalesce(a.free_trial_converted, b.free_trial_converted) as free_trial_converted
-        , coalesce(a.free_trial_created, b.free_trial_created) as free_trial_created
-        , coalesce(a.paused_created, b.paused_created) as paused_created
-        , coalesce(a.paying_churn, b.paying_churn) as paying_churn
-        , coalesce(a.paying_created, b.paying_created) as paying_created
-        , coalesce(b.total_free_trials, a.total_free_trials) as total_free_trials
-        , coalesce(nullif(b.total_paying-c.vimeo_ott_subscribers_total+c.app_store_connect_subscribers_total,-c.vimeo_ott_subscribers_total+c.app_store_connect_subscribers_total)
-          ,nullif(a.total_paying-c.vimeo_ott_subscribers_total+c.app_store_connect_subscribers_total,-c.vimeo_ott_subscribers_total+c.app_store_connect_subscribers_total), b.total_paying, a.total_paying) as total_paying
-        , (null-c.vimeo_ott_subscribers_total+c.app_store_connect_subscribers_total) as test
-        , (-c.vimeo_ott_subscribers_total+c.app_store_connect_subscribers_total) as text2
-        from (select * from get_analytics_p0 where report_version = 'v1' and n=1) as a
-        left join (select * from get_analytics_p0 where report_version = 'v2' and n=1) as b
-        on date(a.timestamp) = date(b.timestamp)
-        left join (
+      , get_analytics_p0 as (
+          with p0 as (
+            select
+            *
+            , case when existing_free_trials is null AND existing_paying is null then 'v2'
+                else 'v1'
+              end as report_version
+            from php.get_analytics
+            where date(sent_at)=current_date
+          )
           select
-          report_date
-          , app_store_connect_subscribers_total
-          , vimeo_ott_subscribers_total
-          from apple_subs
-        ) c
-        on date(a.timestamp) = date(c.report_date)
-      )
-      -- BACK UP SOURCE INCASE OF API OUTAGE
-      , distinct_events as (
-        select distinct user_id
-        , action
-        , status
-        , frequency
-        , to_timestamp(event_created_at, 'YYYY-MM-DD HH24:MI:SS') as event_created_at
-        , to_date(event_created_at, 'YYYY-MM-DD') as event_date
-        , to_date(report_date, 'YYYY-MM-DD') as report_date
-        from customers.all_customers
-        where action = 'subscription'
-      )
-      , total_counts as (
-        select report_date
-        , count(distinct case when status = 'enabled' then user_id end) as total_paying
-        , lag(total_paying, 1) over (order by report_date) as existing_paying
-        , count(distinct case when status = 'free_trial' then user_id end) as total_free_trials
-        , lag(total_free_trials, 1) over (order by report_date) as existing_free_trials
-        from distinct_events
-        group by 1
-      )
-      , customers_analytics as (
-        with p0 as (
-          select get_analytics_p1.timestamp,
-          coalesce(get_analytics_p1.existing_free_trials, total_counts.existing_free_trials) as existing_free_trials,
-          coalesce(get_analytics_p1.existing_paying, total_counts.existing_paying) as existing_paying,
-          get_analytics_p1.free_trial_churn,
-          get_analytics_p1.free_trial_converted,
-          get_analytics_p1.free_trial_created,
-          get_analytics_p1.paused_created,
-          get_analytics_p1.paying_churn,
-          get_analytics_p1.paying_created,
-          coalesce(get_analytics_p1.total_free_trials, total_counts.total_free_trials) as total_free_trials,
-          coalesce(get_analytics_p1.total_paying, total_counts.total_paying) as total_paying
-          from get_analytics_p1
-          full join total_counts
-          on total_counts.report_date = trunc(get_analytics_p1.timestamp)
+          analytics_timestamp as "timestamp"
+          , existing_free_trials
+          , existing_paying
+          , free_trial_churn
+          , free_trial_converted
+          , free_trial_created
+          , paused_created
+          -- , paying_churn
+          , case
+            when date(analytics_timestamp) = '2024-04-20' then paying_churn-36455
+            when date(analytics_timestamp) = '2024-04-18' then paying_churn-44853
+            when date(analytics_timestamp) = '2024-04-17' then paying_churn-55194
+            when date(analytics_timestamp) = '2024-04-16' then paying_churn-15351
+            else paying_churn
+            end as paying_churn
+          -- , paying_created
+          , case
+            when date(analytics_timestamp) = '2024-04-20' then paying_created-36455
+            when date(analytics_timestamp) = '2024-04-18' then paying_created-44853
+            when date(analytics_timestamp) = '2024-04-17' then paying_created-55194
+            when date(analytics_timestamp) = '2024-04-16' then paying_created-15351
+            else paying_created
+            end as paying_created
+          , total_free_trials
+          , total_paying
+          , report_version
+          , row_number() over (partition by analytics_timestamp, report_version order by sent_at desc) as n
+          from p0
         )
-        select * from p0 where date(timestamp) < current_date
-      ),
+        , apple_subs as (
+          select
+          a.report_date
+          , a.ios+a.tvos as vimeo_ott_subscribers_total
+          , b.ios + b.tvos as app_store_connect_subscribers_total
+          from ${customer_file_subscriber_counts.SQL_TABLE_NAME} as a
+          left join ${appstoreconnect_sub_counts.SQL_TABLE_NAME} as b
+          -- from looker_scratch.lr$rm4oz1712233105228_customer_file_subscriber_counts as a
+          -- left join looker_scratch.lr$rmre91712233831486_appstoreconnect_sub_counts as b
+          on a.report_date = b.report_date
+        )
+        , get_analytics_p1_test as (
+          select
+          a.timestamp as timestamp
+          , existing_free_trials
+          , existing_paying
+          , (a.free_trial_created + b.free_trial_created) as free_trial_created
+          , (a.free_trial_converted + b.free_trial_converted) as free_trial_converted
+          , a.free_trial_churn + b.free_trial_churn as free_trial_churn
+          -- , NULL::INTEGER as paused_created
+          , greatest(0, a.paying_created - b.free_trial_created - a.free_trial_converted) as paying_created
+          , greatest(0, a.paying_churn - b.free_trial_churn) as paying_churn
+          -- Need to figure chargebee trials out
+          , a.total_free_trials + c.total_free_trials as total_free_trials
+          , greatest(0, a.total_paying - c.total_free_trials) as total_paying
+          from (select * from get_analytics_p0 where report_version = 2 and n=1) as a
+          left join chargebee_webhook_analytics as b
+          on date(a.timestamp) = b."date"
+          left join chargebee_totals as c
+          on date(a.timestamp) = date(c.uploaded_at)
+        )
+        , get_analytics_p1 as (
+          select
+          coalesce(a.timestamp, a2.timestamp) as timestamp
+          , coalesce(a.existing_free_trials, a2.existing_free_trials) as existing_free_trials
+          , coalesce(a.existing_paying, a2.existing_paying) as existing_paying
+          , coalesce(coalesce(a.free_trial_churn, a2.free_trial_churn), 0) + coalesce(b.free_trial_churn, 0) AS free_trial_churn
+          , coalesce(coalesce(a.free_trial_converted, a2.free_trial_converted), 0) + coalesce(b.free_trial_converted, 0) as free_trial_converted
+          , coalesce(coalesce(a.free_trial_created, a2.free_trial_created), 0) + coalesce(b.free_trial_created, 0) as free_trial_created
+          , coalesce(coalesce(a.paused_created, a2.paused_created), 0) + coalesce(b.paused_created, 0) as paused_created
+          , greatest(0, coalesce(coalesce(a.paying_churn, a2.paying_churn), 0) - coalesce(b.free_trial_churn, 0)) as paying_churn
+          , greatest(0, coalesce(coalesce(a.paying_created, a2.paying_created), 0) - coalesce(b.free_trial_created, 0)) as paying_created
+          , coalesce(coalesce(a2.total_free_trials, a.total_free_trials), 0) + coalesce(c1.total_free_trials, 0) as total_free_trials
+          , coalesce(
+            coalesce(
+              nullif(
+                a2.total_paying-c.vimeo_ott_subscribers_total+c.app_store_connect_subscribers_total
+                ,-c.vimeo_ott_subscribers_total+c.app_store_connect_subscribers_total
+              )
+              ,0
+            ) - coalesce(c1.total_free_trials,0)
+            , coalesce(
+              nullif(
+                a.total_paying-c.vimeo_ott_subscribers_total+c.app_store_connect_subscribers_total
+                ,-c.vimeo_ott_subscribers_total+c.app_store_connect_subscribers_total
+              )
+              ,0
+            ) - coalesce(c1.total_free_trials,0)
+            , a2.total_paying-c1.total_free_trials, a.total_paying-c1.total_free_trials
+          ) as total_paying
+          , (-c.vimeo_ott_subscribers_total+c.app_store_connect_subscribers_total) as test2
+          from (select * from get_analytics_p0 where report_version = 'v1' and n=1) as a
+          left join (select * from get_analytics_p0 where report_version = 'v2' and n=1) as a2
+          on date(a.timestamp) = date(a2.timestamp)
+          left join chargebee_webhook_analytics as b
+          on date(a.timestamp) = b."date"
+          left join (
+            select
+            report_date
+            , app_store_connect_subscribers_total
+            , vimeo_ott_subscribers_total
+            from apple_subs
+          ) c
+          on date(a.timestamp) = date(c.report_date)
+          left join chargebee_totals as c1
+          on date(a.timestamp) = date(c1.uploaded_at)
+        )
+        , get_analytics_p1_old as (
+          select
+          coalesce(a.timestamp, b.timestamp) as timestamp
+          , coalesce(a.existing_free_trials, b.existing_free_trials) as existing_free_trials
+          , coalesce(a.existing_paying, b.existing_paying) as existing_paying
+          , coalesce(a.free_trial_churn, b.free_trial_churn) as free_trial_churn
+          , coalesce(a.free_trial_converted, b.free_trial_converted) as free_trial_converted
+          , coalesce(a.free_trial_created, b.free_trial_created) as free_trial_created
+          , coalesce(a.paused_created, b.paused_created) as paused_created
+          , coalesce(a.paying_churn, b.paying_churn) as paying_churn
+          , coalesce(a.paying_created, b.paying_created) as paying_created
+          , coalesce(b.total_free_trials, a.total_free_trials) as total_free_trials
+          , coalesce(nullif(b.total_paying-c.vimeo_ott_subscribers_total+c.app_store_connect_subscribers_total,-c.vimeo_ott_subscribers_total+c.app_store_connect_subscribers_total)
+            ,nullif(a.total_paying-c.vimeo_ott_subscribers_total+c.app_store_connect_subscribers_total,-c.vimeo_ott_subscribers_total+c.app_store_connect_subscribers_total), b.total_paying, a.total_paying) as total_paying
+          , (null-c.vimeo_ott_subscribers_total+c.app_store_connect_subscribers_total) as test
+          , (-c.vimeo_ott_subscribers_total+c.app_store_connect_subscribers_total) as text2
+          from (select * from get_analytics_p0 where report_version = 'v1' and n=1) as a
+          left join (select * from get_analytics_p0 where report_version = 'v2' and n=1) as b
+          on date(a.timestamp) = date(b.timestamp)
+          left join (
+            select
+            report_date
+            , app_store_connect_subscribers_total
+            , vimeo_ott_subscribers_total
+            from apple_subs
+          ) c
+          on date(a.timestamp) = date(c.report_date)
+        )
+        -- BACK UP SOURCE INCASE OF API OUTAGE
+        , distinct_events as (
+          select distinct user_id
+          , action
+          , status
+          , frequency
+          , to_timestamp(event_created_at, 'YYYY-MM-DD HH24:MI:SS') as event_created_at
+          , to_date(event_created_at, 'YYYY-MM-DD') as event_date
+          , to_date(report_date, 'YYYY-MM-DD') as report_date
+          from customers.all_customers
+          where action = 'subscription'
+        )
+        , total_counts as (
+          select report_date
+          , count(distinct case when status = 'enabled' then user_id end) as total_paying
+          , lag(total_paying, 1) over (order by report_date) as existing_paying
+          , count(distinct case when status = 'free_trial' then user_id end) as total_free_trials
+          , lag(total_free_trials, 1) over (order by report_date) as existing_free_trials
+          from distinct_events
+          group by 1
+        )
+        , customers_analytics as (
+          with p0 as (
+            select get_analytics_p1.timestamp,
+            coalesce(get_analytics_p1.existing_free_trials, total_counts.existing_free_trials) as existing_free_trials,
+            coalesce(get_analytics_p1.existing_paying, total_counts.existing_paying) as existing_paying,
+            get_analytics_p1.free_trial_churn,
+            get_analytics_p1.free_trial_converted,
+            get_analytics_p1.free_trial_created,
+            get_analytics_p1.paused_created,
+            get_analytics_p1.paying_churn,
+            get_analytics_p1.paying_created,
+            coalesce(get_analytics_p1.total_free_trials, total_counts.total_free_trials) as total_free_trials,
+            coalesce(get_analytics_p1.total_paying, total_counts.total_paying) as total_paying
+            from get_analytics_p1
+            full join total_counts
+            on total_counts.report_date = trunc(get_analytics_p1.timestamp)
+          )
+          select * from p0 where date(timestamp) < current_date
+        ),
 
       a as (select a.timestamp, ROW_NUMBER() OVER(ORDER BY a.timestamp desc) AS Row
       from customers_analytics as a),
@@ -164,16 +283,96 @@ view: analytics_v2 {
       high_price,
       other
       from
-      ((select a.*,cast(datepart(week,date(timestamp)) as varchar) as Week,
-      cast(datepart(month,date(timestamp)) as varchar) as Month,
-      cast(datepart(Quarter,date(timestamp)) as varchar) as Quarter,
-      cast(datepart(Year,date(timestamp)) as varchar) as Year,
-      new_trials_14_days_prior from
-      (select *, row_number() over(order by timestamp desc) as rownum from customers_analytics) as a
-      left join
-      (select free_trial_created as new_trials_14_days_prior, row_number() over(order by timestamp desc) as rownum from customers_analytics
-      where timestamp in
-      (select dateadd(day,-14,timestamp) as timestamp from customers_analytics )) as b on a.rownum=b.rownum)) as a
+      (
+        (
+          select
+          a.*
+          ,cast(datepart(week,date(timestamp)) as varchar) as Week,
+          cast(datepart(month,date(timestamp)) as varchar) as Month,
+          cast(datepart(Quarter,date(timestamp)) as varchar) as Quarter,
+          cast(datepart(Year,date(timestamp)) as varchar) as Year,
+          case
+            when timestamp < '2024-04-26' then b.new_trials_14_days_prior
+            when timestamp >= '2024-04-26' and timestamp < '2024-05-04' then b.new_trials_14_days_prior + d.new_trials_7_days_prior
+            when timestamp >= '2024-05-04' then b.new_trials_14_days_prior - e.new_trials_14_days_prior + d.new_trials_7_days_prior
+            end as new_trials_14_days_prior
+          /* Pre-trial length change period dimension
+          b.new_trials_14_days_prior
+          */
+          /* Trial length changed on Web only period dimension
+          case
+            when timestamp < '2024-04-27' then b.new_trials_14_days_prior
+            when timestamp >= '2024-04-27' and timestamp < '2024-05-04' then b.new_trials_14_days_prior + d.new_trials_7_days_prior
+            when timestamp >= '2024-05-04' then b.new_trials_14_days_prior - e.new_trials_14_days_prior + d.new_trials_7_days_prior
+            end as new_trials_14_days_prior
+          */
+          /* Trial length changed on all platforms period dimension
+          case
+            when timestamp < '2024-04-27' then b.new_trials_14_days_prior
+            when timestamp >= '2024-04-27' and timestamp < '2024-05-04' then b.new_trials_14_days_prior + d.new_trials_7_days_prior
+            when timestamp >= '2024-05-04' and timestamp < {PLATFORM_CHANGE_DATE} then b.new_trials_14_days_prior - e.new_trials_14_days_prior + d.new_trials_7_days_prior
+            end as new_trials_14_days_prior
+            when timestamp >= {PLATFORM_CHANGE_DATE} and timestamp < dateadd(day, 14, {PLATFORM_CHANGE_DATE}) then INSERT TRANSITION LOGIC HERE
+            when timestamp >= dateadd(day, 14, {PLATFORM_CHANGE_DATE}) then c.new_trials_7_days_prior
+          */
+          from
+          (
+            select *, row_number() over(order by timestamp desc) as rownum from customers_analytics
+          ) as a
+          left join
+          (
+            select
+              free_trial_created as new_trials_14_days_prior,
+              row_number() over(order by timestamp desc) as rownum
+            from customers_analytics
+            where timestamp in (
+              select
+              dateadd(day, -14, timestamp) as timestamp
+              from customers_analytics
+            )
+          ) as b
+          on a.rownum=b.rownum
+          left join
+          (
+            select
+              free_trial_created as new_trials_7_days_prior,
+              row_number() over(order by timestamp desc) as rownum
+            from customers_analytics
+            where timestamp in (
+              select
+              dateadd(day, -7, timestamp) as timestamp
+              from customers_analytics
+              )
+          ) as c
+          on a.rownum=c.rownum
+          left join
+          (
+            select
+              free_trial_created as new_trials_7_days_prior,
+              row_number() over(order by date desc) as rownum
+            from chargebee_webhook_analytics
+            where date in (
+              select
+              date(dateadd(day, -7, timestamp)) as date
+              from customers_analytics
+              )
+          ) as d
+          on a.rownum=d.rownum
+          left join
+          (
+            select
+              free_trial_created as new_trials_14_days_prior,
+              row_number() over(order by date desc) as rownum
+            from chargebee_webhook_analytics
+            where date in (
+              select
+              date(dateadd(day, -14, timestamp)) as date
+              from customers_analytics
+              )
+          ) as e
+          on a.rownum=e.rownum
+        )
+      ) as a
       left join customers.churn_reasons_aggregated as b on a.timestamp=b.timestamp)) as a))
       , outer_query as (
         select f.*,paying_30_days_prior,churn_30_days,churn_30_day_percent,winback_30_days from e inner join f on e.timestamp=f.timestamp
@@ -974,7 +1173,7 @@ view: analytics_v2 {
 
   measure: churn_30_day_percent_a {
     type: sum
-    sql: ${churn_30_days}/${paying_30_days_prior};;
+    sql: ${churn_30_days}/NULLIF(${paying_30_days_prior}, 0);;
     value_format_name: percent_1
     filters: {
       field: group_a
@@ -985,7 +1184,7 @@ view: analytics_v2 {
 
   measure: churn_30_day_percent_b {
     type: sum
-    sql: ${churn_30_days}/${paying_30_days_prior};;
+    sql: ${churn_30_days}/NULLIF(${paying_30_days_prior}, 0);;
     value_format_name: percent_1
     filters: {
       field: group_b

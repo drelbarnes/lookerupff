@@ -220,15 +220,27 @@ include: "first_n_plays_v2.view.lkml"
 include: "/views/uptv_web/uptv_page_events.view.lkml"
 include: "/views/uptv_web/uptv_web_sessions.view.lkml"
 include: "/views/my_uptvapp/my_uptvapp_installs.view.lkml"
+include: "/views/my_uptvapp/my_uptvapp_activity.view.lkml"
+include: "/views/my_uptvapp/my_uptvapp_metrics.view.lkml"
+include: "/views/my_uptvapp/my_uptvapp_identifies.view.lkml"
 include: "/views/my_uptvapp/my_uptvapp_signups.view.lkml"
 include: "/views/aspire_tvapp/my_aspireapp_installs.view.lkml"
 include: "/views/aspire_tvapp/my_aspireapp_signups.view.lkml"
 include: "/views/aspiretv_web/aspiretv_page_events.view.lkml"
 include: "/views/aspiretv_web/aspiretv_web_sessions.view.lkml"
+include: "/views/aspire_tvapp/my_aspireapp_activity.view.lkml"
 
 # DTC App reporting #
 
 include: "/views/bigquery_views/app_store_connect_aggregate.view.lkml"
+
+# Gaither TV+ #
+
+include: "/views/bigquery_views/brightcove_revenue_events.view.lkml"
+include: "/views/bigquery_views/brightcove_subscription_events.view.lkml"
+# include: "/views/chargebee_event_mapping/chargebee_webhook_events.view.lkml"
+# include: "/views/chargebee_event_mapping/chargebee_analytics.view.lkml"
+include: "/views/chargebee_event_mapping/gtv_vimeo_webhook_events.view.lkml"
 
 # Test Views #
 
@@ -248,7 +260,29 @@ datagroup: upff_analytics_datagroup {
   sql_trigger: SELECT CURRENT_DATE() ;;
 }
 
+datagroup: chargebee_reporting {
+  description: "Datagroup for Chargebee PDTs. Triggers once per day at 8:15am"
+  sql_trigger: SELECT CAST(FORMAT_TIMESTAMP('%F', TIMESTAMP_ADD(CURRENT_TIMESTAMP(), INTERVAL -495 MINUTE)) AS STRING) ;;
+  max_cache_age: "5 minutes"
+}
+
 # Explores #
+
+# explore: chargebee_webhook_events {
+#   label: "Chargebee Webhook Events"
+# }
+
+# explore: chargebee_analytics {
+#   label: "Chargebee Analytics"
+# }
+
+explore: brightcove_subscription_events {
+  label: "Brightcove Subscription Events"
+}
+
+explore: brightcove_revenue_events {
+  label: "Brightcove Revenue Events"
+}
 
 explore: aspiretv_page_events {
   label: "aspiretv_page_events"
@@ -258,9 +292,9 @@ explore: aspiretv_web_sessions {
   label: "aspiretv_web_sessions"
 }
 
-# explore: my_aspireapp_installs {
- # label: "my_aspireapp_installs"
-# }
+explore: my_aspireapp_activity {
+  label: "my aspireapp activity"
+}
 
 explore: my_aspireapp_signups {
   label: "my_aspireapp_signups"
@@ -294,6 +328,18 @@ explore: my_uptvapp_installs {
 
 explore: my_uptvapp_signups {
   label: "My UPtv Signups"
+}
+
+explore: my_uptvapp_activity {
+  label: "My UPtv Activity"
+}
+
+explore: my_uptvapp_metrics {
+  label: "My UPtv Metrics"
+}
+
+explore: my_uptvapp_identifies {
+  label: "My UPtv Identifies"
 }
 
 explore: bigquery_meta_offline_events {

@@ -32,10 +32,19 @@ include: "redshift_marketing_installs.view.lkml"
 include: "redshift_ribbow_agency_fee.view.lkml"
 include: "redshift_exec_summary_metrics.view.lkml"
 include: "analytics_v2.view"
+include: "analytics_v3.view.lkml"
+include: "/views/redshift_views/vimeo_ott_webhook_events.view.lkml"
+include: "/views/redshift_views/vimeo_ott_subscriber_events.view.lkml"
+include: "/views/redshift_views/vimeo_ott_customer_record.view.lkml"
+include: "/views/redshift_views/vimeo_ott_customer_record_analytics.view.lkml"
+include: "analytics_upff_targets.view.lkml"
 include: "mailchimp_email_campaigns.view"
 include: "delighted_survey_question_answered.view"
 include: "/views/customer_file_subscriber_counts.view.lkml"
 include: "/views/appstoreconnect_sub_counts.view.lkml"
+include: "/views/chargebee_event_mapping/gaithertvplus_analytics.view.lkml"
+include: "/views/chargebee_event_mapping/gaithertvplus_app_installers.view.lkml"
+include: "/views/chargebee_event_mapping/chargebee_webhook_events.view.lkml"
 
 explore: redshift_exec_summary_metrics {
   label: "Exec Summary Metrics"
@@ -111,6 +120,12 @@ datagroup: upff_default_datagroup {
   max_cache_age: "6 hour"
 }
 
+  datagroup: upff_event_processing {
+    description: "Datagroup for UPFF Webhooks. Triggers once per day at 3am"
+    sql_trigger: SELECT FLOOR((EXTRACT(epoch from GETDATE()) - 60*60*3)/(60*60*24)) ;;
+    max_cache_age: "5 minutes"
+  }
+
 datagroup: upff_customer_file_reporting {
   description: "Datagroup for UPFF Customer File PDTs. Triggers once per day at 8:15am"
   sql_trigger: SELECT FLOOR((EXTRACT(epoch from GETDATE()) - 60*60*8.25)/(60*60*24)) ;;
@@ -161,6 +176,32 @@ explore: analytics_v2 {
     relationship: one_to_one
   }
 }
+
+explore: analytics_v3 {
+  join: analytics_upff_targets {
+    type: left_outer
+    sql_on: ${analytics_v3.timestamp_month} = ${analytics_upff_targets.month} ;;
+    relationship: many_to_one
+  }
+  join: vimeo_ott_customer_record_analytics {
+    type: left_outer
+    sql_on: ${analytics_v3.datestamp} = ${vimeo_ott_customer_record_analytics.datestamp} ;;
+    relationship: one_to_many
+  }
+}
+
+explore: vimeo_ott_webhook_events {}
+
+explore: vimeo_ott_subscriber_events {}
+
+explore: vimeo_ott_customer_record {}
+
+explore: vimeo_ott_customer_record_analytics {}
+
+explore: gaithertvplus_analytics {}
+explore: gaithertvplus_app_installers {}
+
+explore: chargebee_webhook_events {}
 
 include: "javascript_subscribed.view"
 explore: subscribed {}
