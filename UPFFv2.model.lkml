@@ -46,6 +46,12 @@ include: "/views/chargebee_event_mapping/gaithertvplus_analytics.view.lkml"
 include: "/views/chargebee_event_mapping/gaithertvplus_app_installers.view.lkml"
 include: "/views/chargebee_event_mapping/chargebee_webhook_events.view.lkml"
 
+include: "redshift_allfirstplay_javascript_video_content_playing.view.lkml"
+
+explore: redshift_allfirstplay_javascript_video_content_playing {
+  label: "Redshift Javascript VCP"
+}
+
 explore: redshift_exec_summary_metrics {
   label: "Exec Summary Metrics"
 }
