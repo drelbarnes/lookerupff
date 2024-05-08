@@ -1,4 +1,4 @@
-view: chargebee_webhook_events {
+view: upff_chargebee_webhook_events {
   derived_table: {
     sql: with events as (
         /*                            */
@@ -499,10 +499,7 @@ view: chargebee_webhook_events {
             END AS subscription_status
         , (TIMESTAMP 'epoch' + content_customer_updated_at * INTERVAL '1 second') AS updated_at
         from chargebee_webhook_events.subscription_cancelled
-        where (
-          content_subscription_cancel_reason_code not in ('Not Paid', 'No Card', 'Fraud Review Failed', 'Non Compliant EU Customer', 'Tax Calculation Failed', 'Currency incompatible with Gateway', 'Non Compliant Customer')
-          or content_subscription_cancel_reason_code is null
-        )
+        where content_subscription_cancel_reason_code not in ('Not Paid', 'No Card', 'Fraud Review Failed', 'Non Compliant EU Customer', 'Tax Calculation Failed', 'Currency incompatible with Gateway', 'Non Compliant Customer')
         union all
         /*                                        */
         /*      CUSTOMER PRODUCT CANCELLED        */
