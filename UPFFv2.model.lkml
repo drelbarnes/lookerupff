@@ -54,7 +54,7 @@ explore: redshift_allfirstplay_javascript_video_content_playing {
 
 datagroup: redshift_upff_datagroup {
   description: "Datagroup for Allfirstplay and Timeupdate. Triggers twice per day"
-  sql_trigger: SELECT CURRENT_DATE() ;;
+  sql_trigger: SELECT FLOOR(EXTRACT(EPOCH FROM CURRENT_TIMESTAMP) / 43200) ;;
   max_cache_age: "12 hours"
 }
 
