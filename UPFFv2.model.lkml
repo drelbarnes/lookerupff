@@ -53,9 +53,9 @@ explore: redshift_allfirstplay_javascript_video_content_playing {
 }
 
 datagroup: redshift_upff_datagroup {
-  max_cache_age: "12 hours"
   description: "Datagroup for Allfirstplay and Timeupdate. Triggers twice per day"
   sql_trigger: SELECT CURRENT_DATE() ;;
+  max_cache_age: "12 hours"
 }
 
 explore: redshift_exec_summary_metrics {
