@@ -112,7 +112,6 @@ on cast(a.video_id as varchar) = cast(b.id as varchar)
 
 select * from a
 
-
 ;;
 
 distribution_style: "even"
