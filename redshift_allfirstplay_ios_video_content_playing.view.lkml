@@ -111,6 +111,10 @@ select * from a
 
 ;;
 
+    distribution_style: "even"
+    sortkeys: ["user_id", "video_id"]
+    datagroup_trigger:redshift_upff_datagroup
+
   }
 }
 
