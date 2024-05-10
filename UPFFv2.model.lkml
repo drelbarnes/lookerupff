@@ -48,15 +48,18 @@ include: "/views/chargebee_event_mapping/chargebee_webhook_events.view.lkml"
 
 #redshift allfirstplay explores
 include: "redshift_allfirstplay_javascript_video_content_playing.view.lkml"
-
 explore: redshift_allfirstplay_javascript_video_content_playing {
   label: "Redshift Javascript VCP"
 }
 
 include: "redshift_allfirstplay_ios_video_content_playing.view.lkml"
-
 explore: redshift_allfirstplay_ios_video_content_playing {
-  label: " Redshift IOS VCP"
+  label: "Redshift IOS VCP"
+}
+
+include: "redshift_allfirstplay_android_video_content_playing.view.lkml"
+explore: redshift_allfirstplay_android_video_content_playing {
+  label: "Redshift Android VCP"
 }
 
 datagroup: redshift_upff_datagroup {
@@ -64,6 +67,7 @@ datagroup: redshift_upff_datagroup {
   sql_trigger: SELECT FLOOR(EXTRACT(EPOCH FROM CURRENT_TIMESTAMP) / 43200) ;;
   max_cache_age: "12 hours"
 }
+#end redshift allfirstplay
 
 explore: redshift_exec_summary_metrics {
   label: "Exec Summary Metrics"
