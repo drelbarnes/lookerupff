@@ -62,6 +62,11 @@ explore: redshift_allfirstplay_android_video_content_playing {
   label: "Redshift Android VCP"
 }
 
+include: "redshift_allfirstplay_amazon_video_content_playing.view.lkml"
+explore: redshift_allfirstplay_amazon_video_content_playing {
+  label: "Redshift Amazon VCP"
+}
+
 datagroup: redshift_upff_datagroup {
   description: "Datagroup for Allfirstplay and Timeupdate. Triggers twice per day"
   sql_trigger: SELECT FLOOR(EXTRACT(EPOCH FROM CURRENT_TIMESTAMP) / 43200) ;;
