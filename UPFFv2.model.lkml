@@ -46,6 +46,7 @@ include: "/views/chargebee_event_mapping/gaithertvplus_analytics.view.lkml"
 include: "/views/chargebee_event_mapping/gaithertvplus_app_installers.view.lkml"
 include: "/views/chargebee_event_mapping/chargebee_webhook_events.view.lkml"
 
+#redshift allfirstplay explores
 include: "redshift_allfirstplay_javascript_video_content_playing.view.lkml"
 
 explore: redshift_allfirstplay_javascript_video_content_playing {
