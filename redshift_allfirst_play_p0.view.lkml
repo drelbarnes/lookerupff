@@ -7,15 +7,15 @@ with
 a as
 (
 
-select * from {redshift_allfirstplay_amazon_video_content_playing.SQL_TABLE_NAME}
+select * from ${redshift_allfirstplay_amazon_video_content_playing.SQL_TABLE_NAME}
 union all
-select * from {redshift_allfirstplay_android_video_content_playing.SQL_TABLE_NAME}
+select * from ${redshift_allfirstplay_android_video_content_playing.SQL_TABLE_NAME}
 union all
-select * from {redshift_allfirstplay_ios_video_content_playing.SQL_TABLE_NAME}
+select * from ${redshift_allfirstplay_ios_video_content_playing.SQL_TABLE_NAME}
 union all
-select * from {redshift_allfirstplay_javascript_video_content_playing.SQL_TABLE_NAME}
+select * from ${redshift_allfirstplay_javascript_video_content_playing.SQL_TABLE_NAME}
 union all
-select * from {redshift_allfirstplay_roku_video_content_playing.SQL_TABLE_NAME}
+select * from ${redshift_allfirstplay_roku_video_content_playing.SQL_TABLE_NAME}
 
 )
 
