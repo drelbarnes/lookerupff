@@ -72,6 +72,11 @@ explore: redshift_allfirstplay_roku_video_content_playing {
   label: "Redshift Roku VCP"
 }
 
+include: "redshift_allfirst_play_p0.view.lkml"
+explore: redshift_allfirst_play_p0 {
+  label: "Redshift Allfirstplay"
+}
+
 datagroup: redshift_upff_datagroup {
   description: "Datagroup for Allfirstplay and Timeupdate. Triggers twice per day"
   sql_trigger: SELECT FLOOR(EXTRACT(EPOCH FROM CURRENT_TIMESTAMP) / 43200) ;;
