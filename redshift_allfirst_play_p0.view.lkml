@@ -1,10 +1,12 @@
 view: redshift_allfirst_play_p0 {
   derived_table: {
     sql:
+
 with
 
 a as
 (
+
 select * from {redshift_allfirstplay_amazon_video_content_playing.SQL_TABLE_NAME}
 union all
 select * from {redshift_allfirstplay_android_video_content_playing.SQL_TABLE_NAME}
