@@ -100,9 +100,7 @@ select
     when platform_id is not null then cast(platform_id as integer)
   end as platform_id,
   episode,
-  case
-    when is_chromecast is not null then cast(is_chromecast as integer)
-  end as tv_cast
+  null as tv_cast
 from roku.video_content_playing as a
 left join titles_id_mapping as b
 on cast(a.video_id as varchar) = cast(b.id as varchar)
