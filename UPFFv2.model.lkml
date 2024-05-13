@@ -72,6 +72,11 @@ explore: redshift_allfirstplay_roku_video_content_playing {
   label: "Redshift Roku VCP"
 }
 
+include: "redshift_allfirst_play_q1_ios_firstplay.view.lkml"
+explore: redshift_allfirst_play_q1_ios_firstplay {
+  label: "Redshift IOS FP"
+}
+
 include: "redshift_allfirst_play_p0.view.lkml"
 explore: redshift_allfirst_play_p0 {
   label: "Redshift Allfirstplay"
