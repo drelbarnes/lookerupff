@@ -16,6 +16,8 @@ union all
 select * from ${redshift_allfirstplay_javascript_video_content_playing.SQL_TABLE_NAME}
 union all
 select * from ${redshift_allfirstplay_roku_video_content_playing.SQL_TABLE_NAME}
+union all
+select * from ${redshift_allfirst_play_q1_ios_firstplay.SQL_TABLE_NAME}
 
 )
 
