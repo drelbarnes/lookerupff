@@ -107,6 +107,7 @@ left join titles_id_mapping as b
 on a.video_id = cast(b.id as varchar)
 
 )
+
 select * from a
 
     ;;
@@ -117,10 +118,6 @@ select * from a
 
   }
 
-  # # You can specify the table name if it's different from the view name:
-  # sql_table_name: my_schema_name.tester ;;
-  #
-  # Define your dimensions and measures here, like this:
   dimension_group: timestamp {
     type: time
     sql: ${TABLE}.timestamp ;;
@@ -129,6 +126,14 @@ select * from a
   measure: count {
     type: count
   }
+}
+
+
+  # # You can specify the table name if it's different from the view name:
+  # sql_table_name: my_schema_name.tester ;;
+  #
+  # Define your dimensions and measures here, like this:
+
   #
   # dimension: lifetime_orders {
   #   description: "The total number of orders for each user"
@@ -187,4 +192,3 @@ select * from a
 #     sql: ${lifetime_orders} ;;
 #   }
 # }
-}
