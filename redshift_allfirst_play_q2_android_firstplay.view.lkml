@@ -1,4 +1,4 @@
-view: redshift_allfirst_play_q1_ios_firstplay {
+view: redshift_allfirst_play_q2_android_firstplay {
   derived_table: {
     sql:
 
@@ -81,8 +81,7 @@ select
   b.date as release_date,
   end_date,
   case
-    when collection in ('Season 1','Season 2','Season 3') then series || ' ' || collection
-    else collection
+    when collection in ('Season 1','Season 2','Season 3') then series || ' ' || collection  else collection
   end as collection,
   case
     when (series is null and upper(b.title) like upper(b.collection)) then 'movie'
@@ -95,18 +94,19 @@ select
   user_id,
   anonymous_id,
   event as event_type,
-  'iOS' as source,
+  'Android' as source,
   extract(epoch from sent_at) as epoch_timestamp,
   case
     when platform_id is not null then cast(platform_id as integer)
   end as platform_id,
   episode,
   null as tv_cast
-from ios.firstplay as a
+from android.firstplay as a
 left join titles_id_mapping as b
-on a.video_id = cast(b.id as varchar)
+on a.video_id = b.id
 
 )
+
 
 select * from a
 
@@ -128,12 +128,15 @@ select * from a
   }
 }
 
-
   # # You can specify the table name if it's different from the view name:
   # sql_table_name: my_schema_name.tester ;;
   #
-  # Define your dimensions and measures here, like this:
-
+  # # Define your dimensions and measures here, like this:
+  # dimension: user_id {
+  #   description: "Unique ID for each user that has ordered"
+  #   type: number
+  #   sql: ${TABLE}.user_id ;;
+  # }
   #
   # dimension: lifetime_orders {
   #   description: "The total number of orders for each user"
@@ -154,7 +157,7 @@ select * from a
   #   sql: ${lifetime_orders} ;;
   # }
 
-# view: redshift_allfirst_play_q1_ios_firstplay {
+# view: redshift_allfirst_play_q2_android_firstplay {
 #   # Or, you could make this view a derived table, like this:
 #   derived_table: {
 #     sql: SELECT

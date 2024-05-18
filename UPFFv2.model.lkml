@@ -47,6 +47,7 @@ include: "/views/chargebee_event_mapping/gaithertvplus_app_installers.view.lkml"
 include: "/views/chargebee_event_mapping/chargebee_webhook_events.view.lkml"
 
 #redshift allfirstplay explores
+
 include: "redshift_allfirstplay_javascript_video_content_playing.view.lkml"
 explore: redshift_allfirstplay_javascript_video_content_playing {
   label: "Redshift Javascript VCP"
@@ -77,6 +78,11 @@ explore: redshift_allfirst_play_q1_ios_firstplay {
   label: "Redshift IOS FP"
 }
 
+include: "redshift_allfirst_play_q2_android_firstplay.view.lkml"
+explore: redshift_allfirst_play_q2_android_firstplay {
+  label: "Reshift Android FP"
+}
+
 include: "redshift_allfirst_play_p0.view.lkml"
 explore: redshift_allfirst_play_p0 {
   label: "Redshift Allfirstplay"
@@ -84,9 +90,10 @@ explore: redshift_allfirst_play_p0 {
 
 datagroup: redshift_upff_datagroup {
   description: "Datagroup for Allfirstplay and Timeupdate. Triggers twice per day"
-  sql_trigger: SELECT FLOOR(EXTRACT(EPOCH FROM CURRENT_TIMESTAMP) / 43200) ;;
+  sql_trigger: SELECT FLOOR(EXTRACT(EPOCH FROM CURRENT_TIMESTAMP at time zone 'America/New_York') / 86400) ;;
   max_cache_age: "12 hours"
 }
+
 #end redshift allfirstplay
 
 explore: redshift_exec_summary_metrics {
