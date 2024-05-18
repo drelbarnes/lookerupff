@@ -176,8 +176,8 @@ datagroup: upff_customer_file_reporting {
 }
 
 datagroup: upff_acquisition_reporting {
-  description: "Datagroup for UPFF Acquisition PDTs. Triggers once per day at 9:15am"
-  sql_trigger: SELECT FLOOR((EXTRACT(epoch from GETDATE()) - 60*60*9.25)/(60*60*24)) ;;
+  description: "Datagroup for UPFF Acquisition PDTs. Triggers once per day at 10:15am"
+  sql_trigger: SELECT FLOOR((EXTRACT(epoch from GETDATE()) - 60*60*10.25)/(60*60*24)) ;;
   max_cache_age: "5 minutes"
 }
 
