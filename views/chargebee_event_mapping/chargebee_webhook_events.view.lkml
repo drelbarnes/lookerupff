@@ -1,12 +1,12 @@
 view: chargebee_webhook_events {
   derived_table: {
-    sql: with events as (
+    sql: with event_mapping as (
         /*                            */
         /*      CUSTOMER CREATED      */
         /*                            */
         select
         "timestamp"::TIMESTAMP
-        , id::VARCHAR
+        , _id::VARCHAR as id
         , content_customer_id::VARCHAR as customer_id
         , null::VARCHAR as subscription_id
         , 'customer_created' as event
@@ -44,7 +44,7 @@ view: chargebee_webhook_events {
         /*                            */
         select
         "timestamp"::TIMESTAMP
-        , id::VARCHAR
+        , _id::VARCHAR as id
         , content_customer_id::VARCHAR as customer_id
         , null::VARCHAR as subscription_id
         , 'customer_deleted' as event
@@ -83,7 +83,7 @@ view: chargebee_webhook_events {
         /*                            */
         select
         "timestamp"::TIMESTAMP
-        , id::VARCHAR
+        , _id::VARCHAR as id
         , content_customer_id::VARCHAR as customer_id
         , null::VARCHAR as subscription_id
         , 'customer_updated' as event
@@ -122,7 +122,7 @@ view: chargebee_webhook_events {
         /*                                        */
         select
         "timestamp"::TIMESTAMP
-        , id::VARCHAR
+        , _id::VARCHAR as id
         , content_customer_id::VARCHAR as customer_id
         , content_subscription_id::VARCHAR as subscription_id
         , CASE
@@ -186,7 +186,7 @@ view: chargebee_webhook_events {
         /*                                        */
           select
         "timestamp"::TIMESTAMP
-        , id::VARCHAR
+        , _id::VARCHAR as id
         , content_customer_id::VARCHAR as customer_id
         , content_subscription_id::VARCHAR as subscription_id
         , 'customer_product_free_trial_converted' as event
@@ -316,7 +316,7 @@ view: chargebee_webhook_events {
         /*                                        */
         select
         "timestamp"::TIMESTAMP
-        , id::VARCHAR
+        , _id::VARCHAR as id
         , content_customer_id::VARCHAR as customer_id
         , content_subscription_id::VARCHAR as subscription_id
         , 'customer_product_created' as event
@@ -377,7 +377,7 @@ view: chargebee_webhook_events {
         union all
         select
         "timestamp"::TIMESTAMP
-        , id::VARCHAR
+        , _id::VARCHAR as id
         , content_customer_id::VARCHAR as customer_id
         , content_subscription_id::VARCHAR as subscription_id
         , 'customer_product_renewed' as event
@@ -439,7 +439,7 @@ view: chargebee_webhook_events {
         /*                                        */
         select
         "timestamp"::TIMESTAMP
-        , id::VARCHAR
+        , _id::VARCHAR as id
         , content_customer_id::VARCHAR as customer_id
         , content_subscription_id::VARCHAR as subscription_id
         , CASE
@@ -511,7 +511,7 @@ view: chargebee_webhook_events {
         /*                                        */
         select
         "timestamp"::TIMESTAMP
-        , id::VARCHAR
+        , _id::VARCHAR as id
         , content_customer_id::VARCHAR as customer_id
         , content_subscription_id::VARCHAR as subscription_id
         , CASE -- if cancelled less that 28 days since activating, free_trial expired.
@@ -570,7 +570,7 @@ view: chargebee_webhook_events {
         /*                                        */
         select
         "timestamp"::TIMESTAMP
-        , id::VARCHAR
+        , _id::VARCHAR as id
         , content_customer_id::VARCHAR as customer_id
         , content_subscription_id::VARCHAR as subscription_id
         , 'customer_product_paused' event
@@ -633,7 +633,7 @@ view: chargebee_webhook_events {
         /*                                        */
         select
         "timestamp"::TIMESTAMP
-        , id::VARCHAR
+        , _id::VARCHAR as id
         , content_customer_id::VARCHAR as customer_id
         , content_subscription_id::VARCHAR as subscription_id
         , 'customer_product_resumed' event
@@ -696,7 +696,7 @@ view: chargebee_webhook_events {
         /*                                        */
         select
         "timestamp"::TIMESTAMP
-        , id::VARCHAR
+        , _id::VARCHAR as id
         , content_customer_id::VARCHAR as customer_id
         , content_subscription_id::VARCHAR as subscription_id
         , 'customer_product_charge_failed' as event
@@ -757,7 +757,7 @@ view: chargebee_webhook_events {
         /*                                        */
         select
         "timestamp"::TIMESTAMP
-        , id::VARCHAR
+        , _id::VARCHAR as id
         , content_customer_id::VARCHAR as customer_id
         , content_subscription_id::VARCHAR as subscription_id
         , 'customer_product_set_cancellation' event
@@ -820,7 +820,7 @@ view: chargebee_webhook_events {
         /*                                          */
         select
         "timestamp"::TIMESTAMP
-        , id::VARCHAR
+        , _id::VARCHAR as id
         , content_customer_id::VARCHAR as customer_id
         , content_subscription_id::VARCHAR as subscription_id
         , 'customer_product_undo_set_cancellation' event
@@ -883,7 +883,7 @@ view: chargebee_webhook_events {
         /*                                        */
         select
         "timestamp"::TIMESTAMP
-        , id::VARCHAR
+        , _id::VARCHAR as id
         , content_customer_id::VARCHAR as customer_id
         , content_subscription_id::VARCHAR as subscription_id
         , 'customer_product_set_paused' event
@@ -946,7 +946,7 @@ view: chargebee_webhook_events {
         /*                                        */
         select
         "timestamp"::TIMESTAMP
-        , id::VARCHAR
+        , _id::VARCHAR as id
         , content_customer_id::VARCHAR as customer_id
         , content_subscription_id::VARCHAR as subscription_id
         , 'customer_product_undo_set_paused' event
@@ -1004,7 +1004,10 @@ view: chargebee_webhook_events {
         , (TIMESTAMP 'epoch' + content_customer_updated_at * INTERVAL '1 second') AS updated_at
         from chargebee_webhook_events.subscription_scheduled_pause_removed
       )
-      select *, row_number() over (order by "timestamp", customer_id) as row from events
+      , distinct_events as (
+        select * from (select *, row_number() over (partition by id order by "timestamp") as rn from event_mapping) where rn = 1
+      )
+      select *, row_number() over (order by "timestamp", customer_id) as row from distinct_events
       ;;
     datagroup_trigger: upff_acquisition_reporting
     distribution_style: all
