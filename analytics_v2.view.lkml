@@ -28,16 +28,14 @@ view: analytics_v2 {
           , subscription_subscription_items_0_item_type
           , subscription_subscription_items_0_unit_price
           , subscription_subscription_items_0_item_price_id
+          , row_number() over (partition by subscription_id, uploaded_at order by uploaded_at desc) as rn
           FROM http_api.chargebee_subscriptions
           WHERE subscription_subscription_items_0_item_price_id LIKE '%UP-Faith-Family%'
           )
           select
-          a.*
-          , b.*
-          , row_number() over (partition by a.subscription_id,uploaded_at order by uploaded_at desc, b."timestamp" desc) as rn
-          from p0 a
-          left join upff_events b
-          on a.customer_id = b.customer_id and a.uploaded_at = date(b."timestamp")
+          *
+          from p0
+          where rn=1
         )
       , chargebee_totals as (
         select
@@ -66,6 +64,7 @@ view: analytics_v2 {
           , free_trial_created
           , paused_created
           -- , paying_churn
+          -- MIGRATION ADJUSTMENTS
           , case
             when date(analytics_timestamp) = '2024-04-20' then paying_churn-36455
             when date(analytics_timestamp) = '2024-04-18' then paying_churn-44853
