@@ -992,7 +992,7 @@ view: analytics_v3 {
   measure: churn_30_day_percent {
     type: sum
     label: "Churn Rate"
-    sql: ${churn_30_days}*1.0/${paying_30_days_prior};;
+    sql: ${churn_30_days} * 1.0 / NULLIF(${paying_30_days_prior}, 0);;
     value_format_name: percent_2
   }
 
@@ -1029,7 +1029,7 @@ view: analytics_v3 {
     type: sum
     group_label: "Comparison Measures"
     group_item_label: "Churn Rate"
-    sql: ${comparison_churn_30_days}*1.0/${comparison_paying_30_days_prior};;
+    sql: ${comparison_churn_30_days} * 1.0 / NULLIF(${comparison_paying_30_days_prior}, 0);;
     value_format_name: percent_2
   }
 
