@@ -247,7 +247,7 @@ view: analytics_v2 {
 
       e as (select c.timestamp, cast(paying_30_days_prior as decimal) as paying_30_days_prior,
       cast(churn_30_days as decimal) as churn_30_days,
-      cast(paying_30_days_prior as decimal)/cast(churn_30_days as decimal) as churn_30_day_percent,
+      cast(paying_30_days_prior as decimal) / NULLIF(cast(churn_30_days as decimal), 0) as churn_30_day_percent,
       cast(winback_30_days as decimal) as winback_30_days
       from c inner join d on c.timestamp=d.timestamp),
 
