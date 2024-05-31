@@ -1170,6 +1170,13 @@ view: analytics_v2 {
     }
   }
 
+  measure: churn_30_day_percent {
+    type: sum
+    label: "Churn Rate"
+    sql: ${churn_30_days} * 1.0 / NULLIF(${paying_30_days_prior}, 0);;
+    value_format_name: percent_2
+  }
+
   measure: churn_30_day_percent_a {
     type: sum
     sql: ${churn_30_days}/NULLIF(${paying_30_days_prior}, 0);;
