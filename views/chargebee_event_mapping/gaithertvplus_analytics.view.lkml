@@ -287,6 +287,16 @@ view: gaithertvplus_analytics {
     sql: ${TABLE}.paying_churn ;;
   }
 
+  dimension: churn_30_days {
+    type: number
+    sql: ${TABLE}.churn_30_days ;;
+  }
+
+  dimension: paying_30_days_prior {
+    type: number
+    sql: ${TABLE}.paying_30_days_prior ;;
+  }
+
   measure: total_paid {
     type: sum
     sql: ${total_paying} ;;
@@ -356,6 +366,13 @@ view: gaithertvplus_analytics {
   measure: end_of_month_subs {
     type: sum
     sql: ${TABLE}.CurrentMonthExistingSubs ;;
+  }
+
+  measure: churn_30_day_percent {
+    type: sum
+    label: "Churn Rate"
+    sql: ${churn_30_days} * 1.0 / NULLIF(${paying_30_days_prior}, 0);;
+    value_format_name: percent_2
   }
 
 }
