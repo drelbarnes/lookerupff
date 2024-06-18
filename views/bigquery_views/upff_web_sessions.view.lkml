@@ -8,7 +8,8 @@ view: upff_web_sessions {
         , ip_address
         , user_agent
         , cross_domain_id
-        , user_id
+        , customer_id
+        , ott_user_id as user_id
         , event
         , event_id
         , session_id
@@ -28,6 +29,7 @@ view: upff_web_sessions {
         , search
         , title
         , url
+        , domain
         , path
         , platform
         from ${upff_page_events.SQL_TABLE_NAME}
@@ -72,11 +74,12 @@ view: upff_web_sessions {
           select
           session_id
           , event_number
+          , domain
           , path
           , event
           , first_value(is_conversion ignore nulls) over (partition by session_id order by is_conversion desc) as conversion
           from page_events
-          group by session_id, event_number, path, event, is_conversion
+          group by session_id, event_number, domain, path, event, is_conversion
         )
         select *
         , lag(path) over (partition by session_id order by event_number) as path_lag
@@ -95,6 +98,7 @@ view: upff_web_sessions {
       , sessions_p3 as (
         with p0 as (
           select session_id
+          , domain
           , event_number
           , conversion
           , string_agg(
@@ -103,20 +107,22 @@ view: upff_web_sessions {
             end
             , ">") over (partition by session_id order by event_number ROWS BETWEEN 49 PRECEDING AND CURRENT ROW) as session_path
           from paths
-          group by session_id, event_number, path, event, conversion, path_lag
+          group by session_id, event_number, path, event, conversion, path_lag, domain
         )
         , p1 as (
           select
           session_id
+          , domain
           , session_path
           , conversion
           from p0
           where event_number in (select * from max_events)
-          group by session_id, session_path, conversion
+          group by session_id, session_path, conversion, domain
         )
         , p2 as (
           select *
-          , case when conversion = 1 then split(session_path, ">/checkout/subscribe>")
+          , case when conversion = 1 and domain = "upfaithandfamily" then split(session_path, ">/checkout/subscribe>")
+            when conversion = 1 and domain = "upentertainment.com" then split(session_path, ">/index.php/welcome/up_sell>")
             else null
            end as conversion_path_arr
           from p1

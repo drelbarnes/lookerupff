@@ -390,9 +390,9 @@ view: upff_page_events {
         , user_agent
         , platform
         from web_events a
-        left join id_mapping_table b
+        left join ${chargebee_vimeo_ott_id_mapping.SQL_TABLE_NAME} b
         on a.ott_user_id = safe_cast(b.ott_user_id as string)
-        left join id_mapping_table c
+        left join ${chargebee_vimeo_ott_id_mapping.SQL_TABLE_NAME} c
         on a.ott_user_id = c.customer_id
         group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28
       )
@@ -428,7 +428,7 @@ view: upff_page_events {
         , user_agent
         , platform
         from checkout_events a
-        left join id_mapping_table b
+        left join ${chargebee_vimeo_ott_id_mapping.SQL_TABLE_NAME} b
         on a.customer_id = b.customer_id
         group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28
       )

@@ -173,6 +173,7 @@ include: "/views/vimeo_active_users.view.lkml"
 include: "/views/customer_record.view.lkml"
 include: "/views/customer_record_analytics.view.lkml"
 
+include: "/views/bigquery_views/chargeebe_vimeo_ott_id_mapping.view.lkml"
 include: "/views/bigquery_views/upff_page_events.view.lkml"
 include: "/views/bigquery_views/upff_web_sessions.view.lkml"
 include: "/views/bigquery_views/upff_order_completed_events.view.lkml"
