@@ -5,7 +5,7 @@ view: upff_chargebee_webhook_events {
         /*      CUSTOMER CREATED      */
         /*                            */
         select
-            safe_cast(`timestamp` as TIMESTAMP) as `timestamp`,
+            safe_cast(timestamp as TIMESTAMP) as timestamp,
             safe_cast(_id as STRING) as id,
             safe_cast(content_customer_id as STRING) as customer_id,
             safe_cast(null as string) as subscription_id,
@@ -40,7 +40,7 @@ view: upff_chargebee_webhook_events {
         /*      CUSTOMER DELETED      */
         /*                            */
         select
-            safe_cast(`timestamp` as TIMESTAMP) as `timestamp`,
+            safe_cast(timestamp as TIMESTAMP) as timestamp,
             safe_cast(_id as STRING) as id,
             safe_cast(content_customer_id as STRING) as customer_id,
             safe_cast(null as string) as subscription_id,
@@ -75,7 +75,7 @@ view: upff_chargebee_webhook_events {
         /*      CUSTOMER UPDATED      */
         /*                            */
         select
-            safe_cast(`timestamp` as TIMESTAMP) as `timestamp`,
+            safe_cast(timestamp as TIMESTAMP) as timestamp,
             safe_cast(_id as STRING) as id,
             safe_cast(content_customer_id as STRING) as customer_id,
             safe_cast(null as STRING) as subscription_id,
@@ -111,7 +111,7 @@ view: upff_chargebee_webhook_events {
         /*  CUSTOMER PRODUCT FREE TRIAL CREATED   */
         /*                                        */
         select
-            safe_cast(`timestamp` as TIMESTAMP) as `timestamp`,
+            safe_cast(timestamp as TIMESTAMP) as timestamp,
             safe_cast(_id as STRING) as id,
             safe_cast(content_customer_id as STRING) as customer_id,
             safe_cast(content_subscription_id as STRING) as subscription_id,
@@ -167,7 +167,7 @@ view: upff_chargebee_webhook_events {
         /*  CUSTOMER PRODUCT FREE TRIAL CONVERTED */
         /*                                        */
         select
-            safe_cast(`timestamp` as TIMESTAMP) as `timestamp`,
+            safe_cast(timestamp as TIMESTAMP) as timestamp,
             safe_cast(_id as STRING) as id,
             safe_cast(content_customer_id as STRING) as customer_id,
             safe_cast(content_subscription_id as STRING) as subscription_id,
@@ -222,7 +222,7 @@ view: upff_chargebee_webhook_events {
         /*                DUNNING                 */
         /*                                        */
         select
-            safe_cast(a.`timestamp` as TIMESTAMP) as `timestamp`,
+            safe_cast(a.timestamp as TIMESTAMP) as timestamp,
             safe_cast(a.id as STRING) as id,
             safe_cast(a.content_customer_id as STRING) as customer_id,
             safe_cast(a.content_subscription_id as STRING) as subscription_id,
@@ -279,7 +279,7 @@ view: upff_chargebee_webhook_events {
         /*              REACQUISITION             */
         /*                                        */
         select
-            safe_cast(`timestamp` as TIMESTAMP) as `timestamp`,
+            safe_cast(timestamp as TIMESTAMP) as timestamp,
             safe_cast(_id as STRING) as id,
             safe_cast(content_customer_id as STRING) as customer_id,
             safe_cast(content_subscription_id as STRING) as subscription_id,
@@ -332,7 +332,7 @@ view: upff_chargebee_webhook_events {
         /*        CUSTOMER PRODUCT RENEWED        */
         /*                                        */
         select
-            safe_cast(`timestamp` as TIMESTAMP) as `timestamp`,
+            safe_cast(timestamp as TIMESTAMP) as timestamp,
             safe_cast(_id as STRING) as id,
             safe_cast(content_customer_id as STRING) as customer_id,
             safe_cast(content_subscription_id as STRING) as subscription_id,
@@ -386,7 +386,7 @@ view: upff_chargebee_webhook_events {
         /*  CUSTOMER PRODUCT FREE TRIAL EXPIRED   */
         /*                                        */
         select
-            safe_cast(`timestamp` as TIMESTAMP) as `timestamp`,
+            safe_cast(timestamp as TIMESTAMP) as timestamp,
             safe_cast(_id as STRING) as id,
             safe_cast(content_customer_id as STRING) as customer_id,
             safe_cast(content_subscription_id as STRING) as subscription_id,
@@ -448,7 +448,7 @@ view: upff_chargebee_webhook_events {
         /*                DUNNING                 */
         /*                                        */
         select
-            safe_cast(`timestamp` as TIMESTAMP) as `timestamp`,
+            safe_cast(timestamp as TIMESTAMP) as timestamp,
             safe_cast(_id as STRING) as id,
             safe_cast(content_customer_id as STRING) as customer_id,
             safe_cast(content_subscription_id as STRING) as subscription_id,
@@ -497,7 +497,7 @@ view: upff_chargebee_webhook_events {
         /*        CUSTOMER PRODUCT PAUSED         */
         /*                                        */
         select
-            safe_cast(`timestamp` as TIMESTAMP) as `timestamp`,
+            safe_cast(timestamp as TIMESTAMP) as timestamp,
             safe_cast(_id as STRING) as id,
             safe_cast(content_customer_id as STRING) as customer_id,
             safe_cast(content_subscription_id as STRING) as subscription_id,
@@ -550,7 +550,7 @@ view: upff_chargebee_webhook_events {
         /*        CUSTOMER PRODUCT RESUMED        */
         /*                                        */
         select
-            safe_cast(`timestamp` as TIMESTAMP) as `timestamp`,
+            safe_cast(timestamp as TIMESTAMP) as timestamp,
             safe_cast(_id as STRING) as id,
             safe_cast(content_customer_id as STRING) as customer_id,
             safe_cast(content_subscription_id as STRING) as subscription_id,
@@ -603,7 +603,7 @@ view: upff_chargebee_webhook_events {
         /*      CUSTOMER PRODUCT CHARGE FAILED    */
         /*                                        */
         select
-            safe_cast(`timestamp` as TIMESTAMP) as `timestamp`,
+            safe_cast(timestamp as TIMESTAMP) as timestamp,
             safe_cast(_id as STRING) as id,
             safe_cast(content_customer_id as STRING) as customer_id,
             safe_cast(content_subscription_id as STRING) as subscription_id,
@@ -656,7 +656,7 @@ view: upff_chargebee_webhook_events {
         /*    CUSTOMER PRODUCT SET CANCELLATION   */
         /*                                        */
         select
-            safe_cast(`timestamp` as TIMESTAMP) as `timestamp`,
+            safe_cast(timestamp as TIMESTAMP) as timestamp,
             safe_cast(_id as STRING) as id,
             safe_cast(content_customer_id as STRING) as customer_id,
             safe_cast(content_subscription_id as STRING) as subscription_id,
@@ -709,7 +709,7 @@ view: upff_chargebee_webhook_events {
         /*  CUSTOMER PRODUCT UNDO SET CANCELLATION  */
         /*                                          */
         select
-            safe_cast(`timestamp` as TIMESTAMP) as `timestamp`,
+            safe_cast(timestamp as TIMESTAMP) as timestamp,
             safe_cast(_id as STRING) as id,
             safe_cast(content_customer_id as STRING) as customer_id,
             safe_cast(content_subscription_id as STRING) as subscription_id,
@@ -762,7 +762,7 @@ view: upff_chargebee_webhook_events {
         /*      CUSTOMER PRODUCT SET PAUSED       */
         /*                                        */
         select
-            safe_cast(`timestamp` as TIMESTAMP) as `timestamp`,
+            safe_cast(timestamp as TIMESTAMP) as timestamp,
             safe_cast(_id as STRING) as id,
             safe_cast(content_customer_id as STRING) as customer_id,
             safe_cast(content_subscription_id as STRING) as subscription_id,
@@ -815,7 +815,7 @@ view: upff_chargebee_webhook_events {
         /*      CUSTOMER PRODUCT SET PAUSED       */
         /*                                        */
         select
-            safe_cast(`timestamp` as TIMESTAMP) as `timestamp`,
+            safe_cast(timestamp as TIMESTAMP) as timestamp,
             safe_cast(_id as STRING) as id,
             safe_cast(content_customer_id as STRING) as customer_id,
             safe_cast(content_subscription_id as STRING) as subscription_id,
@@ -865,22 +865,23 @@ view: upff_chargebee_webhook_events {
         from chargebee_webhook_events.subscription_scheduled_pause_removed
     )
     , distinct_events as (
-      select * from (select *, row_number() over (partition by id order by "timestamp") as rn from event_mapping) where rn = 1
+      select * from (select *, row_number() over (partition by id order by timestamp) as rn from event_mapping) where rn = 1
     )
     , id_mapping as (
-      select *
-      , ott_user_id as user_id
-      from ${chargebee_vimeo_ott_id_mapping.SQL_TABLE_NAME}
+      select a.*
+      , safe_cast(b.ott_user_id as string) as user_id
+      from distinct_events a
+      left join ${chargebee_vimeo_ott_id_mapping.SQL_TABLE_NAME} b
+      on a.customer_id = b.customer_id
     )
-      select *, row_number() over (order by "timestamp", customer_id) as row from distinct_events
+      select *, row_number() over (order by timestamp, customer_id) as row from id_mapping
       ;;
-    datagroup_trigger: upff_acquisition_reporting
-    distribution_style: all
+    datagroup_trigger: upff_daily_refresh_datagroup
   }
 
   dimension_group: timestamp {
     type: time
-    sql: ${TABLE}."timestamp" ;;
+    sql: ${TABLE}.timestamp ;;
   }
 
   dimension: id {
@@ -891,6 +892,11 @@ view: upff_chargebee_webhook_events {
   dimension: customer_id {
     type: string
     sql: ${TABLE}.customer_id ;;
+  }
+
+  dimension: user_id {
+    type: string
+    sql: ${TABLE}.user_id ;;
   }
 
   dimension: subscription_id {

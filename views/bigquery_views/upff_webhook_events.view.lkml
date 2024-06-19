@@ -1,17 +1,21 @@
 view: upff_webhook_events {
   derived_table: {
-    sql: with vimeo_webhook_evens as (
-        select "timestamp", user_id, event, campaign, city, country, created_at, email, first_name, last_name, last_payment_date, marketing_opt_in, name, next_payment_date, plan, platform, promotion_code, referrer, region, registered_to_site, source, subscribed_to_site, subscription_frequency, subscription_price, subscription_status, updated_at
-        from ${vimeo_webhook_events.SQL_TABLE_NAME}
+    sql: with vimeo_webhook_events as (
+        select timestamp, user_id, event, campaign, city, country, created_at, email, first_name, last_name, last_payment_date, marketing_opt_in, name, next_payment_date, plan, platform, promotion_code, referrer, region, registered_to_site, source, subscribed_to_site, subscription_frequency, subscription_price, subscription_status, updated_at
+        from `up-faith-and-family-216419.looker_scratch.LR_P44EF1718757520146_vimeo_webhook_events`
       )
       , chargebee_webhook_events as (
-      select "timestamp", user_id as customer_id, event, campaign, city, country, created_at, email, first_name, last_name, last_payment_date, marketing_opt_in, name, next_payment_date, plan, platform, promotion_code, referrer, region, registered_to_site, source, subscribed_to_site, subscription_frequency, subscription_price, subscription_status, updated_at
-      from ${chargebee_webhook_events.SQL_TABLE_NAME} where plan like '%UP-Faith-Family%'
-    )
-    select *, row_number() over (order by "timestamp", user_id) as row from unionised_purchase_events
+      select timestamp, user_id, event, campaign, city, country, created_at, email, first_name, last_name, last_payment_date, marketing_opt_in, name, next_payment_date, plan, platform, promotion_code, referrer, region, registered_to_site, source, subscribed_to_site, subscription_frequency, subscription_price, subscription_status, updated_at
+      from `up-faith-and-family-216419.looker_scratch.LR_P4TPN1718766043851_upff_chargebee_webhook_events` where plan like '%UP-Faith-Family%'
+      )
+      , unionised_purchase_events as (
+        select * from vimeo_webhook_events
+        union all
+        select * from chargebee_webhook_events
+      )
+      select *, row_number() over (order by timestamp, user_id) as row from unionised_purchase_events
     ;;
-    datagroup_trigger: upff_event_processing
-    distribution_style: all
+    datagroup_trigger: upff_daily_refresh_datagroup
   }
 
   measure: count {

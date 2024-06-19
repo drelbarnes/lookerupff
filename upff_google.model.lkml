@@ -169,11 +169,13 @@ include: "/views/vimeo_app_screens.view.lkml"
 include: "/views/upff_web_pages.view.lkml"
 include: "/views/vimeo_app_installs.view.lkml"
 include: "/views/vimeo_webhook_events.view.lkml"
+include: "/views/bigquery_views/upff_chargebee_webhook_events.view.lkml"
 include: "/views/vimeo_active_users.view.lkml"
 include: "/views/customer_record.view.lkml"
 include: "/views/customer_record_analytics.view.lkml"
 
-include: "/views/bigquery_views/chargeebe_vimeo_ott_id_mapping.view.lkml"
+include: "/views/bigquery_views/chargebee_vimeo_ott_id_mapping.view.lkml"
+include: "/views/bigquery_views/upff_webhook_events.view.lkml"
 include: "/views/bigquery_views/upff_page_events.view.lkml"
 include: "/views/bigquery_views/upff_web_sessions.view.lkml"
 include: "/views/bigquery_views/upff_order_completed_events.view.lkml"
@@ -463,6 +465,14 @@ explore: ticket_comments {
 
 explore: allfirstplay {
   label: "Allfirstplay"
+}
+
+explore: upff_chargebee_webhook_events {
+  label: "UPFF Chargebee Webhook Events"
+}
+
+explore: upff_webhook_events {
+  label: "UPFF Webhook Events"
 }
 
 explore: upff_page_events {

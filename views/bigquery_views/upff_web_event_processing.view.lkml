@@ -36,7 +36,7 @@ view: upff_web_event_processing {
           end as plan_type
         , platform
         , promotion_code
-        from ${vimeo_webhook_events.SQL_TABLE_NAME}
+        from ${upff_webhook_events.SQL_TABLE_NAME}
         where event in ("customer_product_created", "customer_product_free_trial_created")
         and platform = "web"
         and user_id is not null
