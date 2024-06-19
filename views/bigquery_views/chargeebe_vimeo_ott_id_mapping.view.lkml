@@ -5,7 +5,7 @@ view: chargebee_vimeo_ott_id_mapping {
         left join customers.tg_middleware_abc9876_ott_users b
         on a.id = b.customer_id
       ;;
-    interval_trigger: "15 minutes"
+    datagroup_trigger: upff_daily_refresh_datagroup
   }
 
 

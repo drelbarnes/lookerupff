@@ -942,7 +942,7 @@ view: chargebee_webhook_events {
         from chargebee_webhook_events.subscription_pause_scheduled
         union all
         /*                                        */
-        /*      CUSTOMER PRODUCT SET PAUSED       */
+        /*    CUSTOMER PRODUCT UNDO SET PAUSED    */
         /*                                        */
         select
         "timestamp"::TIMESTAMP

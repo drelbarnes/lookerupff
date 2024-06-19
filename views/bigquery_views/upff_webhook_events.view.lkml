@@ -1,10 +1,11 @@
 view: upff_webhook_events {
   derived_table: {
-    sql: with unionised_purchase_events as (
-      select "timestamp", user_id, event, campaign, city, country, created_at, email, first_name, last_name, last_payment_date, marketing_opt_in, name, next_payment_date, plan, platform, promotion_code, referrer, region, registered_to_site, source, subscribed_to_site, subscription_frequency, subscription_price, subscription_status, updated_at
-      from ${vimeo_webhook_events.SQL_TABLE_NAME}
-      union all
-      select "timestamp", user_id, event, campaign, city, country, created_at, email, first_name, last_name, last_payment_date, marketing_opt_in, name, next_payment_date, plan, platform, promotion_code, referrer, region, registered_to_site, source, subscribed_to_site, subscription_frequency, subscription_price, subscription_status, updated_at
+    sql: with vimeo_webhook_evens as (
+        select "timestamp", user_id, event, campaign, city, country, created_at, email, first_name, last_name, last_payment_date, marketing_opt_in, name, next_payment_date, plan, platform, promotion_code, referrer, region, registered_to_site, source, subscribed_to_site, subscription_frequency, subscription_price, subscription_status, updated_at
+        from ${vimeo_webhook_events.SQL_TABLE_NAME}
+      )
+      , chargebee_webhook_events as (
+      select "timestamp", user_id as customer_id, event, campaign, city, country, created_at, email, first_name, last_name, last_payment_date, marketing_opt_in, name, next_payment_date, plan, platform, promotion_code, referrer, region, registered_to_site, source, subscribed_to_site, subscription_frequency, subscription_price, subscription_status, updated_at
       from ${chargebee_webhook_events.SQL_TABLE_NAME} where plan like '%UP-Faith-Family%'
     )
     select *, row_number() over (order by "timestamp", user_id) as row from unionised_purchase_events
