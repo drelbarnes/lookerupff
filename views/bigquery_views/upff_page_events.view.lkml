@@ -703,9 +703,9 @@ view: upff_page_events {
     sql: ${TABLE}.event_id ;;
   }
 
-  dimension: user_id {
+  dimension: ott_user_id {
     type: string
-    sql: ${TABLE}.user_id ;;
+    sql: ${TABLE}.ott_user_id ;;
   }
 
   dimension: anonymous_id {
@@ -869,7 +869,7 @@ view: upff_page_events {
 
   set: detail {
     fields: [
-      user_id,
+      ott_user_id,
       anonymous_id,
       ip_address,
       cross_domain_id,

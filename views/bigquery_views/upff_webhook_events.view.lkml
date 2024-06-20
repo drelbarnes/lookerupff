@@ -2,11 +2,11 @@ view: upff_webhook_events {
   derived_table: {
     sql: with vimeo_webhook_events as (
         select timestamp, user_id, event, campaign, city, country, created_at, email, first_name, last_name, last_payment_date, marketing_opt_in, name, next_payment_date, plan, platform, promotion_code, referrer, region, registered_to_site, source, subscribed_to_site, subscription_frequency, subscription_price, subscription_status, updated_at
-        from `up-faith-and-family-216419.looker_scratch.LR_P44EF1718757520146_vimeo_webhook_events`
+        from ${vimeo_webhook_events.SQL_TABLE_NAME}
       )
       , chargebee_webhook_events as (
       select timestamp, user_id, event, campaign, city, country, created_at, email, first_name, last_name, last_payment_date, marketing_opt_in, name, next_payment_date, plan, platform, promotion_code, referrer, region, registered_to_site, source, subscribed_to_site, subscription_frequency, subscription_price, subscription_status, updated_at
-      from `up-faith-and-family-216419.looker_scratch.LR_P4TPN1718766043851_upff_chargebee_webhook_events` where plan like '%UP-Faith-Family%'
+      from ${upff_chargebee_webhook_events.SQL_TABLE_NAME}
       )
       , unionised_purchase_events as (
         select * from vimeo_webhook_events
