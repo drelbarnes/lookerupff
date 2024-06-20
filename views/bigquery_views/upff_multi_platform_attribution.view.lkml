@@ -108,7 +108,7 @@ view: upff_multi_platform_attribution {
     )
     , trial_conversion_events as (
     select *
-    from ${vimeo_webhook_events.SQL_TABLE_NAME}
+    from ${upff_webhook_events.SQL_TABLE_NAME}
     where timestamp between timestamp_add({% date_start date_filter %}, interval 14 day)
     -- we add 21 days to allow for dunning
     and timestamp_add({% date_end date_filter %}, interval 21 day)
