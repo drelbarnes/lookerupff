@@ -353,6 +353,9 @@ view: upff_page_events {
         union all
         select * from checkout_order_updated
       )
+      , upff_checkout_events as (
+        select * from checkout_events where referrer not like "%gaithertvplus%" and referrer_domain not like "%gaithertvplus%"
+      )
       , id_mapping_table as (
         SELECT a.customer_id, b.ott_user_id
         FROM customers.tg_middleware_abc9876_customers a
@@ -427,7 +430,7 @@ view: upff_page_events {
         , path
         , user_agent
         , platform
-        from checkout_events a
+        from upff_checkout_events a
         left join ${chargebee_vimeo_ott_id_mapping.SQL_TABLE_NAME} b
         on a.customer_id = b.customer_id
         group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28
@@ -835,7 +838,7 @@ view: upff_page_events {
 
   dimension: is_conversion {
     type: yesno
-    sql: ${TABLE}.is_conversion ;;
+    sql: ${TABLE}.is_conversion = 1 ;;
   }
 
   dimension: platform {

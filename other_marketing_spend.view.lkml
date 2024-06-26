@@ -57,6 +57,20 @@ view: other_marketing_spend {
         from (select date, spend from customers.samsung group by 1,2)
         group by 1,3
       )
+      , pinterest as (
+        select safe_cast(date as timestamp) as date,
+        sum(cost) as spend,
+        'Pinterest' as channel
+        from (select date, cost from customers.pinterest group by 1,2)
+        group by 1,3
+      )
+      , iheart as (
+        select safe_cast(date as timestamp) as date,
+        sum(cost) as spend,
+        'iHeart' as channel
+        from (select date, cost from customers.iheart group by 1,2)
+        group by 1,3
+      )
       , all_spend as (
         select date,
         spend,
@@ -97,10 +111,23 @@ view: other_marketing_spend {
         , spend
         , channel
         from samsung
+        union all
+        select date
+        , spend
+        , channel
+        from pinterest
+        union all
+        select date
+        , spend
+        , channel
+        from iheart
       )
+      , outer_query as (
       SELECT * FROM `up-faith-and-family-216419.http_api.other_marketing_spend`
       union all
       select cast(date as date), spend, channel from all_spend
+      )
+      select * from outer_query
       ;;
   }
 
