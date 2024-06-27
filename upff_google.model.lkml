@@ -237,10 +237,11 @@ include: "/views/aspire_tvapp/my_aspireapp_activity.view.lkml"
 
 include: "/views/bigquery_views/app_store_connect_aggregate.view.lkml"
 
-# Gaither TV+ #
+# Brightcove Mapping #
 
 include: "/views/bigquery_views/brightcove_revenue_events.view.lkml"
 include: "/views/bigquery_views/brightcove_subscription_events.view.lkml"
+include: "/views/bigquery_views/brightcove_product_id_mapping.view.lkml"
 # include: "/views/chargebee_event_mapping/chargebee_webhook_events.view.lkml"
 # include: "/views/chargebee_event_mapping/chargebee_analytics.view.lkml"
 include: "/views/chargebee_event_mapping/gtv_vimeo_webhook_events.view.lkml"
@@ -285,6 +286,14 @@ explore: brightcove_subscription_events {
 
 explore: brightcove_revenue_events {
   label: "Brightcove Revenue Events"
+}
+
+explore: brightcove_product_id_mapping {
+  label: "Brightcove Product ID Mapping"
+}
+
+explore: chargebee_vimeo_ott_id_mapping {
+  label: "Chargebee - Vimeo OTT ID Mapping"
 }
 
 explore: aspiretv_page_events {
