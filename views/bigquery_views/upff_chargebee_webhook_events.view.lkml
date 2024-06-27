@@ -5,7 +5,7 @@ view: upff_chargebee_webhook_events {
         /*      CUSTOMER CREATED      */
         /*                            */
         select
-            safe_cast(timestamp as TIMESTAMP) as timestamp,
+            TIMESTAMP_SECONDS(occurred_at) as timestamp,
             safe_cast(_id as STRING) as id,
             safe_cast(content_customer_id as STRING) as customer_id,
             safe_cast(null as string) as subscription_id,
@@ -40,7 +40,7 @@ view: upff_chargebee_webhook_events {
         /*      CUSTOMER DELETED      */
         /*                            */
         select
-            safe_cast(timestamp as TIMESTAMP) as timestamp,
+            TIMESTAMP_SECONDS(occurred_at) as timestamp,
             safe_cast(_id as STRING) as id,
             safe_cast(content_customer_id as STRING) as customer_id,
             safe_cast(null as string) as subscription_id,
@@ -75,7 +75,7 @@ view: upff_chargebee_webhook_events {
         /*      CUSTOMER UPDATED      */
         /*                            */
         select
-            safe_cast(timestamp as TIMESTAMP) as timestamp,
+            TIMESTAMP_SECONDS(occurred_at) as timestamp,
             safe_cast(_id as STRING) as id,
             safe_cast(content_customer_id as STRING) as customer_id,
             safe_cast(null as STRING) as subscription_id,
@@ -111,7 +111,7 @@ view: upff_chargebee_webhook_events {
         /*  CUSTOMER PRODUCT FREE TRIAL CREATED   */
         /*                                        */
         select
-            safe_cast(timestamp as TIMESTAMP) as timestamp,
+            TIMESTAMP_SECONDS(occurred_at) as timestamp,
             safe_cast(_id as STRING) as id,
             safe_cast(content_customer_id as STRING) as customer_id,
             safe_cast(content_subscription_id as STRING) as subscription_id,
@@ -135,7 +135,7 @@ view: upff_chargebee_webhook_events {
                 safe_cast(content_subscription_subscription_items_0_item_price_id as STRING),
                 safe_cast(json_extract_scalar(json_extract(json_extract(content_subscription_subscription_items, '$[0]'), '$.item_price_id')) as STRING)
             ) as plan,
-            safe_cast(content_subscription_channel as STRING) as platform,
+            'web' as platform,
             safe_cast(null as STRING) as promotion_code,
             safe_cast(null as STRING) as referrer,
             safe_cast(content_customer_billing_address_state_code as STRING) as region,
@@ -167,7 +167,7 @@ view: upff_chargebee_webhook_events {
         /*  CUSTOMER PRODUCT FREE TRIAL CONVERTED */
         /*                                        */
         select
-            safe_cast(timestamp as TIMESTAMP) as timestamp,
+            TIMESTAMP_SECONDS(occurred_at) as timestamp,
             safe_cast(_id as STRING) as id,
             safe_cast(content_customer_id as STRING) as customer_id,
             safe_cast(content_subscription_id as STRING) as subscription_id,
@@ -188,7 +188,7 @@ view: upff_chargebee_webhook_events {
                 safe_cast(content_subscription_subscription_items_0_item_price_id as STRING),
                 safe_cast(json_extract_scalar(json_extract(json_extract(content_subscription_subscription_items, '$[0]'), '$.item_price_id')) as STRING)
             ) as plan,
-            safe_cast(content_subscription_channel as STRING) as platform,
+            'web' as platform,
             safe_cast(null as STRING) as promotion_code,
             safe_cast(null as STRING) as referrer,
             safe_cast(content_customer_billing_address_state_code as STRING) as region,
@@ -279,7 +279,7 @@ view: upff_chargebee_webhook_events {
         /*              REACQUISITION             */
         /*                                        */
         select
-            safe_cast(timestamp as TIMESTAMP) as timestamp,
+            TIMESTAMP_SECONDS(occurred_at) as timestamp,
             safe_cast(_id as STRING) as id,
             safe_cast(content_customer_id as STRING) as customer_id,
             safe_cast(content_subscription_id as STRING) as subscription_id,
@@ -300,7 +300,7 @@ view: upff_chargebee_webhook_events {
                 safe_cast(content_subscription_subscription_items_0_item_price_id as STRING),
                 safe_cast(json_extract_scalar(json_extract(json_extract(content_subscription_subscription_items, '$[0]'), '$.item_price_id')) as STRING)
             ) as plan,
-            safe_cast(content_subscription_channel as STRING) as platform,
+            'web' as platform,
             safe_cast(null as STRING) as promotion_code,
             safe_cast(null as STRING) as referrer,
             safe_cast(content_customer_billing_address_state_code as STRING) as region,
@@ -332,7 +332,7 @@ view: upff_chargebee_webhook_events {
         /*        CUSTOMER PRODUCT RENEWED        */
         /*                                        */
         select
-            safe_cast(timestamp as TIMESTAMP) as timestamp,
+            TIMESTAMP_SECONDS(occurred_at) as timestamp,
             safe_cast(_id as STRING) as id,
             safe_cast(content_customer_id as STRING) as customer_id,
             safe_cast(content_subscription_id as STRING) as subscription_id,
@@ -353,7 +353,7 @@ view: upff_chargebee_webhook_events {
                 safe_cast(content_subscription_subscription_items_0_item_price_id as STRING),
                 safe_cast(json_extract_scalar(json_extract(json_extract(content_subscription_subscription_items, '$[0]'), '$.item_price_id')) as STRING)
             ) as plan,
-            safe_cast(content_subscription_channel as STRING) as platform,
+            'web' as platform,
             safe_cast(null as STRING) as promotion_code,
             safe_cast(null as STRING) as referrer,
             safe_cast(content_customer_billing_address_state_code as STRING) as region,
@@ -386,7 +386,7 @@ view: upff_chargebee_webhook_events {
         /*  CUSTOMER PRODUCT FREE TRIAL EXPIRED   */
         /*                                        */
         select
-            safe_cast(timestamp as TIMESTAMP) as timestamp,
+            TIMESTAMP_SECONDS(occurred_at) as timestamp,
             safe_cast(_id as STRING) as id,
             safe_cast(content_customer_id as STRING) as customer_id,
             safe_cast(content_subscription_id as STRING) as subscription_id,
@@ -410,7 +410,7 @@ view: upff_chargebee_webhook_events {
                 safe_cast(content_subscription_subscription_items_0_item_price_id as STRING),
                 safe_cast(json_extract_scalar(json_extract(json_extract(content_subscription_subscription_items, '$[0]'), '$.item_price_id')) as STRING)
             ) as plan,
-            safe_cast(content_subscription_channel as STRING) as platform,
+            'web' as platform,
             safe_cast(null as STRING) as promotion_code,
             safe_cast(null as STRING) as referrer,
             safe_cast(content_customer_billing_address_state_code as STRING) as region,
@@ -426,15 +426,7 @@ view: upff_chargebee_webhook_events {
                 safe_cast(content_subscription_subscription_items_0_unit_price as INT64),
                 safe_cast(json_extract_scalar(json_extract(json_extract(content_subscription_subscription_items, '$[0]'), '$.unit_price')) as INT64)
             ) as subscription_price,
-            CASE content_subscription_status
-                WHEN 'active' THEN 'enabled'
-                WHEN 'in_trial' THEN 'free_trial'
-                WHEN 'cancelled' THEN 'cancelled'
-                WHEN 'non_renewing' THEN 'non_renewing'
-                WHEN 'disabled' THEN 'disabled'
-                WHEN 'paused' THEN 'paused'
-                ELSE 'unknown'
-            END AS subscription_status,
+            'cancelled' as subscription_status,
             TIMESTAMP_SECONDS(content_customer_updated_at) as updated_at
         from chargebee_webhook_events.subscription_cancelled
         where (
@@ -448,13 +440,13 @@ view: upff_chargebee_webhook_events {
         /*                DUNNING                 */
         /*                                        */
         select
-            safe_cast(timestamp as TIMESTAMP) as timestamp,
+            TIMESTAMP_SECONDS(occurred_at) as timestamp,
             safe_cast(_id as STRING) as id,
             safe_cast(content_customer_id as STRING) as customer_id,
             safe_cast(content_subscription_id as STRING) as subscription_id,
             CASE
-                WHEN (content_subscription_cancelled_at - content_subscription_activated_at) < 2419200 THEN 'customer_product_free_trial_expired'
-                ELSE 'customer_product_cancelled'
+                WHEN (content_subscription_cancelled_at - content_subscription_activated_at) <= 2592000 THEN 'customer_product_free_trial_expired'
+                ELSE 'customer_product_expired'
             END AS event,
             safe_cast(null as STRING) as campaign,
             safe_cast(null as STRING) as city,
@@ -472,7 +464,7 @@ view: upff_chargebee_webhook_events {
                 safe_cast(content_subscription_subscription_items_0_item_price_id as STRING),
                 safe_cast(json_extract_scalar(json_extract(json_extract(content_subscription_subscription_items, '$[0]'), '$.item_price_id')) as STRING)
             ) as plan,
-            safe_cast(content_subscription_channel as STRING) as platform,
+            'web' as platform,
             safe_cast(null as STRING) as promotion_code,
             safe_cast(null as STRING) as referrer,
             safe_cast(content_customer_billing_address_state_code as STRING) as region,
@@ -497,7 +489,7 @@ view: upff_chargebee_webhook_events {
         /*        CUSTOMER PRODUCT PAUSED         */
         /*                                        */
         select
-            safe_cast(timestamp as TIMESTAMP) as timestamp,
+            TIMESTAMP_SECONDS(occurred_at) as timestamp,
             safe_cast(_id as STRING) as id,
             safe_cast(content_customer_id as STRING) as customer_id,
             safe_cast(content_subscription_id as STRING) as subscription_id,
@@ -518,7 +510,7 @@ view: upff_chargebee_webhook_events {
                 safe_cast(content_subscription_subscription_items_0_item_price_id as STRING),
                 safe_cast(json_extract_scalar(json_extract(json_extract(content_subscription_subscription_items, '$[0]'), '$.item_price_id')) as STRING)
             ) as plan,
-            safe_cast(content_subscription_channel as STRING) as platform,
+            'web' as platform,
             safe_cast(null as STRING) as promotion_code,
             safe_cast(null as STRING) as referrer,
             safe_cast(content_customer_billing_address_state_code as STRING) as region,
@@ -534,15 +526,7 @@ view: upff_chargebee_webhook_events {
                 safe_cast(content_subscription_subscription_items_0_unit_price as INT64),
                 safe_cast(json_extract_scalar(json_extract(json_extract(content_subscription_subscription_items, '$[0]'), '$.unit_price')) as INT64)
             ) as subscription_price,
-            CASE content_subscription_status
-                WHEN 'active' THEN 'enabled'
-                WHEN 'in_trial' THEN 'free_trial'
-                WHEN 'cancelled' THEN 'cancelled'
-                WHEN 'non_renewing' THEN 'non_renewing'
-                WHEN 'disabled' THEN 'disabled'
-                WHEN 'paused' THEN 'paused'
-                ELSE 'unknown'
-            END AS subscription_status,
+            'expired' AS subscription_status,
             TIMESTAMP_SECONDS(content_customer_updated_at) as updated_at
         from chargebee_webhook_events.subscription_paused
         union all
@@ -550,7 +534,7 @@ view: upff_chargebee_webhook_events {
         /*        CUSTOMER PRODUCT RESUMED        */
         /*                                        */
         select
-            safe_cast(timestamp as TIMESTAMP) as timestamp,
+            TIMESTAMP_SECONDS(occurred_at) as timestamp,
             safe_cast(_id as STRING) as id,
             safe_cast(content_customer_id as STRING) as customer_id,
             safe_cast(content_subscription_id as STRING) as subscription_id,
@@ -571,7 +555,7 @@ view: upff_chargebee_webhook_events {
                 safe_cast(content_subscription_subscription_items_0_item_price_id as STRING),
                 safe_cast(json_extract_scalar(json_extract(json_extract(content_subscription_subscription_items, '$[0]'), '$.item_price_id')) as STRING)
             ) as plan,
-            safe_cast(content_subscription_channel as STRING) as platform,
+            'web' as platform,
             safe_cast(null as STRING) as promotion_code,
             safe_cast(null as STRING) as referrer,
             safe_cast(content_customer_billing_address_state_code as STRING) as region,
@@ -603,7 +587,7 @@ view: upff_chargebee_webhook_events {
         /*      CUSTOMER PRODUCT CHARGE FAILED    */
         /*                                        */
         select
-            safe_cast(timestamp as TIMESTAMP) as timestamp,
+            TIMESTAMP_SECONDS(occurred_at) as timestamp,
             safe_cast(_id as STRING) as id,
             safe_cast(content_customer_id as STRING) as customer_id,
             safe_cast(content_subscription_id as STRING) as subscription_id,
@@ -624,7 +608,7 @@ view: upff_chargebee_webhook_events {
                 safe_cast(content_subscription_subscription_items_0_item_price_id as STRING),
                 safe_cast(json_extract_scalar(json_extract(json_extract(content_subscription_subscription_items, '$[0]'), '$.item_price_id')) as STRING)
             ) as plan,
-            safe_cast(content_subscription_channel as STRING) as platform,
+            'web' as platform,
             safe_cast(null as STRING) as promotion_code,
             safe_cast(null as STRING) as referrer,
             safe_cast(content_customer_billing_address_state_code as STRING) as region,
@@ -656,7 +640,7 @@ view: upff_chargebee_webhook_events {
         /*    CUSTOMER PRODUCT SET CANCELLATION   */
         /*                                        */
         select
-            safe_cast(timestamp as TIMESTAMP) as timestamp,
+            TIMESTAMP_SECONDS(occurred_at) as timestamp,
             safe_cast(_id as STRING) as id,
             safe_cast(content_customer_id as STRING) as customer_id,
             safe_cast(content_subscription_id as STRING) as subscription_id,
@@ -677,7 +661,7 @@ view: upff_chargebee_webhook_events {
                 safe_cast(content_subscription_subscription_items_0_item_price_id as STRING),
                 safe_cast(json_extract_scalar(json_extract(json_extract(content_subscription_subscription_items, '$[0]'), '$.item_price_id')) as STRING)
             ) as plan,
-            safe_cast(content_subscription_channel as STRING) as platform,
+            'web' as platform,
             safe_cast(null as STRING) as promotion_code,
             safe_cast(null as STRING) as referrer,
             safe_cast(content_customer_billing_address_state_code as STRING) as region,
@@ -709,7 +693,7 @@ view: upff_chargebee_webhook_events {
         /*  CUSTOMER PRODUCT UNDO SET CANCELLATION  */
         /*                                          */
         select
-            safe_cast(timestamp as TIMESTAMP) as timestamp,
+            TIMESTAMP_SECONDS(occurred_at) as timestamp,
             safe_cast(_id as STRING) as id,
             safe_cast(content_customer_id as STRING) as customer_id,
             safe_cast(content_subscription_id as STRING) as subscription_id,
@@ -730,7 +714,7 @@ view: upff_chargebee_webhook_events {
                 safe_cast(content_subscription_subscription_items_0_item_price_id as STRING),
                 safe_cast(json_extract_scalar(json_extract(json_extract(content_subscription_subscription_items, '$[0]'), '$.item_price_id')) as STRING)
             ) as plan,
-            safe_cast(content_subscription_channel as STRING) as platform,
+            'web' as platform,
             safe_cast(null as STRING) as promotion_code,
             safe_cast(null as STRING) as referrer,
             safe_cast(content_customer_billing_address_state_code as STRING) as region,
@@ -762,7 +746,7 @@ view: upff_chargebee_webhook_events {
         /*      CUSTOMER PRODUCT SET PAUSED       */
         /*                                        */
         select
-            safe_cast(timestamp as TIMESTAMP) as timestamp,
+            TIMESTAMP_SECONDS(occurred_at) as timestamp,
             safe_cast(_id as STRING) as id,
             safe_cast(content_customer_id as STRING) as customer_id,
             safe_cast(content_subscription_id as STRING) as subscription_id,
@@ -783,7 +767,7 @@ view: upff_chargebee_webhook_events {
                 safe_cast(content_subscription_subscription_items_0_item_price_id as STRING),
                 safe_cast(json_extract_scalar(json_extract(json_extract(content_subscription_subscription_items, '$[0]'), '$.item_price_id')) as STRING)
             ) as plan,
-            safe_cast(content_subscription_channel as STRING) as platform,
+            'web' as platform,
             safe_cast(null as STRING) as promotion_code,
             safe_cast(null as STRING) as referrer,
             safe_cast(content_customer_billing_address_state_code as STRING) as region,
@@ -815,7 +799,7 @@ view: upff_chargebee_webhook_events {
         /*      CUSTOMER PRODUCT SET PAUSED       */
         /*                                        */
         select
-            safe_cast(timestamp as TIMESTAMP) as timestamp,
+            TIMESTAMP_SECONDS(occurred_at) as timestamp,
             safe_cast(_id as STRING) as id,
             safe_cast(content_customer_id as STRING) as customer_id,
             safe_cast(content_subscription_id as STRING) as subscription_id,
@@ -836,7 +820,7 @@ view: upff_chargebee_webhook_events {
                 safe_cast(content_subscription_subscription_items_0_item_price_id as STRING),
                 safe_cast(json_extract_scalar(json_extract(json_extract(content_subscription_subscription_items, '$[0]'), '$.item_price_id')) as STRING)
             ) as plan,
-            safe_cast(content_subscription_channel as STRING) as platform,
+            'web' as platform,
             safe_cast(null as STRING) as promotion_code,
             safe_cast(null as STRING) as referrer,
             safe_cast(content_customer_billing_address_state_code as STRING) as region,

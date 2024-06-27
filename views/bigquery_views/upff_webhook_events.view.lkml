@@ -7,13 +7,17 @@ view: upff_webhook_events {
       , chargebee_webhook_events as (
       select timestamp, user_id, event, campaign, city, country, created_at, email, first_name, last_name, last_payment_date, marketing_opt_in, name, next_payment_date, plan, platform, promotion_code, referrer, region, registered_to_site, source, subscribed_to_site, subscription_frequency, subscription_price, subscription_status, updated_at
       from ${upff_chargebee_webhook_events.SQL_TABLE_NAME}
+      where (plan like '%UP-Faith-Family%' or plan is null)
       )
       , unionised_purchase_events as (
         select * from vimeo_webhook_events
         union all
         select * from chargebee_webhook_events
       )
-      select *, row_number() over (order by timestamp, user_id) as row from unionised_purchase_events
+      select *
+      , row_number() over (order by timestamp, user_id) as row
+      , row_number() over (partition by email order by timestamp desc) as user_event_number
+      from unionised_purchase_events
     ;;
     datagroup_trigger: upff_daily_refresh_datagroup
   }
@@ -29,6 +33,11 @@ view: upff_webhook_events {
     sql: ${TABLE}.row ;;
   }
 
+  dimension: user_event_number {
+    type: number
+    sql: ${TABLE}.user_event_number ;;
+  }
+
   dimension_group: timestamp {
     type: time
     sql: ${TABLE}.timestamp ;;
@@ -42,6 +51,30 @@ view: upff_webhook_events {
   dimension: event {
     type: string
     sql: ${TABLE}.event ;;
+  }
+
+  dimension: transformed_event {
+    type: string
+    sql:
+    CASE
+      WHEN ${upff_webhook_events.event} LIKE 'customer_%' THEN
+        CASE
+          WHEN ${upff_webhook_events.event} LIKE 'customer_product_%' THEN
+            REGEXP_REPLACE(
+              ${upff_webhook_events.event},
+              '^customer_product_(.*)',
+              'customer.product.\\1'
+            )
+          ELSE
+            REGEXP_REPLACE(
+              ${upff_webhook_events.event},
+              '^customer_(.*)',
+              'customer.\\1'
+            )
+        END
+      ELSE ${upff_webhook_events.event}
+    END
+  ;;
   }
 
   dimension: campaign {
@@ -187,7 +220,8 @@ view: upff_webhook_events {
       subscription_price,
       subscription_status,
       updated_at_time,
-      row
+      row,
+      user_event_number
     ]
   }
 }
