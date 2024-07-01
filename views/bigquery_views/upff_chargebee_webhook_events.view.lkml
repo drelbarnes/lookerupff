@@ -627,9 +627,9 @@ view: upff_chargebee_webhook_events {
             CASE content_subscription_status
                 WHEN 'active' THEN 'enabled'
                 WHEN 'in_trial' THEN 'free_trial'
-                WHEN 'cancelled' THEN 'cancelled'
+                WHEN 'cancelled' THEN 'expired'
                 WHEN 'non_renewing' THEN 'non_renewing'
-                WHEN 'disabled' THEN 'disabled'
+                WHEN 'disabled' THEN 'expired'
                 WHEN 'paused' THEN 'paused'
                 ELSE 'unknown'
             END AS subscription_status,

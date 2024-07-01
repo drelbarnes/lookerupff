@@ -245,6 +245,7 @@ include: "/views/bigquery_views/brightcove_product_id_mapping.view.lkml"
 # include: "/views/chargebee_event_mapping/chargebee_webhook_events.view.lkml"
 # include: "/views/chargebee_event_mapping/chargebee_analytics.view.lkml"
 include: "/views/chargebee_event_mapping/gtv_vimeo_webhook_events.view.lkml"
+include: "/views/bigquery_views/gtv_webhook_events.view.lkml"
 
 # Test Views #
 
@@ -279,6 +280,10 @@ datagroup: chargebee_reporting {
 # explore: chargebee_analytics {
 #   label: "Chargebee Analytics"
 # }
+
+explore: gtv_webhook_events {
+  label: "GTV+ Webhook Events"
+}
 
 explore: brightcove_subscription_events {
   label: "Brightcove Subscription Events"

@@ -22,25 +22,28 @@ view: brightcove_revenue_events {
         content_subscription_currency_code as currency
         FROM `up-faith-and-family-216419.chargebee_webhook_events.subscription_activated`
       )
-      select
-      subscription_id,
-      date,
-      term_start_date,
-      term_end_date,
-      json_value(content_subscription_subscription_item.item_price_id) as product_id,
-      json_value(content_subscription_subscription_item.amount) as revenue_amount,
-      currency
-      from p0, unnest(json_query_array(content_subscription_subscription_items)) as content_subscription_subscription_item
-      union all
-      select
-      subscription_id,
-      date,
-      term_start_date,
-      term_end_date,
-      json_value(content_subscription_subscription_item.item_price_id) as product_id,
-      json_value(content_subscription_subscription_item.amount) as revenue,
-      currency
-      from p1, unnest(json_query_array(content_subscription_subscription_items)) as content_subscription_subscription_item
+      , unionize_events as (
+        select
+        subscription_id,
+        date,
+        term_start_date,
+        term_end_date,
+        json_value(content_subscription_subscription_item.item_price_id) as product_id,
+        json_value(content_subscription_subscription_item.amount) as revenue_amount,
+        currency
+        from p0, unnest(json_query_array(content_subscription_subscription_items)) as content_subscription_subscription_item
+        union all
+        select
+        subscription_id,
+        date,
+        term_start_date,
+        term_end_date,
+        json_value(content_subscription_subscription_item.item_price_id) as product_id,
+        json_value(content_subscription_subscription_item.amount) as revenue,
+        currency
+        from p1, unnest(json_query_array(content_subscription_subscription_items)) as content_subscription_subscription_item
+      )
+      select * from unionize_events where date is not null
       ;;
   }
 
