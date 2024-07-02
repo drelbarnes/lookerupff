@@ -1,11 +1,11 @@
 view: upff_webhook_events {
   derived_table: {
     sql: with vimeo_webhook_events as (
-        select timestamp, user_id, event, campaign, city, country, created_at, email, first_name, last_name, last_payment_date, marketing_opt_in, name, next_payment_date, plan, platform, promotion_code, referrer, region, registered_to_site, source, subscribed_to_site, subscription_frequency, subscription_price, subscription_status, updated_at
+        select "timestamp", user_id, event, campaign, city, country, created_at, email, first_name, last_name, last_payment_date, marketing_opt_in, name, next_payment_date, plan, platform, promotion_code, referrer, region, registered_to_site, source, subscribed_to_site, subscription_frequency, subscription_price, subscription_status, updated_at
         from ${vimeo_ott_webhook_events.SQL_TABLE_NAME}
       )
       , chargebee_webhook_events as (
-      select timestamp, user_id, event, campaign, city, country, created_at, email, first_name, last_name, last_payment_date, marketing_opt_in, name, next_payment_date, plan, platform, promotion_code, referrer, region, registered_to_site, source, subscribed_to_site, subscription_frequency, subscription_price, subscription_status, updated_at
+      select "timestamp", user_id, event, campaign, city, country, created_at, email, first_name, last_name, last_payment_date, marketing_opt_in, name, next_payment_date, plan, platform, promotion_code, referrer, region, registered_to_site, source, subscribed_to_site, subscription_frequency, subscription_price, subscription_status, updated_at
       from ${chargebee_webhook_events.SQL_TABLE_NAME}
       where (plan like '%UP-Faith-Family%' or plan is null)
       )
@@ -15,8 +15,8 @@ view: upff_webhook_events {
         select * from chargebee_webhook_events
       )
       select *
-      , row_number() over (order by timestamp, user_id) as row
-      , row_number() over (partition by email order by timestamp desc) as user_event_number
+      , row_number() over (order by "timestamp", user_id) as row
+      , row_number() over (partition by email order by "timestamp" desc) as user_event_number
       from unionised_purchase_events
     ;;
     datagroup_trigger: upff_event_processing

@@ -46,6 +46,7 @@ include: "/views/chargebee_event_mapping/gaithertvplus_analytics.view.lkml"
 include: "/views/chargebee_event_mapping/gaithertvplus_app_installers.view.lkml"
 include: "/views/chargebee_event_mapping/chargebee_webhook_events.view.lkml"
 include: "/views/redshift_views/upff_webhook_events.view.lkml"
+include: "/views/chargebee_event_mapping/chargebee_vimeo_ott_id_mapping.view.lkml"
 
 #redshift allfirstplay explores
 
@@ -253,6 +254,7 @@ explore: gaithertvplus_analytics {}
 explore: gaithertvplus_app_installers {}
 
 explore: chargebee_webhook_events {}
+explore: chargebee_vimeo_ott_id_mapping {}
 explore: upff_webhook_events {
   label: "Redshift UPFF Webhook Events"
 }

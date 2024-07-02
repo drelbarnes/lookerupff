@@ -1007,7 +1007,14 @@ view: chargebee_webhook_events {
       , distinct_events as (
         select * from (select *, row_number() over (partition by id order by "timestamp") as rn from event_mapping) where rn = 1
       )
-      select *, row_number() over (order by "timestamp", customer_id) as row from distinct_events
+      , id_mapping as (
+        select a.*
+        , b.ott_user_id::VARCHAR as user_id
+        from distinct_events a
+        left join ${chargebee_vimeo_ott_id_mapping.SQL_TABLE_NAME} b
+        on a.customer_id = b.customer_id
+      )
+      select *, row_number() over (order by "timestamp", customer_id) as row from id_mapping
       ;;
     datagroup_trigger: upff_acquisition_reporting
     distribution_style: all
