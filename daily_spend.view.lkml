@@ -18,27 +18,49 @@ view: daily_spend {
 
       apple_perf as (
         select start_date as date_start,
+        'Apple' as channel,
         sum(total_local_spend_amount) as spend,
-        'Apple' as channel
+        null::integer as impressions,
+        null::integer as clicks,
+        null::integer as installs,
+        null::integer as conversions
          from php.get_apple_search_ads_campaigns
-         group by 1,3
+         group by 1,2
       ),
-
       fb_perf as (
         select i.date_start,
-          sum(i.spend) as spend,
-          'Facebook' as channel
-          from facebook_ads.insights as i
-          group by  1,3
+        'Facebook' as channel,
+        sum(i.spend) as spend,
+        sum(i.impressions) as impressions,
+        sum(i.clicks) as clicks,
+        sum(i.installs) as installs,
+        sum(i.conversions) as conversions
+        from (
+          select date_start,
+          spend,
+          impressions,
+          clicks,
+          null::integer as installs,
+          null::integer as conversions
+          from facebook_ads.insights
+        ) as i
+        group by 1,2
       ),
-
       google_perf as (
         select apr.date_start,
+          'Google' as channel,
           sum(campaigncost) as spend,
-          'Google' as channel
+          sum(impressions) as impressions,
+          sum(clicks) as clicks,
+          sum(installs) as installs,
+          sum(conversions) as conversions
           from (
             select  apr.date_start,
-            sum((apr.cost/1000000)) as campaigncost
+            sum((apr.cost/1000000)) as campaigncost,
+            sum(impressions) as impressions,
+            sum(clicks) as clicks,
+            sum(null::integer) as installs,
+            sum(conversions) as conversions
             from adwords.campaign_performance_reports as apr
             group by 1
           ) as apr
@@ -49,24 +71,31 @@ view: daily_spend {
             group by date_start
           ) as b
           on apr.date_start=b.date_start
-          group by  1,3
+          group by 1,2
       ),
-
       others_perf as (
         with p0 as (
-          select date_start
+          select "date" as date_start
           , channel
           , original_timestamp
           , spend
-          , row_number() over (partition by date_start, channel order by original_timestamp desc) as rn
+          , impressions
+          , clicks
+          , installs
+          , conversions
+          , row_number() over (partition by "date", channel order by original_timestamp desc) as rn
           , count(*) as n
-          FROM looker.get_other_marketing_spend
-          group by 1,2,3,4 order by 1 desc,2,3 desc,4
+          FROM http_api.get_other_marketing_spend
+          group by 1,2,3,4,5,6,7,8 order by 1 desc,2,3 desc,4
         )
         select
         date_start
         , channel
         , sum(spend) as spend
+        , sum(impressions) as impressions
+        , sum(clicks) as clicks
+        , sum(installs) as installs
+        , sum(conversions) as conversions
         from p0
         where rn = 1
         and date_start is not null
@@ -88,36 +117,126 @@ view: daily_spend {
           when date(date_start) between timestamp '2018-08-11' and timestamp '2018-09-08' then spend+((288.37+87.27)/28)
           else spend
           end as spend,
+        impressions,
+        clicks,
+        installs,
+        conversions,
         channel
         from google_perf
         union all
         select date_start,
         spend,
+        impressions,
+        clicks,
+        installs,
+        conversions,
         channel
         from fb_perf
         union all
         select date_start,
         spend,
+        impressions,
+        clicks,
+        installs,
+        conversions,
         channel
         from apple_perf
         union all
-        select date_start
-        , spend
-        , channel
+        select date_start,
+        spend,
+        impressions,
+        clicks,
+        installs,
+        conversions,
+        channel
         from others_perf
       )
       -- pivot then unpivot on the channel to 'create' the records for channels that dont't have any reported spend so it can be forecasted
-      , channel_pivot as (
+      , spend_pivot as (
         select *
         from (select spend, channel, date_start from t1)
-        PIVOT (sum(spend) FOR channel IN ('Apple Search Ads', 'Facebook', 'Bing Ads', 'Google', 'Google Campaign Manager', 'MNTN', 'TikTok', 'Viant', 'Tapjoy', 'Samsung'))
+        PIVOT (sum(spend) FOR channel IN ('Apple Search Ads', 'Facebook', 'Bing Ads', 'Google', 'Google Campaign Manager', 'MNTN', 'TikTok', 'Viant', 'Tapjoy', 'Samsung', 'iHeart', 'Pinterest'))
       )
-      , channel_unpivot as (
+      , spend_unpivot as (
         select *
-        from channel_pivot
+        from spend_pivot
         UNPIVOT include nulls (
-            channel_spend for channel in ("Apple Search Ads", "Facebook", "Bing Ads", "Google", "Google Campaign Manager", "MNTN", "TikTok", "Viant", "Tapjoy", "Samsung")
+            channel_spend for channel in ("Apple Search Ads", "Facebook", "Bing Ads", "Google", "Google Campaign Manager", "MNTN", "TikTok", "Viant", "Tapjoy", "Samsung", "iHeart", "Pinterest")
         )
+      )
+      , conversions_pivot as (
+        select *
+        from (select conversions, channel, date_start from t1)
+        PIVOT (sum(conversions) FOR channel IN ('Apple Search Ads', 'Facebook', 'Bing Ads', 'Google', 'Google Campaign Manager', 'MNTN', 'TikTok', 'Viant', 'Tapjoy', 'Samsung', 'iHeart', 'Pinterest'))
+      )
+      , conversions_unpivot as (
+        select *
+        from conversions_pivot
+        UNPIVOT include nulls (
+            channel_conversions for channel in ("Apple Search Ads", "Facebook", "Bing Ads", "Google", "Google Campaign Manager", "MNTN", "TikTok", "Viant", "Tapjoy", "Samsung", "iHeart", "Pinterest")
+        )
+      )
+      -- Pivot and unpivot for impressions
+      , impressions_pivot AS (
+        SELECT *
+        FROM (SELECT impressions, channel, date_start FROM t1)
+        PIVOT (SUM(impressions) FOR channel IN ('Apple Search Ads', 'Facebook', 'Bing Ads', 'Google', 'Google Campaign Manager', 'MNTN', 'TikTok', 'Viant', 'Tapjoy', 'Samsung', 'iHeart', 'Pinterest'))
+      )
+      , impressions_unpivot AS (
+        SELECT *
+        FROM impressions_pivot
+        UNPIVOT include nulls (
+          channel_impressions for channel in ("Apple Search Ads", "Facebook", "Bing Ads", "Google", "Google Campaign Manager", "MNTN", "TikTok", "Viant", "Tapjoy", "Samsung", "iHeart", "Pinterest")
+        )
+      )
+
+      -- Pivot and unpivot for clicks
+      , clicks_pivot AS (
+        SELECT *
+        FROM (SELECT clicks, channel, date_start FROM t1)
+        PIVOT (SUM(clicks) FOR channel IN ('Apple Search Ads', 'Facebook', 'Bing Ads', 'Google', 'Google Campaign Manager', 'MNTN', 'TikTok', 'Viant', 'Tapjoy', 'Samsung', 'iHeart', 'Pinterest'))
+      )
+      , clicks_unpivot AS (
+        SELECT *
+        FROM clicks_pivot
+        UNPIVOT include nulls (
+          channel_clicks for channel in ("Apple Search Ads", "Facebook", "Bing Ads", "Google", "Google Campaign Manager", "MNTN", "TikTok", "Viant", "Tapjoy", "Samsung", "iHeart", "Pinterest")
+        )
+      )
+
+      -- Pivot and unpivot for installs
+      , installs_pivot AS (
+        SELECT *
+        FROM (SELECT installs, channel, date_start FROM t1)
+        PIVOT (SUM(installs) FOR channel IN ('Apple Search Ads', 'Facebook', 'Bing Ads', 'Google', 'Google Campaign Manager', 'MNTN', 'TikTok', 'Viant', 'Tapjoy', 'Samsung', 'iHeart', 'Pinterest'))
+      )
+      , installs_unpivot AS (
+        SELECT *
+        FROM installs_pivot
+        UNPIVOT include nulls (
+          channel_installs for channel in ("Apple Search Ads", "Facebook", "Bing Ads", "Google", "Google Campaign Manager", "MNTN", "TikTok", "Viant", "Tapjoy", "Samsung", "iHeart", "Pinterest")
+        )
+      )
+
+      -- Modify the combined_metrics CTE to include the new metrics
+      , combined_metrics AS (
+        SELECT
+          s.date_start,
+          s.channel,
+          s.channel_spend,
+          c.channel_conversions,
+          i.channel_impressions,
+          cl.channel_clicks,
+          ins.channel_installs
+        FROM spend_unpivot s
+        LEFT JOIN conversions_unpivot c
+          ON s.date_start = c.date_start AND s.channel = c.channel
+        LEFT JOIN impressions_unpivot i
+          ON s.date_start = i.date_start AND s.channel = i.channel
+        LEFT JOIN clicks_unpivot cl
+          ON s.date_start = cl.date_start AND s.channel = cl.channel
+        LEFT JOIN installs_unpivot ins
+          ON s.date_start = ins.date_start AND s.channel = ins.channel
       )
       -- we then create a spend_partition column that keeps track of the last non null spend value per channel
       , spend_partitioning as (
@@ -125,33 +244,52 @@ view: daily_spend {
           date_start,
           channel,
           channel_spend,
+          channel_conversions,
+          channel_impressions,
+          channel_clicks,
+          channel_installs,
           sum(case when channel_spend is null then 0 else 1 end) over (partition by channel order by date_start asc rows between unbounded preceding and current row) as spend_partition
-          FROM channel_unpivot
-          -- the previous unpivot includes null date_starts so we filter them out
+          FROM combined_metrics
           where date_start is not null
       )
+
       -- we use the spend_partition column to project the first known value into all records with null spend
       , forecast as (
         select
           date_start,
           channel,
           channel_spend,
+          channel_conversions,
+          channel_impressions,
+          channel_clicks,
+          channel_installs,
           spend_partition,
           first_value(channel_spend) over (partition by channel, spend_partition order by date_start asc rows between unbounded preceding and current row) as spend_forecast
         from spend_partitioning
       )
-      select date_start,
-      free_trial_created,
-      channel,
-      -- spend_forecast as channel_spend,
-      channel_spend,
-      -- sum(spend_forecast) over (partition by date_start) as spend,
-      sum(channel_spend)over (partition by date_start) as spend
-      from forecast
-      inner join customers_analytics
-      on date(date_start)=timestamp
-      group by 1,2,3,4
-      order by date_start desc ;;
+      -- NOTE: we discontinued use of the spend forecasting logic.
+      , outer_query as (
+        select
+          date_start,
+          free_trial_created,
+          channel,
+          channel_spend,
+          channel_conversions,
+          channel_impressions,
+          channel_clicks,
+          channel_installs,
+          sum(channel_spend) over (partition by date_start) as spend,
+          sum(channel_conversions) over (partition by date_start) as conversions,
+          sum(channel_impressions) over (partition by date_start) as impressions,
+          sum(channel_clicks) over (partition by date_start) as clicks,
+          sum(channel_installs) over (partition by date_start) as installs
+        from forecast
+        inner join customers_analytics
+        on date(date_start) = timestamp
+        group by 1,2,3,4,5,6,7,8
+        order by date_start desc
+      )
+      select * from outer_query order by date_start desc ;;
     datagroup_trigger: upff_acquisition_reporting
     distribution_style: all
   }
@@ -278,6 +416,29 @@ view: daily_spend {
     sql_distinct_key: ${timestamp_date} ;;
     sql: ${TABLE}.spend ;;
     value_format_name: usd
+  }
+
+  measure: channel_conversions {
+    type: sum
+    sql: ${TABLE}.channel_conversions ;;
+  }
+
+  measure: channel_conversions_a {
+    type: sum
+    sql: ${TABLE}.channel_conversions ;;
+    filters: [group_a: "yes"]
+  }
+
+  measure: channel_conversions_b {
+    type: sum
+    sql: ${TABLE}.channel_conversions ;;
+    filters: [group_b: "yes"]
+  }
+
+  measure: conversions {
+    type: sum_distinct
+    sql_distinct_key: ${timestamp_date} ;;
+    sql: ${TABLE}.conversions ;;
   }
 
   measure: free_trial_created {
