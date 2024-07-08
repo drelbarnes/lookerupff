@@ -34,14 +34,17 @@ view: daily_spend {
         sum(i.impressions) as impressions,
         sum(i.clicks) as clicks,
         sum(i.installs) as installs,
-        sum(i.conversions) as conversions
+        sum(i.purchases_28d) as conversions
         from (
           select date_start,
           spend,
           impressions,
           clicks,
           null::integer as installs,
-          null::integer as conversions
+          COALESCE(actions_1d_view_app_custom_event_fb_mobile_purchase, 0) +
+          COALESCE(actions_1d_view_offsite_conversion_fb_pixel_purchase, 0) +
+          COALESCE(actions_28d_click_app_custom_event_fb_mobile_purchase, 0) +
+          COALESCE(actions_28d_click_offsite_conversion_fb_pixel_purchase, 0) AS purchases_28d
           from facebook_ads.insights
         ) as i
         group by 1,2
@@ -272,24 +275,28 @@ view: daily_spend {
         select
           date_start,
           free_trial_created,
+          paying_created,
+          free_trial_created+paying_created as total_conversions,
           channel,
           channel_spend,
           channel_conversions,
           channel_impressions,
           channel_clicks,
           channel_installs,
+          channel_spend/nullif(channel_conversions,0) as channel_cpa,
           sum(channel_spend) over (partition by date_start) as spend,
-          sum(channel_conversions) over (partition by date_start) as conversions,
+          sum(channel_conversions) over (partition by date_start) as attributed_conversions,
           sum(channel_impressions) over (partition by date_start) as impressions,
           sum(channel_clicks) over (partition by date_start) as clicks,
-          sum(channel_installs) over (partition by date_start) as installs
+          sum(channel_installs) over (partition by date_start) as installs,
+          total_conversions/nullif(attributed_conversions,0) as platform_attribution_ratio
         from forecast
         inner join customers_analytics
         on date(date_start) = timestamp
-        group by 1,2,3,4,5,6,7,8
+        group by 1,2,3,4,5,6,7,8,9,10
         order by date_start desc
       )
-      select * from outer_query order by date_start desc ;;
+      select * from outer_query where channel_spend is not null order by date_start desc ;;
     datagroup_trigger: upff_acquisition_reporting
     distribution_style: all
   }
@@ -352,9 +359,21 @@ view: daily_spend {
     filters: [group_a: "yes"]
   }
 
+  measure: paying_created_a {
+    type: sum_distinct
+    sql_distinct_key: ${timestamp_date} ;;
+    sql: ${TABLE}.paying_created ;;
+    filters: [group_a: "yes"]
+  }
+
+  measure: total_conversions_a {
+    type: number
+    sql: ${free_trial_created_a}+${paying_created_a} ;;
+  }
+
   measure: CPFT_a {
     type: number
-    sql: ${spend_a}/${free_trial_created_a} ;;
+    sql: ${spend_a}/nullif(${free_trial_created_a},0) ;;
     value_format_name: usd
   }
 
@@ -385,9 +404,21 @@ view: daily_spend {
     filters: [group_b: "yes"]
   }
 
+  measure: paying_created_b {
+    type: sum_distinct
+    sql_distinct_key: ${timestamp_date} ;;
+    sql: ${TABLE}.paying_created ;;
+    filters: [group_b: "yes"]
+  }
+
+  measure: total_conversions_b {
+    type: number
+    sql: ${free_trial_created_b}+${paying_created_b} ;;
+  }
+
   measure: CPFT_b {
     type: number
-    sql: ${spend_b}/${free_trial_created_b} ;;
+    sql: ${spend_b}/nullif(${free_trial_created_b},0) ;;
     value_format_name: usd
   }
 
@@ -435,10 +466,61 @@ view: daily_spend {
     filters: [group_b: "yes"]
   }
 
-  measure: conversions {
+  measure: channel_impressions {
+    type: sum
+    sql: ${TABLE}.channel_impressions ;;
+  }
+
+  measure: channel_impressions_a {
+    type: sum
+    sql: ${TABLE}.channel_impressions ;;
+    filters: [group_a: "yes"]
+  }
+
+  measure: channel_impressions_b {
+    type: sum
+    sql: ${TABLE}.channel_impressions ;;
+    filters: [group_b: "yes"]
+  }
+
+  measure: channel_clicks {
+    type: sum
+    sql: ${TABLE}.channel_clicks ;;
+  }
+
+  measure: channel_clicks_a {
+    type: sum
+    sql: ${TABLE}.channel_clicks ;;
+    filters: [group_a: "yes"]
+  }
+
+  measure: channel_clicks_b {
+    type: sum
+    sql: ${TABLE}.channel_clicks ;;
+    filters: [group_b: "yes"]
+  }
+
+  measure: channel_installs {
+    type: sum
+    sql: ${TABLE}.channel_installs ;;
+  }
+
+  measure: channel_installs_a {
+    type: sum
+    sql: ${TABLE}.channel_installs ;;
+    filters: [group_a: "yes"]
+  }
+
+  measure: channel_installs_b {
+    type: sum
+    sql: ${TABLE}.channel_installs ;;
+    filters: [group_b: "yes"]
+  }
+
+  measure: attributed_conversions {
     type: sum_distinct
     sql_distinct_key: ${timestamp_date} ;;
-    sql: ${TABLE}.conversions ;;
+    sql: ${TABLE}.attributed_conversions ;;
   }
 
   measure: free_trial_created {
@@ -447,10 +529,32 @@ view: daily_spend {
     sql: ${TABLE}.free_trial_created ;;
   }
 
+  measure: paying_created {
+    type: sum_distinct
+    sql_distinct_key: ${timestamp_date} ;;
+    sql: ${TABLE}.paying_created ;;
+  }
+
+  measure: total_conversions {
+    type: number
+    sql: ${free_trial_created}+${paying_created} ;;
+  }
+
   measure: CPFT {
     type: number
-    sql: ${spend}/${free_trial_created} ;;
+    sql: ${spend}/nullif(${free_trial_created},0) ;;
     value_format_name: usd
+  }
+
+  measure: channel_cpa {
+    type: number
+    sql: ${channel_spend}/nullif(${channel_conversions},0) ;;
+    value_format_name: usd
+  }
+
+  measure: platform_attribution_ratio {
+    type: number
+    sql: ${total_conversions}/nullif(${attributed_conversions},0) ;;
   }
 
   set: detail {
