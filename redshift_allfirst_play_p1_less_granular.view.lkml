@@ -15,7 +15,7 @@ view: redshift_allfirst_play_p1_less_granular {
                 , ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY timestamp ASC) AS event_num
                 , DATE(timestamp) AS date_stamp
               /* ---- UPDATE DAILY PDT HERE ---- */
-              FROM looker_scratch.lr$rmlrb1720602127589_upff_webhook_events
+              FROM ${upff_webhook_events.SQL_TABLE_NAME}
               WHERE user_id <> '0'
               AND user_id ~ '^[0-9]*$'
               AND DATE(timestamp) < CURRENT_DATE
@@ -37,7 +37,7 @@ view: redshift_allfirst_play_p1_less_granular {
                 , ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY timestamp DESC) AS event_num
                 , DATE(timestamp) AS date_stamp
               /* ---- UPDATE DAILY PDT HERE ---- */
-              FROM looker_scratch.lr$rmlrb1720602127589_upff_webhook_events
+              FROM ${upff_webhook_events.SQL_TABLE_NAME}
               WHERE user_id <> '0'
               AND user_id ~ '^[0-9]*$'
               AND DATE(timestamp) < CURRENT_DATE
@@ -108,10 +108,10 @@ view: redshift_allfirst_play_p1_less_granular {
                 , source
                 , episode
                 /* ---- UPDATE DAILY PDT HERE ---- */
-              FROM looker_scratch.lr$rmrmt1720673222421_redshift_allfirst_play_p0
+              FROM ${redshift_allfirst_play_p0.SQL_TABLE_NAME}
               WHERE user_id <> '0'
               AND user_id ~ '^[0-9]*$'
-              AND DATE(timestamp) >= '2023-06-20'
+              AND DATE(timestamp) >= '2020-01-01'
               AND DATE(timestamp) <= CURRENT_DATE
               ),
 
