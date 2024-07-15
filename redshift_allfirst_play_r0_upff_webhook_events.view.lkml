@@ -99,7 +99,7 @@ view: redshift_allfirst_play_r0_upff_webhook_events {
               select * from customers_updated_event ;;
 
       distribution_style: "even"
-      sortkeys: ["user_id", "video_id"]
+      sortkeys: ["user_id"]
       datagroup_trigger: redshift_upff_datagroup
 
     }
