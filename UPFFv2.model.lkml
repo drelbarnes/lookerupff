@@ -95,6 +95,11 @@ explore: redshift_allfirst_play_p1_less_granular {
   label: "Redshift Plays Less Granular"
 }
 
+include: "redshift_allfirst_play_r0_upff_webhook_events.view.lkml"
+explore: redshift_allfirst_play_r0_upff_webhook_events {
+  label: "Redshift UPFF Transactional Data"
+}
+
 datagroup: redshift_upff_datagroup {
   description: "Datagroup for Allfirstplay and Timeupdate. Triggers twice per day"
   sql_trigger: SELECT FLOOR(EXTRACT(EPOCH FROM CURRENT_TIMESTAMP at time zone 'America/New_York') / 86400) ;;
