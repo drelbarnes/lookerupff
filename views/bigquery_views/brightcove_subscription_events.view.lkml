@@ -2,9 +2,10 @@ view: brightcove_subscription_events {
   derived_table: {
     sql:
       with p0 as (
-      SELECT
+        SELECT
         content_customer_id as customer_id,
         content_subscription_id as subscription_id,
+        content_customer_email as email,
         DATE(TIMESTAMP_SECONDS(content_subscription_trial_start)) as trial_start_date,
         safe_cast(null as date) as active_start_date,
         safe_cast(null as date) as active_end_date,
@@ -17,13 +18,14 @@ view: brightcove_subscription_events {
         false as is_reconnect,
         "subscription_created" as event,
         timestamp
-      FROM
+        FROM
         `up-faith-and-family-216419.chargebee_webhook_events.subscription_created`
       )
       , p1 as (
-      SELECT
+        SELECT
         content_customer_id as customer_id,
         content_subscription_id as subscription_id,
+        content_customer_email as email,
         DATE(TIMESTAMP_SECONDS(content_subscription_trial_start)) as trial_start_date,
         coalesce(DATE(TIMESTAMP_SECONDS(content_subscription_activated_at)), DATE(TIMESTAMP_SECONDS(content_subscription_trial_end))) as active_start_date,
         DATE(TIMESTAMP_SECONDS(content_subscription_cancelled_at)) as active_end_date,
@@ -36,13 +38,14 @@ view: brightcove_subscription_events {
         false as is_reconnect,
         "subscription_cancelled" as event,
         timestamp
-      FROM
+        FROM
         `up-faith-and-family-216419.chargebee_webhook_events.subscription_cancelled`
       )
       , p2 as (
-      SELECT
+        SELECT
         content_customer_id as customer_id,
         content_subscription_id as subscription_id,
+        content_customer_email as email,
         DATE(TIMESTAMP_SECONDS(content_subscription_trial_start)) as trial_start_date,
         DATE(TIMESTAMP_SECONDS(content_subscription_activated_at)) as active_start_date,
         safe_cast(null as date) as active_end_date,
@@ -55,13 +58,14 @@ view: brightcove_subscription_events {
         false as is_reconnect,
         "subscription_activated" as event,
         timestamp
-      FROM
+        FROM
         `up-faith-and-family-216419.chargebee_webhook_events.subscription_activated`
       )
       , p3 as (
         SELECT
          content_customer_id as customer_id,
          content_subscription_id as subscription_id,
+         content_customer_email as email,
          DATE(TIMESTAMP_SECONDS(content_subscription_trial_start)) as trial_start_date,
          DATE(TIMESTAMP_SECONDS(content_subscription_activated_at)) as active_start_date,
          safe_cast(null as date) as active_end_date,
@@ -81,6 +85,7 @@ view: brightcove_subscription_events {
         select
         customer_id,
         subscription_id,
+        email,
         trial_start_date,
         active_start_date,
         active_end_date,
@@ -99,6 +104,7 @@ view: brightcove_subscription_events {
         select
         customer_id,
         subscription_id,
+        email,
         trial_start_date,
         active_start_date,
         active_end_date,
@@ -117,6 +123,7 @@ view: brightcove_subscription_events {
         select
         customer_id,
         subscription_id,
+        email,
         trial_start_date,
         active_start_date,
         active_end_date,
@@ -135,6 +142,7 @@ view: brightcove_subscription_events {
         select
         customer_id,
         subscription_id,
+        email,
         trial_start_date,
         active_start_date,
         active_end_date,
@@ -158,6 +166,7 @@ view: brightcove_subscription_events {
       select
       customer_id,
       subscription_id,
+      email,
       trial_start_date,
       active_start_date,
       active_end_date,
@@ -182,6 +191,11 @@ view: brightcove_subscription_events {
   dimension: subscription_id {
     type: string
     sql: ${TABLE}.subscription_id ;;
+  }
+
+  dimension: email {
+    type: string
+    sql: ${TABLE}.email ;;
   }
 
   dimension: trial_start_date {
