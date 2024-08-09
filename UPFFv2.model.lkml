@@ -47,6 +47,7 @@ include: "/views/chargebee_event_mapping/gaithertvplus_app_installers.view.lkml"
 include: "/views/chargebee_event_mapping/chargebee_webhook_events.view.lkml"
 include: "/views/redshift_views/upff_webhook_events.view.lkml"
 include: "/views/chargebee_event_mapping/chargebee_vimeo_ott_id_mapping.view.lkml"
+include: "/views/redshift_views/bundle_analytics.view.lkml"
 
 #redshift allfirstplay explores
 
@@ -225,6 +226,10 @@ explore: appstoreconnect_sub_counts {
   persist_with: upff_customer_file_reporting
 }
 
+explore: bundle_analytics {
+  persist_with: upff_acquisition_reporting
+}
+
 explore: analytics_v2 {
   persist_with: upff_acquisition_reporting
   join: mailchimp_email_campaigns {
@@ -236,6 +241,11 @@ explore: analytics_v2 {
     type: inner
     sql_on: ${analytics_v2.timestamp_date}=${daily_spend_v2.timestamp_date} ;;
     relationship: one_to_one
+  }
+  join: bundle_analytics {
+    type: inner
+    sql_on: ${analytics_v2.timestamp_date}=${bundle_analytics.date} ;;
+    relationship: one_to_many
   }
 }
 
