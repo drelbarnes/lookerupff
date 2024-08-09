@@ -250,11 +250,25 @@ view: bundle_analytics {
         from gaithertvplus_bundled_subs group by 1 order by uploaded_at limit 5000
       )
       , all_brand_bundle_analytics as (
+      select
+        uploaded_at,
+        brand,
+        sum(total_bundled_upfaithandfamily_trials) as total_bundled_upfaithandfamily_trials,
+        sum(total_bundled_upfaithandfamily_subscribers) as total_bundled_upfaithandfamily_subscribers,
+        sum(total_bundled_gaithertvplus_trials) as total_bundled_gaithertvplus_trials,
+        sum(total_bundled_gaithertvplus_subscribers) as total_bundled_gaithertvplus_subscribers,
+        sum(total_bundled_minno_trials) as total_bundled_minno_trials,
+        sum(total_bundled_minno_subscribers) as total_bundled_minno_subscribers,
+        sum(total_upentertainment_bundle_trials) as total_upentertainment_bundle_trials,
+        sum(total_upentertainment_bundle_subscribers) as total_upentertainment_bundle_subscribers
+      from (
         select * from upfaithandfamily_bundle_analytics
         union all
         select * from gaithertvplus_bundle_analytics
       )
-      select * from all_brand_bundle_analytics order by uploaded_at, brand
+      group by 1,2 order by uploaded_at, brand
+    )
+    select * from all_brand_bundle_analytics order by uploaded_at, brand
     ;;
     datagroup_trigger: upff_event_processing
     distribution_style: all
@@ -275,43 +289,44 @@ view: bundle_analytics {
     sql: ${TABLE}.uploaded_at ;;
   }
 
+
   measure: total_bundled_minno_subscribers {
-    type: number
+    type: sum
     sql: ${TABLE}.total_bundled_minno_subscribers ;;
   }
 
   measure: total_bundled_minno_trials {
-    type: number
+    type: sum
     sql: ${TABLE}.total_bundled_minno_trials ;;
   }
 
   measure: total_bundled_gaithertvplus_subscribers {
-    type: number
+    type: sum
     sql: ${TABLE}.total_bundled_gaithertvplus_subscribers ;;
   }
 
   measure: total_bundled_gaithertvplus_trials {
-    type: number
+    type: sum
     sql: ${TABLE}.total_bundled_gaithertvplus_trials ;;
   }
 
   measure: total_bundled_upfaithandfamily_subscribers {
-    type: number
+    type: sum
     sql: ${TABLE}.total_bundled_upfaithandfamily_subscribers ;;
   }
 
   measure: total_bundled_upfaithandfamily_trials {
-    type: number
+    type: sum
     sql: ${TABLE}.total_bundled_upfaithandfamily_trials ;;
   }
 
   measure: total_upentertainment_bundle_subscribers {
-    type: number
+    type: sum
     sql: ${TABLE}.total_upentertainment_bundle_subscribers ;;
   }
 
   measure: total_upentertainment_bundle_trials {
-    type: number
+    type: sum
     sql: ${TABLE}.total_upentertainment_bundle_trials ;;
   }
 }
