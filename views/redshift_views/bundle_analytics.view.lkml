@@ -1,15 +1,15 @@
 view: bundle_analytics {
   derived_table: {
     sql: with gaithertvplus_events as (
-        select * from looker_scratch.lr$rmjjh1723212955173_chargebee_webhook_events
+        select * from ${chargebee_webhook_events.SQL_TABLE_NAME}
         WHERE plan LIKE '%GaitherTV%'
       )
       , upfaithandfamily_events as (
-        select * from looker_scratch.lr$rmjjh1723212955173_chargebee_webhook_events
+        select * from ${chargebee_webhook_events.SQL_TABLE_NAME}
         WHERE plan LIKE '%UP-Faith-Family%'
       )
       , minno_events as (
-        select * from looker_scratch.lr$rmjjh1723212955173_chargebee_webhook_events
+        select * from ${chargebee_webhook_events.SQL_TABLE_NAME}
         WHERE plan LIKE '%Minno%'
       )
       , gaithertvplus_webhook_analytics as (
