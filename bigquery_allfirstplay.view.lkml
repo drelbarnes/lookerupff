@@ -6,6 +6,8 @@ select * from allfirstplay.p0
 
 ;;
 
+    datagroup_trigger: upff_analytics_datagroup
+
   }
 
 dimension: winback {
