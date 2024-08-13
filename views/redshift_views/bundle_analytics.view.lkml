@@ -270,7 +270,7 @@ view: bundle_analytics {
     )
     select * from all_brand_bundle_analytics order by uploaded_at, brand
     ;;
-    datagroup_trigger: upff_event_processing
+    datagroup_trigger: upff_acquisition_reporting
     distribution_style: all
   }
 
