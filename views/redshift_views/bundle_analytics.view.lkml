@@ -389,6 +389,7 @@ view: bundle_analytics {
         , b.bundle_paused_created
         , b.bundle_resumed
         , b.bundle_changes
+        , lag(b.bundle_trial_created, 7) over (partition by a.bundle_type order by a.uploaded_at) as bundle_trial_created_7_days_prior
         from all_brand_bundle_counts a
         left join bundle_analytics b
         on a.uploaded_at = b.uploaded_at and a.bundle_type = b.bundle_type
@@ -410,8 +411,18 @@ view: bundle_analytics {
     sql: ${TABLE}.bundle_type ;;
   }
 
-  dimension: date {
-    type: date
+  dimension_group: timestamp {
+    type: time
+    timeframes: [
+      raw,
+      time,
+      date,
+      day_of_week,
+      week,
+      month,
+      quarter,
+      year
+    ]
     sql: ${TABLE}.uploaded_at ;;
   }
 
@@ -499,5 +510,16 @@ view: bundle_analytics {
   measure: bundle_resumed {
     type: sum
     sql: ${TABLE}.bundle_resumed ;;
+  }
+
+  measure: bundle_trial_created_7_days_prior{
+    type: sum
+    sql: ${TABLE}.bundle_trial_created_7_days_prior ;;
+  }
+
+  measure: bundle_trial_conversion_rate {
+    type: number
+    value_format: ".0#\%"
+    sql: 100*${bundle_trial_converted}*1.0/NULLIF(${bundle_trial_created_7_days_prior}, 0) ;;
   }
 }

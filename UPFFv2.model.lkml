@@ -244,7 +244,7 @@ explore: analytics_v2 {
   }
   join: bundle_analytics {
     type: inner
-    sql_on: ${analytics_v2.timestamp_date}=${bundle_analytics.date} ;;
+    sql_on: ${analytics_v2.timestamp_date}=${bundle_analytics.timestamp_date} ;;
     relationship: one_to_many
   }
 }
