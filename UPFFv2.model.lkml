@@ -228,6 +228,11 @@ explore: appstoreconnect_sub_counts {
 
 explore: bundle_analytics {
   persist_with: upff_acquisition_reporting
+  join: analytics_v2 {
+    type: left_outer
+    sql_on: ${bundle_analytics.timestamp_date}=${analytics_v2.timestamp_date} ;;
+    relationship: many_to_one
+  }
 }
 
 explore: analytics_v2 {
@@ -243,7 +248,7 @@ explore: analytics_v2 {
     relationship: one_to_one
   }
   join: bundle_analytics {
-    type: inner
+    type: left_outer
     sql_on: ${analytics_v2.timestamp_date}=${bundle_analytics.timestamp_date} ;;
     relationship: one_to_many
   }

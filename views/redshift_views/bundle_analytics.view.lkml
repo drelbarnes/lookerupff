@@ -16,7 +16,8 @@ view: bundle_analytics {
         select
         date(timestamp) as date
         , 'web' as platform
-        ,count(case when (event = 'customer_product_free_trial_created') then 1 else null end) as free_trial_created
+        , 'gaithertvplus'::VARCHAR as brand
+        , count(case when (event = 'customer_product_free_trial_created') then 1 else null end) as free_trial_created
         , count(case when (event = 'customer_product_free_trial_converted') then 1 else null end) as free_trial_converted
         , count(case when (event = 'customer_product_free_trial_expired') then 1 else null end) as free_trial_churn
         , count(case when (event = 'customer_product_created') then 1 else null end) as paying_created
@@ -29,7 +30,9 @@ view: bundle_analytics {
         select
         date(timestamp) as date
         , 'web' as platform
-        ,count(case when (event = 'customer_product_free_trial_created') then 1 else null end) as free_trial_created
+        , 'upfaithandfamily'::VARCHAR as brand
+        , 'upfaithandfamily_only'::VARCHAR as bundle_type
+        , count(case when (event = 'customer_product_free_trial_created') then 1 else null end) as free_trial_created
         , count(case when (event = 'customer_product_free_trial_converted') then 1 else null end) as free_trial_converted
         , count(case when (event = 'customer_product_free_trial_expired') then 1 else null end) as free_trial_churn
         , count(case when (event = 'customer_product_created') then 1 else null end) as paying_created
@@ -42,7 +45,8 @@ view: bundle_analytics {
         select
         date(timestamp) as date
         , 'web' as platform
-        ,count(case when (event = 'customer_product_free_trial_created') then 1 else null end) as free_trial_created
+        , 'minno'::VARCHAR as brand
+        , count(case when (event = 'customer_product_free_trial_created') then 1 else null end) as free_trial_created
         , count(case when (event = 'customer_product_free_trial_converted') then 1 else null end) as free_trial_converted
         , count(case when (event = 'customer_product_free_trial_expired') then 1 else null end) as free_trial_churn
         , count(case when (event = 'customer_product_created') then 1 else null end) as paying_created
@@ -378,6 +382,16 @@ view: bundle_analytics {
         )
         select * from p0 where bundle_type not in ('upfaithandfamily_only', 'not_bundled')
       )
+      , bundle_analytics_plus as (
+        select
+        a1.uploaded_at
+        , a1.bundle_type
+        , a1.bundle_paying_churn+sum(coalesce(a2.bundle_paying_churn,0)) as churn_30_days
+        from bundle_analytics as a1
+        left join bundle_analytics as a2
+        on datediff(day,a2.uploaded_at,a1.uploaded_at)<=29 and datediff(day,a2.uploaded_at,a1.uploaded_at)>0
+        group by a1.uploaded_at,a1.bundle_type,a1.bundle_paying_churn
+      )
       , bundle_metrics as (
         select
         a.*
@@ -390,9 +404,21 @@ view: bundle_analytics {
         , b.bundle_resumed
         , b.bundle_changes
         , lag(b.bundle_trial_created, 7) over (partition by a.bundle_type order by a.uploaded_at) as bundle_trial_created_7_days_prior
+        , lag(a.total_bundled_upfaithandfamily_trials, 30) over (partition by a.bundle_type order by a.uploaded_at) as total_upfaithandfamily_bundles_30_days_prior
+        , c.free_trial_created
+        , c.free_trial_converted
+        , c.free_trial_churn
+        , c.paying_created
+        , c.paying_churn
+        , c.paused_created
+        , d.churn_30_days
         from all_brand_bundle_counts a
         left join bundle_analytics b
         on a.uploaded_at = b.uploaded_at and a.bundle_type = b.bundle_type
+        left join upfaithandfamily_webhook_analytics c
+        on a.uploaded_at = c.date and a.bundle_type = c.bundle_type
+        left join bundle_analytics_plus d
+        on a.uploaded_at = d.uploaded_at and a.bundle_type = d.bundle_type
       )
       select * from bundle_metrics
       order by uploaded_at desc, bundle_type desc
@@ -522,4 +548,51 @@ view: bundle_analytics {
     value_format: ".0#\%"
     sql: 100*${bundle_trial_converted}*1.0/NULLIF(${bundle_trial_created_7_days_prior}, 0) ;;
   }
+
+  measure: free_trial_created {
+    type: sum
+    sql: ${TABLE}.free_trial_created ;;
+  }
+
+  measure: free_trial_converted {
+    type: sum
+    sql: ${TABLE}.free_trial_converted ;;
+  }
+
+  measure: free_trial_churn {
+    type: sum
+    sql: ${TABLE}.free_trial_churn ;;
+  }
+
+  measure: paying_created {
+    type: sum
+    sql: ${TABLE}.paying_created ;;
+  }
+
+  measure: paying_churn {
+    type: sum
+    sql: ${TABLE}.paying_churn ;;
+  }
+
+  measure: paused_created {
+    type: sum
+    sql: ${TABLE}.paused_created ;;
+  }
+
+  measure: total_upfaithandfamily_bundles_30_days_prior{
+    type: sum
+    sql: ${TABLE}.total_upfaithandfamily_bundles_30_days_prior ;;
+  }
+
+  measure: churn_30_days {
+    type: sum
+    sql: ${TABLE}.churn_30_days ;;
+  }
+
+  measure: bundle_churn {
+    type: number
+    value_format: ".0#\%"
+    sql: ${total_upfaithandfamily_bundles_30_days_prior}*1.0/NULLIF(${churn_30_days}, 0) ;;
+  }
+
 }
