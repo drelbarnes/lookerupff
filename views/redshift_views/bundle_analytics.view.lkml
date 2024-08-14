@@ -399,7 +399,7 @@ view: bundle_analytics {
     datagroup_trigger: upff_acquisition_reporting
     distribution_style: all
   }
-
+#testing
   dimension: brand {
     type: string
     sql: ${TABLE}.brand ;;
