@@ -1,8 +1,8 @@
 view: chargebee_vimeo_ott_id_mapping {
   derived_table: {
     sql: SELECT a.customer_id, b.ott_user_id
-        FROM customers.tg_middleware_abc9876_customers a
-        left join customers.tg_middleware_abc9876_ott_users b
+        FROM customers.admin_tg_mw_6778_customers a
+        left join customers.admin_tg_mw_6778_ott_users b
         on a.id = b.customer_id
       ;;
     datagroup_trigger: upff_daily_refresh_datagroup
