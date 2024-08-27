@@ -1,11 +1,11 @@
 view: gtv_webhook_events {
   derived_table: {
     sql: with vimeo_webhook_events as (
-        select timestamp, user_id, event, campaign, city, country, created_at, email, first_name, last_name, last_payment_date, marketing_opt_in, name, next_payment_date, plan, platform, promotion_code, referrer, region, registered_to_site, source, subscribed_to_site, subscription_frequency, subscription_price, subscription_status, updated_at
+        select timestamp, cast(null as string) as customer_id, user_id, event, campaign, city, country, created_at, email, first_name, last_name, last_payment_date, marketing_opt_in, name, next_payment_date, plan, platform, promotion_code, referrer, region, registered_to_site, source, subscribed_to_site, subscription_frequency, subscription_price, subscription_status, updated_at
         from ${gtv_vimeo_webhook_events.SQL_TABLE_NAME}
       )
       , chargebee_webhook_events as (
-      select timestamp, user_id, event, campaign, city, country, created_at, email, first_name, last_name, last_payment_date, marketing_opt_in, name, next_payment_date, plan, platform, promotion_code, referrer, region, registered_to_site, source, subscribed_to_site, subscription_frequency, subscription_price, subscription_status, updated_at
+      select timestamp, customer_id, user_id, event, campaign, city, country, created_at, email, first_name, last_name, last_payment_date, marketing_opt_in, name, next_payment_date, plan, platform, promotion_code, referrer, region, registered_to_site, source, subscribed_to_site, subscription_frequency, subscription_price, subscription_status, updated_at
       from ${upff_chargebee_webhook_events.SQL_TABLE_NAME}
       where (plan like '%Gaither%' and plan is not null)
       )
@@ -41,6 +41,11 @@ view: gtv_webhook_events {
   dimension_group: timestamp {
     type: time
     sql: ${TABLE}.timestamp ;;
+  }
+
+  dimension: customer_id {
+    type: string
+    sql: ${TABLE}.customer_id ;;
   }
 
   dimension: user_id {
