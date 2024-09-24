@@ -251,6 +251,10 @@ include: "/views/bigquery_views/gtv_webhook_events.view.lkml"
 
 include: "/views/testing_views/hubspot_bogo_testing.view.lkml"
 
+# Ad Partners #
+
+include: "/views/bigquery_views/radiant_reporting.view.lkml"
+
 # Datagroups for PDT Triggers #
 
 datagroup: upff_daily_refresh_datagroup {
@@ -281,16 +285,30 @@ datagroup: chargebee_reporting {
 #   label: "Chargebee Analytics"
 # }
 
+explore: radiant_reporting {
+  label: "Radiant Reporting"
+}
+
 explore: gtv_webhook_events {
   label: "GTV+ Webhook Events"
 }
 
 explore: brightcove_subscription_events {
   label: "Brightcove Subscription Events"
+  join: brightcove_revenue_events {
+    type: left_outer
+    sql_on: ${brightcove_subscription_events.subscription_id}=${brightcove_revenue_events.subscription_id};;
+    relationship: one_to_many
+  }
 }
 
 explore: brightcove_revenue_events {
   label: "Brightcove Revenue Events"
+  join: brightcove_subscription_events {
+    type: left_outer
+    sql_on: ${brightcove_revenue_events.subscription_id}=${brightcove_subscription_events.subscription_id} ;;
+    relationship: many_to_one
+  }
 }
 
 explore: brightcove_product_id_mapping {
