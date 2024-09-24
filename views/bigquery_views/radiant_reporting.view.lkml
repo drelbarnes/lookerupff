@@ -225,7 +225,7 @@
       )
       SELECT
         a.timestamp,
-        SHA256(a.email) AS email_hash,
+        a.email,
         a.referrer,
         a.utm_campaign,
         a.utm_source,
@@ -248,9 +248,16 @@
       description: "The timestamp when the event occurred."
     }
 
+    dimension: email {
+      type: string
+      sql: ${TABLE}.email ;;
+      label: "Email"
+      description: "Email"
+    }
+
     dimension: email_hash {
       type: string
-      sql: ${TABLE}.email_hash ;;
+      sql: SHA256(${email}) ;;
       label: "Email Hash"
       description: "SHA256 hash of the user's email address."
     }
