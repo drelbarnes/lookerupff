@@ -519,6 +519,16 @@ view: bundle_analytics {
     sql: ${TABLE}.total_upentertainment_bundle_trials ;;
   }
 
+  measure: total_minno_subscribers {
+    type: number
+    sql: ${total_bundled_minno_subscribers}+${total_upentertainment_bundle_subscribers} ;;
+  }
+
+  measure: total_minno_trials {
+    type: number
+    sql: ${total_bundled_minno_trials}+${total_upentertainment_bundle_trials} ;;
+  }
+
   measure: bundle_trial_created {
     type: sum
     sql: ${TABLE}.bundle_trial_created ;;
