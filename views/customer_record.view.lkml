@@ -1,54 +1,81 @@
 view: customer_record {
   derived_table: {
-    sql: with events as (
-        select user_id, subscription_status as status, event as topic, platform
+    sql: with upff_events as (
+        select customer_id, subscription_id, user_id, subscription_status as status, event as topic, platform
         , case
           when subscription_frequency in (null, "custom", "monthly") then "monthly"
           else "yearly"
           end as frequency
         , timestamp
-        from ${vimeo_webhook_events.SQL_TABLE_NAME}
+        from ${upff_webhook_events.SQL_TABLE_NAME}
         where event != "customer_created"
       )
+      , gtv_events as (
+        select customer_id, subscription_id, user_id, subscription_status as status, event as topic, platform
+        , case
+          when subscription_frequency in (null, "custom", "monthly") then "monthly"
+          else "yearly"
+          end as frequency
+        , timestamp
+        from ${gtv_webhook_events.SQL_TABLE_NAME}
+        where event != "customer_created"
+      )
+      , minno_events as (
+        select customer_id, subscription_id, user_id, subscription_status as status, event as topic, platform
+        , case
+          when subscription_frequency in (null, "custom", "monthly") then "monthly"
+          else "yearly"
+          end as frequency
+        , timestamp
+        from ${minno_webhook_events.SQL_TABLE_NAME}
+        where event != "customer_created"
+      )
+      , events as (
+      select * from upff_events
+      union all
+      select * from gtv_events
+      union all
+      select * from minno_events
+      )
       , max_events as (
-      select user_id, status, topic, platform, frequency, timestamp, row_number() over (partition by user_id, extract(date from timestamp) order by timestamp desc) as rn
+      select customer_id, subscription_id, user_id, status, topic, platform, frequency, timestamp, row_number() over (partition by subscription_id, extract(date from timestamp) order by timestamp desc) as rn
       from events
       )
       , distinct_events as (
-      select user_id, status, topic, platform, frequency, extract(date from timestamp) as date
+      select customer_id, subscription_id, user_id, status, topic, platform, frequency, extract(date from timestamp) as date
       from max_events
       where rn = 1
       )
       , users as (
-      select user_id, min(extract(date from timestamp)) as min_date, current_date as max_date from events group by user_id
+      select customer_id, subscription_id, user_id, min(extract(date from timestamp)) as min_date, current_date as max_date from events group by customer_id, subscription_id, user_id
       )
       , dates as (
       select extract(date from timestamp) as date from events
       group by 1
       )
       , exploded_dates_per_user as (
-      SELECT a.user_id, d.date
+      SELECT a.customer_id, a.subscription_id, a.user_id, d.date
       FROM users a
       JOIN dates d ON d.date >= a.min_date
       AND d.date <= a.max_date
       )
       , join_events as (
-        select a.date, a.user_id, b.status, b.topic, b.platform, b.frequency
+        select a.date, a.customer_id, a.subscription_id, a.user_id, b.status, b.topic, b.platform, b.frequency
         from exploded_dates_per_user as a
         left join distinct_events as b
-        on a.user_id = b.user_id and a.date = b.date
+        on a.customer_id = b.customer_id and b.subscription_id = b.subscription_id and a.user_id = b.user_id and a.date = b.date
       )
       , customer_record as (
-        select timestamp(date) as date, user_id
-        , max(status) over (partition by user_id, status_group) as status
-        , max(topic) over (partition by user_id, status_group) as topic
-        , max(platform) over (partition by user_id, status_group) as platform
-        , max(frequency) over (partition by user_id, status_group) as frequency
-        , sum(ifnull(status_group / nullif(status_group,0),1)) over (partition by user_id, status_group order by date) as days_at_status
-        , count(status_group) over (partition by user_id, status_group) as total_days_at_status
+        select timestamp(date) as date, customer_id, subscription_id, user_id
+        , max(status) over (partition by subscription_id, status_group) as status
+        , max(topic) over (partition by subscription_id, status_group) as topic
+        , max(platform) over (partition by subscription_id, status_group) as platform
+        , max(frequency) over (partition by subscription_id, status_group) as frequency
+        , sum(ifnull(status_group / nullif(status_group,0),1)) over (partition by subscription_id, status_group order by date) as days_at_status
+        , count(status_group) over (partition by subscription_id, status_group) as total_days_at_status
         , null as days_on_record
         from (
-          select *, count(status) over (partition by user_id order by date) as status_group from join_events
+          select *, count(status) over (partition by subscription_id order by date) as status_group from join_events
         )
       )
       select *, row_number() over (order by date) as row from customer_record where date is not null
@@ -64,6 +91,16 @@ view: customer_record {
   dimension_group: date {
     type: time
     sql: ${TABLE}.date ;;
+  }
+
+  dimension: customer_id {
+    type: string
+    sql: ${TABLE}.customer_id ;;
+  }
+
+  dimension: subscription_id {
+    type: string
+    sql: ${TABLE}.subscription_id ;;
   }
 
   dimension: user_id {

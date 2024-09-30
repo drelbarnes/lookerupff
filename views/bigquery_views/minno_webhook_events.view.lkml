@@ -1,23 +1,14 @@
-view: gtv_webhook_events {
+view: minno_webhook_events {
   derived_table: {
-    sql: with vimeo_webhook_events as (
-        select timestamp, cast(user_id as string) as customer_id, concat('sub_', cast(user_id as string)) as subscription_id, user_id, event, campaign, city, country, created_at, email, first_name, last_name, last_payment_date, marketing_opt_in, name, next_payment_date, plan, platform, promotion_code, referrer, region, registered_to_site, source, subscribed_to_site, subscription_frequency, subscription_price, subscription_status, updated_at
-        from ${gtv_vimeo_webhook_events.SQL_TABLE_NAME}
-      )
-      , chargebee_webhook_events as (
-      select timestamp, customer_id, subscription_id, user_id, event, campaign, city, country, created_at, email, first_name, last_name, last_payment_date, marketing_opt_in, name, next_payment_date, plan, platform, promotion_code, referrer, region, registered_to_site, source, subscribed_to_site, subscription_frequency, subscription_price, subscription_status, updated_at
+    sql: with chargebee_webhook_events as (
+      select timestamp, customer_id, subscription_id, cast(null as string) as user_id, event, campaign, city, country, created_at, email, first_name, last_name, last_payment_date, marketing_opt_in, name, next_payment_date, plan, platform, promotion_code, referrer, region, registered_to_site, source, subscribed_to_site, subscription_frequency, subscription_price, subscription_status, updated_at
       from ${upff_chargebee_webhook_events.SQL_TABLE_NAME}
-      where (plan like '%Gaither%' and plan is not null)
-      )
-      , unionised_purchase_events as (
-        select * from vimeo_webhook_events
-        union all
-        select * from chargebee_webhook_events
+      where (plan like '%Minno%' and plan is not null)
       )
       select *
       , row_number() over (order by timestamp, user_id) as row
       , row_number() over (partition by email order by timestamp desc) as user_event_number
-      from unionised_purchase_events
+      from chargebee_webhook_events
     ;;
     datagroup_trigger: upff_daily_refresh_datagroup
   }
@@ -67,22 +58,22 @@ view: gtv_webhook_events {
     type: string
     sql:
     CASE
-      WHEN ${gtv_webhook_events.event} LIKE 'customer_%' THEN
+      WHEN ${minno_webhook_events.event} LIKE 'customer_%' THEN
         CASE
-          WHEN ${gtv_webhook_events.event} LIKE 'customer_product_%' THEN
+          WHEN ${minno_webhook_events.event} LIKE 'customer_product_%' THEN
             REGEXP_REPLACE(
-              ${gtv_webhook_events.event},
+              ${minno_webhook_events.event},
               '^customer_product_(.*)',
               'customer.product.\\1'
             )
           ELSE
             REGEXP_REPLACE(
-              ${gtv_webhook_events.event},
+              ${minno_webhook_events.event},
               '^customer_(.*)',
               'customer.\\1'
             )
         END
-      ELSE ${gtv_webhook_events.event}
+      ELSE ${minno_webhook_events.event}
     END
   ;;
   }
