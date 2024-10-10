@@ -207,6 +207,28 @@
           GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19
         )
       ),
+      android_emails as (
+        select ordered_at, coalesce(order_completed_email, account_created_email) as email
+        from (
+          select a.timestamp as ordered_at
+          , coalesce(a.context_traits_email, a.user_email) as order_completed_email
+          , coalesce(b.context_traits_email, b.user_email) as account_created_email
+          from `up-faith-and-family-216419.android.order_completed` a
+          left join `up-faith-and-family-216419.android.account_created` b
+          on a.session_id = b.session_id or a.user_id = b.user_id
+        )
+      ),
+      ios_emails as (
+        select ordered_at, coalesce(order_completed_email, account_created_email) as email
+        from (
+          select a.timestamp as ordered_at
+          , coalesce(a.context_traits_email, a.user_email) as order_completed_email
+          , coalesce(b.context_traits_email, b.user_email) as account_created_email
+          from `up-faith-and-family-216419.ios.order_completed` a
+          left join `up-faith-and-family-216419.ios.account_created` b
+          on a.session_id = b.session_id or a.user_id = b.user_id
+        )
+      ),
       radiant_leads AS (
         SELECT
           timestamp,
@@ -223,6 +245,7 @@
         WHERE email IS NOT NULL AND rsid IS NOT NULL
         ORDER BY timestamp DESC
       )
+      , radiant_web as (
       SELECT
         a.timestamp,
         a.email,
@@ -236,6 +259,42 @@
         a.track1
       FROM radiant_leads a
       INNER JOIN checkout_order_completed b ON a.email = b.email AND a.timestamp < b.timestamp
+      )
+      , radiant_ios as (
+      SELECT
+        a.timestamp,
+        a.email,
+        a.referrer,
+        a.utm_campaign,
+        a.utm_source,
+        a.utm_medium,
+        a.utm_content,
+        a.utm_term,
+        a.rsid,
+        a.track1
+      FROM radiant_leads a
+      INNER JOIN ios_emails b ON a.email = b.email AND a.timestamp < b.ordered_at
+      )
+      , radiant_android as (
+      SELECT
+        a.timestamp,
+        a.email,
+        a.referrer,
+        a.utm_campaign,
+        a.utm_source,
+        a.utm_medium,
+        a.utm_content,
+        a.utm_term,
+        a.rsid,
+        a.track1
+      FROM radiant_leads a
+      INNER JOIN android_emails b ON a.email = b.email AND a.timestamp < b.ordered_at
+      )
+      select * from radiant_web
+      union all
+      select * from radiant_ios
+      union all
+      select * from radiant_android
     ;;
     datagroup_trigger: upff_daily_refresh_datagroup
   }

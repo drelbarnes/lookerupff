@@ -4,6 +4,7 @@ view: customer_record_analytics {
         select
         date
         , platform
+        , plan
         , frequency
         , count(
           case
@@ -20,19 +21,19 @@ view: customer_record_analytics {
         , count(distinct case when status in ('free_trial') and total_days_at_status <= 14 then user_id end) as total_free_trials
         from ${customer_record.SQL_TABLE_NAME}
         where `date` is not null
-        group by 1,2,3
+        group by 1,2,3,4
       )
       , metrics as (
         with summation as (
           select *
-          , sum(free_trial_created) over (partition by platform, frequency order by date rows between 27 preceding and 14 preceding) as free_trial_created_14_day_sum_offset
-          , sum(free_trial_converted) over (partition by platform, frequency order by date rows between 13 preceding and current row) as free_trial_converted_14_day_sum
-           , lag(case when frequency ="monthly" then total_paying end, 30) over (partition by platform, frequency order by date) as total_monthly_paying_30_days_prior
-          , lag(case when frequency ="yearly" then total_paying end, 365) over (partition by platform, frequency order by date) as total_yearly_paying_365_days_prior
-          , lag(total_paying, 30) over (partition by platform, frequency order by date) as total_paying_30_days_prior
-          , sum(case when frequency = "monthly" then paying_churn end) over (partition by platform, frequency order by date rows between 29 preceding and current row) as monthly_paying_churn_30_day_sum
-          , sum(case when frequency = "yearly" then paying_churn end) over (partition by platform, frequency order by date rows between 364 preceding and current row) as yearly_paying_churn_365_day_sum
-          , sum(paying_churn) over (partition by platform, frequency order by date rows between 29 preceding and current row) as paying_churn_30_day_sum
+          , sum(free_trial_created) over (partition by platform, plan, frequency order by date rows between 27 preceding and 14 preceding) as free_trial_created_14_day_sum_offset
+          , sum(free_trial_converted) over (partition by platform, plan, frequency order by date rows between 13 preceding and current row) as free_trial_converted_14_day_sum
+           , lag(case when frequency ="monthly" then total_paying end, 30) over (partition by platform, plan, frequency order by date) as total_monthly_paying_30_days_prior
+          , lag(case when frequency ="yearly" then total_paying end, 365) over (partition by platform, plan, frequency order by date) as total_yearly_paying_365_days_prior
+          , lag(total_paying, 30) over (partition by platform, plan, frequency order by date) as total_paying_30_days_prior
+          , sum(case when frequency = "monthly" then paying_churn end) over (partition by platform, plan, frequency order by date rows between 29 preceding and current row) as monthly_paying_churn_30_day_sum
+          , sum(case when frequency = "yearly" then paying_churn end) over (partition by platform, plan, frequency order by date rows between 364 preceding and current row) as yearly_paying_churn_365_day_sum
+          , sum(paying_churn) over (partition by platform, plan, frequency order by date rows between 29 preceding and current row) as paying_churn_30_day_sum
           from analytics
         )
         , churn_rates as (
@@ -44,7 +45,7 @@ view: customer_record_analytics {
           from summation
         )
         select *
-        , avg(paying_churn_rate) over (partition by platform order by `date` desc rows between 29 preceding and current row) as platform_churn_rate
+        , avg(paying_churn_rate) over (partition by platform, plan order by `date` desc rows between 29 preceding and current row) as platform_churn_rate
         , avg(paying_churn_rate) over (order by `date` desc rows between 29 preceding and current row) as global_churn_rate
         from churn_rates
       )
@@ -85,6 +86,11 @@ view: customer_record_analytics {
     sql: ${TABLE}.platform ;;
   }
 
+  dimension: plan {
+    type: string
+    sql: ${TABLE}.plan ;;
+  }
+
   dimension: frequency {
     type: string
     sql: ${TABLE}.frequency ;;
@@ -93,6 +99,12 @@ view: customer_record_analytics {
   dimension: free_trial_created {
     type: number
     sql: ${TABLE}.free_trial_created ;;
+  }
+
+  measure: free_trial_created_ {
+    label: "free_trial_created"
+    type: sum
+    sql: ${free_trial_created} ;;
   }
 
   dimension: free_trial_churn {
