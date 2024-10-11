@@ -172,6 +172,7 @@ include: "/views/vimeo_webhook_events.view.lkml"
 include: "/views/bigquery_views/upff_chargebee_webhook_events.view.lkml"
 include: "/views/vimeo_active_users.view.lkml"
 include: "/views/customer_record.view.lkml"
+include: "/views/customer_record_v2.view.lkml"
 include: "/views/customer_record_analytics.view.lkml"
 
 include: "/views/bigquery_views/chargebee_vimeo_ott_id_mapping.view.lkml"
@@ -580,6 +581,11 @@ explore: upff_multi_platform_attribution {
 explore: customer_record {
   label: "Customer Record"
 }
+
+explore: customer_record_v2 {
+  label: "Customer Record V2"
+}
+
 
 explore: customer_record_analytics {
   label: "Customer Record Analytics"

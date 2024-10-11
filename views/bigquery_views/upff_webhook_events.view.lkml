@@ -1,7 +1,17 @@
 view: upff_webhook_events {
   derived_table: {
     sql: with vimeo_webhook_events as (
-        select timestamp, cast(user_id as string) as customer_id, concat('sub_', cast(user_id as string)) as subscription_id, user_id, event, campaign, city, country, created_at, email, first_name, last_name, last_payment_date, marketing_opt_in, name, next_payment_date, plan, platform, promotion_code, referrer, region, registered_to_site, source, subscribed_to_site, subscription_frequency, subscription_price, subscription_status, updated_at
+        select timestamp
+        , cast(user_id as string) as customer_id
+        , concat(case when platform = 'web' then 'sub_' else concat('UP-Faith-Family-', upper(platform), '-') end, cast(user_id as string)) as subscription_id
+        , user_id, event, campaign, city, country, created_at, email, first_name, last_name, last_payment_date, marketing_opt_in, name, next_payment_date
+        ,  concat('UP-Faith-Family-', upper(platform), '-', case when subscription_frequency in (null, "custom", "monthly") then "Monthly" else "Yearly" end) as plan
+        , platform, promotion_code, referrer, region, registered_to_site, source, subscribed_to_site
+        , case
+          when subscription_frequency in (null, "custom", "monthly") then "monthly"
+          else "yearly"
+          end as subscription_frequency
+          , subscription_price, subscription_status, updated_at
         from ${vimeo_webhook_events.SQL_TABLE_NAME}
       )
       , chargebee_webhook_events as (
