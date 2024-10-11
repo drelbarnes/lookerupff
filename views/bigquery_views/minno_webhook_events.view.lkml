@@ -1,7 +1,13 @@
 view: minno_webhook_events {
   derived_table: {
     sql: with chargebee_webhook_events as (
-      select timestamp, customer_id, subscription_id, event, campaign, city, country, created_at, email, first_name, last_name, last_payment_date, marketing_opt_in, name, next_payment_date, plan, platform, promotion_code, referrer, region, registered_to_site, source, subscribed_to_site, subscription_frequency, subscription_price, subscription_status, updated_at
+      select timestamp, customer_id, subscription_id, event, campaign, city, country, created_at, email, first_name, last_name, last_payment_date, marketing_opt_in, name, next_payment_date, plan, platform, promotion_code, referrer, region, registered_to_site, source, subscribed_to_site, subscription_frequency, subscription_price, subscription_status, updated_at, event_priority
+        , payment_method_gateway
+        , payment_method_status
+        , card_funding_type
+        , subscription_due_invoices_count
+        , subscription_due_since
+        , subscription_total_dues
       from ${upff_chargebee_webhook_events.SQL_TABLE_NAME}
       where (plan like '%Minno%' and plan is not null)
       )
@@ -201,6 +207,11 @@ view: minno_webhook_events {
   dimension_group: updated_at {
     type: time
     sql: ${TABLE}.updated_at ;;
+  }
+
+  dimension: event_priority {
+    type: number
+    sql: ${TABLE}.event_priority ;;
   }
 
   set: detail {

@@ -11,11 +11,23 @@ view: gtv_webhook_events {
           when subscription_frequency in (null, "custom", "monthly") then "monthly"
           else "yearly"
           end as subscription_frequency
-          , subscription_price, subscription_status, updated_at
+          , subscription_price, subscription_status, updated_at, cast(null as int) as event_priority
+          , safe_cast(null as string) as payment_method_gateway
+          , safe_cast(null as string) as payment_method_status
+          , safe_cast(null as string) as card_funding_type
+          , safe_cast(null as int) as subscription_due_invoices_count
+          , safe_cast(null as timestamp) as subscription_due_since
+          , safe_cast(null as int) as subscription_total_dues
           from ${gtv_vimeo_webhook_events.SQL_TABLE_NAME}
       )
       , chargebee_webhook_events as (
-      select timestamp, customer_id, subscription_id, event, campaign, city, country, created_at, email, first_name, last_name, last_payment_date, marketing_opt_in, name, next_payment_date, plan, platform, promotion_code, referrer, region, registered_to_site, source, subscribed_to_site, subscription_frequency, subscription_price, subscription_status, updated_at
+      select timestamp, customer_id, subscription_id, event, campaign, city, country, created_at, email, first_name, last_name, last_payment_date, marketing_opt_in, name, next_payment_date, plan, platform, promotion_code, referrer, region, registered_to_site, source, subscribed_to_site, subscription_frequency, subscription_price, subscription_status, updated_at, event_priority
+        , payment_method_gateway
+        , payment_method_status
+        , card_funding_type
+        , subscription_due_invoices_count
+        , subscription_due_since
+        , subscription_total_dues
       from ${upff_chargebee_webhook_events.SQL_TABLE_NAME}
       where (plan like '%Gaither%' and plan is not null)
       )
@@ -23,7 +35,13 @@ view: gtv_webhook_events {
         select * from ${chargebee_vimeo_ott_id_mapping.SQL_TABLE_NAME} where product_id = "137985"
       )
       , user_id_mapping as (
-      select timestamp, a.customer_id, subscription_id, safe_cast(b.ott_user_id as string) as user_id, event, campaign, city, country, created_at, email, first_name, last_name, last_payment_date, marketing_opt_in, name, next_payment_date, plan, platform, promotion_code, referrer, region, registered_to_site, source, subscribed_to_site, subscription_frequency, subscription_price, subscription_status, updated_at
+      select timestamp, a.customer_id, subscription_id, safe_cast(b.ott_user_id as string) as user_id, event, campaign, city, country, created_at, email, first_name, last_name, last_payment_date, marketing_opt_in, name, next_payment_date, plan, platform, promotion_code, referrer, region, registered_to_site, source, subscribed_to_site, subscription_frequency, subscription_price, subscription_status, updated_at, event_priority
+        , payment_method_gateway
+        , payment_method_status
+        , card_funding_type
+        , subscription_due_invoices_count
+        , subscription_due_since
+        , subscription_total_dues
       from chargebee_webhook_events a
       left join user_ids b
       on a.customer_id = b.customer_id
@@ -219,6 +237,11 @@ view: gtv_webhook_events {
   dimension_group: updated_at {
     type: time
     sql: ${TABLE}.updated_at ;;
+  }
+
+  dimension: event_priority {
+    type: number
+    sql: ${TABLE}.event_priority ;;
   }
 
   set: detail {
