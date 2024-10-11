@@ -74,7 +74,6 @@ view: customer_record {
       , max(card_funding_type) over (partition by subscription_id, payment_group) as card_funding_type
       , max(subscription_due_invoices_count) over (partition by subscription_id, payment_group) as subscription_due_invoices_count
       , max(subscription_due_since) over (partition by subscription_id, payment_group) as subscription_due_since
-      , count(last_billed_at) over (partition by subscription_id, subscription_due_since) as billing_attempts
       , date_diff(date, max(date(subscription_due_since)) over (partition by subscription_id, payment_group), day) as day_of_dunning
       , max(total_dues) over (partition by subscription_id, payment_group) as total_dues
       , sum(ifnull(status_group / nullif(status_group,0),1)) over (partition by subscription_id, status_group order by date) as days_at_status
@@ -88,7 +87,47 @@ view: customer_record {
         from join_events
         )
       )
-      select sha256(concat(cast(date as string), customer_id, subscription_id)) as id, * from customer_record where date is not null
+      , last_billing_attempts as (
+        select
+        date,
+          customer_id,
+          subscription_id,
+          topic,
+          last_billed_at,
+          row_number() over (partition by customer_id, subscription_id order by last_billed_at) as billing_attempts
+        from join_events
+        where topic in ('customer_product_free_trial_converted', 'customer_product_renewed', 'customer_product_charge_failed')
+          and last_billed_at is not null
+       group by customer_id, subscription_id, last_billed_at, date, topic
+      )
+      select
+      sha256(concat(cast(a.date as string), a.customer_id, a.subscription_id)) as id
+      , a.date
+      , a.customer_id
+      , a.subscription_id
+      , user_id
+      , plan
+      , status
+      , a.topic
+      , platform
+      , frequency
+      , a.last_billed_at
+      , next_billing_at
+      , payment_method_gateway
+      , payment_method_status
+      , card_funding_type
+      , subscription_due_invoices_count
+      , subscription_due_since
+      , billing_attempts
+      , day_of_dunning
+      , total_dues
+      , days_at_status
+      , total_days_at_status
+      , days_on_record
+      , total_days_on_record
+      from customer_record a
+      left join last_billing_attempts b
+      on a.customer_id = b.customer_id and a.subscription_id = b.subscription_id and a.last_billed_at = b.last_billed_at
        ;;
       datagroup_trigger: upff_daily_refresh_datagroup
     }
