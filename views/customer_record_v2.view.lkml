@@ -77,16 +77,39 @@ view: customer_record_v2 {
       )
       , final_output as (
         select
-          a.*
-          , b.bundle_topic
-          , b.active_services
-          , b.bundled_services
-          , b.is_bundled
-          , b.was_bundled
-          , b.is_bundle_trial_start
-          , b.is_bundle_trial_converted
-          , b.is_bundle_trial_expired
-          , b.is_bundle_paying_churn
+          a.id
+        , a.date
+        , a.customer_id
+        , a.subscription_id
+        , a.user_id
+        , a.plan
+        , a.status
+        , a.topic
+        , a.platform
+        , a.frequency
+        , a.last_billed_at
+        , a.next_billing_at
+        , a.payment_method_gateway
+        , a.payment_method_status
+        , a.card_funding_type
+        , a.subscription_due_invoices_count
+        , a.subscription_due_since
+        , a.billing_attempts
+        , a.day_of_dunning
+        , a.subscription_total_dues
+        , a.days_at_status
+        , a.total_days_at_status
+        , a.days_on_record
+        , a.total_days_on_record
+        , b.bundle_topic
+        , b.active_services
+        , b.bundled_services
+        , b.is_bundled
+        , b.was_bundled
+        , b.is_bundle_trial_start
+        , b.is_bundle_trial_converted
+        , b.is_bundle_trial_expired
+        , b.is_bundle_paying_churn
         from customer_record a
         left join bundling_p1 b
         on a.customer_id = b.customer_id
@@ -94,7 +117,6 @@ view: customer_record_v2 {
         and a.date = b.date
       )
       select * from final_output
-      order by date, plan
        ;;
     datagroup_trigger: upff_daily_refresh_datagroup
   }
