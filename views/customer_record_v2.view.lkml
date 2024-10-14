@@ -1,59 +1,100 @@
 view: customer_record_v2 {
   derived_table: {
     sql: with customer_record as (
-          select
-          id
-          , date
-          , customer_id
-          , subscription_id
-          , user_id
-          , plan
-          , status
-          , topic
-          , platform
-          , frequency
-          , last_billed_at
-          , next_billing_at
-          , payment_method_gateway
-          , payment_method_status
-          , card_funding_type
-          , subscription_due_invoices_count
-          , subscription_due_since
-          , day_of_dunning
-          , total_dues
-          , days_at_status
-          , total_days_at_status
-          , days_on_record
-          , total_days_on_record
-          from ${customer_record.SQL_TABLE_NAME}
-        )
-        , bundling as (
+        select
+        id
+        , date
+        , customer_id
+        , subscription_id
+        , user_id
+        , plan
+        , status
+        , topic
+        , platform
+        , frequency
+        , last_billed_at
+        , next_billing_at
+        , payment_method_gateway
+        , payment_method_status
+        , card_funding_type
+        , subscription_due_invoices_count
+        , subscription_due_since
+        , billing_attempts
+        , day_of_dunning
+        , subscription_total_dues
+        , days_at_status
+        , total_days_at_status
+        , days_on_record
+        , total_days_on_record
+        from ${customer_record.SQL_TABLE_NAME}
+      )
+      , bundling_p0 as (
+        select *
+        , count(case when is_bundled then customer_id end) over (partition by customer_id, date) as bundled_services
+        , CASE
+          WHEN is_bundled is true AND topic = 'customer_product_free_trial_created' and days_at_status = 1 THEN TRUE
+          ELSE FALSE
+          END AS is_bundle_trial_start
+        , case when is_bundled is true and topic = 'customer_product_free_trial_converted' and days_at_status = 1 then true
+          else false
+          end as is_bundle_trial_converted
+        , lag(is_bundled) over (partition by customer_id, subscription_id order by date) as was_bundled
+        , lag(active_services) over (partition by customer_id, subscription_id order by date) as previous_active_services
+        from (
           select
             *
-            , count(case when status in ('free_trial', 'enabled', 'non_renewing') then subscription_id end) over (partition by customer_id, date) as active_services_count
+            , count(case when status in ('free_trial', 'enabled', 'non_renewing') then subscription_id end) over (partition by customer_id, date) as active_services
             , case
-              when count(*) over (partition by customer_id, date, next_billing_at) >= 2 then count(*) over (partition by customer_id, date, next_billing_at)
-              else 0
-            end as bundled_services_count
-            , case
-              when count(*) over (partition by customer_id, date, next_billing_at) >= 2 then true
+              when next_billing_at is not null and count(*) over (partition by customer_id, date, next_billing_at) >= 2 then true
               else false
             end as is_bundled
           from customer_record
         )
-        , final_output as (
-          select
-            a.*
-            , b.active_services_count
-            , b.bundled_services_count
-            , b.is_bundled
-          from customer_record a
-          left join bundling b
-          on a.customer_id = b.customer_id
-          and a.subscription_id = b.subscription_id
-          and a.date = b.date
+      )
+      , bundling_p1 as (
+        select *
+        , case
+          when is_bundle_trial_start and active_services = bundled_services then "bundle_free_trial_created"
+          when is_bundle_trial_converted and bundled_services = count(case when is_bundle_trial_converted then customer_id end) over (partition by customer_id, date) then "bundle_free_trial_converted"
+          when is_bundle_trial_expired and (bundled_services > 0 or active_services > 0) then "bundle_free_trial_downgraded"
+          when is_bundle_trial_expired and previous_bundled_services >= 2 and bundled_services = 0 then "bundle_free_trial_expired"
+          when is_bundle_trial_converted and bundled_services != count(case when is_bundle_trial_converted then customer_id end) over (partition by customer_id, date) and bundled_services > previous_bundled_services then "bundle_upgraded"
+          when is_bundle_paying_churn and bundled_services != count(case when is_bundle_trial_converted then customer_id end) over (partition by customer_id, date) and bundled_services < previous_bundled_services then "bundle_downgraded"
+          when is_bundle_paying_churn and previous_bundled_services >= 2 and bundled_services = 0 then "bundle_paying_churn"
+          else safe_cast(null as string)
+        end as bundle_topic
+        from (
+          select *
+          , lag(bundled_services) over (partition by customer_id, subscription_id order by date) as previous_bundled_services
+          , case when is_bundled is false and was_bundled is true and topic = 'customer_product_free_trial_expired' and days_at_status = 1 then true
+            else false
+            end as is_bundle_trial_expired
+          , case when is_bundled is false and was_bundled is true and topic in ("customer_product_expired", "customer_product_cancelled") and days_at_status = 1 then true
+            else false
+            end as is_bundle_paying_churn
+          from bundling_p0
         )
-        select * from final_output
+      )
+      , final_output as (
+        select
+          a.*
+          , b.bundle_topic
+          , b.active_services
+          , b.bundled_services
+          , b.is_bundled
+          , b.was_bundled
+          , b.is_bundle_trial_start
+          , b.is_bundle_trial_converted
+          , b.is_bundle_trial_expired
+          , b.is_bundle_paying_churn
+        from customer_record a
+        left join bundling_p1 b
+        on a.customer_id = b.customer_id
+        and a.subscription_id = b.subscription_id
+        and a.date = b.date
+      )
+      select * from final_output
+      order by date, plan
        ;;
     datagroup_trigger: upff_daily_refresh_datagroup
   }
@@ -143,25 +184,35 @@ view: customer_record_v2 {
     sql: ${TABLE}.subscription_due_since ;;
   }
 
-  dimension: day_of_dunning{
+  dimension: day_of_dunning {
     type: number
     sql: ${TABLE}.day_of_dunning ;;
   }
 
-  dimension: services_count{
+  dimension: billing_attempts {
+    type: number
+    sql: ${TABLE}.billing_attempts ;;
+  }
+
+  dimension: services_count {
     type: number
     sql: ${TABLE}.services_count ;;
   }
 
-  dimension: is_bundled{
+  dimension: is_bundled {
     type: yesno
     sql: ${TABLE}.is_bundled ;;
   }
 
-  dimension: total_dues {
+  dimension: was_bundled {
+    type: yesno
+    sql: ${TABLE}.was_bundled ;;
+  }
+
+  dimension: subscription_total_dues {
     type: number
     value_format: "$#.00;($#.00)"
-    sql: ${TABLE}.total_dues ;;
+    sql: ${TABLE}.subscription_total_dues ;;
   }
 
   dimension: days_at_status {
@@ -184,10 +235,45 @@ view: customer_record_v2 {
     sql: ${TABLE}.total_days_on_record ;;
   }
 
-  dimension: row {
+  dimension: bundle_topic {
+    type: string
+    sql: ${TABLE}.bundle_topic ;;
+  }
+
+  dimension: active_services {
     type: number
+    sql: ${TABLE}.active_services ;;
+  }
+
+  dimension: bundled_services {
+    type: number
+    sql: ${TABLE}.bundled_services ;;
+  }
+
+  dimension: is_bundle_trial_start {
+    type: yesno
+    sql: ${TABLE}.is_bundle_trial_start ;;
+  }
+
+  dimension: is_bundle_trial_converted {
+    type: yesno
+    sql: ${TABLE}.is_bundle_trial_converted ;;
+  }
+
+  dimension: is_bundle_trial_expired {
+    type: yesno
+    sql: ${TABLE}.is_bundle_trial_expired ;;
+  }
+
+  dimension: is_bundle_paying_churn {
+    type: yesno
+    sql: ${TABLE}.is_bundle_paying_churn ;;
+  }
+
+  dimension: id {
+    type: string
     primary_key: yes
-    sql: ${TABLE}.row ;;
+    sql: ${TABLE}.id ;;
   }
 
   set: detail {
@@ -202,7 +288,7 @@ view: customer_record_v2 {
       total_days_at_status,
       days_on_record,
       total_days_on_record,
-      row
+      id
     ]
   }
 }

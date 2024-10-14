@@ -19,7 +19,7 @@ view: customer_record_analytics {
         , count(case when days_at_status = 1 and topic = "customer_product_paused" then topic end) as paused_created
         , count(distinct case when status in ('enabled') and total_days_at_status <= 365 then user_id end) as total_paying
         , count(distinct case when status in ('free_trial') and total_days_at_status <= 14 then user_id end) as total_free_trials
-        from ${customer_record.SQL_TABLE_NAME}
+        from ${customer_record_v2.SQL_TABLE_NAME}
         where `date` is not null
         group by 1,2,3,4
       )
