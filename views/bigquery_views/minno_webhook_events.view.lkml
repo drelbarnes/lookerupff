@@ -6,7 +6,7 @@ view: minno_webhook_events {
         , payment_method_status
         , card_funding_type
         , subscription_due_invoices_count
-        , subscription_due_since
+        , subscription_due_date
         , subscription_total_dues
       from ${upff_chargebee_webhook_events.SQL_TABLE_NAME}
       where (plan like '%Minno%' and plan is not null)

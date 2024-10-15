@@ -9,7 +9,7 @@ view: customer_record {
         , payment_method_status
         , card_funding_type
         , subscription_due_invoices_count
-        , subscription_due_since
+        , subscription_due_date
         , subscription_total_dues
         from ${upff_webhook_events.SQL_TABLE_NAME}
         where event not in ("customer_created", "customer_updated")
@@ -23,7 +23,7 @@ view: customer_record {
         , payment_method_status
         , card_funding_type
         , subscription_due_invoices_count
-        , subscription_due_since
+        , subscription_due_date
         , subscription_total_dues
         from ${gtv_webhook_events.SQL_TABLE_NAME}
         where event not in ("customer_created", "customer_updated")
@@ -37,7 +37,7 @@ view: customer_record {
         , payment_method_status
         , card_funding_type
         , subscription_due_invoices_count
-        , subscription_due_since
+        , subscription_due_date
         , subscription_total_dues
         from ${minno_webhook_events.SQL_TABLE_NAME}
         where event not in ("customer_created", "customer_updated")
@@ -55,7 +55,7 @@ view: customer_record {
       , payment_method_status
       , card_funding_type
       , subscription_due_invoices_count
-      , subscription_due_since
+      , subscription_due_date
       , subscription_total_dues
       , row_number() over (partition by subscription_id, extract(date from timestamp) order by event_priority, timestamp desc) as rn
       from events
@@ -66,7 +66,7 @@ view: customer_record {
       , payment_method_status
       , card_funding_type
       , subscription_due_invoices_count
-      , subscription_due_since
+      , subscription_due_date
       , subscription_total_dues
       from max_events
       where rn = 1
@@ -92,7 +92,7 @@ view: customer_record {
       , b.payment_method_status
       , b.card_funding_type
       , b.subscription_due_invoices_count
-      , b.subscription_due_since
+      , b.subscription_due_date
       , b.subscription_total_dues
       from exploded_dates_per_user as a
       left join distinct_events as b
@@ -112,8 +112,8 @@ view: customer_record {
       , max(payment_method_status) over (partition by subscription_id, payment_group) as payment_method_status
       , max(card_funding_type) over (partition by subscription_id, payment_group) as card_funding_type
       , max(subscription_due_invoices_count) over (partition by subscription_id, payment_group) as subscription_due_invoices_count
-      , max(subscription_due_since) over (partition by subscription_id, payment_group) as subscription_due_since
-      , date_diff(date, max(date(subscription_due_since)) over (partition by subscription_id, payment_group), day) as day_of_dunning
+      , max(subscription_due_date) over (partition by subscription_id, payment_group) as subscription_due_date
+      , date_diff(date, max(date(subscription_due_date)) over (partition by subscription_id, payment_group), day) as day_of_dunning
       , max(subscription_total_dues) over (partition by subscription_id, payment_group) as subscription_total_dues
       , sum(ifnull(status_group / nullif(status_group,0),1)) over (partition by subscription_id, status_group order by date) as days_at_status
       , count(status_group) over (partition by subscription_id, status_group) as total_days_at_status
@@ -132,13 +132,13 @@ view: customer_record {
           customer_id,
           subscription_id,
           topic,
-          subscription_due_since,
+          subscription_due_date,
           last_billed_at,
-          row_number() over (partition by customer_id, subscription_id, subscription_due_since order by last_billed_at) as billing_attempts
+          row_number() over (partition by customer_id, subscription_id, subscription_due_date order by last_billed_at) as billing_attempts
         from join_events
         where topic in ('customer_product_free_trial_converted', 'customer_product_renewed', 'customer_product_charge_failed')
-          and last_billed_at is not null and subscription_due_since is not null
-       group by customer_id, subscription_id, last_billed_at, date, topic, subscription_due_since
+          and last_billed_at is not null and subscription_due_date is not null
+       group by customer_id, subscription_id, last_billed_at, date, topic, subscription_due_date
       )
       select
       sha256(concat(cast(a.date as string), a.customer_id, a.subscription_id)) as id
@@ -157,7 +157,7 @@ view: customer_record {
       , payment_method_status
       , card_funding_type
       , subscription_due_invoices_count
-      , a.subscription_due_since
+      , a.subscription_due_date
       , billing_attempts
       , day_of_dunning
       , subscription_total_dues
@@ -252,9 +252,9 @@ view: customer_record {
     sql: ${TABLE}.subscription_due_invoices_count ;;
   }
 
-  dimension_group: subscription_due_since {
+  dimension_group: subscription_due_date {
     type: time
-    sql: ${TABLE}.subscription_due_since ;;
+    sql: ${TABLE}.subscription_due_date ;;
   }
 
   dimension: billing_attempts {

@@ -16,7 +16,7 @@ view: gtv_webhook_events {
           , safe_cast(null as string) as payment_method_status
           , safe_cast(null as string) as card_funding_type
           , safe_cast(null as int) as subscription_due_invoices_count
-          , safe_cast(null as timestamp) as subscription_due_since
+          , safe_cast(null as timestamp) as subscription_due_date
           , safe_cast(null as int) as subscription_total_dues
           from ${gtv_vimeo_webhook_events.SQL_TABLE_NAME}
       )
@@ -26,7 +26,7 @@ view: gtv_webhook_events {
         , payment_method_status
         , card_funding_type
         , subscription_due_invoices_count
-        , subscription_due_since
+        , subscription_due_date
         , subscription_total_dues
       from ${upff_chargebee_webhook_events.SQL_TABLE_NAME}
       where (plan like '%Gaither%' and plan is not null)
@@ -40,7 +40,7 @@ view: gtv_webhook_events {
         , payment_method_status
         , card_funding_type
         , subscription_due_invoices_count
-        , subscription_due_since
+        , subscription_due_date
         , subscription_total_dues
       from chargebee_webhook_events a
       left join user_ids b
