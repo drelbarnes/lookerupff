@@ -40,6 +40,7 @@ view: upff_chargebee_webhook_events {
             , safe_cast(null as string) as card_funding_type
             , safe_cast(null as int) as subscription_due_invoices_count
             , safe_cast(null as timestamp) as subscription_due_date
+            , safe_cast(null as timestamp) as subscription_due_since
             , safe_cast(null as int) as subscription_total_dues
         from chargebee_webhook_events.customer_created
         union all
@@ -82,6 +83,7 @@ view: upff_chargebee_webhook_events {
             , safe_cast(null as string) as card_funding_type
             , safe_cast(null as int) as subscription_due_invoices_count
             , safe_cast(null as timestamp) as subscription_due_date
+            , safe_cast(null as timestamp) as subscription_due_since
             , safe_cast(null as int) as subscription_total_dues
         from chargebee_webhook_events.customer_deleted
         union all
@@ -124,6 +126,7 @@ view: upff_chargebee_webhook_events {
             , safe_cast(null as string) as card_funding_type
             , safe_cast(null as int) as subscription_due_invoices_count
             , safe_cast(null as timestamp) as subscription_due_date
+            , safe_cast(null as timestamp) as subscription_due_since
             , safe_cast(null as int) as subscription_total_dues
         from chargebee_webhook_events.customer_changed
         union all
@@ -188,6 +191,7 @@ view: upff_chargebee_webhook_events {
             , safe_cast(content_card_funding_type as string) as card_funding_type
             , safe_cast(content_subscription_due_invoices_count as int) as subscription_due_invoices_count
             , safe_cast(null as timestamp) as subscription_due_date
+            , safe_cast(null as timestamp) as subscription_due_since
             , safe_cast(null as int) as subscription_total_dues
               from chargebee_webhook_events.subscription_created
         union all
@@ -248,6 +252,7 @@ view: upff_chargebee_webhook_events {
             , safe_cast(content_card_funding_type as string) as card_funding_type
             , safe_cast(content_subscription_due_invoices_count as int) as subscription_due_invoices_count
             , timestamp_seconds(content_invoice_due_date) as subscription_due_date
+            , timestamp_seconds(content_subscription_due_since) as subscription_due_since
             , safe_cast(content_subscription_total_dues as int) as subscription_total_dues
         from chargebee_webhook_events.subscription_activated
         where safe_cast(content_subscription_due_invoices_count as INT64) = 0
@@ -310,6 +315,7 @@ view: upff_chargebee_webhook_events {
             , safe_cast(a.content_card_funding_type as string) as card_funding_type
             , safe_cast(a.content_subscription_due_invoices_count as int) as subscription_due_invoices_count
             , timestamp_seconds(a.content_invoice_due_date) as subscription_due_date
+            , timestamp_seconds(b.content_subscription_due_since) as subscription_due_since
             , safe_cast(a.content_subscription_total_dues as int) as subscription_total_dues
         from chargebee_webhook_events.subscription_activated b
         inner join chargebee_webhook_events.payment_succeeded a
@@ -373,7 +379,8 @@ view: upff_chargebee_webhook_events {
             , safe_cast(content_customer_payment_method_status as string) as payment_method_status
             , safe_cast(content_card_funding_type as string) as card_funding_type
             , safe_cast(content_subscription_due_invoices_count as int) as subscription_due_invoices_count
-            , timestamp_seconds(content_invoice_due_date) as subscriptidue_date
+            , timestamp_seconds(content_invoice_due_date) as subscription_due_date
+            , timestamp_seconds(content_subscription_due_since) as subscription_due_since
             , safe_cast(content_subscription_total_dues as int) as subscription_total_dues
         from chargebee_webhook_events.subscription_reactivated
         union all
@@ -434,6 +441,7 @@ view: upff_chargebee_webhook_events {
             , safe_cast(content_card_funding_type as string) as card_funding_type
             , safe_cast(content_subscription_due_invoices_count as int) as subscription_due_invoices_count
             , timestamp_seconds(content_invoice_due_date) as subscription_due_date
+            , timestamp_seconds(content_subscription_due_since) as subscription_due_since
             , safe_cast(content_subscription_total_dues as int) as subscription_total_dues
         from chargebee_webhook_events.subscription_renewed
         where safe_cast(content_subscription_due_invoices_count as INT64) = 0
@@ -496,6 +504,7 @@ view: upff_chargebee_webhook_events {
             , safe_cast(a.content_card_funding_type as string) as card_funding_type
             , safe_cast(a.content_subscription_due_invoices_count as int) as subscription_due_invoices_count
             , timestamp_seconds(a.content_invoice_due_date) as subscription_due_date
+            , timestamp_seconds(b.content_subscription_due_since) as subscription_due_since
             , safe_cast(a.content_subscription_total_dues as int) as subscription_total_dues
         from chargebee_webhook_events.subscription_renewed b
         inner join chargebee_webhook_events.payment_succeeded a
@@ -554,6 +563,7 @@ view: upff_chargebee_webhook_events {
             , safe_cast(content_card_funding_type as string) as card_funding_type
             , safe_cast(content_subscription_due_invoices_count as int) as subscription_due_invoices_count
             , timestamp_seconds(content_subscription_cancelled_at) as subscription_due_date
+            , timestamp_seconds(content_subscription_due_since) as subscription_due_since
             , safe_cast(content_subscription_total_dues as int) as subscription_total_dues
         from chargebee_webhook_events.subscription_cancelled
         where (
@@ -615,6 +625,7 @@ view: upff_chargebee_webhook_events {
             , safe_cast(content_card_funding_type as string) as card_funding_type
             , safe_cast(content_subscription_due_invoices_count as int) as subscription_due_invoices_count
             , timestamp_seconds(content_subscription_cancelled_at) as subscription_due_date
+            , timestamp_seconds(content_subscription_due_since) as subscription_due_since
             , safe_cast(content_subscription_total_dues as int) as subscription_total_dues
         from chargebee_webhook_events.subscription_cancelled
         where content_subscription_cancel_reason_code in ('No Card', 'Fraud Review Failed', 'Non Compliant EU Customer', 'Tax Calculation Failed', 'Currency incompatible with Gateway', 'Non Compliant Customer')
@@ -673,6 +684,7 @@ view: upff_chargebee_webhook_events {
         , safe_cast(a.content_card_funding_type as string) as card_funding_type
         , safe_cast(a.content_subscription_due_invoices_count as int) as subscription_due_invoices_count
         , timestamp_seconds(a.content_invoice_due_date) as subscription_due_date
+        , timestamp_seconds(b.content_subscription_due_since) as subscription_due_since
         , safe_cast(a.content_subscription_total_dues as int) as subscription_total_dues
       from chargebee_webhook_events.subscription_cancelled b
       inner join chargebee_webhook_events.payment_failed a
@@ -727,6 +739,7 @@ view: upff_chargebee_webhook_events {
             , safe_cast(content_card_funding_type as string) as card_funding_type
             , safe_cast(content_subscription_due_invoices_count as int) as subscription_due_invoices_count
             , timestamp_seconds(occurred_at) as subscription_due_date
+            , timestamp_seconds(content_subscription_due_since) as subscription_due_since
             , safe_cast(content_subscription_total_dues as int) as subscription_total_dues
         from chargebee_webhook_events.subscription_paused
         union all
@@ -787,6 +800,7 @@ view: upff_chargebee_webhook_events {
             , safe_cast(content_card_funding_type as string) as card_funding_type
             , safe_cast(content_subscription_due_invoices_count as int) as subscription_due_invoices_count
             , timestamp_seconds(content_invoice_due_date) as subscription_due_date
+            , timestamp_seconds(content_subscription_due_since) as subscription_due_since
             , safe_cast(content_subscription_total_dues as int) as subscription_total_dues
         from chargebee_webhook_events.subscription_resumed
         union all
@@ -848,6 +862,7 @@ view: upff_chargebee_webhook_events {
             , safe_cast(content_card_funding_type as string) as card_funding_type
             , safe_cast(content_subscription_due_invoices_count as int) as subscription_due_invoices_count
             , timestamp_seconds(content_invoice_due_date) as subscription_due_date
+            , timestamp_seconds(content_subscription_due_since) as subscription_due_since
             , safe_cast(content_subscription_total_dues as int) as subscription_total_dues
         from chargebee_webhook_events.payment_failed
         where content_subscription_status in ('active', 'in_trial')
@@ -909,6 +924,7 @@ view: upff_chargebee_webhook_events {
             , safe_cast(content_card_funding_type as string) as card_funding_type
             , safe_cast(content_subscription_due_invoices_count as int) as subscription_due_invoices_count
             , safe_cast(null as timestamp) as subscription_due_date
+            , timestamp_seconds(content_subscription_due_since) as subscription_due_since
             , safe_cast(content_subscription_total_dues as int) as subscription_total_dues
         from chargebee_webhook_events.subscription_cancellation_scheduled
         union all
@@ -969,6 +985,7 @@ view: upff_chargebee_webhook_events {
             , safe_cast(content_card_funding_type as string) as card_funding_type
             , safe_cast(content_subscription_due_invoices_count as int) as subscription_due_invoices_count
             , timestamp_seconds(content_subscription_next_billing_at) as subscription_due_date
+            , timestamp_seconds(content_subscription_due_since) as subscription_due_since
             , safe_cast(content_subscription_total_dues as int) as subscription_total_dues
         from chargebee_webhook_events.subscription_scheduled_cancellation_removed
         union all
@@ -1029,6 +1046,7 @@ view: upff_chargebee_webhook_events {
             , safe_cast(content_card_funding_type as string) as card_funding_type
             , safe_cast(content_subscription_due_invoices_count as int) as subscription_due_invoices_count
             , timestamp_seconds(content_subscription_next_billing_at) as subscription_due_date
+            , timestamp_seconds(content_subscription_due_since) as subscription_due_since
             , safe_cast(content_subscription_total_dues as int) as subscription_total_dues
         from chargebee_webhook_events.subscription_pause_scheduled
         union all
@@ -1089,6 +1107,7 @@ view: upff_chargebee_webhook_events {
             , safe_cast(content_card_funding_type as string) as card_funding_type
             , safe_cast(content_subscription_due_invoices_count as int) as subscription_due_invoices_count
             , timestamp_seconds(content_subscription_next_billing_at) as subscription_due_date
+            , timestamp_seconds(content_subscription_due_since) as subscription_due_since
             , safe_cast(content_subscription_total_dues as int) as subscription_total_dues
         from chargebee_webhook_events.subscription_scheduled_pause_removed
         )

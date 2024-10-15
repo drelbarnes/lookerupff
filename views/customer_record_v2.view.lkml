@@ -19,6 +19,7 @@ view: customer_record_v2 {
         , card_funding_type
         , subscription_due_invoices_count
         , subscription_due_date
+        , subscription_due_since
         , billing_attempts
         , day_of_dunning
         , subscription_total_dues
@@ -94,6 +95,7 @@ view: customer_record_v2 {
         , a.card_funding_type
         , a.subscription_due_invoices_count
         , a.subscription_due_date
+        , a.subscription_due_since
         , a.billing_attempts
         , a.day_of_dunning
         , a.subscription_total_dues
@@ -204,6 +206,11 @@ view: customer_record_v2 {
   dimension_group: subscription_due_date {
     type: time
     sql: ${TABLE}.subscription_due_date ;;
+  }
+
+  dimension_group: subscription_due_since {
+    type: time
+    sql: ${TABLE}.subscription_due_since ;;
   }
 
   dimension: day_of_dunning {
