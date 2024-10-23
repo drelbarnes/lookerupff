@@ -174,6 +174,7 @@ include: "/views/vimeo_active_users.view.lkml"
 include: "/views/customer_record.view.lkml"
 include: "/views/customer_record_v2.view.lkml"
 include: "/views/customer_record_analytics.view.lkml"
+include: "/views/customer_record_bundle_analytics.view.lkml"
 
 include: "/views/bigquery_views/chargebee_vimeo_ott_id_mapping.view.lkml"
 include: "/views/bigquery_views/upff_webhook_events.view.lkml"
@@ -589,6 +590,10 @@ explore: customer_record_v2 {
 
 explore: customer_record_analytics {
   label: "Customer Record Analytics"
+}
+
+explore: customer_record_bundle_analytics {
+  label: "Customer Record Bundle Analytics"
 }
 
 explore: vimeo_active_users {

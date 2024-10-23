@@ -88,6 +88,11 @@ view: upff_webhook_events {
     sql: ${TABLE}.customer_id ;;
   }
 
+  dimension: subscription_id {
+    type: string
+    sql: ${TABLE}.subscription_id ;;
+  }
+
   dimension: user_id {
     type: string
     sql: ${TABLE}.user_id ;;
