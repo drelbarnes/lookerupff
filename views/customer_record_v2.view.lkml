@@ -62,7 +62,7 @@ view: customer_record_v2 {
             when is_bundle_trial_converted is true and bundled_services > 0 and bundled_services = count(case when is_bundle_trial_converted then customer_id end) over (partition by customer_id, date) then "bundle_free_trial_converted"
             when is_bundle_trial_expired is true and (bundled_services > 0 and active_services > 0) then "bundle_free_trial_downgraded"
             when is_bundle_trial_expired is true and (bundled_services = 0 and active_services > 0) then "bundle_free_trial_unbundled"
-            when is_bundle_trial_expired is true and previous_bundled_services >= 2 and bundled_services = 0 then "bundle_free_trial_expired"
+            when is_bundle_trial_expired is true and (previous_bundled_services >= 2 and bundled_services = 0 and active_services = 0) then "bundle_free_trial_expired"
             when is_bundle_trial_converted is true and bundled_services != count(case when is_bundle_trial_converted then customer_id end) over (partition by customer_id, date) and bundled_services > previous_bundled_services then "bundle_upgraded"
             when is_bundle_paying_churn is true and bundled_services != count(case when is_bundle_trial_converted then customer_id end) over (partition by customer_id, date) and bundled_services < previous_bundled_services then "bundle_downgraded"
             when is_bundle_paying_churn is true and previous_bundled_services >= 2 and bundled_services = 0  and active_services > 0 then "bundle_unbundled"
@@ -97,8 +97,8 @@ view: customer_record_v2 {
           , coalesce(b.bundled_plan_names, c.bundled_plan_names) as bundled_plan_names
           , case
             when bundle_topic = "bundle_free_trial_created" then "free_trial"
-            when bundle_topic in ("bundle_free_trial_converted", "bundle_upgraded") then "enabled"
-            when bundle_topic in ("bundle_free_trial_downgraded","bundle_free_trial_unbundled","bundle_free_trial_expired", "bundle_unbundled", "bundle_paying_churn") then "expired"
+            when bundle_topic in ("bundle_free_trial_converted", "bundle_upgraded", "bundle_free_trial_downgraded", "bundle_downgraded") then "enabled"
+            when bundle_topic in ("bundle_free_trial_unbundled","bundle_free_trial_expired", "bundle_unbundled", "bundle_paying_churn") then "expired"
             else safe_cast(null as string)
           end as bundle_status
           from bundling_p1 a
