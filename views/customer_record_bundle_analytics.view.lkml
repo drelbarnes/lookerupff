@@ -532,10 +532,27 @@ view: customer_record_bundle_analytics {
     sql: ${TABLE}.total_free_trial_bundles ;;
   }
 
+  dimension: total_free_trial_bundles_in_dunning {
+    type: number
+    sql: ${TABLE}.total_free_trial_bundles_in_dunning ;;
+  }
+
   measure: total_free_trial_bundles_ {
     label: "total_free_trial_bundles"
     type: sum
     sql: ${total_free_trial_bundles} ;;
+  }
+
+  measure: total_free_trial_bundles_in_dunning_ {
+    label: "total_free_trial_bundles_in_dunning"
+    type: sum
+    sql: ${total_free_trial_bundles_in_dunning} ;;
+  }
+
+  measure: total_active_free_trials {
+    label: "Total Free Trial Bundles"
+    type: number
+    sql: ${total_free_trial_bundles_} + ${total_free_trial_bundles_in_dunning_} ;;
   }
 
   dimension: bundle_free_trial_created_14_day_sum_offset {
