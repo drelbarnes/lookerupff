@@ -68,7 +68,11 @@ include: "redshift_customers_views_by_user.view"
 include: "/views/monthly_customer_report.view.lkml"
 include: "/views/agm_audiences.view.lkml"
 include: "/views/bango_views/verizon_events.view.lkml"
+include: "test_all_customers.view.lkml"
 
+explore: test_all_customers {
+  label: "Test All Customers"
+}
 
 explore: agm_audiences {
   label: "AGM Audiences"
