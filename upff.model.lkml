@@ -68,10 +68,13 @@ include: "redshift_customers_views_by_user.view"
 include: "/views/monthly_customer_report.view.lkml"
 include: "/views/agm_audiences.view.lkml"
 include: "/views/bango_views/verizon_events.view.lkml"
-include: "/analytics_v4.view.lkml"
 include: "/page_views_ip_date.view.lkml"
 include: "/segment_consent.view.lkml"
+include: "test_all_customers.view.lkml"
 
+explore: test_all_customers {
+  label: "Test All Customers"
+}
 
 explore: page_views_ip_date{
   label: "User Consents"
