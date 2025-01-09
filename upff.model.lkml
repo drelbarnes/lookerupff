@@ -68,7 +68,19 @@ include: "redshift_customers_views_by_user.view"
 include: "/views/monthly_customer_report.view.lkml"
 include: "/views/agm_audiences.view.lkml"
 include: "/views/bango_views/verizon_events.view.lkml"
+include: "/analytics_v4.view.lkml"
+include: "/page_views_ip_date.view.lkml"
+include: "/segment_consent.view.lkml"
 
+
+explore: page_views_ip_date{
+  label: "User Consents"
+  join: segment_consent {
+    sql_on: ${page_views_ip_date.context_ip} = ${segment_consent.context_ip}
+      AND DATE(${page_views_ip_date.timestamp_time}) = DATE(${segment_consent.timestamp_time}) ;;
+    relationship: many_to_one
+  }
+}
 
 explore: agm_audiences {
   label: "AGM Audiences"

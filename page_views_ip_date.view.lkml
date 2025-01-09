@@ -1,12 +1,8 @@
 view: page_views_ip_date {
   derived_table: {
-    sql: select context_ip, timestamp from javascript_upff_home.pages ;;
+    sql: select id,context_ip, timestamp from javascript_upff_home.pages ;;
   }
 
-  measure: count {
-    type: count
-    drill_fields: [detail*]
-  }
 
   dimension: context_ip {
     type: string
@@ -17,7 +13,11 @@ view: page_views_ip_date {
     type: time
     sql: ${TABLE}.timestamp ;;
   }
+  measure: views_count {
+    type: count_distinct
+    sql: ${TABLE}.id ;;
 
+  }
   set: detail {
     fields: [
       context_ip,
