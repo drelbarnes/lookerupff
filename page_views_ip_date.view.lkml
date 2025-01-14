@@ -16,7 +16,12 @@ view: page_views_ip_date {
   measure: views_count {
     type: count_distinct
     sql: ${TABLE}.id ;;
+  }
 
+  measure: unique_ip_views_count {
+    type: count_distinct
+    sql: ${TABLE}.context_ip ;;
+    label: "Total Unique IP Count"
   }
   set: detail {
     fields: [

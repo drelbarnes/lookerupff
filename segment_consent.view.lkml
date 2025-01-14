@@ -8,6 +8,17 @@ view: segment_consent {
       type: count
       drill_fields: [detail*]
     }
+    measure: distinct_ip_with_consent {
+      type: count_distinct
+      sql: ${context_ip} ;;
+      filters: [context_consent_category_preferences_c0004: "true"]
+      description: "Counts distinct IPs where context_consent_category_preferences_c0004 is true"
+    }
+  measure: distinct_ip {
+    type: count_distinct
+    sql: ${context_ip} ;;
+    description: "Counts distinct IP address"
+  }
 
     dimension: context_ip {
       type: string

@@ -77,7 +77,7 @@ explore: test_all_customers {
 }
 
 explore: page_views_ip_date{
-  label: "User Consents"
+  label: "Page Views Join by IP"
   join: segment_consent {
     sql_on: ${page_views_ip_date.context_ip} = ${segment_consent.context_ip}
       AND DATE(${page_views_ip_date.timestamp_time}) = DATE(${segment_consent.timestamp_time}) ;;
@@ -85,6 +85,14 @@ explore: page_views_ip_date{
   }
 }
 
+explore: page_views{
+  label: "Page Views"
+  from: page_views_ip_date
+}
+
+explore: segment_consent {
+  label: "Segment Consent"
+}
 explore: agm_audiences {
   label: "AGM Audiences"
 }
