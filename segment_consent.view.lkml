@@ -1,6 +1,6 @@
 view: segment_consent {
     derived_table: {
-      sql: *
+      sql: select *
         from javascript_upff_home.segment_consent_preference_updated ;;
     }
 
