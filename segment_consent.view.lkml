@@ -1,6 +1,6 @@
 view: segment_consent {
     derived_table: {
-      sql: select context_ip, context_consent_category_preferences_c0004, timestamp
+      sql: *
         from javascript_upff_home.segment_consent_preference_updated ;;
     }
 
@@ -8,15 +8,17 @@ view: segment_consent {
       type: count
       drill_fields: [detail*]
     }
-    measure: distinct_ip_with_consent {
+    measure: distinct_ip_with_target_cookie_consent {
       type: count_distinct
       sql: ${context_ip} ;;
       filters: [context_consent_category_preferences_c0004: "true"]
+      label: "Unique IP count with target cookie consent"
       description: "Counts distinct IPs where context_consent_category_preferences_c0004 is true"
     }
   measure: distinct_ip {
     type: count_distinct
     sql: ${context_ip} ;;
+    label: "Unique IP count"
     description: "Counts distinct IP address"
   }
 
