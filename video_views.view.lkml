@@ -156,7 +156,7 @@ view: video_views {
         is_live,
         presentation,
         context_timezone,
-        session_id,
+        session_id
       from play_data_global
       order by
         user_id, date(timestamp), video_id, min_count
@@ -168,7 +168,7 @@ view: video_views {
         user_id,
         video_id,
         date(timestamp) as date,
-        max(min_count) as min_count,
+        max(min_count) as min_count
       from plays_most_granular
       group by 1,2,3
       ),
@@ -177,7 +177,7 @@ view: video_views {
       (
       select
         a.*,
-        row_number() over (partition by a.user_id order by a.timestamp) as play_number,
+        row_number() over (partition by a.user_id order by a.timestamp) as play_number
       from plays_most_granular as a
       inner join plays_max_duration as b
       on a.user_id = b.user_id
