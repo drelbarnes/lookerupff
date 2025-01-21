@@ -71,7 +71,11 @@ include: "/views/bango_views/verizon_events.view.lkml"
 include: "/page_views_ip_date.view.lkml"
 include: "/segment_consent.view.lkml"
 include: "test_all_customers.view.lkml"
+include: "/video_views.view.lkml"
 
+explore: video_views {
+  label: "Video Views"
+}
 explore: test_all_customers {
   label: "Test All Customers"
 }
