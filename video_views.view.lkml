@@ -22,7 +22,7 @@ view: video_views {
         context_timezone,
         session_id,
         UNIX_SECONDS(sent_at) as EPOCH_TIMESTAMP,
-        cast(is_chromecast as int64) as tv_cast,
+        cast(is_chromecast as int64) as tv_cast
       from javascript_gaither_tv_seller_site.video_content_playing
 
       union all
@@ -49,7 +49,7 @@ view: video_views {
         context_timezone,
         session_id,
         UNIX_SECONDS(sent_at) as EPOCH_TIMESTAMP,
-        cast(is_chromecast as int64) as tv_cast,
+        cast(is_chromecast as int64) as tv_cast
       from gaither_tv_android.video_content_playing
 
       union all
@@ -73,7 +73,7 @@ view: video_views {
         context_timezone,
         session_id,
         UNIX_SECONDS(sent_at) as EPOCH_TIMESTAMP,
-        cast(is_chromecast as int64) as tv_cast,
+        cast(is_chromecast as int64) as tv_cast
       from gaither_tv_apple.video_content_playing
 
       union all
@@ -97,7 +97,7 @@ view: video_views {
         context_timezone,
         session_id,
         UNIX_SECONDS(sent_at) as EPOCH_TIMESTAMP,
-        cast(is_chromecast as int64) as tv_cast,
+        cast(is_chromecast as int64) as tv_cast
       from gaither_tv_fire_tv.video_content_playing
 
       union all
@@ -121,7 +121,7 @@ view: video_views {
         NULL as context_timezone,
         session_id,
         UNIX_SECONDS(sent_at) as EPOCH_TIMESTAMP,
-        cast(is_chromecast as int64) as tv_cast,
+        cast(is_chromecast as int64) as tv_cast
       from gaither_tv_roku.video_content_playing
       ),
 
