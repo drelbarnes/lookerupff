@@ -1,8 +1,7 @@
 view: video_views {
   derived_table: {
-    sql: with
-
-      a as
+    sql:
+    with a as
       (
       select
         timestamp,
