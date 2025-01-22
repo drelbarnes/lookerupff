@@ -72,7 +72,8 @@ include: "/page_views_ip_date.view.lkml"
 include: "/segment_consent.view.lkml"
 include: "test_all_customers.view.lkml"
 include: "/video_views.view.lkml"
-
+include: "/Gaither_page_views.view.lkml"
+include: "/gaither_segment_consent.view.lkml"
 explore: video_views {
   label: "Video Views"
 }
@@ -89,14 +90,26 @@ explore: page_views_ip_date{
   }
 }
 
+explore: gaither_page_views{
+  label: "Gaither Page Views Join by IP"
+  join: gaither_segment_consent {
+    sql_on: ${gaither_page_views.context_ip} = ${gaither_segment_consent.context_ip}
+      AND DATE(${gaither_page_views.timestamp_time}) = DATE(${gaither_segment_consent.timestamp_time}) ;;
+    relationship: many_to_one
+  }
+}
+
 explore: page_views{
   label: "Page Views"
   from: page_views_ip_date
 }
-
+explore: gaither_segment_consent {
+  label: "Gaither Segment Consent"
+}
 explore: segment_consent {
   label: "Segment Consent"
 }
+
 explore: agm_audiences {
   label: "AGM Audiences"
 }

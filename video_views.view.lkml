@@ -4,15 +4,14 @@ view: video_views {
     with a as
       (
       select
-        timestamp,
         video_title,
         collection_title,
-        safe_cast(video_id as int64) as video_id,
+        CAST(video_id as bigint) as video_id,
         user_id,
         anonymous_id,
         event as event_type,
         'GaitherTV Web' as source,
-        'web'as device_type,
+        'web' as device_type,
         'web' as device_os,
         CASE
               WHEN is_live = 0 THEN 'onDemand'
@@ -21,17 +20,17 @@ view: video_views {
         is_live,
         context_timezone,
         session_id,
-        UNIX_SECONDS(sent_at) as EPOCH_TIMESTAMP,
-        cast(is_chromecast as int64) as tv_cast
+        EXTRACT(EPOCH FROM sent_at) as EPOCH_TIMESTAMP,
+        cast(is_chromecast as bigint) as tv_cast,
+        timestamp
       from javascript_gaither_tv_seller_site.video_content_playing
 
       union all
 
       select
-        timestamp,
         video_title,
         collection_title,
-        safe_cast(video_id as int64) as video_id,
+        cast(video_id as bigint) as video_id,
         user_id,
         anonymous_id,
         event as event_type,
@@ -48,17 +47,18 @@ view: video_views {
         is_live,
         context_timezone,
         session_id,
-        UNIX_SECONDS(sent_at) as EPOCH_TIMESTAMP,
-        cast(is_chromecast as int64) as tv_cast
+        EXTRACT(EPOCH FROM sent_at) as EPOCH_TIMESTAMP,
+        cast(is_chromecast as bigint) as tv_cast,
+        timestamp
       from gaither_tv_android.video_content_playing
 
       union all
 
       select
-        timestamp,
+
         video_title,
         collection_title,
-        safe_cast(video_id as int64) as video_id,
+        cast(video_id as bigint) as video_id,
         user_id,
         anonymous_id,
         event as event_type,
@@ -72,17 +72,18 @@ view: video_views {
         is_live,
         context_timezone,
         session_id,
-        UNIX_SECONDS(sent_at) as EPOCH_TIMESTAMP,
-        cast(is_chromecast as int64) as tv_cast
+        EXTRACT(EPOCH FROM sent_at) as EPOCH_TIMESTAMP,
+        cast(is_chromecast as bigint) as tv_cast,
+        timestamp
       from gaither_tv_apple.video_content_playing
 
       union all
 
       select
-        timestamp,
+
         video_title,
         collection_title,
-        safe_cast(video_id as int64) as video_id,
+        cast(video_id as bigint) as video_id,
         user_id,
         anonymous_id,
         event as event_type,
@@ -96,17 +97,17 @@ view: video_views {
         is_live,
         context_timezone,
         session_id,
-        UNIX_SECONDS(sent_at) as EPOCH_TIMESTAMP,
-        cast(is_chromecast as int64) as tv_cast
+        EXTRACT(EPOCH FROM sent_at) as EPOCH_TIMESTAMP,
+        cast(is_chromecast as bigint) as tv_cast,
+        timestamp
       from gaither_tv_fire_tv.video_content_playing
 
       union all
 
       select
-        timestamp,
         video_title,
         collection_title,
-        safe_cast(video_id as int64) as video_id,
+        cast(video_id as bigint) as video_id,
         user_id,
         anonymous_id,
         event as event_type,
@@ -120,8 +121,9 @@ view: video_views {
         is_live,
         NULL as context_timezone,
         session_id,
-        UNIX_SECONDS(sent_at) as EPOCH_TIMESTAMP,
-        cast(is_chromecast as int64) as tv_cast
+        EXTRACT(EPOCH FROM sent_at) as EPOCH_TIMESTAMP,
+        cast(is_chromecast as bigint) as tv_cast,
+        timestamp
       from gaither_tv_roku.video_content_playing
       ),
 
@@ -145,7 +147,6 @@ view: video_views {
         row_number() over (partition by user_id, date(timestamp), video_id order by date(timestamp)) as min_count,
         min(timestamp) over (partition by user_id, video_id, date(timestamp)) as start_time,
         max(timestamp) over (partition by user_id, video_id, date(timestamp)) as end_time,
-        timestamp,
         date(timestamp) as view_dt,
         collection_title,
         video_title,
@@ -156,7 +157,8 @@ view: video_views {
         is_live,
         presentation,
         context_timezone,
-        session_id
+        session_id,
+        timestamp
       from play_data_global
       order by
         user_id, date(timestamp), video_id, min_count
