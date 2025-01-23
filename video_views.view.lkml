@@ -135,7 +135,7 @@ view: video_views {
       (
       select * from a
       where user_id <> '0'
-      and regexp_contains(user_id, r'^[0-9]*$')
+      and user_id ~ '^[0-9]*$'
       and user_id is not null
       and video_title is not null
       ),
@@ -194,13 +194,6 @@ view: video_views {
         ,device_os
         ,device_type
         ,is_live as is_live_channel
-        ,CASE
-        WHEN context_timezone IS NOT NULL
-             AND SAFE.TIMESTAMP(FORMAT_TIMESTAMP('%F %H:%M:%S', start_time), context_timezone) IS NOT NULL THEN
-          SAFE.TIMESTAMP(FORMAT_TIMESTAMP('%F %H:%M:%S', start_time), context_timezone)
-        ELSE NULL
-      END AS local_view_time
-
         ,presentation
         ,session_id
         ,context_timezone as time_zone
@@ -241,10 +234,7 @@ view: video_views {
     sql: ${TABLE}.is_live_channel ;;
   }
 
-  dimension_group: local_view_time {
-    type: time
-    sql: ${TABLE}.local_view_time ;;
-  }
+
 
   dimension: presentation {
     type: string
@@ -287,7 +277,6 @@ view: video_views {
       device_os,
       device_type,
       is_live_channel,
-      local_view_time_time,
       presentation,
       session_id,
       time_zone,
