@@ -8,28 +8,28 @@ view: gaither_segment_consent {
     type: count_distinct
     sql: ${context_ip} ;;
     filters: [context_consent_category_preferences_c0001: "true"]
-    label: "Unique IP count 0001 consent"
+    label: "Unique IP count for Strictly cookie"
     description: "Counts distinct IPs where context_consent_category_preferences_c0001 is true"
   }
   measure: distinct_ip_c0002 {
     type: count_distinct
     sql: ${context_ip} ;;
     filters: [context_consent_category_preferences_c0002: "true"]
-    label: "Unique IP count 0002 consent"
+    label: "Unique IP count for Perfomance cookie"
     description: "Counts distinct IPs where context_consent_category_preferences_c0002 is true"
   }
   measure: distinct_ip_c0003 {
     type: count_distinct
     sql: ${context_ip} ;;
     filters: [context_consent_category_preferences_c0003: "true"]
-    label: "Unique IP count 0003 consent"
+    label: "Unique IP count for Functional cookie"
     description: "Counts distinct IPs where context_consent_category_preferences_c0003 is true"
   }
   measure: distinct_ip_c0004 {
     type: count_distinct
     sql: ${context_ip} ;;
     filters: [context_consent_category_preferences_c0004: "true"]
-    label: "Unique IP count 0004 consent"
+    label: "Unique IP count for Targeting cookie"
     description: "Counts distinct IPs where context_consent_category_preferences_c0004 is true"
   }
   measure: distinct_ip {
