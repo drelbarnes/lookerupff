@@ -194,6 +194,13 @@ view: video_views {
         ,device_os
         ,device_type
         ,is_live as is_live_channel
+        ,CASE
+  WHEN TRY_CAST(start_time AS TIMESTAMP) IS NOT NULL
+       AND TRY_CAST(context_timezone AS VARCHAR) IS NOT NULL THEN
+    (start_time AT TIME ZONE 'UTC') AT TIME ZONE context_timezone
+  ELSE
+    NULL
+END AS local_view_time
         ,presentation
         ,session_id
         ,context_timezone as time_zone
@@ -234,7 +241,10 @@ view: video_views {
     sql: ${TABLE}.is_live_channel ;;
   }
 
-
+  dimension_group: local_view_time {
+    type: time
+    sql: ${TABLE}.local_view_time ;;
+  }
 
   dimension: presentation {
     type: string
@@ -251,13 +261,13 @@ view: video_views {
     sql: ${TABLE}.time_zone ;;
   }
 
-  dimension_group: start_time {
-    type: time
+  dimension: start_time {
+    type: string
     sql: ${TABLE}.start_time ;;
   }
 
-  dimension_group: end_time {
-    type: time
+  dimension: end_time {
+    type: string
     sql: ${TABLE}.end_time ;;
   }
 
@@ -277,11 +287,12 @@ view: video_views {
       device_os,
       device_type,
       is_live_channel,
+      local_view_time_time,
       presentation,
       session_id,
       time_zone,
-      start_time_time,
-      end_time_time,
+      start_time,
+      end_time,
       video_id,
       duration
     ]
