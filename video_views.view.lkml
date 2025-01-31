@@ -35,7 +35,10 @@ view: video_views {
         anonymous_id,
         event as event_type,
         'GaitherTV Android' as source,
-        device as device_type,
+        CASE
+              WHEN device = 'fire_tv' THEN 'fire tv'
+              ELSE device
+          END AS device_type,
         CASE
               WHEN device = 'fire_tv' THEN 'fire tv'
               ELSE context_device_type
