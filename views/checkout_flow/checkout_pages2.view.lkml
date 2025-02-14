@@ -49,7 +49,10 @@ view: checkout_pages2 {
       ELSE NULL
     END) AS confirmation_page_count
 FROM checkout_pages
-WHERE checkout_pages.timestamp >= DATEADD(day, -{%parameter in_last_n_days %}+1, CURRENT_DATE) AND checkout_pages.timestamp < DATEADD(day, 1, CURRENT_DATE)
+WHERE checkout_pages.timestamp >=
+    DATEADD(day, -{% parameter in_last_n_days %} + 1, {% parameter current_date %})
+    AND checkout_pages.timestamp <
+    DATEADD(day, 1, {% parameter current_date %})
 GROUP BY 1),
 result as(
      SELECT
@@ -111,6 +114,12 @@ from result
     label: "Is in the last n days"
 
     }
+  parameter: current_date {
+    type: date
+    default_value: "CURRENT_DATE"
+    label: "Start Date"
+  }
+
 
   dimension: date {
     type: date
