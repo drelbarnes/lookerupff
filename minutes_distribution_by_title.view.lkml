@@ -77,7 +77,7 @@ view: minutes_distribution_by_title {
                 , sum(number_viewers) over (partition by collection order by min_count) * 100.0 / sum(number_viewers) over (partition by collection) as cumulative
                 , (1 - sum(number_viewers) over (partition by collection order by min_count) * 1.0 / sum(number_viewers) over (partition by collection)) * 100 as reverse_cumulative
               from minutes_by_title
-              group by collection, min_count
+              group by collection, min_count, number_viewers
               order by collection, min_count ;;
     }
 
