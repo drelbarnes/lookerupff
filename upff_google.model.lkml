@@ -172,7 +172,9 @@ include: "/views/vimeo_webhook_events.view.lkml"
 include: "/views/bigquery_views/upff_chargebee_webhook_events.view.lkml"
 include: "/views/vimeo_active_users.view.lkml"
 include: "/views/customer_record.view.lkml"
+include: "/views/customer_record_v2.view.lkml"
 include: "/views/customer_record_analytics.view.lkml"
+include: "/views/customer_record_bundle_analytics.view.lkml"
 
 include: "/views/bigquery_views/chargebee_vimeo_ott_id_mapping.view.lkml"
 include: "/views/bigquery_views/upff_webhook_events.view.lkml"
@@ -246,11 +248,16 @@ include: "/views/bigquery_views/brightcove_product_id_mapping.view.lkml"
 # include: "/views/chargebee_event_mapping/chargebee_webhook_events.view.lkml"
 # include: "/views/chargebee_event_mapping/chargebee_analytics.view.lkml"
 include: "/views/chargebee_event_mapping/gtv_vimeo_webhook_events.view.lkml"
+include: "/views/bigquery_views/minno_webhook_events.view.lkml"
 include: "/views/bigquery_views/gtv_webhook_events.view.lkml"
 
 # Test Views #
 
 include: "/views/testing_views/hubspot_bogo_testing.view.lkml"
+
+# Ad Partners #
+
+include: "/views/bigquery_views/radiant_reporting.view.lkml"
 
 # Datagroups for PDT Triggers #
 
@@ -282,16 +289,34 @@ datagroup: chargebee_reporting {
 #   label: "Chargebee Analytics"
 # }
 
+explore: radiant_reporting {
+  label: "Radiant Reporting"
+}
+
 explore: gtv_webhook_events {
   label: "GTV+ Webhook Events"
 }
 
+explore: minno_webhook_events {
+  label: "Minno Webhook Events"
+}
+
 explore: brightcove_subscription_events {
   label: "Brightcove Subscription Events"
+  join: brightcove_revenue_events {
+    type: left_outer
+    sql_on: ${brightcove_subscription_events.subscription_id}=${brightcove_revenue_events.subscription_id};;
+    relationship: one_to_many
+  }
 }
 
 explore: brightcove_revenue_events {
   label: "Brightcove Revenue Events"
+  join: brightcove_subscription_events {
+    type: left_outer
+    sql_on: ${brightcove_revenue_events.subscription_id}=${brightcove_subscription_events.subscription_id} ;;
+    relationship: many_to_one
+  }
 }
 
 explore: brightcove_product_id_mapping {
@@ -559,8 +584,17 @@ explore: customer_record {
   label: "Customer Record"
 }
 
+explore: customer_record_v2 {
+  label: "Customer Record V2"
+}
+
+
 explore: customer_record_analytics {
   label: "Customer Record Analytics"
+}
+
+explore: customer_record_bundle_analytics {
+  label: "Customer Record Bundle Analytics"
 }
 
 explore: vimeo_active_users {

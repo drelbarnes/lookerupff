@@ -4,6 +4,7 @@ view: customer_record_analytics {
         select
         date
         , platform
+        , plan
         , frequency
         , count(
           case
@@ -16,35 +17,38 @@ view: customer_record_analytics {
         , count(case when days_at_status = 1 and topic = "customer_product_created" then topic end) as paying_created
         , count(case when days_at_status = 1 and topic in ("customer_product_expired", "customer_product_cancelled") then topic end) as paying_churn
         , count(case when days_at_status = 1 and topic = "customer_product_paused" then topic end) as paused_created
-        , count(distinct case when status in ('enabled') and total_days_at_status <= 365 then user_id end) as total_paying
-        , count(distinct case when status in ('free_trial') and total_days_at_status <= 14 then user_id end) as total_free_trials
-        from ${customer_record.SQL_TABLE_NAME}
+        , count(distinct case when status in ('enabled') and total_days_at_status <= 365 then customer_id end) as total_paying
+        , count(distinct case when status in ('free_trial') and total_days_at_status <= 21 then customer_id end) as total_free_trials
+        from ${customer_record_v2.SQL_TABLE_NAME}
         where `date` is not null
-        group by 1,2,3
+        group by 1,2,3,4
       )
       , metrics as (
         with summation as (
           select *
-          , sum(free_trial_created) over (partition by platform, frequency order by date rows between 27 preceding and 14 preceding) as free_trial_created_14_day_sum_offset
-          , sum(free_trial_converted) over (partition by platform, frequency order by date rows between 13 preceding and current row) as free_trial_converted_14_day_sum
-           , lag(case when frequency ="monthly" then total_paying end, 30) over (partition by platform, frequency order by date) as total_monthly_paying_30_days_prior
-          , lag(case when frequency ="yearly" then total_paying end, 365) over (partition by platform, frequency order by date) as total_yearly_paying_365_days_prior
-          , lag(total_paying, 30) over (partition by platform, frequency order by date) as total_paying_30_days_prior
-          , sum(case when frequency = "monthly" then paying_churn end) over (partition by platform, frequency order by date rows between 29 preceding and current row) as monthly_paying_churn_30_day_sum
-          , sum(case when frequency = "yearly" then paying_churn end) over (partition by platform, frequency order by date rows between 364 preceding and current row) as yearly_paying_churn_365_day_sum
-          , sum(paying_churn) over (partition by platform, frequency order by date rows between 29 preceding and current row) as paying_churn_30_day_sum
+          , sum(free_trial_created) over (partition by platform, plan, frequency order by date rows between 27 preceding and 14 preceding) as free_trial_created_14_day_sum_offset
+          , sum(free_trial_converted) over (partition by platform, plan, frequency order by date rows between 13 preceding and current row) as free_trial_converted_14_day_sum
+          , sum(free_trial_created) over (partition by platform, plan, frequency order by date rows between 13 preceding and 7 preceding) as free_trial_created_7_day_sum_offset
+          , sum(free_trial_converted) over (partition by platform, plan, frequency order by date rows between 6 preceding and current row) as free_trial_converted_7_day_sum
+           , lag(case when frequency ="monthly" then total_paying end, 30) over (partition by platform, plan, frequency order by date) as total_monthly_paying_30_days_prior
+          , lag(case when frequency ="yearly" then total_paying end, 365) over (partition by platform, plan, frequency order by date) as total_yearly_paying_365_days_prior
+          , lag(total_paying, 30) over (partition by platform, plan, frequency order by date) as total_paying_30_days_prior
+          , sum(case when frequency = "monthly" then paying_churn end) over (partition by platform, plan, frequency order by date rows between 29 preceding and current row) as monthly_paying_churn_30_day_sum
+          , sum(case when frequency = "yearly" then paying_churn end) over (partition by platform, plan, frequency order by date rows between 364 preceding and current row) as yearly_paying_churn_365_day_sum
+          , sum(paying_churn) over (partition by platform, plan, frequency order by date rows between 29 preceding and current row) as paying_churn_30_day_sum
           from analytics
         )
         , churn_rates as (
           select *
-          , ifnull(free_trial_converted_14_day_sum/nullif(free_trial_created_14_day_sum_offset,0),null) as free_trial_conversion_rate
+          , ifnull(free_trial_converted_14_day_sum/nullif(free_trial_created_14_day_sum_offset,0),null) as free_trial_14_conversion_rate
+          , ifnull(free_trial_converted_7_day_sum/nullif(free_trial_created_7_day_sum_offset,0),null) as free_trial_conversion_rate
           , ifnull(monthly_paying_churn_30_day_sum / nullif(total_monthly_paying_30_days_prior,0),null) as monthly_churn_rate
           , ifnull(yearly_paying_churn_365_day_sum / nullif(total_yearly_paying_365_days_prior,0),null) as yearly_churn_rate
           , ifnull(paying_churn_30_day_sum / nullif(total_paying_30_days_prior,0),null) as paying_churn_rate
           from summation
         )
         select *
-        , avg(paying_churn_rate) over (partition by platform order by `date` desc rows between 29 preceding and current row) as platform_churn_rate
+        , avg(paying_churn_rate) over (partition by platform, plan order by `date` desc rows between 29 preceding and current row) as platform_churn_rate
         , avg(paying_churn_rate) over (order by `date` desc rows between 29 preceding and current row) as global_churn_rate
         from churn_rates
       )
@@ -85,6 +89,11 @@ view: customer_record_analytics {
     sql: ${TABLE}.platform ;;
   }
 
+  dimension: plan {
+    type: string
+    sql: ${TABLE}.plan ;;
+  }
+
   dimension: frequency {
     type: string
     sql: ${TABLE}.frequency ;;
@@ -93,6 +102,12 @@ view: customer_record_analytics {
   dimension: free_trial_created {
     type: number
     sql: ${TABLE}.free_trial_created ;;
+  }
+
+  measure: free_trial_created_ {
+    label: "free_trial_created"
+    type: sum
+    sql: ${free_trial_created} ;;
   }
 
   dimension: free_trial_churn {
@@ -140,6 +155,16 @@ view: customer_record_analytics {
     sql: ${TABLE}.free_trial_converted_14_day_sum ;;
   }
 
+  dimension: free_trial_created_7_day_sum_offset {
+    type: number
+    sql: ${TABLE}.free_trial_created_7_day_sum_offset ;;
+  }
+
+  dimension: free_trial_converted_7_day_sum {
+    type: number
+    sql: ${TABLE}.free_trial_converted_7_day_sum ;;
+  }
+
   dimension: total_monthly_paying_30_days_prior {
     type: number
     sql: ${TABLE}.total_monthly_paying_30_days_prior ;;
@@ -168,6 +193,11 @@ view: customer_record_analytics {
   dimension: paying_churn_30_day_sum {
     type: number
     sql: ${TABLE}.paying_churn_30_day_sum ;;
+  }
+
+  dimension: free_trial_14_conversion_rate {
+    type: number
+    sql: ${TABLE}.free_trial_14_conversion_rate ;;
   }
 
   dimension: free_trial_conversion_rate {
@@ -210,6 +240,16 @@ view: customer_record_analytics {
     sql: ${TABLE}.total_paying_30_days_prior ;;
   }
 
+  measure: total_free_trial_created_7_day_sum_offset {
+    type: sum
+    sql: ${TABLE}.free_trial_created_7_day_sum_offset ;;
+  }
+
+  measure: total_free_trial_converted_7_day_sum {
+    type: sum
+    sql: ${TABLE}.free_trial_converted_7_day_sum ;;
+  }
+
   set: detail {
     fields: [
       date_time,
@@ -231,6 +271,7 @@ view: customer_record_analytics {
       monthly_paying_churn_30_day_sum,
       yearly_paying_churn_365_day_sum,
       paying_churn_30_day_sum,
+      free_trial_14_conversion_rate,
       free_trial_conversion_rate,
       monthly_churn_rate,
       yearly_churn_rate,

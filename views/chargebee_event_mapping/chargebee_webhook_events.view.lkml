@@ -741,7 +741,10 @@ view: chargebee_webhook_events {
           )::INT
         ) as subscription_price
         , CASE content_subscription_status
-              WHEN 'active' THEN 'enabled'
+              WHEN 'active' THEN
+                CASE WHEN (EXTRACT(EPOCH FROM "timestamp") - "content_subscription_activated_at") < 2419200 THEN 'free_trial'
+                  ELSE 'enabled'
+                END
               WHEN 'in_trial' THEN 'free_trial'
               WHEN 'cancelled' THEN 'cancelled'
               WHEN 'non_renewing' THEN 'non_renewing'

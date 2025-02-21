@@ -1,27 +1,6 @@
-view: upff_webhook_events {
+view: minno_webhook_events {
   derived_table: {
-    sql: with vimeo_webhook_events as (
-        select timestamp
-        , cast(user_id as string) as customer_id
-        , concat(case when platform = 'web' then 'sub_' else concat('UP-Faith-Family-', upper(platform), '-') end, cast(user_id as string)) as subscription_id
-        , user_id, event, campaign, city, country, created_at, email, first_name, last_name, last_payment_date, marketing_opt_in, name, next_payment_date
-        ,  concat('UP-Faith-Family-', upper(platform), '-', case when subscription_frequency in (null, "custom", "monthly") then "Monthly" else "Yearly" end) as plan
-        , platform, promotion_code, referrer, region, registered_to_site, source, subscribed_to_site
-        , case
-          when subscription_frequency in (null, "custom", "monthly") then "monthly"
-          else "yearly"
-          end as subscription_frequency
-          , subscription_price, subscription_status, updated_at, cast(null as int) as event_priority
-          , safe_cast(null as string) as payment_method_gateway
-          , safe_cast(null as string) as payment_method_status
-          , safe_cast(null as string) as card_funding_type
-          , safe_cast(null as int) as subscription_due_invoices_count
-          , safe_cast(null as timestamp) as subscription_due_date
-          , safe_cast(null as timestamp) as subscription_due_since
-          , safe_cast(null as int) as subscription_total_dues
-        from ${vimeo_webhook_events.SQL_TABLE_NAME}
-      )
-      , chargebee_webhook_events as (
+    sql: with chargebee_webhook_events as (
       select timestamp, customer_id, subscription_id, event, campaign, city, country, created_at, email, first_name, last_name, last_payment_date, marketing_opt_in, name, next_payment_date, plan, platform, promotion_code, referrer, region, registered_to_site, source, subscribed_to_site, subscription_frequency, subscription_price, subscription_status, updated_at, event_priority
         , payment_method_gateway
         , payment_method_status
@@ -31,33 +10,22 @@ view: upff_webhook_events {
         , subscription_due_since
         , subscription_total_dues
       from ${upff_chargebee_webhook_events.SQL_TABLE_NAME}
-      where (plan like '%UP-Faith-Family%' or plan is null)
+      where (plan like '%Minno%' and plan is not null)
       )
       , user_ids as (
-        select * from ${chargebee_vimeo_ott_id_mapping.SQL_TABLE_NAME} where product_id = "27315"
+        select * from ${chargebee_vimeo_ott_id_mapping.SQL_TABLE_NAME} where product_id = "139141415"
       )
       , user_id_mapping as (
-        select timestamp, a.customer_id, subscription_id, safe_cast(b.ott_user_id as string) as user_id, event, campaign, city, country, created_at, email, first_name, last_name, last_payment_date, marketing_opt_in, name, next_payment_date, plan, platform, promotion_code, referrer, region, registered_to_site, source, subscribed_to_site, subscription_frequency, subscription_price, subscription_status, updated_at, event_priority
-        , payment_method_gateway
-        , payment_method_status
-        , card_funding_type
-        , subscription_due_invoices_count
-        , subscription_due_date
-        , subscription_due_since
-        , subscription_total_dues
-        from chargebee_webhook_events a
-        left join user_ids b
-        on a.customer_id = b.customer_id
-      )
-      , unionised_purchase_events as (
-        select * from vimeo_webhook_events
-        union all
-        select * from user_id_mapping
+      select a.*
+      , safe_cast(b.ott_user_id as string) as user_id
+      from chargebee_webhook_events a
+      left join user_ids b
+      on a.customer_id = b.customer_id
       )
       select *
       , row_number() over (order by timestamp, user_id) as row
       , row_number() over (partition by email order by timestamp desc) as user_event_number
-      from unionised_purchase_events
+      from user_id_mapping
     ;;
     datagroup_trigger: upff_daily_refresh_datagroup
   }
@@ -107,22 +75,22 @@ view: upff_webhook_events {
     type: string
     sql:
     CASE
-      WHEN ${upff_webhook_events.event} LIKE 'customer_%' THEN
+      WHEN ${minno_webhook_events.event} LIKE 'customer_%' THEN
         CASE
-          WHEN ${upff_webhook_events.event} LIKE 'customer_product_%' THEN
+          WHEN ${minno_webhook_events.event} LIKE 'customer_product_%' THEN
             REGEXP_REPLACE(
-              ${upff_webhook_events.event},
+              ${minno_webhook_events.event},
               '^customer_product_(.*)',
               'customer.product.\\1'
             )
           ELSE
             REGEXP_REPLACE(
-              ${upff_webhook_events.event},
+              ${minno_webhook_events.event},
               '^customer_(.*)',
               'customer.\\1'
             )
         END
-      ELSE ${upff_webhook_events.event}
+      ELSE ${minno_webhook_events.event}
     END
   ;;
   }

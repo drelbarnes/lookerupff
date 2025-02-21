@@ -452,6 +452,7 @@ view: daily_spend {
   measure: channel_conversions {
     type: sum
     sql: ${TABLE}.channel_conversions ;;
+    value_format: "0"
   }
 
   measure: channel_conversions_a {
@@ -469,6 +470,7 @@ view: daily_spend {
   measure: channel_impressions {
     type: sum
     sql: ${TABLE}.channel_impressions ;;
+    value_format: "0"
   }
 
   measure: channel_impressions_a {
@@ -486,6 +488,7 @@ view: daily_spend {
   measure: channel_clicks {
     type: sum
     sql: ${TABLE}.channel_clicks ;;
+    value_format: "0"
   }
 
   measure: channel_clicks_a {
@@ -503,6 +506,7 @@ view: daily_spend {
   measure: channel_installs {
     type: sum
     sql: ${TABLE}.channel_installs ;;
+    value_format: "0"
   }
 
   measure: channel_installs_a {
@@ -521,6 +525,7 @@ view: daily_spend {
     type: sum_distinct
     sql_distinct_key: ${timestamp_date} ;;
     sql: ${TABLE}.attributed_conversions ;;
+    value_format: "0"
   }
 
   measure: free_trial_created {

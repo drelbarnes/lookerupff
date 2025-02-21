@@ -68,7 +68,47 @@ include: "redshift_customers_views_by_user.view"
 include: "/views/monthly_customer_report.view.lkml"
 include: "/views/agm_audiences.view.lkml"
 include: "/views/bango_views/verizon_events.view.lkml"
+include: "/page_views_ip_date.view.lkml"
+include: "/segment_consent.view.lkml"
+include: "test_all_customers.view.lkml"
+include: "/video_views.view.lkml"
+include: "/Gaither_page_views.view.lkml"
+include: "/gaither_segment_consent.view.lkml"
+explore: video_views {
+  label: "Video Views"
+}
+explore: test_all_customers {
+  label: "Test All Customers"
+}
 
+explore: page_views_ip_date{
+  label: "Page Views Join by IP"
+  join: segment_consent {
+    sql_on: ${page_views_ip_date.context_ip} = ${segment_consent.context_ip}
+      AND DATE(${page_views_ip_date.timestamp_time}) = DATE(${segment_consent.timestamp_time}) ;;
+    relationship: many_to_one
+  }
+}
+
+explore: gaither_page_views{
+  label: "Gaither Page Views Join by IP"
+  join: gaither_segment_consent {
+    sql_on: ${gaither_page_views.context_ip} = ${gaither_segment_consent.context_ip}
+      AND DATE(${gaither_page_views.timestamp_time}) = DATE(${gaither_segment_consent.timestamp_time}) ;;
+    relationship: many_to_one
+  }
+}
+
+explore: page_views{
+  label: "Page Views"
+  from: page_views_ip_date
+}
+explore: gaither_segment_consent {
+  label: "Gaither Segment Consent"
+}
+explore: segment_consent {
+  label: "Segment Consent"
+}
 
 explore: agm_audiences {
   label: "AGM Audiences"
