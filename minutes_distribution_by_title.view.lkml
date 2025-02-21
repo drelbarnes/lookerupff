@@ -59,15 +59,27 @@ view: minutes_distribution_by_title {
               and a.min_count = b.min_count
               ),
 
+              title_durations as
+              (
+              select distinct
+                  title as collection
+                , round(duration_seconds / 60, 0) as duration_mins
+              from php.get_titles
+              ),
+
               minutes_by_title as
               (
               select
-                  collection
-                , min_count
-                , count(user_id) as number_viewers
+                  a.collection
+                , b.min_count
+                , count(b.user_id) as number_viewers
               from plays_less_granular
+              left join title_durations as b
+              on a.collection = b.collection
+              where a.min_count < b.duration_mins + 1
               group by 1,2
-              )
+              ),
+
 
               select
                   collection
