@@ -94,8 +94,8 @@ view: minutes_distribution_by_title {
 
   measure: reverse_cumulative_measure {
     type: number
-    sql: MAX(${reverse_cumulative}) ;;
-    value_format: "0.##"
+    sql: round(max(${reverse_cumulative}), 0) ;;
+    value_format: "0"
   }
 
   measure: count {
