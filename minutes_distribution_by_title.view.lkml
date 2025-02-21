@@ -81,6 +81,12 @@ view: minutes_distribution_by_title {
               ;;
     }
 
+  measure: reverse_cumulative_measure {
+    type: number
+    sql: MAX(${reverse_cumulative}) ;;
+    value_format: "0.##"
+  }
+
   measure: count {
     type: count
     drill_fields: [detail*]
