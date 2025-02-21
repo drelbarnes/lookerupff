@@ -78,8 +78,7 @@ view: minutes_distribution_by_title {
               on a.collection = b.collection
               where a.min_count < b.duration_mins + 1
               group by 1,2
-              ),
-
+              )
 
               select
                   collection
