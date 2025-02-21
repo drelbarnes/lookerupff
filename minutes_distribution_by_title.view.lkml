@@ -80,49 +80,49 @@ view: minutes_distribution_by_title {
               ;;
     }
 
-    measure: count {
-      type: count
-      drill_fields: [detail*]
-    }
-
-    dimension: collection {
-      type: string
-      sql: ${TABLE}.collection ;;
-    }
-
-    dimension: min_count {
-      type: number
-      sql: ${TABLE}.min_count ;;
-    }
-
-    dimension: number_viewers {
-      type: number
-      sql: ${TABLE}.number_viewers ;;
-    }
-
-    measure: percent_of_total {
-      type: number
-      sql: ${TABLE}.percent_of_total ;;
-    }
-
-    measure: cumulative {
-      type: number
-      sql: ${TABLE}.cumulative ;;
-    }
-
-    measure: reverse_cumulative {
-      type: number
-      sql: ${TABLE}.reverse_cumulative ;;
-    }
-
-    set: detail {
-      fields: [
-        collection,
-        min_count,
-        number_viewers,
-        percent_of_total,
-        cumulative,
-        reverse_cumulative
-      ]
-    }
+  measure: count {
+    type: count
+    drill_fields: [detail*]
   }
+
+  dimension: collection {
+    type: string
+    sql: ${TABLE}.collection ;;
+  }
+
+  dimension: min_count {
+    type: number
+    sql: ${TABLE}.min_count ;;
+  }
+
+  dimension: number_viewers {
+    type: number
+    sql: ${TABLE}.number_viewers ;;
+  }
+
+  dimension: percent_of_total {
+    type: number
+    sql: ${TABLE}.percent_of_total ;;
+  }
+
+  dimension: cumulative {
+    type: number
+    sql: ${TABLE}.cumulative ;;
+  }
+
+  dimension: reverse_cumulative {
+    type: number
+    sql: ${TABLE}.reverse_cumulative ;;
+  }
+
+  set: detail {
+    fields: [
+      collection,
+      min_count,
+      number_viewers,
+      percent_of_total,
+      cumulative,
+      reverse_cumulative
+    ]
+  }
+}
