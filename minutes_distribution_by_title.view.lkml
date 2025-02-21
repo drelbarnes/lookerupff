@@ -100,17 +100,17 @@ view: minutes_distribution_by_title {
       sql: ${TABLE}.number_viewers ;;
     }
 
-    dimension: percent_of_total {
+    measure: percent_of_total {
       type: number
       sql: ${TABLE}.percent_of_total ;;
     }
 
-    dimension: cumulative {
+    measure: cumulative {
       type: number
       sql: ${TABLE}.cumulative ;;
     }
 
-    dimension: reverse_cumulative {
+    measure: reverse_cumulative {
       type: number
       sql: ${TABLE}.reverse_cumulative ;;
     }
