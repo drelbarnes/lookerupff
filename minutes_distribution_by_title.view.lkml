@@ -73,7 +73,7 @@ view: minutes_distribution_by_title {
                   a.collection
                 , b.min_count
                 , count(b.user_id) as number_viewers
-              from plays_less_granular
+              from plays_less_granular as a
               left join title_durations as b
               on a.collection = b.collection
               where a.min_count < b.duration_mins + 1
