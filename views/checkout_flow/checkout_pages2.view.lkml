@@ -1,8 +1,6 @@
 view: checkout_pages2 {
   derived_table: {
     sql:
-    -- Parameter value: {% assign extra = include_marketing_pages._parameter_value %}{{ extra }}
-
     WITH checkout_pages AS (select
         context_page_path
         ,context_ip
