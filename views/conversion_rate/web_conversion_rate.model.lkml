@@ -9,7 +9,7 @@ explore: trials_created {
 
   join: page_visits {
     type: left_outer
-    sql_on: ${trials_created.time_period} = ${page_visits.time_period} ;;
+    sql_on: ${trials_created.day} = ${page_visits.time_period} ;;
     relationship: one_to_one
   }
 }

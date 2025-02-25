@@ -14,33 +14,25 @@ view: trials_created {
         WHERE EXTRACT(YEAR FROM timestamp) >= 2023
         GROUP BY DATE(timestamp)
       )
-      SELECT
-          TO_CHAR(day, 'YYYY-MM-DD') AS day_format,
-          TO_CHAR(day, 'YYYY-MM') AS month_format,
-          SUM(daily_unique_ip) AS ip_sum
-      FROM daily_distinct
-      GROUP BY 1, 2 ;;
+      SELECT *
+      from daily_distinct;;
   }
 
-  # Parameter for selecting time granularity
-  parameter: time_granularity {
+
+
+  dimension: day {
+    type: date
+    sql: ${TABLE}.day;;
+  }
+  dimension: month_year {
     type: string
-    suggestions: ["day", "month"]
-    default_value: "month"
+    sql: CAST(EXTRACT(YEAR FROM ${TABLE}.timestamp) AS TEXT) || '-' || LPAD(CAST(EXTRACT(MONTH FROM ${TABLE}.timestamp) AS TEXT), 2, '0') ;;
   }
 
-  # Dynamic time period based on user selection
-  dimension: time_period {
-    type: string
-    sql:
-      CASE
-        WHEN {% parameter time_granularity %} = 'day' THEN ${TABLE}.day_format
-        ELSE ${TABLE}.month_format
-      END ;;
-  }
+
 
   measure: ip_sum {
     type: sum
-    sql: ${TABLE}.ip_sum ;;
+    sql: ${TABLE}.daily_unique_ip ;;
   }
 }

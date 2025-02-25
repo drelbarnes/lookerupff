@@ -1,15 +1,16 @@
 view: page_visits {
   derived_table: {
-    sql:
+    sql:with result as(
       SELECT
           DATE(timestamp) AS day,
-          COUNT(DISTINCT user_id) AS unique_users
-      FROM some_other_dataset
+          COUNT(DISTINCT context_ip) AS unique_users
+      FROM javascript_upff_home.pages
       WHERE EXTRACT(YEAR FROM timestamp) >= 2023
-      {% if url_filter._is_filtered %}
-        AND path IN ( {% condition url_filter %} path {% endcondition %} )
-      {% endif %}
-      GROUP BY DATE(timestamp) ;;
+        AND ( {% condition url_filter %} path {% endcondition %} )
+      GROUP BY DATE(timestamp))
+
+      SELECT *
+      FROM result;;
   }
   # Parameter for URL Filtering
   filter: url_filter {
@@ -18,20 +19,19 @@ view: page_visits {
     default_value: ""
   }
 
-  dimension_group: day {
-    type: time
-    timeframes: [date, month, year]
-    sql: ${TABLE}.day ;;
-  }
+
 
   dimension: time_period {
-    type: string
-    sql:
-    CASE
-      WHEN {% parameter time_granularity %} = 'day' THEN TO_CHAR(${TABLE}.day, 'YYYY-MM-DD')
-      ELSE TO_CHAR(${TABLE}.day, 'YYYY-MM')
-    END ;;
+    type: date
+    sql:${TABLE}.day;;
   }
+  dimension: month_year {
+    type: string
+    sql: CAST(EXTRACT(YEAR FROM ${TABLE}.day) AS TEXT) || '-' || LPAD(CAST(EXTRACT(MONTH FROM ${TABLE}.day) AS TEXT), 2, '0') ;;
+  }
+
+
+
 
 
   measure: unique_users {

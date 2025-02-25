@@ -1,4 +1,4 @@
-view: checkout_pages {
+view: checkout_gaitherTV {
   derived_table: {
     sql:
 
@@ -23,7 +23,7 @@ view: checkout_pages {
         ,timestamp
       FROM javascript_upff_home.pages
       ;;
-      }
+  }
   parameter: include_marketing_pages {
     type: string
     allowed_value: {
@@ -56,28 +56,29 @@ view: checkout_pages {
     type: string
     sql: ${TABLE}.data_table ;;
   }
-  measure: marketing_page_count{
-    type:  count_distinct
+
+  measure: plans_page_count {
+    type: count_distinct
     sql:
     CASE
       WHEN {% parameter include_marketing_pages %} = 'yes' THEN
         CASE
-          WHEN ${TABLE}.context_page_path LIKE '%upfaithandfamily.com%'
+          WHEN ${TABLE}.context_page_path IN ('/', '/index.php/welcome/plans') or ${TABLE}.context_page_path LIKE '%upfaithandfamily.com%'
           THEN ${TABLE}.context_ip
           ELSE NULL
         END
       ELSE
-        NULL
+        CASE
+          WHEN ${TABLE}.context_page_path IN ('/', '/index.php/welcome/plans')
+          THEN ${TABLE}.context_ip
+          ELSE NULL
+        END
     END ;;
-    label: "Marketing Page Count"
-
-  }
-  measure: plans_page_count {
-    type: count_distinct
-    sql:${TABLE}.context_ip;;
-    filters:[context_page_path: "/,/index.php/welcome/plans"]
     label: "Plans Page Count"
   }
+
+
+
 
 
   measure: payment_page_count {
@@ -93,15 +94,15 @@ view: checkout_pages {
     label: "Create Account Page Count"
     filters: [context_page_path:
       "/index.php/welcome/create_account,
-      /create_account/"]
-}
+    /create_account/"]
+  }
   measure: select_payment_page_count {
     type: count_distinct
     sql: ${TABLE}.context_ip ;;
     label: "Select Payment Page Count"
     filters: [context_page_path:
       "/index.php/welcome/select_payment,
-      /payment"]
+    /payment"]
   }
 
   measure: upsell_page_count {
