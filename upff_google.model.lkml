@@ -221,6 +221,7 @@ include: "svod_sub_counts.view.lkml"
 include: "svod_view_counts.view.lkml"
 include: "svod_content_type.view.lkml"
 include: "first_n_plays_v2.view.lkml"
+include: "minutes_distribution_by_title.view.lkml"
 
 include: "/views/uptv_web/uptv_page_events.view.lkml"
 include: "/views/uptv_web/uptv_web_sessions.view.lkml"
@@ -504,6 +505,10 @@ explore: ticket_comments {
 
 explore: allfirstplay {
   label: "Allfirstplay"
+}
+
+explore: minutes_distribution_by_title {
+  label: "Minutes Distribution by Title"
 }
 
 explore: upff_chargebee_webhook_events {
