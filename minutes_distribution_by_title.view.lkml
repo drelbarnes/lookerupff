@@ -59,6 +59,16 @@ view: minutes_distribution_by_title {
               and a.min_count = b.min_count
               ),
 
+              movie_play_counts as
+              (
+              select
+                  collection
+                , count(distinct user_id) as n
+              from plays_less_granular
+              group by 1
+              having n > 1200
+              ),
+
               title_durations as
               (
               select distinct
@@ -77,6 +87,7 @@ view: minutes_distribution_by_title {
               left join title_durations as b
               on a.collection = b.collection
               where a.min_count < b.duration_mins + 1
+              and a.collection in (select collection from movie_play_counts)
               group by 1,2
               )
 
