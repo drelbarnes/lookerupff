@@ -11,7 +11,7 @@ view: suspicious_email {
       ,content_customer_created_from_ip
       ,timestamp
       from chargebee_webhook_events.subscription_created
-      WHERE content_customer_email LIKE (content_customer_first_name||content_customer_last_name ||'____'||'@gmail.com') );;
+      WHERE content_customer_email LIKE (content_customer_first_name||content_customer_last_name ||'____'||'@gmail.com');;
 
 
   }
