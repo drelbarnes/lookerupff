@@ -27,11 +27,11 @@ view: suspicious_email {
 
   dimension: first_name {
     type: string
-    sql:  ${TABLE}.content_customer_first_name ;;
+    sql:  ${TABLE}.content_card_first_name ;;
   }
   dimension: last_name {
     type: string
-    sql:  ${TABLE}.content_customer_last_name ;;
+    sql:  ${TABLE}.content_card_last_name ;;
   }
   dimension: email {
     type: string
