@@ -59,6 +59,16 @@ view: minutes_distribution_by_title {
               and a.min_count = b.min_count
               ),
 
+              movie_play_counts as
+              (
+              select
+                  collection
+                , count(distinct user_id) as n
+              from plays_less_granular
+              group by 1
+              having n > 1200
+              ),
+
               title_durations as
               (
               select distinct
@@ -72,23 +82,26 @@ view: minutes_distribution_by_title {
               select
                   a.collection
                 , a.min_count
+                , round(a.min_count / b.duration_mins, 2) as pct_duration
                 , count(a.user_id) as number_viewers
               from plays_less_granular as a
               left join title_durations as b
               on a.collection = b.collection
               where a.min_count < b.duration_mins + 1
-              group by 1,2
+              and a.collection in (select collection from movie_play_counts)
+              group by 1,2,3
               )
 
               select
                   collection
                 , min_count
+                , pct_duration
                 , number_viewers
                 , number_viewers * 100.0 / sum(number_viewers) over (partition by collection) as percent_of_total
                 , sum(number_viewers) over (partition by collection order by min_count) * 100.0 / sum(number_viewers) over (partition by collection) as cumulative
                 , (1 - sum(number_viewers) over (partition by collection order by min_count) * 1.0 / sum(number_viewers) over (partition by collection)) * 100 as reverse_cumulative
               from minutes_by_title
-              order by collection, min_count
+              order by 1,2,3
               ;;
     }
 
@@ -111,6 +124,11 @@ view: minutes_distribution_by_title {
   dimension: min_count {
     type: number
     sql: ${TABLE}.min_count ;;
+  }
+
+  dimension: pct_duration {
+    type: number
+    sql: ${TABLE}.pct_duration ;;
   }
 
   dimension: number_viewers {
