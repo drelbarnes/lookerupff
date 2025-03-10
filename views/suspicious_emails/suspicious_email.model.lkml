@@ -8,5 +8,5 @@ explore: suspicious_email {
 }
 
 explore: suspicious_email_gaither {
-  label: "Suspicious Emails"
+  label: "Suspicious Emails_Gaither"
 }
