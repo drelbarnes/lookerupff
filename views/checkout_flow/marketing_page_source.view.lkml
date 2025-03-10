@@ -21,7 +21,8 @@ view: marketing_page_source {
       ELSE 'NONE'
     END as referrer_cleaned
     ,timestamp
-    from javascript_upff_home.pages)
+    from javascript_upff_home.pages
+    where url LIKE '%upfaithandfamily.com%')
     select * from result;;
 
   }
