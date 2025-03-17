@@ -73,9 +73,9 @@ view: n_day_views {
     select
     m.collection
     , m.dt_first_view
-    , count(distinct if(p.timestamp between timestamp(m.dt_first_view) and timestamp(m.dt_first_view) + interval 7 day, p.user_id, null)) as views_7_days
-    , count(distinct if(p.timestamp between timestamp(m.dt_first_view) and timestamp(m.dt_first_view) + interval 30 day, p.user_id, null)) as views_30_days
-    , count(distinct if(p.timestamp between timestamp(m.dt_first_view) and timestamp(m.dt_first_view) + interval 90 day, p.user_id, null)) as views_90_days
+    , count(/*distinct*/ if(p.timestamp between timestamp(m.dt_first_view) and timestamp(m.dt_first_view) + interval 7 day, p.user_id, null)) as views_7_days
+    , count(/*distinct*/ if(p.timestamp between timestamp(m.dt_first_view) and timestamp(m.dt_first_view) + interval 30 day, p.user_id, null)) as views_30_days
+    , count(/*distinct*/ if(p.timestamp between timestamp(m.dt_first_view) and timestamp(m.dt_first_view) + interval 90 day, p.user_id, null)) as views_90_days
     from movie_play_counts as m
     inner join plays_less_granular as p
     on m.collection = p.collection
