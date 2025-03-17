@@ -101,19 +101,22 @@ view: n_day_views {
     sql: ${TABLE}.dt_first_view ;;
   }
 
-  dimension: views_7_days {
-    type: number
+  measure: views_7_days {
+    type: sum
     sql: ${TABLE}.views_7_days ;;
+    value_format_name: decimal_0
   }
 
-  dimension: views_30_days {
-    type: number
+  measure: views_30_days {
+    type: sum
     sql: ${TABLE}.views_30_days ;;
+    value_format_name: decimal_0
   }
 
-  dimension: views_90_days {
-    type: number
+  measure: views_90_days {
+    type: sum
     sql: ${TABLE}.views_90_days ;;
+    value_format_name: decimal_0
   }
 
   set: detail {
