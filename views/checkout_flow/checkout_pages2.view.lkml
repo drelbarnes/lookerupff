@@ -17,7 +17,7 @@ view: checkout_pages2 {
       UNION all
       SELECT
         url as context_page_path
-        ,context_ip
+        ,anonymous_id as context_ip
         ,'marketing' as data_table
         ,timestamp
       FROM javascript_upff_home.pages
