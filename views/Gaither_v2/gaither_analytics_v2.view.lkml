@@ -65,6 +65,11 @@ view: gaither_analytics_v2 {
     ELSE 'No'
   END AS trials_converted
   ,CASE
+    WHEN status in('cancelled','paused') AND LAG(status) OVER (PARTITION BY user_id ORDER BY report_date) ='in_trial'
+    THEN 'Yes'
+    ELSE 'No'
+  END AS trials_not_converted
+  ,CASE
     WHEN status = 'active' AND LAG(status) OVER (PARTITION BY user_id ORDER BY report_date) ='paused'
     THEN 'Yes'
     ELSE 'No'
@@ -81,6 +86,12 @@ view: gaither_analytics_v2 {
   dimension: date {
     type: date
     sql:  ${TABLE}.report_date ;;
+  }
+  dimension_group: report_date {
+    type: time
+    timeframes: [date, week]
+    sql: ${TABLE}.report_date ;;
+    convert_tz: yes  # Adjust for timezone conversion if needed
   }
 
   dimension: status {
@@ -100,6 +111,11 @@ view: gaither_analytics_v2 {
   dimension: trials_converted {
     type: string
     sql: ${TABLE}.trials_converted ;;
+  }
+
+  dimension: trials_not_converted {
+    type: string
+    sql: ${TABLE}.trials_not_converted ;;
   }
 
   dimension: re_acquisitions {
@@ -131,6 +147,11 @@ view: gaither_analytics_v2 {
   measure: trials_converted_count {
     type: count_distinct
     filters: [trials_converted: "Yes"]
+    sql: ${TABLE}.user_id  ;;
+  }
+  measure: trials_not_converted_count {
+    type: count_distinct
+    filters: [trials_not_converted: "Yes"]
     sql: ${TABLE}.user_id  ;;
   }
 
