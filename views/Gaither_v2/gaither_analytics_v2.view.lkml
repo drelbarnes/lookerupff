@@ -58,8 +58,14 @@ view: gaither_analytics_v2 {
   union all
   select * from vimeo_raw)
 
-  select * ,
-  CASE
+  select
+  user_id
+  ,status
+  ,platform
+  ,DATEADD(DAY, -1, created_at) as created_at
+  ,DATEADD(DAY, 0, report_date) as report_date
+  ,DATEADD(DAY, -1, report_date) as re_acquisitions_date
+  ,CASE
     WHEN status = 'active' AND LAG(status) OVER (PARTITION BY user_id ORDER BY report_date) ='in_trial'
     THEN 'Yes'
     ELSE 'No'
@@ -79,8 +85,7 @@ view: gaither_analytics_v2 {
     THEN 'Yes'
     ELSE 'No'
   END AS cancelled_users
-  from result
-    ;;
+  from result;;
   }
 
   dimension: date {
@@ -92,6 +97,11 @@ view: gaither_analytics_v2 {
     timeframes: [date, week]
     sql: ${TABLE}.report_date ;;
     convert_tz: yes  # Adjust for timezone conversion if needed
+  }
+
+  dimension: re_acquisitions_date {
+    type: date
+    sql: ${TABLE}.re_acquisitions_date ;;
   }
 
   dimension: status {
