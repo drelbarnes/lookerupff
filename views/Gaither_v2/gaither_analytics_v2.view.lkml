@@ -1,7 +1,6 @@
 view: gaither_analytics_v2 {
   derived_table: {
     sql:
-    ------ Source Tables ------
     with chargebee_subscriptions as (
     select * from http_api.chargebee_subscriptions),
 
@@ -11,17 +10,16 @@ view: gaither_analytics_v2 {
     ------  Chargebee ------
     chargebee_raw as(
     SELECT
-      uploaded_at as report_date
+      date(uploaded_at) as report_date
       ,subscription_id as user_id
       ,Case
         WHEN subscription_status = 'non_renewing' THEN 'active'
         ELSE subscription_status
       END AS status
       ,'Chargebee' as platform
-      ,MIN(uploaded_at) OVER (PARTITION BY subscription_id) AS created_at
       ,ROW_NUMBER() OVER (PARTITION BY subscription_id, uploaded_at ORDER BY uploaded_at DESC) AS rn
     FROM chargebee_subscriptions
-    WHERE subscription_subscription_items_0_item_price_id LIKE '%GaitherTV%'
+    WHERE subscription_subscription_items_0_item_price_id LIKE '%Gaither%'
 ),
     chargebee_subs as(
     select
@@ -29,7 +27,122 @@ view: gaither_analytics_v2 {
     from chargebee_raw
     where rn=1.  -- select the report with most recent date for each day
 ),
+    chargebee_trial_start as (
+    SELECT
+      --subtract 4 hour delay from actual to storage
+      date(DATEADD(HOUR, -4, received_at)) as created_at
+      ,content_subscription_id as user_id
+    FROM chargebee_webhook_events.subscription_created
+    WHERE content_subscription_subscription_items like '%Gaither%'
+),
+    chargebee_trial_converted as(
+    SELECT
+      date(received_at) as report_date
+      ,content_subscription_id as user_id
+      ,'Yes' as trials_converted
+    FROM chargebee_webhook_events.subscription_activated
+    WHERE content_subscription_subscription_items like '%Gaither%'
 
+),
+    chargebee_sub_cancelled as(
+    SELECT
+      date(received_at) as report_date
+      ,content_subscription_id as user_id
+      ,'Yes' as sub_cancelled
+    FROM chargebee_webhook_events.subscription_cancelled
+    WHERE content_subscription_subscription_items like '%Gaither%'
+),
+    chargebee_re_acquisition as(
+    SELECT
+      date(received_at) as report_date
+      ,content_subscription_id as user_id
+      ,'Yes' as re_acquisition
+      ,date(received_at) as re_acquisition_date
+    FROM chargebee_webhook_events.subscription_reactivated
+    WHERE content_subscription_subscription_items like '%Gaither%'
+),
+    join_trial_start as(
+    SELECT
+      a.*
+      ,b.created_at
+    FROM chargebee_subs as a
+    LEFT JOIN chargebee_trial_start b
+    ON a.user_id = b.user_id
+),
+
+    join_trial_converted as (
+    SELECT
+      a.*
+      ,b.trials_converted
+    FROM join_trial_start a
+    LEFT JOIN chargebee_trial_converted b
+    on a.user_id = b.user_id and a.report_date = b.report_date
+),
+
+    join_sub_cancelled as(
+    SELECT
+      a.*
+      ,b.sub_cancelled
+    FROM join_trial_converted a
+    LEFT JOIN chargebee_sub_cancelled b
+    on a.user_id = b.user_id and a.report_date = b.report_date
+),
+    join_re_acquisition as(
+    SELECT
+      a.*
+      ,b.re_acquisition
+      ,b.re_acquisition_date
+    FROM join_sub_cancelled a
+    LEFT JOIN chargebee_re_acquisition b
+    on a.user_id = b.user_id and a.report_date = b.report_date
+),
+
+
+
+  trial_not_converted as(
+  SELECT
+    *,
+  --CASE
+    --WHEN  ((DATEDIFF(DAY, date(report_date),date(created_at)) = -21) or (DATEDIFF(DAY, date(report_date),date(created_at)) = -14)) and sub_cancelled IS NOT NULL THEN 'Yes'
+    --ELSE 'No'
+  --END AS charge_failed
+  CASE
+    WHEN  ((DATEDIFF(DAY, date(report_date),date(created_at)) = -7) and sub_cancelled IS NOT NULL) THEN 'Yes'
+    ELSE NULL
+  END AS trial_not_converted
+  FROM join_re_acquisition
+),
+-- undo subs that were marked as cancelled but its actually trials not converted
+  undo_wrong_subs as (
+  SELECT
+    date(report_date) as report_date
+    ,user_id
+    ,status
+    ,platform
+    ,date(created_at) as created_at
+    ,CASE
+      WHEN re_acquisition_date is NULL THEN report_date
+      ELSE re_acquisition_date
+    END AS re_acquisition_date
+    ,CASE
+      WHEN trials_converted is NULL THEN 'No'
+      ELSE 'Yes'
+    END as trials_converted
+    ,trial_not_converted
+    ,CASE
+      WHEN trial_not_converted is not NULL and sub_cancelled IS NOT NULL THEN 'No'
+      WHEN sub_cancelled IS not NULL and trial_not_converted is NULL THEN 'Yes'
+      ELSE 'No'
+    END AS sub_cancelled
+    ,CASE
+      WHEN re_acquisition is NULL THEN 'No'
+      ELSE 'Yes'
+    END AS re_acquisition
+
+    FROM trial_not_converted
+
+),
+-- unmark subs where it was marked as cancelled, but its actually trial not converted
 
     ------ Vimeo OTT ------
     vimeo_raw as (
@@ -42,27 +155,17 @@ view: gaither_analytics_v2 {
         ELSE status
       END AS status
       ,platform
-      ,date(customer_created_at) as created_at
+      ,date(MIN(report_date) OVER (PARTITION BY user_id)) AS created_at
       ,date(report_date) as report_date
     from vimeo_subscriptions
     where action = 'subscription' and platform not in('api','web')
 ),
-  result as(
-  select
-    user_id
-    ,CAST(status AS VARCHAR(255))
-    ,platform
-    ,date(created_at) as created_at
-    ,date(report_date) as report_date
-  from chargebee_subs
-  union all
-  select * from vimeo_raw)
 
-  select
+  result2 as (select
   user_id
   ,status
   ,platform
-  ,DATEADD(DAY, -1, created_at) as created_at
+  ,created_at
   ,DATEADD(DAY, 0, report_date) as report_date
   ,DATEADD(DAY, -1, report_date) as re_acquisitions_date
   ,CASE
@@ -79,13 +182,97 @@ view: gaither_analytics_v2 {
     WHEN status = 'active' AND LAG(status) OVER (PARTITION BY user_id ORDER BY report_date) ='paused'
     THEN 'Yes'
     ELSE 'No'
-  END AS re_acquisitions
+  END AS re_acquisition
   ,CASE
     WHEN status in('cancelled','paused') AND LAG(status) OVER (PARTITION BY user_id ORDER BY report_date) ='active'
     THEN 'Yes'
     ELSE 'No'
-  END AS cancelled_users
-  from result;;
+  END AS sub_cancelled
+
+  from vimeo_raw),
+  result3 as(
+  select *,
+  CASE
+    WHEN((DATEDIFF(DAY, date(report_date),date(created_at)) = -21) or (DATEDIFF(DAY, date(report_date),date(created_at)) = -20)) and sub_cancelled = 'Yes' THEN 'Yes'
+    ELSE 'No'
+END AS charge_failed
+from result2)
+
+,final as(
+SELECT
+  user_id,
+  status,
+  platform,
+  date(created_at) as created_at,
+  date(report_date) as report_date,
+  date(re_acquisitions_date) as re_acquisition_date,
+
+  -- Fix for trials_converted logic
+  CASE
+    WHEN trials_converted = 'Yes'
+      AND user_id IN (
+        SELECT user_id
+        FROM result3
+        WHERE charge_failed = 'Yes'
+      )
+    THEN 'No'::VARCHAR
+    ELSE trials_converted::VARCHAR
+  END AS trials_converted,
+
+  -- Fix for trials_not_converted logic
+  CASE
+    WHEN trials_converted = 'Yes'
+      AND user_id IN (
+        SELECT user_id
+        FROM result3
+        WHERE charge_failed = 'Yes'
+      )
+    THEN 'Yes'::VARCHAR
+    ELSE trials_not_converted::VARCHAR
+  END AS trial_not_converted,
+
+  re_acquisition,
+  CASE
+    WHEN sub_cancelled = 'Yes'
+      AND user_id IN (
+        SELECT user_id
+        FROM result3
+        WHERE charge_failed = 'Yes'
+      )
+    THEN 'No'::VARCHAR
+    ELSE sub_cancelled::VARCHAR
+  END AS sub_cancelled
+  --charge_failed
+
+FROM result3
+),
+final_join as (
+select
+  report_date
+  ,user_id
+  ,status
+  ,platform
+  ,created_at
+  ,re_acquisition_date
+  ,trials_converted
+  ,trial_not_converted
+  ,sub_cancelled
+  ,re_acquisition
+  from undo_wrong_subs
+UNION ALL
+select
+  report_date
+  ,user_id
+  ,status
+  ,platform
+  ,created_at
+  ,re_acquisition_date
+  ,trials_converted
+  ,trial_not_converted
+  ,sub_cancelled
+  ,re_acquisition
+  from final)
+select * from final_join;;
   }
 
   dimension: date {
@@ -101,7 +288,7 @@ view: gaither_analytics_v2 {
 
   dimension: re_acquisitions_date {
     type: date
-    sql: ${TABLE}.re_acquisitions_date ;;
+    sql: ${TABLE}.re_acquisition_date ;;
   }
 
   dimension: status {
@@ -125,17 +312,17 @@ view: gaither_analytics_v2 {
 
   dimension: trials_not_converted {
     type: string
-    sql: ${TABLE}.trials_not_converted ;;
+    sql: ${TABLE}.trial_not_converted ;;
   }
 
   dimension: re_acquisitions {
     type: string
-    sql:  ${TABLE}.re_acquisitions ;;
+    sql:  ${TABLE}.re_acquisition ;;
   }
 
   dimension: user_cancelled {
     type: string
-    sql:  ${TABLE}.cancelled_users ;;
+    sql:  ${TABLE}.sub_cancelled ;;
   }
 
   measure: total_paying {
