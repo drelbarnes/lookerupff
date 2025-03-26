@@ -61,6 +61,8 @@ view: gaither_analytics_v2 {
     FROM chargebee_webhook_events.subscription_reactivated
     WHERE content_subscription_subscription_items like '%Gaither%'
 ),
+
+
     join_trial_start as(
     SELECT
       a.*
@@ -128,7 +130,10 @@ view: gaither_analytics_v2 {
       WHEN trials_converted is NULL THEN 'No'
       ELSE 'Yes'
     END as trials_converted
-    ,trial_not_converted
+    ,CASE
+      WHEN trial_not_converted is NULL THEN 'No'
+      ELSE 'Yes'
+    END as trial_not_converted
     ,CASE
       WHEN trial_not_converted is not NULL and sub_cancelled IS NOT NULL THEN 'No'
       WHEN sub_cancelled IS not NULL and trial_not_converted is NULL THEN 'Yes'
@@ -138,10 +143,49 @@ view: gaither_analytics_v2 {
       WHEN re_acquisition is NULL THEN 'No'
       ELSE 'Yes'
     END AS re_acquisition
-
     FROM trial_not_converted
 
 ),
+  mark_trials_converted as (
+    SELECT *
+    ,LAG(trials_converted, 14) OVER (PARTITION BY user_id ORDER BY report_date) AS trials_converted_14_days_ago
+    FROM undo_wrong_subs
+
+),
+
+  mark_charge_failed as (
+    SELECT *
+      ,CASE
+        WHEN sub_cancelled = 'Yes' AND trials_converted_14_days_ago = 'Yes' THEN 'Yes'
+        ELSE 'No'
+    END AS charge_failed
+    FROM mark_trials_converted
+),
+
+  undo_trials_converted as (
+    SELECT
+      report_date
+      ,user_id
+      ,status
+      ,platform
+      ,created_at
+      ,re_acquisition_date
+      ,CASE
+        WHEN MAX(charge_failed) OVER (PARTITION BY user_id) = 'Yes' THEN 'No'
+        ELSE trials_converted
+    END AS trials_converted
+      ,CASE
+        WHEN MAX(charge_failed) OVER (PARTITION BY user_id) = 'Yes'  and trials_converted = 'Yes' THEN 'Yes'
+        ELSE trial_not_converted
+       END AS trial_not_converted
+      ,sub_cancelled
+      ,re_acquisition
+      ,charge_failed
+
+    FROM mark_charge_failed
+),
+
+
 -- unmark subs where it was marked as cancelled, but its actually trial not converted
 
     ------ Vimeo OTT ------
@@ -242,7 +286,7 @@ SELECT
     THEN 'No'::VARCHAR
     ELSE sub_cancelled::VARCHAR
   END AS sub_cancelled
-  --charge_failed
+  ,charge_failed
 
 FROM result3
 ),
@@ -258,7 +302,8 @@ select
   ,trial_not_converted
   ,sub_cancelled
   ,re_acquisition
-  from undo_wrong_subs
+  ,charge_failed
+  from undo_trials_converted
 UNION ALL
 select
   report_date
@@ -271,8 +316,10 @@ select
   ,trial_not_converted
   ,sub_cancelled
   ,re_acquisition
+  ,charge_failed
   from final)
-select * from final_join;;
+select *
+  from final_join;;
   }
 
   dimension: date {
@@ -289,6 +336,11 @@ select * from final_join;;
   dimension: re_acquisitions_date {
     type: date
     sql: ${TABLE}.re_acquisition_date ;;
+  }
+
+  dimension: user_id {
+    type: string
+    sql:  ${TABLE}.user_id ;;
   }
 
   dimension: status {
@@ -323,6 +375,11 @@ select * from final_join;;
   dimension: user_cancelled {
     type: string
     sql:  ${TABLE}.sub_cancelled ;;
+  }
+
+  dimension: charge_failed {
+    type: string
+    sql:  ${TABLE}.charge_failed ;;
   }
 
   measure: total_paying {
@@ -361,6 +418,12 @@ select * from final_join;;
   measure: user_cancelled_count {
     type: count_distinct
     filters: [user_cancelled: "Yes"]
+    sql: ${TABLE}.user_id  ;;
+  }
+
+  measure: charge_failed_count {
+    type: count_distinct
+    filters: [charge_failed: "Yes"]
     sql: ${TABLE}.user_id  ;;
   }
 
