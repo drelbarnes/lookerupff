@@ -8,6 +8,7 @@ view: checkout_pages {
         ,'checkout_page' as data_table
         ,timestamp
       from JavaScript_upentertainment_checkout.pages
+      WHERE referrer NOT LIKE '%gaither%'
       union all
       select
         context_page_path

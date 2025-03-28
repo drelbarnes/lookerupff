@@ -1,4 +1,4 @@
-view: checkout_gaitherTV {
+view: checkout_pages {
   derived_table: {
     sql:
 
@@ -8,6 +8,8 @@ view: checkout_gaitherTV {
         ,'checkout_page' as data_table
         ,timestamp
       from JavaScript_upentertainment_checkout.pages
+      WHERE referrer LIKE '%gaither%'
+      OR url like '%gaither%' -- for data stored on 3/28 and onward
       union all
       select
         context_page_path
@@ -15,13 +17,14 @@ view: checkout_gaitherTV {
         ,'order_completed' as data_table
         ,timestamp
       from JavaScript_upentertainment_checkout.order_completed
+      WHERE context_page_referrer like '%gaither%'
       UNION all
       SELECT
         url as context_page_path
-        ,context_ip
+        ,anonymous_id as context_ip
         ,'marketing' as data_table
         ,timestamp
-      FROM javascript_upff_home.pages
+      FROM javascript_gaither_tv.pages
       ;;
   }
   parameter: include_marketing_pages {
@@ -56,29 +59,28 @@ view: checkout_gaitherTV {
     type: string
     sql: ${TABLE}.data_table ;;
   }
-
-  measure: plans_page_count {
-    type: count_distinct
+  measure: marketing_page_count{
+    type:  count_distinct
     sql:
     CASE
       WHEN {% parameter include_marketing_pages %} = 'yes' THEN
         CASE
-          WHEN ${TABLE}.context_page_path IN ('/', '/index.php/welcome/plans') or ${TABLE}.context_page_path LIKE '%upfaithandfamily.com%'
+          WHEN ${TABLE}.context_page_path LIKE '%https://www.gaither.tv/%' or context_page_path LIKE 'https://gaithertvplus.com/%'
           THEN ${TABLE}.context_ip
           ELSE NULL
         END
       ELSE
-        CASE
-          WHEN ${TABLE}.context_page_path IN ('/', '/index.php/welcome/plans')
-          THEN ${TABLE}.context_ip
-          ELSE NULL
-        END
+        NULL
     END ;;
+    label: "Marketing Site Count"
+
+  }
+  measure: plans_page_count {
+    type: count_distinct
+    sql:${TABLE}.context_ip;;
+    filters:[context_page_path: "/,/index.php/welcome/plans"]
     label: "Plans Page Count"
   }
-
-
-
 
 
   measure: payment_page_count {
@@ -111,8 +113,8 @@ view: checkout_gaitherTV {
     label: "Up Sell Page Count"
     filters: [ context_page_path:
       "/index.php/welcome/up_sell,
-      /index.php/welcome/up_sell/upfaithandfamily/monthly,
-      /index.php/welcome/up_sell/upfaithandfamily/yearly,
+      /index.php/welcome/up_sell/gaithertvplus/monthly,
+      /index.php/welcome/up_sell/gaithertvplus/yearly,
       /up_sell",
       data_table: "order_completed"]
   }
