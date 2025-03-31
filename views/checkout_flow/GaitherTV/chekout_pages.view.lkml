@@ -3,7 +3,12 @@ view: checkout_pages {
     sql:
 
       select
-        context_page_path
+        CASE
+          WHEN context_page_path LIKE '%/index.php/welcome/payment/gaithertvplus%' THEN '/index.php/welcome/payment/gaithertvplus'
+          WHEN context_page_path LIKE '%/index.php/welcome/create_account/gaithertvplus%' THEN '/index.php/welcome/create_account/gaithertvplus'
+          WHEN context_page_path LIKE '%/index.php/welcome/select_payment/gaithertvplus%' THEN '/index.php/welcome/select_payment/gaithertvplus'
+          ELSE context_page_path
+        END AS  context_page_path
         ,context_ip
         ,'checkout_page' as data_table
         ,timestamp
@@ -78,7 +83,7 @@ view: checkout_pages {
   measure: plans_page_count {
     type: count_distinct
     sql:${TABLE}.context_ip;;
-    filters:[context_page_path: "/,/index.php/welcome/plans"]
+    filters:[context_page_path: "/,/index.php/welcome/plans,/index.php/welcome/plans/gaithertvplus"]
     label: "Plans Page Count"
   }
 
@@ -87,7 +92,7 @@ view: checkout_pages {
     type: count_distinct
     sql: ${TABLE}.context_ip ;;
     label: "Payment Page Count"
-    filters: [context_page_path: "/index.php/welcome/payment,/index.php/welcome/confirm_payment/upfaithandfamily/%"]
+    filters: [context_page_path: "/index.php/welcome/payment/gaithertvplus,/index.php/welcome/payment,/index.php/welcome/confirm_payment/upfaithandfamily/%"]
   }
 
   measure: create_account_page_count {
@@ -96,7 +101,7 @@ view: checkout_pages {
     label: "Create Account Page Count"
     filters: [context_page_path:
       "/index.php/welcome/create_account,
-    /create_account/"]
+    /create_account/,/index.php/welcome/create_account/gaithertvplus"]
   }
   measure: select_payment_page_count {
     type: count_distinct
@@ -104,7 +109,7 @@ view: checkout_pages {
     label: "Select Payment Page Count"
     filters: [context_page_path:
       "/index.php/welcome/select_payment,
-    /payment"]
+    /payment,/index.php/welcome/select_payment/gaithertvplus"]
   }
 
   measure: upsell_page_count {
@@ -123,7 +128,7 @@ view: checkout_pages {
     type: count_distinct
     sql: ${TABLE}.context_ip ;;
     label: "Confirmation Page Count"
-    filters: [context_page_path: "/index.php/welcome/confirmation"]
+    filters: [context_page_path: "/index.php/welcome/confirmation,/index.php/welcome/confirmation/upfaithandfamily/monthly/gaithertvplus,/index.php/welcome/confirmation/gaithertvplus/yearly/upfaithandfamily"]
   }
 
 
