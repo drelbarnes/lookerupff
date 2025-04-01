@@ -128,6 +128,11 @@ view: other_marketing_spend {
         , spend
         , channel
         from iheart
+        union all
+        select date
+        , spend
+        , channel
+        from radio
       )
       , outer_query as (
       SELECT * FROM `up-faith-and-family-216419.http_api.other_marketing_spend`
