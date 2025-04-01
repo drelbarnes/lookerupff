@@ -71,6 +71,13 @@ view: other_marketing_spend {
         from (select date, cost from customers.iheart group by 1,2)
         group by 1,3
       )
+      , radio as (
+        select safe_cast(date as timestamp) as date,
+        sum(cost) as spend,
+        'Radio' as channel
+        from (select date, cost from customers.radio group by 1,2)
+        group by 1,3
+      )
       , all_spend as (
         select date,
         spend,
