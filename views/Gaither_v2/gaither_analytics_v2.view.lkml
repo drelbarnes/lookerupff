@@ -30,7 +30,11 @@ view: gaither_analytics_v2 {
     chargebee_trial_start as (
     SELECT
       --subtract 4 hour delay from actual to storage
-      date(DATEADD(HOUR, -4, received_at)) as created_at
+      date(DATEADD(HOUR, -5, received_at)) as created_at
+      ,CASE
+        WHEN EXTRACT(HOUR FROM received_at)<4 THEN 'Yes'
+        ELSE 'No'
+      END AS add_day
       ,content_subscription_id as user_id
     FROM chargebee_webhook_events.subscription_created
     WHERE content_subscription_subscription_items like '%Gaither%'
@@ -67,16 +71,44 @@ view: gaither_analytics_v2 {
     SELECT
       a.*
       ,b.created_at
+      ,b.add_day
     FROM chargebee_subs as a
     LEFT JOIN chargebee_trial_start b
     ON a.user_id = b.user_id
+),
+    join_trial_start2 as(
+    SELECT
+       CAST(report_date AS DATE) AS report_date
+      ,user_id
+      ,status
+      , platform
+      ,CAST(created_at AS DATE) AS created_at
+          FROM join_trial_start
+    UNION ALL
+    SELECT
+      created_at as report_date
+      ,user_id
+      ,'in_trial' as status
+      ,'Chargebee' as platform
+      ,created_at
+    FROM chargebee_trial_start
+    UNION ALL
+    SELECT
+     DATEADD(day, 1, created_at) as report_date
+      ,user_id
+      ,'in_trial' as status
+      ,'Chargebee' as platform
+      ,created_at
+    FROM chargebee_trial_start
+    WHERE add_day = 'Yes'
+
 ),
 
     join_trial_converted as (
     SELECT
       a.*
       ,b.trials_converted
-    FROM join_trial_start a
+    FROM join_trial_start2 a
     LEFT JOIN chargebee_trial_converted b
     on a.user_id = b.user_id and a.report_date = b.report_date
 ),
@@ -99,8 +131,6 @@ view: gaither_analytics_v2 {
     on a.user_id = b.user_id and a.report_date = b.report_date
 ),
 
-
-
   trial_not_converted as(
   SELECT
     *,
@@ -119,7 +149,10 @@ view: gaither_analytics_v2 {
   SELECT
     date(report_date) as report_date
     ,user_id
-    ,status
+    ,CASE
+      WHEN trials_converted is not NULL THEN 'active'
+      ELSE status
+    END AS status
     ,platform
     ,date(created_at) as created_at
     ,CASE
@@ -168,7 +201,10 @@ view: gaither_analytics_v2 {
       ,user_id
       ,status
       ,platform
-      ,created_at
+      ,CASE
+        WHEN created_at is NULL THEN '1999-01-01'
+        ELSE created_at
+      END as created_at
       ,re_acquisition_date
       ,CASE
         WHEN MAX(charge_failed) OVER (PARTITION BY user_id) = 'Yes' THEN 'No'
@@ -183,6 +219,7 @@ view: gaither_analytics_v2 {
       ,charge_failed
 
     FROM mark_charge_failed
+
 ),
 
 
@@ -319,7 +356,8 @@ select
   ,charge_failed
   from final)
 select *
-  from final_join;;
+  from final_join
+  ;;
   }
 
   dimension: date {

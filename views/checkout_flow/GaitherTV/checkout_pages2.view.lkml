@@ -17,17 +17,17 @@ view: checkout_pages2 {
     END) AS marketing_page_count,
   {% endif %}
     COUNT(DISTINCT CASE
-          WHEN (checkout_pages.context_page_path IN ('/index.php/welcome/plans', '/'))
+          WHEN (checkout_pages.context_page_path IN ('/index.php/welcome/plans', '/','/index.php/welcome/plans/gaithertvplus'))
           THEN checkout_pages.context_ip
           ELSE NULL
         END) AS plans_page_count,
     COUNT(DISTINCT CASE
-      WHEN ((checkout_pages.context_page_path LIKE '/index.php/welcome/create_account' OR checkout_pages.context_page_path LIKE '/create_account/') and data_table ='checkout_page')
+      WHEN ((checkout_pages.context_page_path LIKE '/index.php/welcome/create_account%' OR checkout_pages.context_page_path LIKE '/create_account/') and data_table ='checkout_page')
       THEN checkout_pages.context_ip
       ELSE NULL
     END) AS create_account_page_count,
     COUNT(DISTINCT CASE
-      WHEN ((checkout_pages.context_page_path LIKE '/index.php/welcome/select_payment' OR checkout_pages.context_page_path = '/payment')and data_table ='checkout_page')
+      WHEN ((checkout_pages.context_page_path LIKE '/index.php/welcome/select_payment%' OR checkout_pages.context_page_path = '/payment')and data_table ='checkout_page')
       THEN checkout_pages.context_ip
       ELSE NULL
     END) AS select_payment_page_count,
@@ -42,7 +42,7 @@ view: checkout_pages2 {
       ELSE NULL
     END) AS upsell_page_count,
     COUNT(DISTINCT CASE
-      WHEN (checkout_pages.context_page_path = '/index.php/welcome/confirmation' and data_table ='checkout_page')
+      WHEN (checkout_pages.context_page_path like '/index.php/welcome/confirmation%' and data_table ='checkout_page')
       THEN checkout_pages.context_ip
       ELSE NULL
     END) AS confirmation_page_count
