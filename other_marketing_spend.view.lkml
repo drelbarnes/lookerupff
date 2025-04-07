@@ -71,6 +71,13 @@ view: other_marketing_spend {
         from (select date, cost from customers.iheart group by 1,2)
         group by 1,3
       )
+      , radio as (
+        select safe_cast(date as timestamp) as date,
+        sum(cost) as spend,
+        'Radio' as channel
+        from (select date, cost from customers.radio group by 1,2)
+        group by 1,3
+      )
       , all_spend as (
         select date,
         spend,
@@ -121,6 +128,11 @@ view: other_marketing_spend {
         , spend
         , channel
         from iheart
+        union all
+        select date
+        , spend
+        , channel
+        from radio
       )
       , outer_query as (
       SELECT * FROM `up-faith-and-family-216419.http_api.other_marketing_spend`
