@@ -128,7 +128,7 @@ view: checkout_pages {
     type: count_distinct
     sql: ${TABLE}.context_ip ;;
     label: "Confirmation Page Count"
-    filters: [context_page_path: "/index.php/welcome/confirmation,/index.php/welcome/confirmation/upfaithandfamily/monthly/gaithertvplus,/index.php/welcome/confirmation/gaithertvplus/yearly/upfaithandfamily"]
+    filters: [context_page_path: "/index.php/welcome/confirmation,/index.php/welcome/confirmation/gaithertvplus/yearly,/index.php/welcome/confirmation/gaithertvplus/monthly,/index.php/welcome/confirmation/gaithertvplus/yearly/upfaithandfamily,/index.php/welcome/confirmation/gaithertvplus/monthly/upfaithandfamily"]
   }
 
 
