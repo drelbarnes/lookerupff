@@ -6,7 +6,7 @@ view: analytics_v2 {
       )
       , chargebee_webhook_analytics as (
         select
-        date(timestamp) as date
+         date(DATEADD(HOUR, -4, timestamp)) as date
         , 'web' as platform
         ,count(case when (event = 'customer_product_free_trial_created') then 1 else null end) as free_trial_created
         , count(case when (event = 'customer_product_free_trial_converted') then 1 else null end) as free_trial_converted
@@ -90,6 +90,7 @@ view: analytics_v2 {
           select
           a.report_date
           , a.ios+a.tvos as vimeo_ott_subscribers_total
+          , a.roku + a.amazon_fire_tv + a.android + a.android_tv + b.ios + b.tvos as vimeo_total
           , b.ios + b.tvos as app_store_connect_subscribers_total
           from ${customer_file_subscriber_counts.SQL_TABLE_NAME} as a
           left join ${appstoreconnect_sub_counts.SQL_TABLE_NAME} as b
@@ -129,23 +130,7 @@ view: analytics_v2 {
           , greatest(0, coalesce(coalesce(a.paying_churn, a2.paying_churn), 0) - coalesce(b.free_trial_churn, 0)) as paying_churn
           , greatest(0, coalesce(coalesce(a.paying_created, a2.paying_created), 0) - coalesce(b.free_trial_created, 0)) as paying_created
           , coalesce(coalesce(a2.total_free_trials, a.total_free_trials), 0) + coalesce(c1.total_free_trials, 0) as total_free_trials
-          , coalesce(
-            coalesce(
-              nullif(
-                a2.total_paying-c.vimeo_ott_subscribers_total+c.app_store_connect_subscribers_total
-                ,-c.vimeo_ott_subscribers_total+c.app_store_connect_subscribers_total
-              )
-              ,0
-            ) - coalesce(c1.total_free_trials,0)
-            , coalesce(
-              nullif(
-                a.total_paying-c.vimeo_ott_subscribers_total+c.app_store_connect_subscribers_total
-                ,-c.vimeo_ott_subscribers_total+c.app_store_connect_subscribers_total
-              )
-              ,0
-            ) - coalesce(c1.total_free_trials,0)
-            , a2.total_paying-c1.total_free_trials, a.total_paying-c1.total_free_trials
-          ) as total_paying
+          , c.vimeo_total + c1.total_paying as total_paying
           , (-c.vimeo_ott_subscribers_total+c.app_store_connect_subscribers_total) as test2
           from (select * from get_analytics_p0 where report_version = 'v1' and n=1) as a
           left join (select * from get_analytics_p0 where report_version = 'v2' and n=1) as a2
@@ -157,11 +142,13 @@ view: analytics_v2 {
             report_date
             , app_store_connect_subscribers_total
             , vimeo_ott_subscribers_total
+            ,vimeo_total
             from apple_subs
           ) c
           on date(a.timestamp) = date(c.report_date)
           left join chargebee_totals as c1
           on date(a.timestamp) = date(c1.uploaded_at)
+
         )
         , get_analytics_p1_old as (
           select
@@ -187,6 +174,7 @@ view: analytics_v2 {
             report_date
             , app_store_connect_subscribers_total
             , vimeo_ott_subscribers_total
+            ,vimeo_total
             from apple_subs
           ) c
           on date(a.timestamp) = date(c.report_date)
