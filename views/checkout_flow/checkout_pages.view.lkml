@@ -3,24 +3,34 @@ view: checkout_pages {
     sql:
 
       select
-        context_page_path
+      CASE
+        WHEN context_page_path LIKE '/index.php/welcome/create_account/%' THEN '/index.php/welcome/create_account'
+        WHEN context_page_path LIKE '/index.php/welcome/plans%' THEN '/index.php/welcome/plans'
+        WHEN context_page_path LIKE '/index.php/welcome/select_payment%' THEN '/index.php/welcome/select_payment'
+        WHEN context_page_path LIKE '/index.php/welcome/payment%' THEN '/index.php/welcome/payment'
+        WHEN context_page_path LIKE '/index.php/welcome/confirmation%' THEN '/index.php/welcome/confirmation'
+        ELSE context_page_path
+        END AS context_page_path
         ,context_ip
         ,'checkout_page' as data_table
+        ,id
         ,timestamp
-      from JavaScript_upentertainment_checkout.pages
+      from javascript_upentertainment_checkout.pages
       WHERE referrer NOT LIKE '%gaither%'
       union all
       select
         context_page_path
         ,context_ip
         ,'order_completed' as data_table
+        ,id
         ,timestamp
-      from JavaScript_upentertainment_checkout.order_completed
+      from javaScript_upentertainment_checkout.order_completed
       UNION all
       SELECT
         url as context_page_path
         ,anonymous_id as context_ip
         ,'marketing' as data_table
+        ,id
         ,timestamp
       FROM javascript_upff_home.pages
       ;;
@@ -63,7 +73,7 @@ view: checkout_pages {
     CASE
       WHEN {% parameter include_marketing_pages %} = 'yes' THEN
         CASE
-          WHEN ${TABLE}.context_page_path LIKE '%upfaithandfamily.com%'
+          WHEN ${TABLE}.context_page_path LIKE '%upfaithandfamily.com%' or ${TABLE}.context_page_path LIKE 'vhx.tv'
           THEN ${TABLE}.context_ip
           ELSE NULL
         END

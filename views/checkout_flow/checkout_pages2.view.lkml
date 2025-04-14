@@ -10,8 +10,8 @@ view: checkout_pages2 {
     DATE(checkout_pages.timestamp) AS date,
     {% if include_marketing_pages._parameter_value == "'yes'" %}
     COUNT(DISTINCT CASE
-      WHEN (checkout_pages.context_page_path LIKE '%upfaithandfamily.com%'
-            AND checkout_pages.data_table = 'marketing')
+      WHEN (checkout_pages.context_page_path LIKE '%upfaithandfamily.com%' or checkout_pages.context_page_path LIKE '%upfaithandfamily.com/%')
+            AND checkout_pages.data_table = 'marketing'
       THEN checkout_pages.context_ip
       ELSE NULL
     END) AS marketing_page_count,
