@@ -32,7 +32,7 @@ view: checkout_pages2 {
       ELSE NULL
     END) AS select_payment_page_count,
     COUNT(DISTINCT CASE
-      WHEN ((checkout_pages.context_page_path = '/index.php/welcome/payment' or checkout_pages.context_page_path like '/index.php/welcome/confirm_payment/gaithertvplus/%')and data_table ='checkout_page')
+      WHEN ((checkout_pages.context_page_path = '/index.php/welcome/payment' or checkout_pages.context_page_path like '/index.php/welcome/payment/gaithertvplus%')and data_table ='checkout_page')
       THEN checkout_pages.context_ip
       ELSE NULL
     END) AS payment_page_count,

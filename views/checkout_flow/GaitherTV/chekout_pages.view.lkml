@@ -7,6 +7,7 @@ view: checkout_pages {
           WHEN context_page_path LIKE '%/index.php/welcome/payment/gaithertvplus%' THEN '/index.php/welcome/payment/gaithertvplus'
           WHEN context_page_path LIKE '%/index.php/welcome/create_account/gaithertvplus%' THEN '/index.php/welcome/create_account/gaithertvplus'
           WHEN context_page_path LIKE '%/index.php/welcome/select_payment/gaithertvplus%' THEN '/index.php/welcome/select_payment/gaithertvplus'
+          WHEN context_page_path LIKE '%/index.php/welcome/payment/gaithertvplus%' THEN '/index.php/welcome/payment/gaithertvplus'
           ELSE context_page_path
         END AS  context_page_path
         ,context_ip
