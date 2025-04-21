@@ -16,7 +16,7 @@ view: checkout_pages {
       from JavaScript_upentertainment_checkout.pages
       WHERE referrer LIKE '%gaither%'
       OR url like '%gaither%' -- for data stored on 3/28 and onward
-      union all
+      UNION ALL
       select
         context_page_path
         ,context_ip

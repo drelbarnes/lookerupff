@@ -17,6 +17,30 @@ view: checkout_pages {
         ,timestamp
       from javascript_upentertainment_checkout.pages
       WHERE referrer NOT LIKE '%gaither%'
+      UNION ALL
+      SELECT
+        context_page_path
+        ,context_ip
+        ,CASE
+          WHEN context_page_path = '/checkout/subscribe/purchase' THEN 'checkout_page'
+          WHEN context_page_path = '/checkout/subscribe/receipt' THEN 'checkout_page'
+          WHEN context_page_path = '/activate' THEN 'order_completed'
+        END AS data_table
+        ,id
+        ,timestamp
+      FROM javascript.pages
+      WHERE context_page_path LIKE '%/checkout/subscribe%' or context_page_path LIKE '/activate'
+
+      UNION ALL
+      SELECT
+         context_page_path
+        ,context_ip
+        ,'order_completed' AS data_table
+        ,id
+        ,timestamp
+      FROM javascript.order_completed
+
+
       union all
       select
         context_page_path
@@ -86,7 +110,7 @@ view: checkout_pages {
   measure: plans_page_count {
     type: count_distinct
     sql:${TABLE}.context_ip;;
-    filters:[context_page_path: "/,/index.php/welcome/plans"]
+    filters:[context_page_path: "/,/index.php/welcome/plans,/checkout/subscribe/purchase"]
     label: "Plans Page Count"
   }
 
@@ -118,12 +142,12 @@ view: checkout_pages {
   measure: upsell_page_count {
     type: count_distinct
     sql: ${TABLE}.context_ip ;;
-    label: "Up Sell Page Count"
+    label: "UPSell Page/Order Completed Count"
     filters: [ context_page_path:
       "/index.php/welcome/up_sell,
       /index.php/welcome/up_sell/upfaithandfamily/monthly,
       /index.php/welcome/up_sell/upfaithandfamily/yearly,
-      /up_sell",
+      /up_sell,/checkout/subscribe",
       data_table: "order_completed"]
   }
 
@@ -131,7 +155,7 @@ view: checkout_pages {
     type: count_distinct
     sql: ${TABLE}.context_ip ;;
     label: "Confirmation Page Count"
-    filters: [context_page_path: "/index.php/welcome/confirmation"]
+    filters: [context_page_path: "/index.php/welcome/confirmation,/checkout/subscribe/receipt"]
   }
 
 

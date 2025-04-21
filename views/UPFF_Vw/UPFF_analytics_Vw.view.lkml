@@ -253,7 +253,7 @@ view: UPFF_analytics_Vw {
       ELSE status
       END AS status
       ,platform
-      ,date(MIN(report_date) OVER (PARTITION BY user_id)) AS created_at
+      ,date(customer_created_at) AS created_at
       ,date(report_date) as report_date
       from vimeo_subscriptions
       where action = 'subscription' and platform not in('api','web')
