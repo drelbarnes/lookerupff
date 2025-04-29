@@ -26,7 +26,7 @@ view: resubscribe_pages2 {
     END) AS confirmation_page_count
 FROM resubscribe_pages
 WHERE resubscribe_pages.timestamp >= {% date_start filter_field %}
-  AND resubscribe_pages.timestamp <= {% date_end filter_field %}
+  --AND resubscribe_pages.timestamp <= {% date_end filter_field %}
 GROUP BY 1),
 result as(
 
