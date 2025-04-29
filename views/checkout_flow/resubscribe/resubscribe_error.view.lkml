@@ -6,8 +6,8 @@ view: resubscribe_error {
         context_ip
         ,api_error_code
         ,timestamp
-      from javascript_upentertainment_checkout.resubscribe_error ;;
-
+      from javascript_upentertainment_checkout.resubscribe_error
+      where api_error_code != 'invalid_state_for_request';;
       }
 
   dimension: date {

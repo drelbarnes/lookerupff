@@ -1,20 +1,31 @@
 view: resubscribe_pages {
   derived_table: {
     sql:
-
+      WITH result as(
       select
         CASE
-          WHEN context_page_path like '%welcome/resubscribe/%' THEN 'welcome'
+          WHEN context_page_path like '%welcome/resubscribe/upfaithandfamily/%' THEN 'welcome'
           WHEN context_page_path like '%welcome/resubscribe_thank_you/upfaithandfamily%' THEN 'thank_you'
-          WHEN context_page_path like '%confirmation_resubscribe/upfaithandfamily/%'
-          THEN 'confirmation'
           ELSE context_page_path
         END AS context_page_path
         ,context_ip
-        ,'checkout_page' as data_table
         ,id
         ,timestamp
-      from javascript_upentertainment_checkout.pages;;
+      from javascript_upentertainment_checkout.pages
+
+      UNION ALL
+      SELECT
+      CASE
+          WHEN context_page_path like '%/index.php/welcome/confirmation_resubscribe/upfaithandfamily/%'
+          THEN 'confirmation'
+          ELSE context_page_path
+          END AS context_page_path
+        ,context_ip
+        ,id
+        ,timestamp
+      FROM javascript_upentertainment_checkout.order_resubscribed)
+      select * from result
+      ;;
 
   }
 
