@@ -2,6 +2,8 @@ connection: "upff"
 
 include: "/views/Gaither_v2/gaither_analytics_v2.view.lkml"
 include: "/views/Gaither_v2/rolling.view.lkml"
+include: "/views/Gaither_v2/cpft.view.lkml"
+
 
 explore: gaither_analytics_v2 {
   label: "Gaither Analytics V2"
@@ -12,3 +14,6 @@ explore: gaither_analytics_v2 {
     relationship: many_to_many
   }
 }
+
+explore: cpft {
+  label: "Gaither CPFT"}
