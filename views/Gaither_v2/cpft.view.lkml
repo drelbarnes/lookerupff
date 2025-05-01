@@ -44,8 +44,8 @@ INNER JOIN g ON ads.ad_group_id = g.ad_group_id
 ),
      customers_analytics as (
         SELECT
-      COUNT(*) AS free_trial_created
-      ,date(report_date)as timestamp
+      COUNT(distinct user_id) AS free_trial_created
+      ,date(created_at)as timestamp
     FROM ${gaither_analytics_v2.SQL_TABLE_NAME}
     WHERE
       status = 'in_trial'
