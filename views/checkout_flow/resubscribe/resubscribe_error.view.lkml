@@ -1,8 +1,23 @@
 view: resubscribe_error {
   derived_table: {
     sql:
+    with result as(
       select
         context_ip
+        ,CASE
+    WHEN POSITION('rid' IN context_page_url) > 0 THEN
+      CASE
+        WHEN POSITION('&' IN SUBSTRING(context_page_url FROM POSITION('rid' IN context_page_url))) > 0 THEN
+          SUBSTRING(
+            context_page_url,
+            POSITION('rid' IN context_page_url),
+            POSITION('&' IN SUBSTRING(context_page_url FROM POSITION('rid' IN context_page_url))) - 1
+          )
+        ELSE
+          SUBSTRING(context_page_url FROM POSITION('rid' IN context_page_url))
+      END
+    ELSE NULL
+        END AS rid
         ,api_error_code
         ,CASE
           WHEN message like 'Subscription cannot%Insufficient funds%' THEN 'Error message: (3001) Insufficient funds.'
@@ -21,8 +36,20 @@ view: resubscribe_error {
           Else message
           END AS message
         ,timestamp
-      from javascript_upentertainment_checkout.resubscribe_error
-      where api_error_code != 'invalid_state_for_request';;
+      from javascript_upentertainment_checkout.resubscribe_error)
+      --where api_error_code != 'invalid_state_for_request')
+
+      select
+      context_ip
+      ,CASE
+        WHEN (rid is NULL or rid = '') THEN context_ip
+        ELSE rid
+        END AS rid
+      ,api_error_code
+      ,message
+      ,timestamp
+      from result
+      ;;
       }
 
   dimension: date {
@@ -34,6 +61,11 @@ view: resubscribe_error {
   dimension: ip_address {
     type: string
     sql: ${TABLE}.context_ip ;;
+  }
+
+  dimension: rid {
+    type: string
+    sql: ${TABLE}.rid ;;
   }
 
   dimension: message {
@@ -48,14 +80,14 @@ view: resubscribe_error {
 
   measure: error_code_count {
     type: count_distinct
-    sql:${TABLE}.context_ip;;
+    sql:${TABLE}.rid;;
 
     label: "API Error Code Count"
   }
 
   measure: error_message_count {
     type: count_distinct
-    sql:${TABLE}.context_ip;;
+    sql:${TABLE}.rid;;
 
     label: "API Error Message Count"
   }

@@ -23,7 +23,12 @@ view: resubscribe_pages2 {
       WHEN resubscribe_pages.context_page_path = 'confirmation'
       THEN resubscribe_pages.context_ip
       ELSE NULL
-    END) AS confirmation_page_count
+    END) AS confirmation_page_count,
+    COUNT(DISTINCT CASE
+      WHEN resubscribe_pages.context_page_path = 'resubscribed'
+      THEN resubscribe_pages.context_ip
+      ELSE NULL
+    END) AS resubscribed_page_count
 FROM resubscribe_pages
 WHERE resubscribe_pages.timestamp >= {% date_start filter_field %}
   --AND resubscribe_pages.timestamp <= {% date_end filter_field %}
@@ -48,6 +53,13 @@ result as(
       'Confirmation Page Count' AS column_name,
       COALESCE(SUM(confirmation_page_count), 0) AS value,
       3 AS page_order
+      FROM resubscribe_pages2
+
+      UNION ALL
+      SELECT
+      'Resubscribed Page Count' AS column_name,
+      COALESCE(SUM(resubscribed_page_count), 0) AS value,
+      4 AS page_order
       FROM resubscribe_pages2)
       SELECT *
       from result
