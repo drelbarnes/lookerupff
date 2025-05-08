@@ -1,29 +1,40 @@
 view: resubscribe_pages {
   derived_table: {
     sql:
-      WITH result as(
+      WITH welcome as(
       select
-        CASE
-          WHEN context_page_path like '%welcome/resubscribe/upfaithandfamily/%' THEN 'welcome'
-          WHEN context_page_path like '%welcome/resubscribe_thank_you/upfaithandfamily%' THEN 'thank_you'
-          WHEN context_page_path like '%welcome/confirmation_resubscribe/upfaithandfamily%' THEN 'confirmation'
-          ELSE context_page_path
-        END AS context_page_path
-        ,CASE
-          WHEN context_page_path = 'confirmation' THEN
-            CASE
-              WHEN POSITION('rid' IN context_page_url) > 0 THEN SUBSTRING(
-        context_page_url,
-        POSITION('rid' IN context_page_url),
-        POSITION('&' IN SUBSTRING(context_page_url FROM POSITION('rid' IN context_page_url))) - 1
-      )
-            ELSE context_ip
-          END
-          ELSE context_ip
-        END AS context_ip
-        ,id
+        'welcome' as context_page_path
+        ,context_ip
         ,timestamp
-      from javascript_upentertainment_checkout.pages
+      from javascript_upentertainment_checkout.pages where context_page_path like '%welcome/resubscribe/upfaithandfamily/%'
+      ),
+
+      thank_you as (
+      select
+        'thank_you' as context_page_path
+        ,context_ip
+        ,timestamp
+      from javascript_upentertainment_checkout.pages where context_page_path like '%welcome/resubscribe_thank_you/upfaithandfamily%' and context_ip in (select context_ip from welcome)
+
+      ),
+
+      confirmation as (
+      select
+        'confirmation' as context_page_path
+        ,context_ip
+        ,timestamp
+      from javascript_upentertainment_checkout.pages where context_page_path like '%welcome/confirmation_resubscribe/upfaithandfamily%' and context_ip in (select context_ip from thank_you)
+      ),
+
+      result as(
+      select * from welcome
+
+      UNION ALL
+
+      select * from thank_you
+
+      UNION ALL
+      select * from confirmation
 
       UNION ALL
       SELECT
@@ -33,7 +44,6 @@ view: resubscribe_pages {
           ELSE context_page_path
           END AS context_page_path
         ,context_ip
-        ,id
         ,timestamp
       FROM javascript_upentertainment_checkout.order_resubscribed)
       select * from result

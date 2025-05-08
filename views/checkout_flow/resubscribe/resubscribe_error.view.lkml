@@ -36,8 +36,8 @@ view: resubscribe_error {
           Else message
           END AS message
         ,timestamp
-      from javascript_upentertainment_checkout.resubscribe_error)
-      --where api_error_code != 'invalid_state_for_request')
+      from javascript_upentertainment_checkout.resubscribe_error
+      where api_error_code != 'invalid_state_for_request' and api_error_code != 'configuration_incompatible')
 
       select
       context_ip
