@@ -240,6 +240,7 @@ view: UPFF_analytics_Vw {
       ),
 
 
+
       -- unmark subs where it was marked as cancelled, but its actually trial not converted
 
       ------ Vimeo OTT ------
@@ -253,11 +254,38 @@ view: UPFF_analytics_Vw {
       ELSE status
       END AS status
       ,platform
-      ,date(customer_created_at) AS created_at
+      ,date(DATEADD(HOUR, -4, CAST(replace(customer_created_at,' UTC','')as DATETIME))) AS created_at
+      ,CASE
+        WHEN EXTRACT(HOUR FROM CAST(replace(customer_created_at,' UTC','')as DATETIME))<4 THEN 'Yes'
+        ELSE 'No'
+        END AS add_day
       ,date(report_date) as report_date
       from vimeo_subscriptions
       where action = 'subscription' and platform not in('api','web')
       ),
+
+      vimeo_raw2 as(
+      SELECT
+      user_id
+      ,status
+      ,platform
+      ,created_at
+      ,add_day
+      ,report_date
+      from vimeo_raw
+
+      UNION ALL
+      SELECT
+      user_id
+      ,'in_trial' as status
+      ,platform
+      ,created_at
+      ,add_day
+      ,date(created_at) as report_date
+      from vimeo_raw
+      WHERE add_day = 'Yes'
+      ),
+
 
       result2 as (select
       user_id
@@ -287,7 +315,7 @@ view: UPFF_analytics_Vw {
       ELSE 'No'
       END AS sub_cancelled
 
-      from vimeo_raw),
+      from vimeo_raw2),
       result3 as(
       select *,
       CASE

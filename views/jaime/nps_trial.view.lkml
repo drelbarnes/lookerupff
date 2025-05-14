@@ -74,7 +74,12 @@ SELECT
   END AS account_platform
 
 FROM raiting r)
-select * from result;;
+select * from result
+where account_platform = 'Chargebee'
+and "http_api_purchase_event.email" in (SELECT customer_email
+      FROM http_api.chargebee_subscriptions
+      WHERE DATE(uploaded_at) = CURRENT_DATE - INTERVAL '1 day'
+        AND subscription_status IN ('cancelled', 'paused'));;
  }
 
   dimension: received_date {
