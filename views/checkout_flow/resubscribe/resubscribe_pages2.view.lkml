@@ -36,7 +36,7 @@ GROUP BY 1),
 result as(
 
       SELECT
-      'Welcome Page Count' AS column_name,
+      'Resubscribe Page Count' AS column_name,
       COALESCE(SUM(welcome_page_count), 0) AS value,
       1 AS page_order
       FROM resubscribe_pages2
@@ -57,7 +57,7 @@ result as(
 
       UNION ALL
       SELECT
-      'Resubscribed Page Count' AS column_name,
+      'Order Resubscribed Count' AS column_name,
       COALESCE(SUM(resubscribed_page_count), 0) AS value,
       4 AS page_order
       FROM resubscribe_pages2)

@@ -5,7 +5,7 @@ view: UPFF_analytics_Vw {
     select * from http_api.chargebee_subscriptions),
 
       vimeo_subscriptions as(
-      select * from customers.all_customers),
+      select * from customers.all_customers where report_date > '2025-01-01'),
 
       ------  Chargebee ------
       -- get daily status of each user
@@ -244,24 +244,67 @@ view: UPFF_analytics_Vw {
       -- unmark subs where it was marked as cancelled, but its actually trial not converted
 
       ------ Vimeo OTT ------
-      vimeo_raw as (
+
+
+      vimeo_raw0 as (
       select
       CAST(user_id AS VARCHAR(255))
       ,CASE
       WHEN status = 'free_trial' THEN 'in_trial'
       WHEN status = 'expired' THEN 'paused'
+      WHEN status = 'cancelled' THEN 'paused'
       WHEN status = 'enabled' THEN 'active'
       ELSE status
       END AS status
       ,platform
-      ,date(DATEADD(HOUR, -4, CAST(replace(customer_created_at,' UTC','')as DATETIME))) AS created_at
+      ,customer_created_at
+      ,event_created_at
+      ,LAG(status) OVER (PARTITION BY user_id ORDER BY report_date) AS prev_status
+      ,LAG(platform) OVER (PARTITION BY user_id ORDER BY report_date) AS prev_platform
+      ,report_date
+      from vimeo_subscriptions
+      where action = 'subscription' and platform not in('api','web')
+      ),
+
+      vimeo_raw00 as (
+      SELECT
+      user_id
+      ,status
+      ,platform
+      ,customer_created_at
+      ,event_created_at
+      ,prev_status
+      ,prev_platform
       ,CASE
-        WHEN EXTRACT(HOUR FROM CAST(replace(customer_created_at,' UTC','')as DATETIME))<4 THEN 'Yes'
+      WHEN status = 'in_trial'
+         AND (prev_status is not NULL AND prev_status NOT IN ('free_trial'))
+      THEN 'Yes'
+      ELSE 'No'
+      END AS platform_change
+      ,report_date
+      from vimeo_raw0
+      ),
+      vimeo_raw as (
+      select
+      user_id
+      ,status
+      ,platform
+      ,prev_status
+      ,prev_platform
+      ,platform_change
+      ,CASE
+        WHEN platform_change = 'Yes' THEN date(DATEADD(HOUR, -4, CAST(replace(event_created_at,' UTC','')as DATETIME)))
+        WHEN prev_status is NULL THEN DATEADD(DAY, -1, date(report_date))
+        ELSE date(DATEADD(HOUR, -4, CAST(replace(customer_created_at,' UTC','')as DATETIME)))
+      END AS created_at
+      ,CASE
+        WHEN prev_status is NULL and status = 'in_trial' THEN 'Yes'
+        WHEN platform_change = 'Yes' and report_date != created_at THEN 'Yes'
+        WHEN ABS( (report_date::date) - (created_at::date) ) = 1 and EXTRACT(HOUR FROM CAST(replace(customer_created_at,' UTC','')as DATETIME))<4 THEN 'Yes'
         ELSE 'No'
         END AS add_day
       ,date(report_date) as report_date
-      from vimeo_subscriptions
-      where action = 'subscription' and platform not in('api','web')
+      from vimeo_raw00
       ),
 
       vimeo_raw2 as(
@@ -305,7 +348,7 @@ view: UPFF_analytics_Vw {
       ELSE 'No'
       END AS trials_not_converted
       ,CASE
-      WHEN status = 'active' AND LAG(status) OVER (PARTITION BY user_id ORDER BY report_date) ='paused'
+      WHEN status in ('active','in_trial') AND LAG(status) OVER (PARTITION BY user_id ORDER BY report_date) ='paused'
       THEN 'Yes'
       ELSE 'No'
       END AS re_acquisition

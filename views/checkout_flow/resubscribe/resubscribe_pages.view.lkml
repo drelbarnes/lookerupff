@@ -75,7 +75,7 @@ view: resubscribe_pages {
     type: count_distinct
     sql:${TABLE}.context_ip;;
     filters:[context_page_path: "welcome"]
-    label: "Welcome Page Count"
+    label: "Resubscribe Page Count"
   }
 
 
@@ -96,7 +96,7 @@ view: resubscribe_pages {
   measure: resubscribed_page_count {
     type: count_distinct
     sql: ${TABLE}.context_ip ;;
-    label: "Resubscribed Page Count"
+    label: "Order Resubscribed Count"
     filters: [context_page_path: "resubscribed"]
   }
 
