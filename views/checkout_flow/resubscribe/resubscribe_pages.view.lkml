@@ -43,7 +43,16 @@ view: resubscribe_pages {
           THEN 'resubscribed'
           ELSE context_page_path
           END AS context_page_path
-        ,context_ip
+        ,CASE
+    WHEN POSITION('&' IN SUBSTRING(context_page_url FROM POSITION('?rid=' IN context_page_url) + 5)) > 0 THEN
+      SUBSTRING(
+        context_page_url,
+        POSITION('?rid=' IN context_page_url) + 5,
+        POSITION('&' IN SUBSTRING(context_page_url FROM POSITION('?rid=' IN context_page_url) + 5)) - 1
+      )
+    ELSE
+      SUBSTRING(context_page_url FROM POSITION('?rid=' IN context_page_url) + 5)
+  END AS context_ip
         ,timestamp
       FROM javascript_upentertainment_checkout.order_resubscribed)
       select * from result
