@@ -260,6 +260,10 @@ include: "/views/testing_views/hubspot_bogo_testing.view.lkml"
 
 include: "/views/bigquery_views/radiant_reporting.view.lkml"
 
+# Chargebee #
+
+include: "/views/Chargebee/chargebee_subscriptions.view.lkml"
+
 # Datagroups for PDT Triggers #
 
 datagroup: upff_daily_refresh_datagroup {
