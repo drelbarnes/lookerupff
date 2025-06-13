@@ -294,6 +294,10 @@ datagroup: chargebee_reporting {
 #   label: "Chargebee Analytics"
 # }
 
+explore: chargebee_subscriptions {
+  label: "Chargebee Subscriptions"
+}
+
 explore: radiant_reporting {
   label: "Radiant Reporting"
 }
