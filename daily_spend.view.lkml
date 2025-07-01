@@ -78,17 +78,19 @@ view: daily_spend {
       ),
       others_perf as (
         with p0 as (
-          select "date" as date_start
-          , channel
+          select
+          other_marketing_spend_date as date_start
+          ,other_marketing_spend_channel as channel
           , original_timestamp
-          , spend
-          , impressions
-          , clicks
-          , installs
-          , conversions
-          , row_number() over (partition by "date", channel order by original_timestamp desc) as rn
+          , other_marketing_spend_spend  as spend
+          , 0 as impressions
+          , 0 as clicks
+          , 0 as installs
+          ,0 as conversions
+          , row_number() over (partition by other_marketing_spend_date , channel order by original_timestamp desc) as rn
           , count(*) as n
-          FROM http_api.get_other_marketing_spend
+
+          FROM looker.get_channel_spend
           group by 1,2,3,4,5,6,7,8 order by 1 desc,2,3 desc,4
         )
         select
@@ -158,38 +160,38 @@ view: daily_spend {
       , spend_pivot as (
         select *
         from (select spend, channel, date_start from t1)
-        PIVOT (sum(spend) FOR channel IN ('Apple Search Ads', 'Facebook', 'Bing Ads', 'Google', 'Google Campaign Manager', 'MNTN', 'TikTok', 'Viant', 'Tapjoy', 'Samsung', 'iHeart', 'Pinterest', 'Radio'))
+        PIVOT (sum(spend) FOR channel IN ('Apple Search Ads', 'Facebook','OLV','Display', 'Bing Ads', 'Google', 'Google Campaign Manager', 'MNTN', 'TikTok', 'Viant', 'Tapjoy', 'Samsung', 'iHeart', 'Pinterest', 'Radio'))
       )
       , spend_unpivot as (
         select *
         from spend_pivot
         UNPIVOT include nulls (
-            channel_spend for channel in ("Apple Search Ads", "Facebook", "Bing Ads", "Google", "Google Campaign Manager", "MNTN", "TikTok", "Viant", "Tapjoy", "Samsung", "iHeart", "Pinterest", "Radio")
+            channel_spend for channel in ("Apple Search Ads", "Facebook","OLV","Display", "Bing Ads", "Google", "Google Campaign Manager", "MNTN", "TikTok", "Viant", "Tapjoy", "Samsung", "iHeart", "Pinterest", "Radio")
         )
       )
       , conversions_pivot as (
         select *
         from (select conversions, channel, date_start from t1)
-        PIVOT (sum(conversions) FOR channel IN ('Apple Search Ads', 'Facebook', 'Bing Ads', 'Google', 'Google Campaign Manager', 'MNTN', 'TikTok', 'Viant', 'Tapjoy', 'Samsung', 'iHeart', 'Pinterest', 'Radio'))
+        PIVOT (sum(conversions) FOR channel IN ('Apple Search Ads', 'Facebook','OLV','Display', 'Bing Ads', 'Google', 'Google Campaign Manager', 'MNTN', 'TikTok', 'Viant', 'Tapjoy', 'Samsung', 'iHeart', 'Pinterest', 'Radio'))
       )
       , conversions_unpivot as (
         select *
         from conversions_pivot
         UNPIVOT include nulls (
-            channel_conversions for channel in ("Apple Search Ads", "Facebook", "Bing Ads", "Google", "Google Campaign Manager", "MNTN", "TikTok", "Viant", "Tapjoy", "Samsung", "iHeart", "Pinterest", "Radio")
+            channel_conversions for channel in ("Apple Search Ads", "Facebook","OLV","Display", "Bing Ads", "Google", "Google Campaign Manager", "MNTN", "TikTok", "Viant", "Tapjoy", "Samsung", "iHeart", "Pinterest", "Radio")
         )
       )
       -- Pivot and unpivot for impressions
       , impressions_pivot AS (
         SELECT *
         FROM (SELECT impressions, channel, date_start FROM t1)
-        PIVOT (SUM(impressions) FOR channel IN ('Apple Search Ads', 'Facebook', 'Bing Ads', 'Google', 'Google Campaign Manager', 'MNTN', 'TikTok', 'Viant', 'Tapjoy', 'Samsung', 'iHeart', 'Pinterest', 'Radio'))
+        PIVOT (SUM(impressions) FOR channel IN ('Apple Search Ads', 'Facebook','OLV','Display', 'Bing Ads', 'Google', 'Google Campaign Manager', 'MNTN', 'TikTok', 'Viant', 'Tapjoy', 'Samsung', 'iHeart', 'Pinterest', 'Radio'))
       )
       , impressions_unpivot AS (
         SELECT *
         FROM impressions_pivot
         UNPIVOT include nulls (
-          channel_impressions for channel in ("Apple Search Ads", "Facebook", "Bing Ads", "Google", "Google Campaign Manager", "MNTN", "TikTok", "Viant", "Tapjoy", "Samsung", "iHeart", "Pinterest", "Radio")
+          channel_impressions for channel in ("Apple Search Ads", "Facebook","OLV","Display", "Bing Ads", "Google", "Google Campaign Manager", "MNTN", "TikTok", "Viant", "Tapjoy", "Samsung", "iHeart", "Pinterest", "Radio")
         )
       )
 
@@ -197,13 +199,13 @@ view: daily_spend {
       , clicks_pivot AS (
         SELECT *
         FROM (SELECT clicks, channel, date_start FROM t1)
-        PIVOT (SUM(clicks) FOR channel IN ('Apple Search Ads', 'Facebook', 'Bing Ads', 'Google', 'Google Campaign Manager', 'MNTN', 'TikTok', 'Viant', 'Tapjoy', 'Samsung', 'iHeart', 'Pinterest', 'Radio'))
+        PIVOT (SUM(clicks) FOR channel IN ('Apple Search Ads', 'Facebook','OLV','Display', 'Bing Ads', 'Google', 'Google Campaign Manager', 'MNTN', 'TikTok', 'Viant', 'Tapjoy', 'Samsung', 'iHeart', 'Pinterest', 'Radio'))
       )
       , clicks_unpivot AS (
         SELECT *
         FROM clicks_pivot
         UNPIVOT include nulls (
-          channel_clicks for channel in ("Apple Search Ads", "Facebook", "Bing Ads", "Google", "Google Campaign Manager", "MNTN", "TikTok", "Viant", "Tapjoy", "Samsung", "iHeart", "Pinterest", "Radio")
+          channel_clicks for channel in ("Apple Search Ads", "Facebook","OLV","Display", "Bing Ads", "Google", "Google Campaign Manager", "MNTN", "TikTok", "Viant", "Tapjoy", "Samsung", "iHeart", "Pinterest", "Radio")
         )
       )
 
@@ -211,13 +213,13 @@ view: daily_spend {
       , installs_pivot AS (
         SELECT *
         FROM (SELECT installs, channel, date_start FROM t1)
-        PIVOT (SUM(installs) FOR channel IN ('Apple Search Ads', 'Facebook', 'Bing Ads', 'Google', 'Google Campaign Manager', 'MNTN', 'TikTok', 'Viant', 'Tapjoy', 'Samsung', 'iHeart', 'Pinterest','Radio'))
+        PIVOT (SUM(installs) FOR channel IN ('Apple Search Ads', 'Facebook','OLV','Display', 'Bing Ads', 'Google', 'Google Campaign Manager', 'MNTN', 'TikTok', 'Viant', 'Tapjoy', 'Samsung', 'iHeart', 'Pinterest','Radio'))
       )
       , installs_unpivot AS (
         SELECT *
         FROM installs_pivot
         UNPIVOT include nulls (
-          channel_installs for channel in ("Apple Search Ads", "Facebook", "Bing Ads", "Google", "Google Campaign Manager", "MNTN", "TikTok", "Viant", "Tapjoy", "Samsung", "iHeart", "Pinterest", "Radio")
+          channel_installs for channel in ("Apple Search Ads", "Facebook","OLV","Display", "Bing Ads", "Google", "Google Campaign Manager", "MNTN", "TikTok", "Viant", "Tapjoy", "Samsung", "iHeart", "Pinterest", "Radio")
         )
       )
 

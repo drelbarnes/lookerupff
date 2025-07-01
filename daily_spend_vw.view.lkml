@@ -111,6 +111,37 @@ INNER JOIN g ON ads.ad_group_id = g.ad_group_id
       on apr.date_start=b.date_start
       group by apr.date_start, b.spend,b.name
       ),
+      others_perf as (
+        with p0 as (
+          select
+          other_marketing_spend_date as date_start
+          ,other_marketing_spend_channel as channel
+          , original_timestamp
+          , other_marketing_spend_spend  as spend
+          , 0 as impressions
+          , 0 as clicks
+          , 0 as installs
+          ,0 as conversions
+          , row_number() over (partition by other_marketing_spend_date , channel order by original_timestamp desc) as rn
+          , count(*) as n
+
+          FROM looker.get_channel_spend
+          group by 1,2,3,4,5,6,7,8 order by 1 desc,2,3 desc,4
+        )
+        select
+        date_start
+        , channel
+        , sum(spend) as spend
+        , sum(impressions) as impressions
+        , sum(clicks) as clicks
+        , sum(installs) as installs
+        , sum(conversions) as conversions
+        from p0
+        where rn = 1
+        and date_start is not null
+        group by 1,2
+        order by date_start desc
+      ),
 
       t1 as (
       -- manually adding spend to historical google adwords record
@@ -141,6 +172,15 @@ INNER JOIN g ON ads.ad_group_id = g.ad_group_id
       conversions,
       channel
       from fb_perf
+       union all
+      select date_start,
+      spend,
+      impressions,
+      clicks,
+      installs,
+      conversions,
+      channel
+      from others_perf
 
       )
 
@@ -155,7 +195,10 @@ INNER JOIN g ON ads.ad_group_id = g.ad_group_id
       free_trial_created,
       paying_created,
       free_trial_created+paying_created as total_conversions,
-      channel,
+      CASE
+        WHEN channel like '%RMG_%' THEN 'Ribbow'
+        ELSE channel
+      END AS channel,
       spend
       from t1
       inner join customers_analytics

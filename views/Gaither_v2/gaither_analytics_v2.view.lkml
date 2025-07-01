@@ -32,10 +32,10 @@ view: gaither_analytics_v2 {
       chargebee_trial_start as (
       SELECT
       --subtract 5 hour delay to get actual time
-      date(DATEADD(HOUR, -5, received_at)) as created_at
+      date(DATEADD(HOUR, -4, received_at)) as created_at
       -- add_day will be used as condition to add one more day for gap due to time difference
       ,CASE
-      WHEN EXTRACT(HOUR FROM received_at)<5 THEN 'Yes'
+      WHEN EXTRACT(HOUR FROM received_at)<4 THEN 'Yes'
       ELSE 'No'
       END AS add_day
       ,content_subscription_id as user_id
