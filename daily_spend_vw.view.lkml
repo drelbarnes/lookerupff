@@ -196,7 +196,7 @@ INNER JOIN g ON ads.ad_group_id = g.ad_group_id
       paying_created,
       free_trial_created+paying_created as total_conversions,
       CASE
-        WHEN channel like '%RMG_%' THEN 'Ribbow'
+        WHEN channel like '%RMG_%' THEN 'Google'
         ELSE channel
       END AS channel,
       spend
