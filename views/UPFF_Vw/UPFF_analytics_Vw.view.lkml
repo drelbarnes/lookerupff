@@ -6,7 +6,8 @@ view: UPFF_analytics_Vw {
     select * from http_api.chargebee_subscriptions),
 
       vimeo_subscriptions as(
-      select * from customers.all_customers where report_date = TO_CHAR(CURRENT_DATE, 'YYYY-MM-DD')),
+      -- select * from customers.all_customers where report_date = TO_CHAR(CURRENT_DATE, 'YYYY-MM-DD') --
+      select * from customers.all_customers where report_date > '2025-01-01'),
 
       ------  Chargebee ------
       -- get daily status of each user
