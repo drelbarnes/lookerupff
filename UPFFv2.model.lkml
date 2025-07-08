@@ -11,6 +11,7 @@ include: "javascript_users.view"
 include: "javascript_play.view"
 include: "titles_id_mapping.view"
 include: "daily_spend.view"
+include: "daily_spend_vw.view.lkml"
 include: "app_installers.view.lkml"
 include: "timeupdate.view.lkml"
 include: "daily_cpa.view.lkml"
@@ -172,6 +173,7 @@ explore: redshift_php_get_trialist_survey {
 
 explore: mvpds {}
 explore: daily_spend_v2 {}
+  explore: daily_spend_vw {}
 
 explore: mtd_free_trials{}
 

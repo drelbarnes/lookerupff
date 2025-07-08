@@ -1,9 +1,15 @@
 explore: app_installers {}
 view: app_installers {
   derived_table: {
-    sql: select anonymous_id, timestamp from android.app_installed
+    sql: select anonymous_id,
+    'Android' as platform,
+    timestamp from android.app_installed
+
       union all
-      select anonymous_id, timestamp from ios.app_installed
+      select anonymous_id,
+      'IOS' as platform,
+      timestamp from ios.app_installed
+
        ;;
   }
 
@@ -12,6 +18,10 @@ view: app_installers {
     sql: ${TABLE}.anonymous_id ;;
   }
 
+  dimension: platform {
+    type:  string
+    sql: ${TABLE}.platform ;;
+  }
   dimension: anonymous_id {
     type: string
     sql: ${TABLE}.anonymous_id ;;
