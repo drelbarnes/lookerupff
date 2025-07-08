@@ -85,6 +85,11 @@ view: n_day_views {
     select * from n_day_views ;;
   }
 
+  dimension: title {
+    type: string
+    sql: ${TABLE}.title ;;
+  }
+
   measure: count {
     type: count
     drill_fields: [detail*]
