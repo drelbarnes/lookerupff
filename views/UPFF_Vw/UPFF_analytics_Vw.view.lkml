@@ -18,6 +18,10 @@ view: UPFF_analytics_Vw {
       ELSE subscription_status
       END AS status
       ,'Chargebee' as platform
+      ,CASE
+        WHEN subscription_billing_period_unit = 'month' THEN 'monthly'
+        ELSE 'yearly'
+      END AS billing_period
       ,ROW_NUMBER() OVER (PARTITION BY subscription_id, uploaded_at ORDER BY uploaded_at DESC) AS rn
       FROM chargebee_subscriptions
       WHERE subscription_subscription_items_0_item_price_id LIKE '%UP%'
@@ -39,6 +43,10 @@ view: UPFF_analytics_Vw {
       ELSE 'No'
       END AS add_day
       ,content_subscription_id as user_id
+      ,CASE
+        WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'
+        ELSE 'yearly'
+      END AS billing_period
       FROM chargebee_webhook_events.subscription_created
       WHERE content_subscription_subscription_items like '%UP%'
       ),
@@ -89,6 +97,7 @@ view: UPFF_analytics_Vw {
       ,user_id
       ,status
       , platform
+      ,billing_period
       ,CAST(created_at AS DATE) AS created_at
       FROM join_trial_start
       UNION ALL
@@ -98,6 +107,7 @@ view: UPFF_analytics_Vw {
       ,user_id
       ,'in_trial' as status
       ,'Chargebee' as platform
+      ,billing_period
       ,created_at
       FROM chargebee_trial_start
       UNION ALL
@@ -107,6 +117,7 @@ view: UPFF_analytics_Vw {
       ,user_id
       ,'in_trial' as status
       ,'Chargebee' as platform
+      ,billing_period
       ,created_at
       FROM chargebee_trial_start
       WHERE add_day = 'Yes'
@@ -165,6 +176,7 @@ view: UPFF_analytics_Vw {
       ELSE status
       END AS status
       ,platform
+      ,billing_period
       ,date(created_at) as created_at
       -- fill re-acquisition date using report date, re-acquisition column has to be yes to use this date
       ,CASE
@@ -218,6 +230,7 @@ view: UPFF_analytics_Vw {
       ,user_id
       ,status
       ,platform
+      ,billing_period
       ,CASE
       WHEN created_at is NULL THEN '1999-01-01'
       ELSE created_at
@@ -257,6 +270,10 @@ view: UPFF_analytics_Vw {
       ELSE status
       END AS status
       ,platform
+      ,CASE
+      WHEN frequency = 'custom' THEN 'monthly'
+      ELSE frequency
+      END as billing_period
       ,customer_created_at
       ,event_created_at
       ,LAG(status) OVER (PARTITION BY user_id ORDER BY report_date) AS prev_status
@@ -271,6 +288,7 @@ view: UPFF_analytics_Vw {
       user_id
       ,status
       ,platform
+      ,billing_period
       ,customer_created_at
       ,event_created_at
       ,prev_status
@@ -291,6 +309,7 @@ view: UPFF_analytics_Vw {
       ,platform
       ,prev_status
       ,prev_platform
+      ,billing_period
       ,platform_change
       ,CASE
         WHEN platform_change = 'Yes' THEN date(DATEADD(HOUR, -4, CAST(replace(event_created_at,' UTC','')as DATETIME)))
@@ -312,6 +331,7 @@ view: UPFF_analytics_Vw {
       user_id
       ,status
       ,platform
+      ,billing_period
       ,created_at
       ,add_day
       ,report_date
@@ -322,6 +342,7 @@ view: UPFF_analytics_Vw {
       user_id
       ,'in_trial' as status
       ,platform
+      ,billing_period
       ,created_at
       ,add_day
       ,date(created_at) as report_date
@@ -334,6 +355,7 @@ view: UPFF_analytics_Vw {
       user_id
       ,status
       ,platform
+      ,billing_period
       ,created_at
       ,DATEADD(DAY, 0, report_date) as report_date
       ,DATEADD(DAY, -1, report_date) as re_acquisitions_date
@@ -372,6 +394,7 @@ view: UPFF_analytics_Vw {
       user_id,
       status,
       platform,
+      billing_period,
       date(created_at) as created_at,
       date(report_date) as report_date,
       date(re_acquisitions_date) as re_acquisition_date,
@@ -421,6 +444,7 @@ view: UPFF_analytics_Vw {
       ,user_id
       ,status
       ,platform
+      ,billing_period
       ,created_at
       ,re_acquisition_date
       ,trials_converted
@@ -435,6 +459,7 @@ view: UPFF_analytics_Vw {
       ,user_id
       ,status
       ,platform
+      ,billing_period
       ,created_at
       ,re_acquisition_date
       ,trials_converted
@@ -457,6 +482,11 @@ view: UPFF_analytics_Vw {
     timeframes: [date, week]
     sql: ${TABLE}.report_date ;;
     convert_tz: yes  # Adjust for timezone conversion if needed
+  }
+
+  dimension: billing_period {
+    type: string
+    sql: ${TABLE}.billing_period ;;
   }
 
   dimension: re_acquisitions_date {

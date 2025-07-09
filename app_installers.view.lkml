@@ -1,14 +1,39 @@
 explore: app_installers {}
 view: app_installers {
   derived_table: {
-    sql: select anonymous_id,
-    'Android' as platform,
-    timestamp from android.app_installed
+    sql:
+      SELECT anonymous_id
+      ,CASE
+        WHEN context_device_model like '%TV%' THEN 'Android TV'
+        ELSE 'Android'
+      END AS platform
+      ,timestamp FROM android.app_installed
 
-      union all
-      select anonymous_id,
-      'IOS' as platform,
-      timestamp from ios.app_installed
+      UNION ALL
+        SELECT anonymous_id,
+        CASE
+          WHEN device = 'appletv' THEN 'tvOS'
+          ELSE 'IOS'
+        END AS platform
+        ,timestamp FROM ios.app_installed
+
+      UNION ALL
+      SELECT
+        anonymous_id
+        ,CASE
+          WHEN device = 'fire_tablet' THEN 'Amazon Fire Tablet'
+          ELSE 'amazon_fire_tv'
+        END AS platform
+        ,timestamp
+      FROM amazon_fire_tv.app_installed
+
+      UNION ALL
+      SELECT
+        anonymous_id
+        ,'Roku' as platform
+        ,timestamp
+      FROM roku.app_installed
+
 
        ;;
   }
