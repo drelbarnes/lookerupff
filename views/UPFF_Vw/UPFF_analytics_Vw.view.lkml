@@ -1,10 +1,12 @@
 view: UPFF_analytics_Vw {
   derived_table: {
+
     sql:
     with chargebee_subscriptions as (
     select * from http_api.chargebee_subscriptions),
 
       vimeo_subscriptions as(
+      -- select * from customers.all_customers where report_date = TO_CHAR(CURRENT_DATE, 'YYYY-MM-DD') --
       select * from customers.all_customers where report_date > '2025-01-01'),
 
       ------  Chargebee ------
@@ -471,6 +473,13 @@ view: UPFF_analytics_Vw {
       select *
       from final_join
       ;;
+
+    # Option 1: Time-based rebuild
+    persist_for: "3 hours"
+
+    # Option 2 (Redshift-friendly): Rebuild based on table update timestamp
+    #sql_trigger_value: SELECT MAX(report_date) FROM result3;;
+    distribution_style: all
   }
 
   dimension: date {

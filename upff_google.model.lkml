@@ -223,6 +223,7 @@ include: "svod_content_type.view.lkml"
 include: "first_n_plays_v2.view.lkml"
 include: "minutes_distribution_by_title.view.lkml"
 include: "n_day_views.view.lkml"
+include: "premier_scorecard.view.lkml"
 
 include: "/views/uptv_web/uptv_page_events.view.lkml"
 include: "/views/uptv_web/uptv_web_sessions.view.lkml"
@@ -522,6 +523,10 @@ explore: minutes_distribution_by_title {
 
 explore: n_day_views {
   label: "Nth Day Views Benchmark"
+}
+
+explore: premier_scorecard {
+  label: "Premier Scorecard"
 }
 
 explore: upff_chargebee_webhook_events {
