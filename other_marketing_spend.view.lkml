@@ -119,11 +119,11 @@ view: other_marketing_spend {
         , channel
         from samsung
         union all
-        select date
+        /*select date
         , spend
         , channel
         from pinterest
-        union all
+        union all*/
         select date
         , spend
         , channel
