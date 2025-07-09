@@ -57,13 +57,13 @@ view: other_marketing_spend {
         from (select date, spend from customers.samsung group by 1,2)
         group by 1,3
       )
-      , pinterest as (
+      /*, pinterest as (
         select safe_cast(date as timestamp) as date,
         sum(cost) as spend,
         'Pinterest' as channel
         from (select date, cost from customers.pinterest group by 1,2)
         group by 1,3
-      )
+      )*/
       , iheart as (
         select safe_cast(date as timestamp) as date,
         sum(cost) as spend,
