@@ -13,13 +13,14 @@ view: rolling {
       report_date,
       user_id
       ,billing_period
+      ,DATE_TRUNC('month', report_date) AS month_start
+
       FROM
       v2_table
       WHERE
       sub_cancelled = 'Yes'
       AND charge_failed = 'No'
-      GROUP BY
-      report_date, user_id,billing_period
+
       ),
       rolling_churn as (
       SELECT
@@ -37,6 +38,50 @@ view: rolling {
       ORDER BY
       t1.report_date
       ),
+
+
+dates AS (
+  SELECT DISTINCT
+    report_date,
+    DATE_TRUNC('month', report_date) AS month_start
+  FROM user_cancelled_counts
+),
+
+monthly_churn AS (
+  SELECT
+    d.report_date,
+    COUNT(DISTINCT cu.user_id) AS monthly_running_churn
+  FROM dates d
+  LEFT JOIN user_cancelled_counts cu
+    ON cu.billing_period = 'monthly'
+    AND cu.month_start = d.month_start
+    AND cu.report_date <= d.report_date
+  GROUP BY d.report_date
+),
+
+yearly_churn AS (
+  SELECT
+    d.report_date,
+    COUNT(DISTINCT cu.user_id) AS yearly_running_churn
+  FROM dates d
+  LEFT JOIN user_cancelled_counts cu
+    ON cu.billing_period = 'yearly'
+    AND cu.month_start = d.month_start
+    AND cu.report_date <= d.report_date
+  GROUP BY d.report_date
+),
+
+running_churn as(
+SELECT
+  d.report_date,
+  COALESCE(m.monthly_running_churn, 0) AS monthly_running_churn,
+  COALESCE(y.yearly_running_churn, 0) AS yearly_running_churn
+FROM
+  dates d
+LEFT JOIN monthly_churn m ON d.report_date = m.report_date
+LEFT JOIN yearly_churn y ON d.report_date = y.report_date
+ORDER BY d.report_date),
+
 
     apple AS (
     SELECT
@@ -95,12 +140,16 @@ FULL OUTER JOIN total_paid_subs t
       tps.total_paid_subs_yearly,
       tps.total_paid_subs_monthly,
       LAG(tps.total_paid_subs_monthly, 30) OVER (ORDER BY tps.report_date) as total_rolling_monthly,
-      LAG(tps.total_paid_subs_yearly, 30) OVER (ORDER BY tps.report_date) as total_rolling_yearly
+      LAG(tps.total_paid_subs_yearly, 30) OVER (ORDER BY tps.report_date) as total_rolling_yearly,
+      yearly_running_churn,
+      monthly_running_churn
       FROM
       rolling_churn rc
       LEFT JOIN
       total_paid_subs2 tps
-      ON rc.report_date = tps.report_date)
+      ON rc.report_date = tps.report_date
+      LEFT JOIN running_churn rc2
+      ON rc.report_date = rc2.report_date)
       select * from result;;
 
   }
@@ -116,7 +165,15 @@ FULL OUTER JOIN total_paid_subs t
     sql: ${TABLE}.report_date ;;
 
   }
+  dimension: monthly_running_churn {
+    type: number
+    sql: ${TABLE}.monthly_running_churn ;;
+  }
 
+  dimension: yearly_running_churn {
+    type: number
+    sql: ${TABLE}.yearly_running_churn ;;
+  }
 
   dimension: total_paid_subs_yearly {
     type: number
