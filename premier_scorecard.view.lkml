@@ -1701,6 +1701,9 @@ view: premier_scorecard {
                 , count(IF(p.TIMESTAMP between TIMESTAMP(m.release_date) AND TIMESTAMP(m.release_date) + interval 7 day, p.user_id, NULL)) AS views_7_days
                 , count(IF(p.TIMESTAMP between TIMESTAMP(m.release_date) AND TIMESTAMP(m.release_date) + interval 30 day, p.user_id, NULL)) AS views_30_days
                 , count(IF(p.TIMESTAMP between TIMESTAMP(m.release_date) AND TIMESTAMP(m.release_date) + interval 90 day, p.user_id, NULL)) AS views_90_days
+                , count(DISTINCT IF(p.TIMESTAMP between TIMESTAMP(m.release_date) AND TIMESTAMP(m.release_date) + interval 7 day, p.user_id, NULL)) AS uniques_7_days
+                , count(DISTINCT IF(p.TIMESTAMP between TIMESTAMP(m.release_date) AND TIMESTAMP(m.release_date) + interval 30 day, p.user_id, NULL)) AS uniques_30_days
+                , count(DISTINCT IF(p.TIMESTAMP between TIMESTAMP(m.release_date) AND TIMESTAMP(m.release_date) + interval 90 day, p.user_id, NULL)) AS uniques_90_days
               FROM movie_play_counts AS m
               INNER JOIN plays_less_granular AS p
               ON m.collection = p.collection
@@ -1716,6 +1719,9 @@ view: premier_scorecard {
                 , views_7_days
                 , views_30_days
                 , views_90_days
+                , uniques_7_days
+                , uniques_30_days
+                , uniques_90_days
                 , round(views_7_days / subscriber_count, 2) AS views_per_weekly_sub_7d
                 , round(views_30_days / subscriber_count, 2) AS views_per_weekly_sub_30d
                 , round(views_90_days / subscriber_count, 2) AS views_per_weekly_sub_45d
@@ -1761,6 +1767,21 @@ view: premier_scorecard {
       sql: ${TABLE}.views_90_days ;;
     }
 
+    dimension: uniques_7_days {
+      type: number
+      sql: ${TABLE}.uniques_7_days ;;
+    }
+
+    dimension: uniques_30_days {
+      type: number
+      sql: ${TABLE}.uniques_30_days ;;
+    }
+
+    dimension: uniques_90_days {
+      type: number
+      sql: ${TABLE}.uniques_90_days ;;
+    }
+
     dimension: views_per_weekly_sub_7d {
       type: number
       sql: ${TABLE}.views_per_weekly_sub_7d ;;
@@ -1784,6 +1805,9 @@ view: premier_scorecard {
         views_7_days,
         views_30_days,
         views_90_days,
+        uniques_7_days,
+        uniques_30_days,
+        uniques_90_days,
         views_per_weekly_sub_7d,
         views_per_weekly_sub_30d,
         views_per_weekly_sub_45d
