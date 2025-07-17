@@ -82,29 +82,9 @@ LEFT JOIN monthly_churn m ON d.report_date = m.report_date
 LEFT JOIN yearly_churn y ON d.report_date = y.report_date
 ORDER BY d.report_date),
 
-
-    apple AS (
-    SELECT
-      date("date") AS report_date,
-      CASE
-        WHEN device = 'apple_tv' THEN 'tvos'
-        ELSE 'ios'
-      END AS device_group,
-      CASE
-        WHEN frequency = 'annual' THEN 'yearly'
-        ELSE 'monthly'
-      END AS billing_period,
-      paying_subscribers
-  FROM http_api.subscription_summary_daily
-),
-    new_apple AS (
-  SELECT
-    report_date,
-    SUM(CASE WHEN billing_period = 'monthly' THEN paying_subscribers ELSE 0 END) AS total_paid_subs_monthly,
-    SUM(CASE WHEN billing_period = 'yearly' THEN paying_subscribers ELSE 0 END) AS total_paid_subs_yearly
-  FROM apple
-  WHERE device_group = 'ios'
-  GROUP BY report_date
+new_apple AS (
+    SELECT *
+    FROM ${ios.SQL_TABLE_NAME}
 ),
 
       total_paid_subs as (

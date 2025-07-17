@@ -372,7 +372,7 @@ view: UPFF_analytics_Vw {
       ELSE 'No'
       END AS trials_not_converted
       ,CASE
-      WHEN status in ('active','in_trial') AND LAG(status) OVER (PARTITION BY user_id ORDER BY report_date) ='paused'
+      WHEN status in ('active') AND LAG(status) OVER (PARTITION BY user_id ORDER BY report_date) ='paused'
       THEN 'Yes'
       ELSE 'No'
       END AS re_acquisition
