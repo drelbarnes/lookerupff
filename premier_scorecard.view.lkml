@@ -1724,7 +1724,7 @@ view: premier_scorecard {
                 , uniques_90_days
                 , round(views_7_days / subscriber_count, 2) AS views_per_weekly_sub_7d
                 , round(views_30_days / subscriber_count, 2) AS views_per_weekly_sub_30d
-                , round(views_90_days / subscriber_count, 2) AS views_per_weekly_sub_45d
+                , round(views_90_days / subscriber_count, 2) AS views_per_weekly_sub_90d
               FROM title_views_raw
               )
 
@@ -1792,9 +1792,9 @@ view: premier_scorecard {
       sql: ${TABLE}.views_per_weekly_sub_30d ;;
     }
 
-    dimension: views_per_weekly_sub_45d {
+    dimension: views_per_weekly_sub_90d {
       type: number
-      sql: ${TABLE}.views_per_weekly_sub_45d ;;
+      sql: ${TABLE}.views_per_weekly_sub_90d ;;
     }
 
     set: detail {
@@ -1810,7 +1810,7 @@ view: premier_scorecard {
         uniques_90_days,
         views_per_weekly_sub_7d,
         views_per_weekly_sub_30d,
-        views_per_weekly_sub_45d
+        views_per_weekly_sub_90d
       ]
     }
   }
