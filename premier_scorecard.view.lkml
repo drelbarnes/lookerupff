@@ -1563,7 +1563,7 @@ view: premier_scorecard {
               SELECT "The Holiday Swap", DATE '2023-12-05' UNION ALL
               SELECT "A Christmas Masquerade", DATE '2023-12-12' UNION ALL
               SELECT "An Eclectic Christmas", DATE '2023-12-12' UNION ALL
-              SELECT "Country Roads Christmas", DATE '2023-12-19' UNION ALL
+              SELECT "Country Hearts Christmas", DATE '2023-12-19' UNION ALL
               SELECT "Heart of a Champion", DATE '2024-01-16' UNION ALL
               SELECT "The Single's Guidebook", DATE '2024-01-30' UNION ALL
               SELECT "The Soulmate Search", DATE '2024-01-30' UNION ALL
