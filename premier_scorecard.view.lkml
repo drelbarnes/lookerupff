@@ -1705,7 +1705,7 @@ view: premier_scorecard {
               title_views_raw AS
               (
               SELECT
-                m.collection /* removed m.collection here and in left join condition */
+                m.title as collection /* removed m.collection here and in left join condition */
                 , m.release_date
                 , m.subscriber_count
                 , count(IF(p.TIMESTAMP between TIMESTAMP(m.release_date) AND TIMESTAMP(m.release_date) + interval 7 day, p.user_id, NULL)) AS views_7_days
