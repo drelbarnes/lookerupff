@@ -1431,7 +1431,15 @@ view: premier_scorecard {
               SELECT DATE '2025-07-10', 385101 UNION ALL
               SELECT DATE '2025-07-11', 385576 UNION ALL
               SELECT DATE '2025-07-12', 385879 UNION ALL
-              SELECT DATE '2025-07-13', 386142
+              SELECT DATE '2025-07-13', 386142 UNION ALL
+              SELECT DATE '2025-07-14', 400000 UNION ALL
+              SELECT DATE '2025-07-15', 400000 UNION ALL
+              SELECT DATE '2025-07-16', 400000 UNION ALL
+              SELECT DATE '2025-07-17', 400000 UNION ALL
+              SELECT DATE '2025-07-18', 400000 UNION ALL
+              SELECT DATE '2025-07-19', 400000 UNION ALL
+              SELECT DATE '2025-07-20', 400000 UNION ALL
+              SELECT DATE '2025-07-21', 400000
               ),
 
               upff_premier_titles AS
@@ -1514,7 +1522,8 @@ view: premier_scorecard {
               SELECT "The Wedding Contest" UNION ALL
               SELECT "Sugarcreek Amish Mysteries: Blessings in Disguise" UNION ALL
               SELECT "Two Chefs and a Wedding Cake" UNION ALL
-              SELECT "A Solider for Christmas"
+              SELECT "A Solider for Christmas" UNION ALL
+              SELECT "A Home for Christmas"
               ),
 
               upff_premier_dates AS
@@ -1597,7 +1606,8 @@ view: premier_scorecard {
               SELECT "The Wedding Contest", DATE '2025-06-03' UNION ALL
               SELECT "Sugarcreek Amish Mysteries: Blessings in Disguise", DATE '2025-06-10' UNION ALL
               SELECT "Two Chefs and a Wedding Cake", DATE '2025-06-10' UNION ALL
-              SELECT "A Solider for Christmas", DATE '2025-07-01'
+              SELECT "A Solider for Christmas", DATE '2025-07-01' UNION ALL
+              SELECT "A Home for Christmas", DATE '2025-07-15'
               ),
 
               upff_subscriber_counts AS
