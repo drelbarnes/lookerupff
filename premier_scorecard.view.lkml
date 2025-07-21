@@ -1705,7 +1705,7 @@ view: premier_scorecard {
               title_views_raw AS
               (
               SELECT
-                m.title as collection /* removed m.collection here and in left join condition */
+                m.collection /* removed m.collection here and in left join condition */
                 , m.release_date
                 , m.subscriber_count
                 , count(IF(p.TIMESTAMP between TIMESTAMP(m.release_date) AND TIMESTAMP(m.release_date) + interval 7 day, p.user_id, NULL)) AS views_7_days
@@ -1716,7 +1716,7 @@ view: premier_scorecard {
                 , count(DISTINCT IF(p.TIMESTAMP between TIMESTAMP(m.release_date) AND TIMESTAMP(m.release_date) + interval 90 day, p.user_id, NULL)) AS uniques_90_days
               FROM movie_play_counts AS m
               INNER JOIN plays_less_granular AS p
-              ON m.title = p.title
+              ON m.collection = p.title
               GROUP BY 1,2,3
               ),
 
