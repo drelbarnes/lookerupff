@@ -157,29 +157,37 @@ SELECT * FROM result
   dimension: monthly_running_conversion {
     type:  number
     sql: ${TABLE}.monthly_running_conversion ;;
+    label: "Running Conversion Monthly"
   }
 
   dimension: yearly_running_conversion {
     type:  number
     sql: ${TABLE}.yearly_running_conversion ;;
+    label: "Running Conversion Yearly"
   }
   dimension: monthly_running_reacquisition {
     type: number
     sql: ${TABLE}.monthly_running_reacquisition ;;
+    label: "Running Reacquisition Monthly"
   }
 
   dimension: yearly_running_reacquisition {
     type: number
     sql: ${TABLE}.yearly_running_reacquisition ;;
+    label: "Running Reacquisition Yearly"
   }
 
   dimension: monthly_running_trials_started {
     type: number
     sql: ${TABLE}.monthly_running_trials_started ;;
+    label: "Running Trials Started Monthly"
   }
 
   dimension: yearly_running_trials_started {
     type: number
     sql: ${TABLE}.yearly_running_trials_started ;;
+    label: "Running Trials Started Yearly"
+
+
   }
   }
