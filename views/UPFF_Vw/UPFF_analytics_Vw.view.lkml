@@ -474,12 +474,14 @@ view: UPFF_analytics_Vw {
       from final_join
       ;;
 
+
     # Option 1: Time-based rebuild
-    persist_for: "3 hours"
+    #persist_for: "3 hours"
 
     # Option 2 (Redshift-friendly): Rebuild based on table update timestamp
-    #sql_trigger_value: SELECT MAX(report_date) FROM result3;;
-    distribution_style: all
+    sql_trigger_value: SELECT MAX(report_date) FROM result3;;
+    distribution: "user_id"
+    sortkeys: ["user_id"]
   }
 
   dimension: date {
