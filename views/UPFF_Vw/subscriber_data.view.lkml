@@ -35,7 +35,11 @@ result as (
       ,customer_last_name as last_name
       ,customer_email as email
       ,customer_cs_marketing_opt_in as marketing_opt_in
-      ,subscription_status
+      ,CASE
+        WHEN subscription_status = 'in_trial' THEN 'free_trial'
+        WHEN subscription_status = 'active' THEN 'enabled'
+      ELSE subscription_status
+      END AS subscription_status
       ,CASE
         WHEN subscription_billing_period_unit ='month' THEN 'monthly'
         ELSE 'yearly'
