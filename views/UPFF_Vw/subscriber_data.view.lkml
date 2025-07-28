@@ -50,7 +50,7 @@ result as (
         ELSE 'No'
       END AS is_in_dunning
     FROM http_api.chargebee_subscriptions
-    where subscription_subscription_items_0_item_price_id like 'UP%' and date(timestamp) = CURRENT_DATE -1 and is_in_dunning = 'No'
+    where subscription_subscription_items_0_item_price_id like 'UP%' and date(timestamp) = CURRENT_DATE
 
     UNION ALL
 SELECT
@@ -82,7 +82,7 @@ END AS subscription_end_date
   ELSE 'No'
   END AS is_in_dunning
 from customers.all_customers
-where action = 'subscription'and is_in_dunning = 'Yes' and report_date = CURRENT_DATE -1),
+where action = 'subscription' and report_date = CURRENT_DATE),
 
 hubspot AS (
   SELECT *
