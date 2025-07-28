@@ -481,7 +481,7 @@ view: UPFF_analytics_Vw {
 
     # Option 2 (Redshift-friendly): Rebuild based on table update timestamp
     sql_trigger_value:  SELECT TO_CHAR(DATEADD(minute, -585, CURRENT_TIMESTAMP), 'YYYY-MM-DD');;
-    distribution: "KEY"
+    distribution: "user_id"
     sortkeys: ["user_id"]
 
   }
