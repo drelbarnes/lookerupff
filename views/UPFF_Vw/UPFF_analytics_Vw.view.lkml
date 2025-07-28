@@ -314,9 +314,9 @@ view: UPFF_analytics_Vw {
       ,billing_period
       ,platform_change
       ,CASE
-        WHEN platform_change = 'Yes' THEN date(DATEADD(HOUR, -4, CAST(replace(event_created_at,' UTC','')as DATETIME)))
+        WHEN prev_status = 'paused' THEN date(DATEADD(HOUR, -4, CAST(replace(event_created_at,' UTC','')as DATETIME)))
         WHEN prev_status is NULL THEN DATEADD(DAY, -1, date(report_date))
-        ELSE date(DATEADD(HOUR, -4, CAST(replace(customer_created_at,' UTC','')as DATETIME)))
+        ELSE date(DATEADD(HOUR, 0, CAST(replace(customer_created_at,' UTC','')as DATETIME)))
       END AS created_at
       ,CASE
         WHEN prev_status is NULL and status = 'in_trial' THEN 'Yes'

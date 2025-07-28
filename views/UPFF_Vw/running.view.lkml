@@ -142,6 +142,7 @@ result AS (
 
 SELECT * FROM result
     ;;
+
   }
 
   dimension: date {
