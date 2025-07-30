@@ -1,6 +1,7 @@
 view: UPFF_analytics_Vw {
   derived_table: {
 
+
     sql:
     with chargebee_subscriptions as (
     select * from http_api.chargebee_subscriptions),
@@ -479,10 +480,12 @@ view: UPFF_analytics_Vw {
     #persist_for: "3 hours"
 
     # Option 2 (Redshift-friendly): Rebuild based on table update timestamp
-    sql_trigger_value: SELECT MAX(report_date) FROM result3;;
+    sql_trigger_value:  SELECT TO_CHAR(DATEADD(minute, -585, CURRENT_TIMESTAMP), 'YYYY-MM-DD');;
     distribution: "user_id"
     sortkeys: ["user_id"]
+
   }
+
 
   dimension: date {
     type: date
