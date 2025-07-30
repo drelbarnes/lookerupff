@@ -101,6 +101,7 @@ hubspot AS (
 SELECT
 a.*
 ,b.properties_topic_value as topic
+
 FROM result a
 LEFT JOIN hubspot b
 ON LOWER(a.email) = b.email ;;
@@ -172,6 +173,10 @@ ON LOWER(a.email) = b.email ;;
     sql: ${TABLE}.topic ;;
   }
 
+  measure: total {
+    type: count_distinct
+    sql: ${TABLE}.user_id  ;;
+  }
 
 
   }
