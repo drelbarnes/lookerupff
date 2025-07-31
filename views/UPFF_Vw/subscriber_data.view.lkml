@@ -75,8 +75,8 @@ END AS plan_name
 
 CASE
   WHEN expiration_date IS NOT NULL
-    AND TRIM(REPLACE(expiration_date, 'UTC', '')) <> ''
-    THEN DATE(TRY_CAST(TRIM(REPLACE(expiration_date, 'UTC', '')) AS TIMESTAMP))
+    AND TRIM(REPLACE(event_created_at, 'UTC', '')) <> '' and status in('cancelled','disabled','expired')
+    THEN DATE(TRY_CAST(TRIM(REPLACE(event_created_at, 'UTC', '')) AS TIMESTAMP))
   ELSE NULL
 END AS subscription_end_date
 
