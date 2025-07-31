@@ -86,7 +86,7 @@ END AS subscription_end_date
   ELSE 'No'
   END AS is_in_dunning
 from customers.all_customers
-where action = 'subscription' and report_date = CURRENT_DATE and platform not in ('api'),
+where action = 'subscription' and report_date = CURRENT_DATE and platform not in ('api')),
 
 hubspot AS (
   SELECT *
