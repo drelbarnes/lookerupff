@@ -293,7 +293,8 @@ select distinct * from audience where week = FORMAT_TIMESTAMP('%F', TIMESTAMP_SU
   }
 
   dimension: user_id {
-    type: string
+    type: number
+    tags: ["user_id"]
     sql: ${TABLE}.user_id ;;
   }
 
