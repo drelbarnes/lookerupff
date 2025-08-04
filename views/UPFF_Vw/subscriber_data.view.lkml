@@ -28,8 +28,17 @@ latest_succeeded_vimeo AS (
 
   GROUP BY email
 ),
-result as (
-  SELECT
+vimeo_info as (
+SELECT DISTINCT
+  CAST(user_id AS VARCHAR) as user_id
+  ,email
+  ,platform
+FROM customers.all_customers
+WHERE report_date = CURRENT_DATE
+and action = 'subscription'
+),
+chargebee as(
+SELECT
       customer_id as user_id
       ,customer_first_name as first_name
       ,customer_last_name as last_name
@@ -55,10 +64,27 @@ result as (
       END AS is_in_dunning
     FROM http_api.chargebee_subscriptions
     where subscription_subscription_items_0_item_price_id like 'UP%' and date(timestamp) = CURRENT_DATE
+),
 
-    UNION ALL
+web_user as (
+  SELECT
+    a.user_id as vimeo_id
+    ,b.*
+    FROM vimeo_info a
+    LEFT JOIN chargebee b
+    ON a.email= b.email
+    WHERE a.platform = 'api'
+),
+
+result as (
 SELECT
- CAST(user_id AS VARCHAR) as user_id
+  *
+FROM web_user
+UNION ALL
+
+SELECT
+ CAST(user_id AS VARCHAR) as vimeo_id
+  ,CAST(user_id AS VARCHAR) as user_id
 ,first_name
 ,last_name
 ,email
@@ -96,15 +122,45 @@ hubspot AS (
     FROM hubspot.contacts
   ) sub
   WHERE row_num = 1
-)
+),
 
-SELECT
+get_active_user as (
+  SELECT distinct
+  b.user_id
+  ,b.email
+  ,a.active_users_week
+
+  FROM looker.bigquery_active_users a
+  LEFT JOIN vimeo_info b
+  ON CAST(a.user_id AS VARCHAR) = b.user_id
+),
+
+
+final as(
+SELECT distinct
 a.*
 ,b.properties_topic_value as topic
-
+,CASE
+  WHEN c.email IS NOT NULL THEN 'Yes'
+  ELSE 'No'
+END AS is_active_user
 FROM result a
 LEFT JOIN hubspot b
-ON LOWER(a.email) = b.email ;;
+ON LOWER(a.email) = LOWER(b.email)
+LEFT JOIN get_active_user c
+ON LOWER(a.email) = c.email),
+
+ranked_emails AS (
+  SELECT
+    *,
+    ROW_NUMBER() OVER (PARTITION BY email ORDER BY subscription_start_date DESC) AS rn
+  FROM final
+)
+SELECT * from final where email in (SELECT email
+FROM final
+GROUP BY email
+HAVING COUNT(*) > 1)
+;;
   }
 
   dimension: user_id {
@@ -171,6 +227,11 @@ ON LOWER(a.email) = b.email ;;
   dimension: topic {
     type: string
     sql: ${TABLE}.topic ;;
+  }
+
+  dimension: is_active_user {
+    type: string
+    sql: ${TABLE}.is_active_user ;;
   }
 
   measure: total {

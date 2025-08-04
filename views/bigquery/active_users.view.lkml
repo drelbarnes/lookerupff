@@ -288,7 +288,7 @@ select
 from allfirstplay
 
 )
-select distinct * from audience where week = FORMAT_TIMESTAMP('%F', TIMESTAMP_SUB(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), WEEK(MONDAY)), INTERVAL 7 DAY))
+select distinct * from audience
  ;;
   }
 
