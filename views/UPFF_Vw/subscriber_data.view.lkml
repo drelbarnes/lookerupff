@@ -229,7 +229,7 @@ WHERE rn = 1
   }
 
   dimension: is_active_user {
-    type: yesno
+    type: string
     sql: ${TABLE}.is_active_user ;;
   }
 
