@@ -1,6 +1,7 @@
 view: UPFF_analytics_Vw {
   derived_table: {
 
+
     sql:
     with chargebee_subscriptions as (
     select * from http_api.chargebee_subscriptions),
@@ -314,9 +315,9 @@ view: UPFF_analytics_Vw {
       ,billing_period
       ,platform_change
       ,CASE
-        WHEN platform_change = 'Yes' THEN date(DATEADD(HOUR, -4, CAST(replace(event_created_at,' UTC','')as DATETIME)))
+        WHEN prev_status = 'paused' THEN date(DATEADD(HOUR, -4, CAST(replace(event_created_at,' UTC','')as DATETIME)))
         WHEN prev_status is NULL THEN DATEADD(DAY, -1, date(report_date))
-        ELSE date(DATEADD(HOUR, -4, CAST(replace(customer_created_at,' UTC','')as DATETIME)))
+        ELSE date(DATEADD(HOUR, 0, CAST(replace(customer_created_at,' UTC','')as DATETIME)))
       END AS created_at
       ,CASE
         WHEN prev_status is NULL and status = 'in_trial' THEN 'Yes'
@@ -474,13 +475,18 @@ view: UPFF_analytics_Vw {
       from final_join
       ;;
 
+
     # Option 1: Time-based rebuild
-    persist_for: "3 hours"
+    #persist_for: "2 hours"
 
     # Option 2 (Redshift-friendly): Rebuild based on table update timestamp
-    #sql_trigger_value: SELECT MAX(report_date) FROM result3;;
-    distribution_style: all
+    sql_trigger_value: SELECT TO_CHAR(DATEADD(minute, -555, GETDATE()), 'YYYY-MM-DD');;
+    #sql_trigger_value:  SELECT TO_CHAR(DATE_TRUNC('day', CURRENT_TIMESTAMP) + INTERVAL '9 hours 45 minutes', 'YYYY-MM-DD');;
+    distribution: "user_id"
+    sortkeys: ["user_id"]
+
   }
+
 
   dimension: date {
     type: date
