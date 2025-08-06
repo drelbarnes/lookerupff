@@ -156,10 +156,9 @@ ranked_emails AS (
     ROW_NUMBER() OVER (PARTITION BY email ORDER BY subscription_start_date DESC) AS rn
   FROM final
 )
-SELECT * from final where email in (SELECT email
-FROM final
-GROUP BY email
-HAVING COUNT(*) > 1)
+SELECT *
+FROM ranked_emails
+WHERE rn = 1
 ;;
   }
 
@@ -230,7 +229,7 @@ HAVING COUNT(*) > 1)
   }
 
   dimension: is_active_user {
-    type: string
+    type: yesno
     sql: ${TABLE}.is_active_user ;;
   }
 
