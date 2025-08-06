@@ -62,6 +62,7 @@ SELECT
         WHEN subscription_status = 'active' and email in (select email from latest_failed) and email not in (select email from latest_succeeded) THEN 'Yes'
         ELSE 'No'
       END AS is_in_dunning
+      ,customer_billing_address_state_code as state
     FROM http_api.chargebee_subscriptions
     where subscription_subscription_items_0_item_price_id like 'UP%' and date(timestamp) = CURRENT_DATE
 ),
@@ -111,6 +112,7 @@ END AS subscription_end_date
   WHEN subscription_status = 'enabled' and email in (select email from latest_failed_vimeo) and email not in (select email from latest_succeeded_vimeo) THEN 'Yes'
   ELSE 'No'
   END AS is_in_dunning
+  ,state
 from customers.all_customers
 where action = 'subscription' and report_date = CURRENT_DATE and platform not in ('api')),
 
@@ -172,9 +174,16 @@ WHERE rn = 1
     sql: ${TABLE}.first_name ;;
   }
 
+
+
   dimension: last_name {
     type:  string
     sql: ${TABLE}.last_name ;;
+  }
+
+  dimension: state {
+    type:  string
+    sql: ${TABLE}.state ;;
   }
 
   dimension: email {
