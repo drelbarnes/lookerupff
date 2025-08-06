@@ -1432,14 +1432,29 @@ view: premier_scorecard {
               SELECT DATE '2025-07-11', 385576 UNION ALL
               SELECT DATE '2025-07-12', 385879 UNION ALL
               SELECT DATE '2025-07-13', 386142 UNION ALL
-              SELECT DATE '2025-07-14', 400000 UNION ALL
-              SELECT DATE '2025-07-15', 400000 UNION ALL
-              SELECT DATE '2025-07-16', 400000 UNION ALL
-              SELECT DATE '2025-07-17', 400000 UNION ALL
-              SELECT DATE '2025-07-18', 400000 UNION ALL
-              SELECT DATE '2025-07-19', 400000 UNION ALL
-              SELECT DATE '2025-07-20', 400000 UNION ALL
-              SELECT DATE '2025-07-21', 400000
+              SELECT DATE '2025-07-14', 386910 UNION ALL
+              SELECT DATE '2025-07-15', 387178 UNION ALL
+              SELECT DATE '2025-07-16', 387533 UNION ALL
+              SELECT DATE '2025-07-17', 387947 UNION ALL
+              SELECT DATE '2025-07-18', 388501 UNION ALL
+              SELECT DATE '2025-07-19', 388804 UNION ALL
+              SELECT DATE '2025-07-20', 389321 UNION ALL
+              SELECT DATE '2025-07-21', 389756 UNION ALL
+              SELECT DATE '2025-07-22', 389757 UNION ALL
+              SELECT DATE '2025-07-23', 389687 UNION ALL
+              SELECT DATE '2025-07-24', 389666 UNION ALL
+              SELECT DATE '2025-07-25', 389583 UNION ALL
+              SELECT DATE '2025-07-26', 389533 UNION ALL
+              SELECT DATE '2025-07-27', 389628 UNION ALL
+              SELECT DATE '2025-07-28', 389769 UNION ALL
+              SELECT DATE '2025-07-29', 389418 UNION ALL
+              SELECT DATE '2025-07-30', 389178 UNION ALL
+              SELECT DATE '2025-07-31', 388956 UNION ALL
+              SELECT DATE '2025-08-01', 389237 UNION ALL
+              SELECT DATE '2025-08-02', 389291 UNION ALL
+              SELECT DATE '2025-08-03', 389589 UNION ALL
+              SELECT DATE '2025-08-04', 389928 UNION ALL
+              SELECT DATE '2025-08-05', 389596
               ),
 
               upff_premier_titles AS
@@ -1523,7 +1538,9 @@ view: premier_scorecard {
               SELECT "Sugarcreek Amish Mysteries: Blessings in Disguise" UNION ALL
               SELECT "Two Chefs and a Wedding Cake" UNION ALL
               SELECT "A Solider for Christmas" UNION ALL
-              SELECT "A Home for Christmas"
+              SELECT "A Home for Christmas" UNION ALL
+              SELECT "A Wedding for Belle"
+          --  SELECT "See You Aagain"
               ),
 
               upff_premier_dates AS
@@ -1607,7 +1624,9 @@ view: premier_scorecard {
               SELECT "Sugarcreek Amish Mysteries: Blessings in Disguise", DATE '2025-06-10' UNION ALL
               SELECT "Two Chefs and a Wedding Cake", DATE '2025-06-10' UNION ALL
               SELECT "A Solider for Christmas", DATE '2025-07-01' UNION ALL
-              SELECT "A Home for Christmas", DATE '2025-07-15'
+              SELECT "A Home for Christmas", DATE '2025-07-15' UNION ALL
+              SELECT "A Wedding for Belle", DATE '2025-07-29'
+          --  SELECT "See You Again", DATE '2025-08-12'
               ),
 
               upff_subscriber_counts AS
