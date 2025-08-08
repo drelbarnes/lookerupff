@@ -4,8 +4,37 @@ view: running {
     WITH v2_table AS (
   SELECT *
   FROM ${UPFF_analytics_Vw.SQL_TABLE_NAME}
-  where report_date >= '2025-01-01'
+  where report_date >= '2025-06-01'
 ),
+    platform as (
+      select distinct
+        CAST(user_id AS VARCHAR) as user_id
+        ,platform
+        ,report_date
+      from customers.all_customers
+      where report_date >= '2025-06-01'
+    ),
+
+    reacquisition as (
+      select distinct
+        CAST(customer_id AS VARCHAR)as user_id
+        ,subscription_frequency as billing_period
+        ,event_type
+        ,date(event_occurred_at) as report_date
+      FROM customers.new_customers
+      where subscription_frequency != 'custom' ),
+
+    vimeo as (
+
+    SELECT
+      b.user_id
+      ,a.platform
+      ,b.billing_period
+      ,b.event_type
+      ,b.report_date
+    FROM reacquisition b
+    LEFT JOIN platform a
+    ON a.report_date = b.report_date),
 
 -- Existing CTEs
 trial_conversion AS (
@@ -15,7 +44,16 @@ trial_conversion AS (
     billing_period,
     DATE_TRUNC('month', report_date) AS month_start
   FROM v2_table
-  WHERE trials_converted = 'Yes'
+  WHERE trials_converted = 'Yes' and platform = 'Chargebee'
+
+  UNION ALL
+
+  SELECT
+    report_date,
+    user_id,
+    billing_period,
+    DATE_TRUNC('month', report_date) AS month_start
+  FROM vimeo where event_type = 'Free Trial to Paid'
 ),
 
 re_acquisitions AS (
@@ -25,7 +63,16 @@ re_acquisitions AS (
     billing_period,
     DATE_TRUNC('month', report_date) AS month_start
   FROM v2_table
-  WHERE re_acquisition = 'Yes'
+  WHERE re_acquisition = 'Yes' and platform = 'Chargebee'
+
+  UNION ALL
+
+  SELECT
+    report_date,
+    user_id,
+    billing_period,
+    DATE_TRUNC('month', report_date) AS month_start
+  FROM vimeo where event_type = 'Direct to Paid'
 ),
 
 trial_started AS (
@@ -35,7 +82,16 @@ trial_started AS (
     billing_period,
     DATE_TRUNC('month', report_date) AS month_start
   FROM v2_table
-  WHERE DATE(report_date) = DATE(created_at)
+  WHERE DATE(report_date) = DATE(created_at) and platform = 'Chargebee'
+
+  UNION ALL
+
+  SELECT
+    report_date,
+    user_id,
+    billing_period,
+    DATE_TRUNC('month', report_date) AS month_start
+  FROM vimeo where event_type = 'New Free Trial'
 ),
 
 -- Base date set from trial_conversion to unify report_date dimension
