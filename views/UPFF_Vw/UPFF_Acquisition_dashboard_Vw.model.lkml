@@ -7,6 +7,8 @@ include: "/views/UPFF_Vw/running.view.lkml"
 include: "/views/UPFF_Vw/trials_by_platform.view.lkml"
 include: "/views/UPFF_Vw/subscriber_data.view.lkml"
 include: "/views/UPFF_Vw/vimeo.view.lkml"
+include: "/views/UPFF_Vw/free_trials.view.lkml"
+
 
 explore: UPFF_analytics_Vw {
   label: "UPFF_analytics_Vw"
@@ -25,6 +27,12 @@ explore: UPFF_analytics_Vw {
   join: running {
     type: left_outer
     sql_on:  ${running.report_date_date}=${UPFF_analytics_Vw.date}  ;;
+    relationship: many_to_many
+  }
+
+  join: free_trials {
+    type: left_outer
+    sql_on: ${free_trials.date}=${UPFF_analytics_Vw.date}  ;;
     relationship: many_to_many
   }
 
