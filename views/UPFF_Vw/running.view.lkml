@@ -4,7 +4,7 @@ view: running {
     WITH v2_table AS (
   SELECT *
   FROM ${UPFF_analytics_Vw.SQL_TABLE_NAME}
-  where report_date >= '2025-06-01'
+  where report_date >= '2025-07-01'
 ),
     platform as (
       select distinct
@@ -12,7 +12,7 @@ view: running {
         ,platform
         ,report_date
       from customers.all_customers
-      where report_date >= '2025-06-01'
+      where report_date >= '2025-07-01'
     ),
 
     reacquisition as (
