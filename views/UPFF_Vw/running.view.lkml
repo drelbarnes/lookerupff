@@ -4,7 +4,7 @@ view: running {
     WITH v2_table AS (
   SELECT *
   FROM ${UPFF_analytics_Vw.SQL_TABLE_NAME}
-  where report_date >= '2025-07-01'
+  where report_date >= '2025-07-01' and platform = 'Chargebee'
 ),
     platform as (
       select distinct
@@ -44,7 +44,7 @@ trial_conversion AS (
     billing_period,
     DATE_TRUNC('month', report_date) AS month_start
   FROM v2_table
-  WHERE trials_converted = 'Yes' and platform = 'Chargebee'
+  WHERE trials_converted = 'Yes'
 
   UNION ALL
 
@@ -63,7 +63,7 @@ re_acquisitions AS (
     billing_period,
     DATE_TRUNC('month', report_date) AS month_start
   FROM v2_table
-  WHERE re_acquisition = 'Yes' and platform = 'Chargebee'
+  WHERE re_acquisition = 'Yes'
 
   UNION ALL
 
@@ -82,7 +82,7 @@ trial_started AS (
     billing_period,
     DATE_TRUNC('month', report_date) AS month_start
   FROM v2_table
-  WHERE DATE(report_date) = DATE(created_at) and platform = 'Chargebee'
+  WHERE DATE(report_date) = DATE(created_at)
 
   UNION ALL
 
