@@ -20,7 +20,7 @@ explore: UPFF_analytics_Vw {
 
   join: ios {
     type: left_outer
-    sql_on:  ${ios.report_date_date}=${UPFF_analytics_Vw.date}  ;;
+    sql_on:  ${ios.report_date_date}=${UPFF_analytics_Vw.date} and ${ios.billing_period}=${UPFF_analytics_Vw.billing_period} ;;
     relationship: many_to_many
   }
 

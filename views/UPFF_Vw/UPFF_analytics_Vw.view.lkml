@@ -4,11 +4,11 @@ view: UPFF_analytics_Vw {
 
     sql:
     with chargebee_subscriptions as (
-    select * from http_api.chargebee_subscriptions),
+    select * from http_api.chargebee_subscriptions where  date(uploaded_at) >= '2025-07-01' ),
 
       vimeo_subscriptions as(
       -- select * from customers.all_customers where report_date = TO_CHAR(CURRENT_DATE, 'YYYY-MM-DD') --
-      select * from customers.all_customers where report_date > '2025-01-01'),
+      select * from customers.all_customers where report_date >= '2025-07-01'),
 
       ------  Chargebee ------
       -- get daily status of each user
@@ -164,7 +164,9 @@ view: UPFF_analytics_Vw {
       --ELSE 'No'
       --END AS charge_failed
       CASE
-      WHEN  ((DATEDIFF(DAY, date(report_date),date(created_at)) = -7) and sub_cancelled IS NOT NULL) THEN 'Yes'
+
+      --WHEN  ((DATEDIFF(DAY, date(report_date),date(created_at)) = -8) and sub_cancelled IS NOT NULL) THEN 'Yes'
+      WHEN status in('cancelled','paused') AND LAG(status) OVER (PARTITION BY user_id ORDER BY report_date) ='in_trial' THEN 'Yes'
       ELSE NULL
       END AS trial_not_converted
       FROM join_re_acquisition
