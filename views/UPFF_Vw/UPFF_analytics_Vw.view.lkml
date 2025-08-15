@@ -4,11 +4,11 @@ view: UPFF_analytics_Vw {
 
     sql:
     with chargebee_subscriptions as (
-    select * from http_api.chargebee_subscriptions where  date(uploaded_at) >= '2025-07-01' ),
+    select * from http_api.chargebee_subscriptions where  date(uploaded_at) >= '2025-01-01' ),
 
       vimeo_subscriptions as(
       -- select * from customers.all_customers where report_date = TO_CHAR(CURRENT_DATE, 'YYYY-MM-DD') --
-      select * from customers.all_customers where report_date >= '2025-07-01'),
+      select * from customers.all_customers where report_date >= '2025-01-01'),
 
       ------  Chargebee ------
       -- get daily status of each user
@@ -200,7 +200,7 @@ view: UPFF_analytics_Vw {
       END as trial_not_converted
       -- undo subs that were marked as cancelled but its actually trials not converted
       ,CASE
-      WHEN trial_not_converted is not NULL and sub_cancelled IS NOT NULL THEN 'No'
+      WHEN  LAG(status) OVER (PARTITION BY user_id ORDER BY report_date) ='in_trial' THEN 'No'
       WHEN sub_cancelled IS not NULL and trial_not_converted is NULL THEN 'Yes'
       ELSE 'No'
       END AS sub_cancelled
@@ -269,8 +269,8 @@ view: UPFF_analytics_Vw {
       CAST(user_id AS VARCHAR(255))
       ,CASE
       WHEN status = 'free_trial' THEN 'in_trial'
-      WHEN status = 'expired' THEN 'paused'
-      WHEN status = 'cancelled' THEN 'paused'
+      WHEN status = 'expired' THEN 'cancelled'
+      --WHEN status = 'cancelled' --THEN 'paused'
       WHEN status = 'enabled' THEN 'active'
       ELSE status
       END AS status

@@ -1,148 +1,13 @@
 view: rolling {
   derived_table: {
     sql:
-    with vimeo_subscriptions as(
-      -- select * from customers.all_customers where report_date = TO_CHAR(CURRENT_DATE, 'YYYY-MM-DD') --
-      select * from customers.all_customers where report_date >= '2025-06-30'),
-      vimeo_raw0 as (
-      select
-      CAST(user_id AS VARCHAR(255))
-      ,CASE
-      WHEN status = 'free_trial' THEN 'in_trial'
-      WHEN status = 'expired' THEN 'paused'
-      WHEN status = 'cancelled' THEN 'paused'
-      WHEN status = 'enabled' THEN 'active'
-      ELSE status
-      END AS status
-      ,platform
-      ,CASE
-      WHEN frequency = 'custom' THEN 'monthly'
-      ELSE frequency
-      END as billing_period
-      ,customer_created_at
-      ,event_created_at
-      ,LAG(status) OVER (PARTITION BY user_id ORDER BY report_date) AS prev_status
-      ,LAG(platform) OVER (PARTITION BY user_id ORDER BY report_date) AS prev_platform
-      ,report_date
-      from vimeo_subscriptions
-      where action = 'subscription' and platform not in('api','web')
-      ),
-
-      vimeo_raw00 as (
-      SELECT
-      user_id
-      ,status
-      ,platform
-      ,billing_period
-      ,customer_created_at
-      ,event_created_at
-      ,prev_status
-      ,prev_platform
-      ,CASE
-      WHEN status = 'in_trial'
-      AND (prev_status is not NULL AND prev_status NOT IN ('free_trial'))
-      THEN 'Yes'
-      ELSE 'No'
-      END AS platform_change
-      ,report_date
-      from vimeo_raw0
-      ),
-      vimeo_raw as (
-      select
-      user_id
-      ,status
-      ,platform
-      ,prev_status
-      ,prev_platform
-      ,billing_period
-      ,platform_change
-      ,CASE
-      WHEN prev_status = 'paused' THEN date(DATEADD(HOUR, -4, CAST(replace(event_created_at,' UTC','')as DATETIME)))
-      WHEN prev_status is NULL THEN DATEADD(DAY, -1, date(report_date))
-      ELSE date(DATEADD(HOUR, 0, CAST(replace(customer_created_at,' UTC','')as DATETIME)))
-      END AS created_at
-      ,CASE
-      WHEN prev_status is NULL and status = 'in_trial' THEN 'Yes'
-      WHEN platform_change = 'Yes' and report_date != created_at THEN 'Yes'
-      WHEN ABS( (report_date::date) - (created_at::date) ) = 1 and EXTRACT(HOUR FROM CAST(replace(customer_created_at,' UTC','')as DATETIME))<4 THEN 'Yes'
-      ELSE 'No'
-      END AS add_day
-      ,date(report_date) as report_date
-      from vimeo_raw00
-      ),
-
-      vimeo_raw2 as(
-      SELECT
-      user_id
-      ,status
-      ,platform
-      ,billing_period
-      ,created_at
-      ,add_day
-      ,report_date
-      from vimeo_raw
-
-      UNION ALL
-      SELECT
-      user_id
-      ,'in_trial' as status
-      ,platform
-      ,billing_period
-      ,created_at
-      ,add_day
-      ,date(created_at) as report_date
-      from vimeo_raw
-      WHERE add_day = 'Yes'
-      ),
+   WITH v2_table AS (
+  SELECT *
+  FROM ${UPFF_analytics_Vw.SQL_TABLE_NAME}
+  where report_date >= '2025-06-30' ),
 
 
-      result2 as (select
-      user_id
-      ,status
-      ,platform
-      ,billing_period
-      ,created_at
-      ,DATEADD(DAY, 0, report_date) as report_date,
-      CASE
-      WHEN status in('cancelled','paused') AND LAG(status) OVER (PARTITION BY user_id ORDER BY report_date) ='active'
-      THEN 'Yes'
-      ELSE 'No'
-      END AS sub_cancelled
-
-      from vimeo_raw2),
-      result3 as(
-      select *
-      from result2)
-
-      ,final as(
-      SELECT
-      user_id,
-      status,
-      platform,
-      billing_period,
-      date(created_at) as created_at,
-      date(report_date) as report_date
-            ,sub_cancelled
-
-
-      -- Fix for trials_converted logic
-
-      FROM result3
-      ),
-      v2_table as (
-
-      select
-      report_date
-      ,user_id
-      ,status
-      ,platform
-      ,billing_period
-      ,created_at
-      ,sub_cancelled
-      from final),
-
-
-      user_cancelled_counts AS (
+      user_cancelled_counts2 AS (
       SELECT
       report_date,
       user_id
@@ -152,9 +17,45 @@ view: rolling {
       FROM
       v2_table
       WHERE
-      sub_cancelled = 'Yes'
+      sub_cancelled = 'Yes' and platform = 'Chargebee'
 
       ),
+
+      vm_user  as(
+      select
+        report_date
+        ,user_id
+        ,billing_period
+      FROM v2_table
+      WHERE platform != 'Chargebee'
+      ),
+
+      vm as (
+      SELECT
+        date(timestamp) as report_date
+        ,CAST(user_id AS VARCHAR) as user_id
+        ,DATE_TRUNC('month', timestamp) AS month_start
+        FROM vimeo_ott_webhook.customer_product_expired
+        where date(timestamp) >='2025-07-01'
+      ),
+      vm2 as (
+      SELECT
+        a.report_date
+        ,a.user_id
+        ,b.billing_period
+        ,a.month_start
+        from vm a
+        LEFT JOIN vm_user b
+        ON a.report_date = b.report_date and a.user_id = b.user_id
+      ),
+
+      user_cancelled_counts as (
+        select * from user_cancelled_counts2
+        UNION ALL
+        select * from vm2
+      ),
+
+
       rolling_churn as (
       SELECT
       t1.report_date
@@ -255,52 +156,7 @@ FROM new_apple2 a
 FULL OUTER JOIN total_paid_subs t
   ON a.report_date = t.report_date),
 
-  chargebee_subscriptions as (
-    select * from http_api.chargebee_subscriptions where  date(uploaded_at) >= '2025-07-01' ),
 
-      ------  Chargebee ------
-      -- get daily status of each user
-      chargebee_raw as(
-      SELECT
-      date(uploaded_at) as report_date
-      ,subscription_id as user_id
-      ,Case
-      WHEN subscription_status = 'non_renewing' THEN 'active'
-      ELSE subscription_status
-      END AS status
-      ,CASE
-        WHEN subscription_billing_period_unit = 'month' THEN 'monthly'
-        ELSE 'yearly'
-      END AS billing_period
-      ,ROW_NUMBER() OVER (PARTITION BY subscription_id, uploaded_at ORDER BY uploaded_at DESC) AS rn
-      FROM chargebee_subscriptions
-      WHERE subscription_subscription_items_0_item_price_id LIKE '%UP%'
-      ),
-      chargebee_subs as(
-      select
-      report_date,
-      COUNT(DISTINCT CASE
-    WHEN status ='active'
-         AND billing_period = 'monthly'
-    THEN user_id
-    ELSE NULL
-END) AS total_paid_subs_monthly
-,
-      COUNT(DISTINCT CASE WHEN status = 'active' and billing_period = 'yearly' THEN user_id ELSE NULL END ) AS total_paid_subs_yearly
-      from chargebee_raw
-      where rn=1.
-      group by 1
-      ),
-
-      total_paid_subs3  as (
-      select
-        a.report_date
-        ,a.total_paid_subs_monthly + b.total_paid_subs_monthly total_paid_subs_monthly
-        ,a.total_paid_subs_yearly + b.total_paid_subs_yearly AS total_paid_subs_yearly
-      FROM total_paid_subs2 a
-      LEFT JOIN chargebee_subs b
-      ON a.report_date = b.report_date
-      ),
 
       result as(
       SELECT
@@ -316,7 +172,7 @@ END) AS total_paid_subs_monthly
       FROM
       rolling_churn rc
       LEFT JOIN
-      total_paid_subs3 tps
+      total_paid_subs2 tps
       ON rc.report_date = tps.report_date
       LEFT JOIN running_churn rc2
       ON rc.report_date = rc2.report_date)
