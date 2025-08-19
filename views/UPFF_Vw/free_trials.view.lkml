@@ -1,52 +1,42 @@
 view: free_trials {
   derived_table: {
     sql:
-    with p0 as (
-            select
-            *
-            , case when existing_free_trials is null AND existing_paying is null then 'v2'
-                else 'v1'
-              end as report_version
-            from php.get_analytics
-            where date(sent_at)=current_date
-          ),
-      p1 as (
-          select
-          analytics_timestamp as "timestamp",total_free_trials,report_version,
-          row_number() over (partition by analytics_timestamp, report_version order by sent_at desc) as n
-          from p0),
-          vimeo as(
+    with chargebee as (
+      SELECT
+        content_subscription_id as user_id
+        ,CASE
+          WHEN content_subscription_billing_period_unit ='month' THEN 'monthly'
+          ELSE 'yearly'
+        END AS billing_period
+        ,'web' as platform
+        ,date(DATEADD(HOUR, -4, received_at)) as report_date
+      FROM chargebee_webhook_events.subscription_created
+      WHERE report_date >= '2025-01-01'
+      AND content_subscription_subscription_items like '%UP%'
+    ),
 
-          select total_free_trials ,date(timestamp) as report_date from p1
-          where report_version = 'v2' and n=1),
+    vimeo as (
+      SELECT distinct
+        email
+        ,date(event_occurred_at) as report_date
+        ,subscription_frequency as billing_period
+        FROM customers.new_customers
+        WHERE event_type = 'New Free Trial' and report_date >='2025-01-01'
+      ),
+    vimeo2 as (
+      SELECT
+        a.email as user_id
+        ,a.billing_period
+        ,b.platform
+        ,a.report_date
+      FROM vimeo a
+      LEFT JOIN (SELECT email, platform, date(timestamp) as report_date FROM vimeo_ott_webhook.customer_product_free_trial_created where report_date >= '2025-01-01') b
+      ON a.email = b.email and a.report_date = b.report_date
+      )
+    SELECT * from vimeo2
+    UNION ALL
+    SELECT * from chargebee;;
 
-chargebee0 as (
- SELECT
-          uploaded_at
-          , subscription_status as status
-          , row_number() over (partition by subscription_id, uploaded_at order by uploaded_at desc) as rn
-          FROM http_api.chargebee_subscriptions
-          WHERE subscription_subscription_items_0_item_price_id LIKE '%UP-Faith-Family%'
-          ),
-chargebee1 as (
-          select
-          *
-          from chargebee0
-          where rn=1
-        ),
-chargebee2 as (
-select
-uploaded_at as report_date,
-count(case when (status = 'in_trial') then 1 else null end) as total_free_trials
-        from chargebee1
-        group by 1)
-
-select
-a.total_free_trials + b.total_free_trials as total_free_trials
-,b.report_date
-FROM chargebee2 a
-LEFT JOIN vimeo b
-ON date(a.report_date )= b.report_date;;
   }
   dimension: date {
     type: date
@@ -61,9 +51,18 @@ ON date(a.report_date )= b.report_date;;
     convert_tz: yes  # Adjust for timezone conversion if needed
   }
 
-  dimension: total_free_trials {
-    type: number
-    sql: ${TABLE}.total_free_trials ;;
+  dimension: user_id {
+    type: string
+    sql: ${TABLE}.user_id ;;
   }
 
+  dimension: platform{
+    type: string
+    sql: ${TABLE}.platform ;;
+  }
+
+  dimension: billing_period{
+    type: string
+    sql: ${TABLE}.billing_period ;;
+  }
 }

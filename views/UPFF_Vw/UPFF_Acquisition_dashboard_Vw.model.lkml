@@ -8,7 +8,8 @@ include: "/views/UPFF_Vw/trials_by_platform.view.lkml"
 include: "/views/UPFF_Vw/subscriber_data.view.lkml"
 include: "/views/UPFF_Vw/vimeo.view.lkml"
 include: "/views/UPFF_Vw/free_trials.view.lkml"
-
+include: "/views/UPFF_Vw/free_trials_historical.view.lkml"
+include: "/views/UPFF_Vw/converted.view.lkml"
 
 explore: UPFF_analytics_Vw {
   label: "UPFF_analytics_Vw"
@@ -36,7 +37,16 @@ explore: UPFF_analytics_Vw {
     relationship: many_to_many
   }
 
+}
 
+explore: converted {
+  label: "UPFF Conversion V2"
+
+  join: free_trials_historical {
+    type: left_outer
+    sql_on: ${free_trials_historical.date}=${converted.date}  ;;
+    relationship: many_to_many
+  }
 }
 
 explore: trials_by_platform {
