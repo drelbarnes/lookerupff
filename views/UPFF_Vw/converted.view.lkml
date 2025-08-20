@@ -7,7 +7,7 @@ view: converted {
         ,subscription_frequency as billing_period
         ,date(event_occurred_at) as report_date
       FROM customers.new_customers
-      WHERE event_type = 'Free Trial to Paid' and report_date >='2025-01-01'
+      WHERE event_type = 'Free Trial to Paid' and report_date >='2025-06-01'
 
       UNION ALL
 
@@ -19,7 +19,7 @@ view: converted {
         END AS billing_period
         ,date(DATEADD(HOUR, -4, received_at)) as report_date
         FROM chargebee_webhook_events.subscription_activated
-        WHERE content_subscription_subscription_items like '%UP%' and date(received_at) >='2025-01-01'),
+        WHERE content_subscription_subscription_items like '%UP%' and date(received_at) >='2025-06-01'),
 
 result2 as (
       select

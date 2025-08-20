@@ -10,7 +10,7 @@ include: "/views/UPFF_Vw/vimeo.view.lkml"
 include: "/views/UPFF_Vw/free_trials.view.lkml"
 include: "/views/UPFF_Vw/free_trials_historical.view.lkml"
 include: "/views/UPFF_Vw/converted.view.lkml"
-
+include: "/views/UPFF_Vw/sub_count.view.lkml"
 explore: UPFF_analytics_Vw {
   label: "UPFF_analytics_Vw"
   join: rolling {
@@ -59,4 +59,8 @@ explore: subscriber_data {
 
 explore: vimeo {
   label: "UPFF Resubscribers"
+}
+
+explore: sub_count {
+  label: "UPFF V2 sub count"
 }

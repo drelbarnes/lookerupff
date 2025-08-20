@@ -3,12 +3,15 @@ view: UPFF_analytics_Vw {
 
 
     sql:
-    with chargebee_subscriptions as (
-    select * from http_api.chargebee_subscriptions where  date(uploaded_at) >= '2025-01-01' ),
+    WITH params AS (
+  SELECT CAST('2025-06-01' AS DATE) AS cutoff_date
+),
+chargebee_subscriptions as (
+    select * from http_api.chargebee_subscriptions where  date(uploaded_at) >= '2025-06-01' ),
 
       vimeo_subscriptions as(
       -- select * from customers.all_customers where report_date = TO_CHAR(CURRENT_DATE, 'YYYY-MM-DD') --
-      select * from customers.all_customers where report_date >= '2025-01-01'),
+      select * from customers.all_customers where report_date >= '2025-06-01'),
 
       ------  Chargebee ------
       -- get daily status of each user
@@ -28,6 +31,7 @@ view: UPFF_analytics_Vw {
       ,ROW_NUMBER() OVER (PARTITION BY subscription_id, uploaded_at ORDER BY uploaded_at DESC) AS rn
       FROM chargebee_subscriptions
       WHERE subscription_subscription_items_0_item_price_id LIKE '%UP%'
+
       ),
       chargebee_subs as(
       select
@@ -52,6 +56,7 @@ view: UPFF_analytics_Vw {
       END AS billing_period
       FROM chargebee_webhook_events.subscription_created
       WHERE content_subscription_subscription_items like '%UP%'
+      and date(received_at) >= '2025-06-01'
       ),
       -- get trial convertion data for each user
       chargebee_trial_converted as(
@@ -61,6 +66,7 @@ view: UPFF_analytics_Vw {
       ,'Yes' as trials_converted
       FROM chargebee_webhook_events.subscription_activated
       WHERE content_subscription_subscription_items like '%UP%'
+      and date(received_at) >= '2025-06-01'
 
       ),
       -- get sub cancelled data for each user
@@ -71,6 +77,7 @@ view: UPFF_analytics_Vw {
       ,'Yes' as sub_cancelled
       FROM chargebee_webhook_events.subscription_cancelled
       WHERE content_subscription_subscription_items like '%UP%'
+      and date(received_at) >= '2025-06-01'
       ),
       -- get re-acquition data for each user
       chargebee_re_acquisition as(
@@ -81,6 +88,7 @@ view: UPFF_analytics_Vw {
       ,date(received_at) as re_acquisition_date
       FROM chargebee_webhook_events.subscription_reactivated
       WHERE content_subscription_subscription_items like '%UP%'
+      and date(received_at) >= '2025-06-01'
       ),
 
       --left join trial start data to daily report for created date

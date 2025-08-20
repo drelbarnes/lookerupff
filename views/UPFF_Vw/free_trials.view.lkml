@@ -11,7 +11,7 @@ view: free_trials {
         ,'web' as platform
         ,date(DATEADD(HOUR, -4, received_at)) as report_date
       FROM chargebee_webhook_events.subscription_created
-      WHERE report_date >= '2025-01-01'
+      WHERE report_date >= '2025-06-01'
       AND content_subscription_subscription_items like '%UP%'
     ),
 
@@ -21,7 +21,7 @@ view: free_trials {
         ,date(event_occurred_at) as report_date
         ,subscription_frequency as billing_period
         FROM customers.new_customers
-        WHERE event_type = 'New Free Trial' and report_date >='2025-01-01'
+        WHERE event_type = 'New Free Trial' and report_date >='2025-06-01'
       ),
     vimeo2 as (
       SELECT
@@ -30,7 +30,7 @@ view: free_trials {
         ,b.platform
         ,a.report_date
       FROM vimeo a
-      LEFT JOIN (SELECT email, platform, date(timestamp) as report_date FROM vimeo_ott_webhook.customer_product_free_trial_created where report_date >= '2025-01-01') b
+      LEFT JOIN (SELECT email, platform, date(timestamp) as report_date FROM vimeo_ott_webhook.customer_product_free_trial_created where report_date >= '2025-06-01') b
       ON a.email = b.email and a.report_date = b.report_date
       )
     SELECT * from vimeo2
