@@ -5,7 +5,10 @@ view: sub_count {
       SELECT
         report_date
         ,user_id
-        ,platform
+        ,CASE
+          WHEN platform = 'Chargebee' THEN 'web'
+          ELSE platform
+        END AS platform
         ,billing_period
       FROM ${UPFF_analytics_Vw.SQL_TABLE_NAME}
       WHERE status in ( 'active','non_renewing','enabled')
@@ -66,8 +69,9 @@ view: sub_count {
           billing_period
 
         FROM trial_count
-      )
+      ),
 
+    result as (
       SELECT
       *
       ,'active' as status
@@ -78,7 +82,11 @@ view: sub_count {
       SELECT
       *
       ,'in_trial' as status
-      FROM total_trial_count
+      FROM total_trial_count)
+
+    SELECT *,
+    'AzZmVjUuQo25N2MFb'::VARCHAR as user_id
+    FROM result
       ;;
   }
   dimension: date {
@@ -100,6 +108,11 @@ view: sub_count {
   dimension: user_count {
     type: number
     sql: ${TABLE}.user_count ;;
+  }
+
+  dimension: user_id {
+    type: string
+    sql: ${TABLE}.user_id ;;
   }
 
   dimension: status {
