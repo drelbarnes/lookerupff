@@ -113,6 +113,7 @@ view: sub_count {
   dimension: user_id {
     type: string
     sql: ${TABLE}.user_id ;;
+    tags: ["user_id"]
   }
 
   dimension: status {
