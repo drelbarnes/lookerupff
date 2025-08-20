@@ -31,7 +31,7 @@ view: sub_count {
       ,platform
       ,billing_period
       FROM active
-      WHERE platform not in 'ios'
+      WHERE platform != 'ios'
       GROUP BY 2,3,4
 
       UNION ALL
@@ -53,6 +53,19 @@ view: sub_count {
       ,billing_period
       FROM trial
       GROUP BY 2,3,4
+      ),
+      total_trial_count as (
+        SELECT
+        SUM(user_count) OVER (
+              PARTITION BY platform, billing_period
+              ORDER BY report_date
+              ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
+          ) AS user_count_7d,
+          report_date,
+          platform,
+          billing_period
+
+        FROM trial_count
       )
 
       SELECT
@@ -65,7 +78,7 @@ view: sub_count {
       SELECT
       *
       ,'in_trial' as status
-      FROM trial_count
+      FROM total_trial_count
       ;;
   }
   dimension: date {
