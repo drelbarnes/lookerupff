@@ -187,8 +187,60 @@ result2 as (
     ,status
   FROM result
   GROUP BY 2,3,4
+),
+churn_rate as (
+SELECT
+  report_date
+  ,rolling_30_day_unique_user_count_yearly
+  ,rolling_30_day_unique_user_count_monthly
+  ,total_rolling_monthly
+  ,total_rolling_yearly
+FROM ${rolling.SQL_TABLE_NAME}),
+
+rolling_churn as(
+  SELECT
+    report_date
+    ,rolling_30_day_unique_user_count_monthly as user_count
+    ,'monthly' as billing_period
+    ,'rolling_churn' as status
+  FROM churn_rate
+
+  UNION ALL
+
+  SELECT
+    report_date
+    ,total_rolling_monthly as user_count
+    ,'monthly' as billing_period
+    ,'rolling_total' as status
+  FROM churn_rate
+
+  UNION ALL
+
+  SELECT
+    report_date
+    ,rolling_30_day_unique_user_count_yearly as user_count
+    ,'yearly' as billing_period
+    ,'rolling_churn' as status
+  FROM churn_rate
+
+  UNION ALL
+
+  SELECT
+    report_date
+    ,total_rolling_yearly as user_count
+    ,'yearly' as billing_period
+    ,'rolling_total' as status
+  FROM churn_rate
+
 )
 SELECT * FROM result2
+UNION ALL
+SELECT
+  user_count
+  ,report_date
+  ,billing_period
+  ,status
+FROM rolling_churn
 ;;
   }
   dimension: date {
@@ -246,6 +298,20 @@ SELECT * FROM result2
     type: sum
     sql: ${user_count} ;;
     filters: [status: "reacquisition"]
+
+  }
+
+  measure: rolling_churn_count {
+    type: sum
+    sql: ${user_count} ;;
+    filters: [status: "rolling_churn"]
+
+  }
+
+  measure: rolling_total_count {
+    type: sum
+    sql: ${user_count} ;;
+    filters: [status: "rolling_total"]
 
   }
 
