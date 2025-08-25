@@ -17,7 +17,7 @@ view: converted {
           WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'
           ELSE 'yearly'
         END AS billing_period
-        ,date(DATEADD(HOUR, -4, received_at)) as report_date
+        ,date(DATEADD(HOUR, 0, received_at)) as report_date
         FROM chargebee_webhook_events.subscription_activated
         WHERE content_subscription_subscription_items like '%UP%' and date(received_at) >='2025-06-01'),
 

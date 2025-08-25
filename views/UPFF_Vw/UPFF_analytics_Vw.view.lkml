@@ -1,17 +1,17 @@
 view: UPFF_analytics_Vw {
   derived_table: {
-
-
     sql:
-    WITH params AS (
-  SELECT CAST('2025-06-01' AS DATE) AS cutoff_date
+    WITH config AS (
+    SELECT
+      report_date
+    FROM  ${config.SQL_TABLE_NAME}
 ),
 chargebee_subscriptions as (
-    select * from http_api.chargebee_subscriptions where  date(uploaded_at) >= '2025-06-01' ),
+    select * from http_api.chargebee_subscriptions where  date(uploaded_at) >= (SELECT max(report_date) FROM config) ),
 
       vimeo_subscriptions as(
       -- select * from customers.all_customers where report_date = TO_CHAR(CURRENT_DATE, 'YYYY-MM-DD') --
-      select * from customers.all_customers where report_date >= '2025-06-01'),
+      select * from customers.all_customers where report_date >= (SELECT max(report_date) FROM config)),
 
       ------  Chargebee ------
       -- get daily status of each user
@@ -56,7 +56,7 @@ chargebee_subscriptions as (
       END AS billing_period
       FROM chargebee_webhook_events.subscription_created
       WHERE content_subscription_subscription_items like '%UP%'
-      and date(received_at) >= '2025-06-01'
+      and date(received_at) >= (SELECT max(report_date) FROM config)
       ),
       -- get trial convertion data for each user
       chargebee_trial_converted as(
@@ -66,7 +66,7 @@ chargebee_subscriptions as (
       ,'Yes' as trials_converted
       FROM chargebee_webhook_events.subscription_activated
       WHERE content_subscription_subscription_items like '%UP%'
-      and date(received_at) >= '2025-06-01'
+      and date(received_at) >= (SELECT max(report_date) FROM config)
 
       ),
       -- get sub cancelled data for each user
@@ -77,7 +77,7 @@ chargebee_subscriptions as (
       ,'Yes' as sub_cancelled
       FROM chargebee_webhook_events.subscription_cancelled
       WHERE content_subscription_subscription_items like '%UP%'
-      and date(received_at) >= '2025-06-01'
+      and date(received_at) >= (SELECT max(report_date) FROM config)
       ),
       -- get re-acquition data for each user
       chargebee_re_acquisition as(
@@ -88,7 +88,7 @@ chargebee_subscriptions as (
       ,date(received_at) as re_acquisition_date
       FROM chargebee_webhook_events.subscription_reactivated
       WHERE content_subscription_subscription_items like '%UP%'
-      and date(received_at) >= '2025-06-01'
+      and date(received_at) >= (SELECT max(report_date) FROM config)
       ),
 
       --left join trial start data to daily report for created date

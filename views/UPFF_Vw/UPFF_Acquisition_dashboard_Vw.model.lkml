@@ -2,6 +2,8 @@ connection: "upff"
 
 include: "/views/UPFF_Vw/UPFF_analytics_Vw.view.lkml"
 include: "/views/UPFF_Vw/rolling.view.lkml"
+include: "/views/UPFF_Vw/config.view.lkml"
+include: "/views/UPFF_Vw/rolling_platform.view.lkml"
 include: "/views/UPFF_Vw/ios.view.lkml"
 include: "/views/UPFF_Vw/running.view.lkml"
 include: "/views/UPFF_Vw/trials_by_platform.view.lkml"

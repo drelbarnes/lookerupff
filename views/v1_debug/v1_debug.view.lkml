@@ -94,11 +94,17 @@ view: v1_debug {
           , coalesce(a.existing_free_trials, a2.existing_free_trials) as existing_free_trials
           , coalesce(a.existing_paying, a2.existing_paying) as existing_paying
           , coalesce(coalesce(a.free_trial_churn, a2.free_trial_churn), 0) + coalesce(b.free_trial_churn, 0) AS free_trial_churn
-          , coalesce(coalesce(a.free_trial_converted, a2.free_trial_converted), 0) + coalesce(b.free_trial_converted, 0) as free_trial_converted
+          , --coalesce(coalesce(a.free_trial_converted, a2.free_trial_converted), 0)
+           coalesce(b.free_trial_converted, 0)
+          as free_trial_converted
           , coalesce(coalesce(a.free_trial_created, a2.free_trial_created), 0) + coalesce(b.free_trial_created, 0) as free_trial_created
           , coalesce(coalesce(a.paused_created, a2.paused_created), 0) + coalesce(b.paused_created, 0) as paused_created
-          , greatest(0, coalesce(coalesce(a.paying_churn, a2.paying_churn), 0) - coalesce(b.free_trial_churn, 0)) as paying_churn
-          , greatest(0, coalesce(coalesce(a.paying_created, a2.paying_created), 0) - coalesce(b.free_trial_created, 0)) as paying_created
+          , greatest(0, coalesce(coalesce(a.paying_churn, a2.paying_churn), 0))
+          -- - coalesce(b.free_trial_churn, 0))
+          as paying_churn
+          , greatest(0, coalesce(coalesce(a.paying_created, a2.paying_created), 0))
+           - coalesce(b.free_trial_created, 0)
+          as paying_created
           , coalesce(coalesce(a2.total_free_trials, a.total_free_trials), 0) + coalesce(c1.total_free_trials, 0) as total_free_trials
           , c1.total_paying as total_paying
           , 0 as test2
@@ -124,6 +130,7 @@ view: v1_debug {
       , to_date(report_date, 'YYYY-MM-DD') as report_date
       from customers.all_customers
       where action = 'subscription'
+      and report_date >= '2025-08-01'
       )
       , total_counts as (
       select report_date
@@ -217,25 +224,7 @@ view: v1_debug {
       when timestamp >= '2024-04-26' and timestamp < '2024-05-04' then b.new_trials_14_days_prior + d.new_trials_7_days_prior
       when timestamp >= '2024-05-04' then b.new_trials_14_days_prior - e.new_trials_14_days_prior + d.new_trials_7_days_prior
       end as new_trials_14_days_prior
-      /* Pre-trial length change period dimension
-      b.new_trials_14_days_prior
-      */
-      /* Trial length changed on Web only period dimension
-      case
-      when timestamp < '2024-04-27' then b.new_trials_14_days_prior
-      when timestamp >= '2024-04-27' and timestamp < '2024-05-04' then b.new_trials_14_days_prior + d.new_trials_7_days_prior
-      when timestamp >= '2024-05-04' then b.new_trials_14_days_prior - e.new_trials_14_days_prior + d.new_trials_7_days_prior
-      end as new_trials_14_days_prior
-      */
-      /* Trial length changed on all platforms period dimension
-      case
-      when timestamp < '2024-04-27' then b.new_trials_14_days_prior
-      when timestamp >= '2024-04-27' and timestamp < '2024-05-04' then b.new_trials_14_days_prior + d.new_trials_7_days_prior
-      when timestamp >= '2024-05-04' and timestamp < {PLATFORM_CHANGE_DATE} then b.new_trials_14_days_prior - e.new_trials_14_days_prior + d.new_trials_7_days_prior
-      end as new_trials_14_days_prior
-      when timestamp >= {PLATFORM_CHANGE_DATE} and timestamp < dateadd(day, 14, {PLATFORM_CHANGE_DATE}) then INSERT TRANSITION LOGIC HERE
-      when timestamp >= dateadd(day, 14, {PLATFORM_CHANGE_DATE}) then c.new_trials_7_days_prior
-      */
+
       from
       (
       select *, row_number() over(order by timestamp desc) as rownum from customers_analytics
