@@ -65,4 +65,52 @@ view: free_trials {
     type: string
     sql: ${TABLE}.billing_period ;;
   }
+
+  measure: free_trials {
+    type: count_distinct
+    sql: ${TABLE}.user_id ;;
+  }
+
+  measure: free_trials_ios {
+    type: count_distinct
+    sql: ${TABLE}.user_id ;;
+    filters: [platform: "ios"]
+  }
+  measure: free_trials_tvos {
+    type: count_distinct
+    sql: ${TABLE}.user_id ;;
+    filters: [platform: "tvos"]
+  }
+  measure: free_trials_web {
+    type: count_distinct
+    sql: ${TABLE}.user_id ;;
+    filters: [platform: "web"]
+  }
+  measure: free_trials_android {
+    type: count_distinct
+    sql: ${TABLE}.user_id ;;
+    filters: [platform: "android"]
+  }
+  measure: free_trials_android_tv {
+    type: count_distinct
+    sql: ${TABLE}.user_id ;;
+    filters: [platform: "android_tv"]
+  }
+  measure: free_trials_fire_tv {
+    type: count_distinct
+    sql: ${TABLE}.user_id ;;
+    filters: [platform: "amazon_fire_tv"]
+  }
+  measure: free_trials_fire_tablet {
+    type: count_distinct
+    sql: ${TABLE}.user_id ;;
+    filters: [platform: "amazon_fire_tv"]
+  }
+
+  measure: free_trials_roku {
+    type: count_distinct
+    sql: ${TABLE}.user_id ;;
+    filters: [platform: "roku"]
+  }
+
 }

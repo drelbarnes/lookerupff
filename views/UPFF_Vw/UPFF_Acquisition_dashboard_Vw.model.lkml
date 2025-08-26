@@ -55,7 +55,7 @@ explore: converted {
   }
 }
 
-explore: trials_by_platform {
+explore: free_trials {
   label: "UPFF Free Trials VW"
 }
 
