@@ -160,6 +160,7 @@ trial_conversion AS (
   WHERE content_subscription_subscription_items LIKE '%UP%'
     AND DATE(received_at) >= '2025-07-01'
     AND (report_date::date - DATE(TIMESTAMP 'epoch' + content_customer_created_at * INTERVAL '1 second')) <= 14
+    AND content_invoice_dunning_attempts != '[]'
 
 
   UNION ALL

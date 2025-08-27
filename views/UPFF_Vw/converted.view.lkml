@@ -19,7 +19,23 @@ view: converted {
         END AS billing_period
         ,date(DATEADD(HOUR, 0, received_at)) as report_date
         FROM chargebee_webhook_events.subscription_activated
-        WHERE content_subscription_subscription_items like '%UP%' and date(received_at) >='2025-06-01'),
+        WHERE content_subscription_subscription_items like '%UP%' and date(received_at) >='2025-06-01'
+         AND content_subscription_due_invoices_count = 0
+
+       UNION ALL
+
+  SELECT
+    content_customer_email::VARCHAR AS email,
+    CASE
+      WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'::VARCHAR
+      ELSE 'yearly'::VARCHAR
+    END AS billing_period,
+    DATE(received_at) AS report_date
+  FROM chargebee_webhook_events.payment_succeeded
+  WHERE content_subscription_subscription_items LIKE '%UP%'
+    AND DATE(received_at) >= '2025-06-01'
+    AND (report_date::date - DATE(TIMESTAMP 'epoch' + content_customer_created_at * INTERVAL '1 second')) <= 14
+    AND content_invoice_dunning_attempts != '[]'),
 
 result2 as (
       select
