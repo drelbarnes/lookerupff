@@ -8,14 +8,20 @@ view: churn_gain {
   WHERE report_date >= '2025-06-30'
 ),
 
+
 chargebee_cancelled AS (
   SELECT
-    report_date,
-    user_id,
-    billing_period,
+    content_subscription_id::VARCHAR AS user_id,
+    CASE
+      WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'::VARCHAR
+      ELSE 'yearly'::VARCHAR
+    END AS billing_period,
+    DATE("timestamp") AS report_date,
     'web'::VARCHAR AS platform
-  FROM v2_table
-  WHERE sub_cancelled = 'Yes' AND platform = 'Chargebee'
+  FROM chargebee_webhook_events.subscription_cancelled
+  WHERE
+    ((content_subscription_cancel_reason_code not in ('Not Paid', 'No Card', 'Fraud Review Failed', 'Non Compliant EU Customer', 'Tax Calculation Failed', 'Currency incompatible with Gateway', 'Non Compliant Customer') and  (content_subscription_cancelled_at - content_subscription_trial_end) > 10000)or content_subscription_cancel_reason_code is null)
+    AND content_subscription_subscription_items LIKE '%UP%'
 ),
 
 vm_user AS (
@@ -138,6 +144,23 @@ trial_conversion AS (
   FROM chargebee_webhook_events.subscription_activated
   WHERE content_subscription_subscription_items LIKE '%UP%'
     AND DATE(received_at) >= '2025-07-01'
+    AND content_subscription_due_invoices_count = 0
+
+  UNION ALL
+
+  SELECT
+    DATE(received_at) AS report_date,
+    content_subscription_id::VARCHAR AS user_id,
+    CASE
+      WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'::VARCHAR
+      ELSE 'yearly'::VARCHAR
+    END AS billing_period,
+    'web'::VARCHAR AS platform
+  FROM chargebee_webhook_events.payment_succeeded
+  WHERE content_subscription_subscription_items LIKE '%UP%'
+    AND DATE(received_at) >= '2025-07-01'
+    AND (report_date::date - DATE(TIMESTAMP 'epoch' + content_customer_created_at * INTERVAL '1 second')) <= 14
+
 
   UNION ALL
 
@@ -171,8 +194,7 @@ dunning AS (
     DATE("timestamp") AS report_date,
     'web'::VARCHAR AS platform
   FROM chargebee_webhook_events.subscription_cancelled
-  WHERE content_subscription_cancel_reason = 'not_paid'
-    AND content_subscription_subscription_items LIKE '%UP%'
+  WHERE (content_subscription_cancel_reason_code in ('Not Paid', 'No Card', 'Fraud Review Failed', 'Non Compliant EU Customer', 'Tax Calculation Failed', 'Currency incompatible with Gateway', 'Non Compliant Customer') and (content_subscription_cancelled_at - content_subscription_activated_at) > 1900800) AND content_subscription_subscription_items LIKE '%UP%'
 ),
 
 dunning_count AS (

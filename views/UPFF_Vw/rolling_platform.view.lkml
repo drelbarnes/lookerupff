@@ -11,16 +11,21 @@ v2_table AS (
 
 -- 2) Chargebee cancellations -> treat as 'web' platform (adjust if you prefer a different label)
 user_cancelled_counts2 AS (
-  SELECT
-    report_date,
-    user_id,
-    billing_period,
-    DATE_TRUNC('month', report_date) AS month_start,
-    'web' AS platform
-  FROM v2_table
-  WHERE sub_cancelled = 'Yes'
-    AND platform = 'Chargebee'
-),
+      SELECT
+      DATE("timestamp") AS report_date,
+      content_subscription_id::VARCHAR AS user_id,
+      CASE
+      WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'::VARCHAR
+      ELSE 'yearly'::VARCHAR
+    END AS billing_period
+      ,DATE_TRUNC('month', report_date) AS month_start
+      ,'web' as platform
+  FROM chargebee_webhook_events.subscription_cancelled
+  WHERE
+    ((content_subscription_cancel_reason_code not in ('Not Paid', 'No Card', 'Fraud Review Failed', 'Non Compliant EU Customer', 'Tax Calculation Failed', 'Currency incompatible with Gateway', 'Non Compliant Customer') and  (content_subscription_cancelled_at - content_subscription_trial_end) > 10000)  or content_subscription_cancel_reason_code is null or (content_subscription_cancel_reason_code in ('Not Paid', 'No Card', 'Fraud Review Failed', 'Non Compliant EU Customer', 'Tax Calculation Failed', 'Currency incompatible with Gateway', 'Non Compliant Customer') and (content_subscription_cancelled_at - content_subscription_activated_at) > 2000800))
+    AND content_subscription_subscription_items LIKE '%UP%'
+
+      ),
 
 -- 3) Non-Chargebee users with platform/billing info (to enrich VM webhook expirations)
 vm_user AS (
