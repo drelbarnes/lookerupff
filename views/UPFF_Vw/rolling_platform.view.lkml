@@ -27,7 +27,7 @@ user_cancelled_counts2 AS (
 
       ),
 
--- 3) Non-Chargebee users with platform/billing info (to enrich VM webhook expirations)
+-- 33) Non-Chargebee users with platform/billing info (to enrich VM webhook expirations)
 vm_user AS (
   SELECT
     report_date,
