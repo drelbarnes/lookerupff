@@ -6,6 +6,7 @@ view: free_trials_historical {
           SELECT
             user_id as email
             ,billing_period
+            ,platform
             ,report_date + INTERVAL '7 day' as report_date
           FROM trials
 ;;
@@ -23,7 +24,10 @@ view: free_trials_historical {
       convert_tz: yes  # Adjust for timezone conversion if needed
     }
 
-
+    dimension: platform{
+    type: string
+    sql: ${TABLE}.platform ;;
+    }
     dimension: billing_period{
       type: string
       sql: ${TABLE}.billing_period ;;

@@ -5,7 +5,9 @@ view: converted {
       SELECT
         email
         ,subscription_frequency as billing_period
+        ,'vimeo' as platform
         ,date(event_occurred_at) as report_date
+
       FROM customers.new_customers
       WHERE event_type = 'Free Trial to Paid' and report_date >='2025-06-01'
 
@@ -17,7 +19,9 @@ view: converted {
           WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'
           ELSE 'yearly'
         END AS billing_period
+        ,'web' as platform
         ,date(DATEADD(HOUR, 0, received_at)) as report_date
+
         FROM chargebee_webhook_events.subscription_activated
         WHERE content_subscription_subscription_items like '%UP%' and date(received_at) >='2025-06-01'
          AND content_subscription_due_invoices_count = 0
@@ -29,8 +33,9 @@ view: converted {
     CASE
       WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'::VARCHAR
       ELSE 'yearly'::VARCHAR
-    END AS billing_period,
-    DATE(received_at) AS report_date
+    END AS billing_period
+    ,'web' as platform
+    ,DATE(received_at) AS report_date
   FROM chargebee_webhook_events.payment_succeeded
   WHERE content_subscription_subscription_items LIKE '%UP%'
     AND DATE(received_at) >= '2025-06-01'
@@ -73,6 +78,11 @@ select * from result2
   dimension: types{
     type: string
     sql: ${TABLE}.types ;;
+  }
+
+  dimension: platform{
+    type: string
+    sql: ${TABLE}.platform ;;
   }
 
   measure: converted_count{
