@@ -36,6 +36,7 @@ view: resubscribe_error {
           Else message
           END AS message
         ,timestamp
+        ,user_email
       from javascript_upentertainment_checkout.resubscribe_error
       where api_error_code != 'invalid_state_for_request' and api_error_code != 'configuration_incompatible')
 
@@ -48,6 +49,7 @@ view: resubscribe_error {
       ,api_error_code
       ,message
       ,timestamp
+      ,user_email
       from result
       ;;
       }
@@ -66,6 +68,11 @@ view: resubscribe_error {
   dimension: rid {
     type: string
     sql: ${TABLE}.rid ;;
+  }
+
+  dimension: email {
+    type: string
+    sql: ${TABLE}.user_email ;;
   }
 
   dimension: message {
