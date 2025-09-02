@@ -2,7 +2,7 @@ view: churn_gain {
   derived_table: {
     sql:
 
-    WITH v2_table AS (
+    ,v2_table AS (
   SELECT *
   FROM ${UPFF_analytics_Vw.SQL_TABLE_NAME}
   WHERE report_date >= '2025-06-30'
@@ -48,7 +48,7 @@ vimeo0 AS (
 vimeo AS (
   SELECT
     b.user_id,
-    COALESCE(a.platform, 'ios')::VARCHAR AS platform,   -- avoid NULL platform
+    a.platform,
     b.billing_period,
     b.event_type,
     b.report_date
@@ -306,9 +306,14 @@ SELECT
   status,
   platform   -- match column count & type
 FROM rolling_churn
-
-
 ;;
+
+    sql_trigger_value: SELECT TO_CHAR(DATEADD(minute, -555, GETDATE()), 'YYYY-MM-DD');;
+    #sql_trigger_value:  SELECT TO_CHAR(DATE_TRUNC('day', CURRENT_TIMESTAMP) + INTERVAL '9 hours 45 minutes', 'YYYY-MM-DD');;
+    distribution: "report_date"
+    sortkeys: ["report_date"]
+
+
   }
   dimension: date {
     type: date
