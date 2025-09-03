@@ -4,6 +4,7 @@ view: resubscribe_error {
     with result as(
       select
         context_ip
+       ,user_email
         ,CASE
     WHEN POSITION('rid' IN context_page_url) > 0 THEN
       CASE
@@ -41,6 +42,7 @@ view: resubscribe_error {
 
       select
       context_ip
+     ,user_email
       ,CASE
         WHEN (rid is NULL or rid = '') THEN context_ip
         ELSE rid
@@ -66,6 +68,11 @@ view: resubscribe_error {
   dimension: rid {
     type: string
     sql: ${TABLE}.rid ;;
+  }
+
+  dimension: email {
+    type: string
+    sql: ${TABLE}.user_email ;;
   }
 
   dimension: message {

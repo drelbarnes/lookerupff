@@ -1,14 +1,13 @@
 view: rolling {
   derived_table: {
     sql:
-    with v2_table as(
-      SELECT
-        *
-      FROM
-        ${UPFF_analytics_Vw.SQL_TABLE_NAME}
-    ),
+   WITH v2_table AS (
+  SELECT *
+  FROM ${UPFF_analytics_Vw.SQL_TABLE_NAME}
+  where report_date >= '2025-06-30' ),
 
-      user_cancelled_counts AS (
+
+      user_cancelled_counts2 AS (
       SELECT
       report_date,
       user_id
@@ -18,10 +17,45 @@ view: rolling {
       FROM
       v2_table
       WHERE
-      sub_cancelled = 'Yes'
-      AND charge_failed = 'No'
+      sub_cancelled = 'Yes' and platform = 'Chargebee'
 
       ),
+
+      vm_user  as(
+      select
+        report_date
+        ,user_id
+        ,billing_period
+      FROM v2_table
+      WHERE platform != 'Chargebee'
+      ),
+
+      vm as (
+      SELECT
+        date(timestamp) as report_date
+        ,CAST(user_id AS VARCHAR) as user_id
+        ,DATE_TRUNC('month', timestamp) AS month_start
+        FROM vimeo_ott_webhook.customer_product_expired
+        where date(timestamp) >='2025-07-01'
+      ),
+      vm2 as (
+      SELECT
+        a.report_date
+        ,a.user_id
+        ,b.billing_period
+        ,a.month_start
+        from vm a
+        LEFT JOIN vm_user b
+        ON a.report_date = b.report_date and a.user_id = b.user_id
+      ),
+
+      user_cancelled_counts as (
+        select * from user_cancelled_counts2
+        UNION ALL
+        select * from vm2
+      ),
+
+
       rolling_churn as (
       SELECT
       t1.report_date
@@ -87,6 +121,16 @@ new_apple AS (
     FROM ${ios.SQL_TABLE_NAME}
 ),
 
+new_apple2 as(
+select a.report_date,
+a.paid_subscribers as total_paid_subs_monthly,
+b.paid_subscribers as total_paid_subs_yearly
+from (select * from new_apple where billing_period = 'monthly') a
+LEFT JOIN (select * from new_apple where billing_period = 'yearly') b
+on a.report_date = b.report_date
+),
+
+
       total_paid_subs as (
       SELECT
       report_date,
@@ -108,9 +152,11 @@ END) AS total_paid_subs_monthly
   COALESCE(a.report_date, t.report_date) AS report_date,
   COALESCE(a.total_paid_subs_monthly, 0) + COALESCE(t.total_paid_subs_monthly, 0) AS total_paid_subs_monthly,
   COALESCE(a.total_paid_subs_yearly, 0) + COALESCE(t.total_paid_subs_yearly, 0) AS total_paid_subs_yearly
-FROM new_apple a
+FROM new_apple2 a
 FULL OUTER JOIN total_paid_subs t
   ON a.report_date = t.report_date),
+
+
 
       result as(
       SELECT
@@ -136,8 +182,8 @@ FULL OUTER JOIN total_paid_subs t
 
   dimension: date {
     type: date
-    primary_key: yes
     sql:  ${TABLE}.report_date ;;
+    primary_key: yes
   }
   dimension_group: report_date {
     type: time

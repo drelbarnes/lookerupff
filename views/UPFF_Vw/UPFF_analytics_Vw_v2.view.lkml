@@ -1,4 +1,4 @@
-view: UPFF_analytics_Vw {
+view: UPFF_analytics_Vw_v2 {
   derived_table: {
     sql:
      , cfg AS (  -- renamed from "cfg"
@@ -6,10 +6,10 @@ view: UPFF_analytics_Vw {
   FROM ${configg.SQL_TABLE_NAME}
 ),
 
-chargebee_subscriptions as (
-    select * from http_api.chargebee_subscriptions where  CAST(uploaded_at AS DATE) >= (
-        SELECT MAX(report_date)
-        FROM cfg)),
+      chargebee_subscriptions as (
+      select * from http_api.chargebee_subscriptions where  CAST(uploaded_at AS DATE) >= (
+      SELECT MAX(report_date)
+      FROM cfg)),
 
       vimeo_subscriptions as(
       -- select * from customers.all_customers where report_date = TO_CHAR(CURRENT_DATE, 'YYYY-MM-DD') --
@@ -27,8 +27,8 @@ chargebee_subscriptions as (
       END AS status
       ,'Chargebee' as platform
       ,CASE
-        WHEN subscription_billing_period_unit = 'month' THEN 'monthly'
-        ELSE 'yearly'
+      WHEN subscription_billing_period_unit = 'month' THEN 'monthly'
+      ELSE 'yearly'
       END AS billing_period
       ,ROW_NUMBER() OVER (PARTITION BY subscription_id, uploaded_at ORDER BY uploaded_at DESC) AS rn
       FROM chargebee_subscriptions
@@ -53,8 +53,8 @@ chargebee_subscriptions as (
       END AS add_day
       ,content_subscription_id as user_id
       ,CASE
-        WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'
-        ELSE 'yearly'
+      WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'
+      ELSE 'yearly'
       END AS billing_period
       FROM chargebee_webhook_events.subscription_created
       WHERE content_subscription_subscription_items like '%UP%'
@@ -251,14 +251,6 @@ chargebee_subscriptions as (
       ELSE created_at
       END as created_at
       ,re_acquisition_date
-      ,CASE
-      WHEN MAX(charge_failed) OVER (PARTITION BY user_id) = 'Yes' THEN 'No'
-      ELSE trials_converted
-      END AS trials_converted
-      ,CASE
-      WHEN MAX(charge_failed) OVER (PARTITION BY user_id) = 'Yes'  and trials_converted = 'Yes' THEN 'Yes'
-      ELSE trial_not_converted
-      END AS trial_not_converted
       ,sub_cancelled
       ,re_acquisition
       ,charge_failed
@@ -274,182 +266,24 @@ chargebee_subscriptions as (
       ------ Vimeo OTT ------
 
 
-      vimeo_raw0 as (
+      vimeo_raw as (
       select
       CAST(user_id AS VARCHAR(255))
       ,CASE
-      WHEN status = 'free_trial' THEN 'in_trial'
-      WHEN status = 'expired' THEN 'cancelled'
-      --WHEN status = 'cancelled' --THEN 'paused'
-      WHEN status = 'enabled' THEN 'active'
-      ELSE status
+        WHEN status = 'free_trial' THEN 'in_trial'
+        WHEN status = 'expired' THEN 'cancelled'
+        WHEN status = 'enabled' THEN 'active'
+        ELSE status
       END AS status
       ,platform
       ,CASE
-      WHEN frequency = 'custom' THEN 'monthly'
-      ELSE frequency
+        WHEN frequency = 'custom' THEN 'monthly'
+        ELSE frequency
       END as billing_period
-      ,customer_created_at
-      ,event_created_at
-      ,LAG(status) OVER (PARTITION BY user_id ORDER BY report_date) AS prev_status
-      ,LAG(platform) OVER (PARTITION BY user_id ORDER BY report_date) AS prev_platform
       ,report_date
       from vimeo_subscriptions
       where action = 'subscription' and platform not in('api','web')
       ),
-
-      vimeo_raw00 as (
-      SELECT
-      user_id
-      ,status
-      ,platform
-      ,billing_period
-      ,customer_created_at
-      ,event_created_at
-      ,prev_status
-      ,prev_platform
-      ,CASE
-      WHEN status = 'in_trial'
-         AND (prev_status is not NULL AND prev_status NOT IN ('free_trial'))
-      THEN 'Yes'
-      ELSE 'No'
-      END AS platform_change
-      ,report_date
-      from vimeo_raw0
-      ),
-      vimeo_raw as (
-      select
-      user_id
-      ,status
-      ,platform
-      ,prev_status
-      ,prev_platform
-      ,billing_period
-      ,platform_change
-      ,CASE
-        WHEN prev_status = 'paused' THEN date(DATEADD(HOUR, -4, CAST(replace(event_created_at,' UTC','')as DATETIME)))
-        WHEN prev_status is NULL THEN DATEADD(DAY, -1, date(report_date))
-        ELSE date(DATEADD(HOUR, 0, CAST(replace(customer_created_at,' UTC','')as DATETIME)))
-      END AS created_at
-      ,CASE
-        WHEN prev_status is NULL and status = 'in_trial' THEN 'Yes'
-        WHEN platform_change = 'Yes' and report_date != created_at THEN 'Yes'
-        WHEN ABS( (report_date::date) - (created_at::date) ) = 1 and EXTRACT(HOUR FROM CAST(replace(customer_created_at,' UTC','')as DATETIME))<4 THEN 'Yes'
-        ELSE 'No'
-        END AS add_day
-      ,date(report_date) as report_date
-      from vimeo_raw00
-      ),
-
-      vimeo_raw2 as(
-      SELECT
-      user_id
-      ,status
-      ,platform
-      ,billing_period
-      ,created_at
-      ,add_day
-      ,report_date
-      from vimeo_raw
-
-      UNION ALL
-      SELECT
-      user_id
-      ,'in_trial' as status
-      ,platform
-      ,billing_period
-      ,created_at
-      ,add_day
-      ,date(created_at) as report_date
-      from vimeo_raw
-      WHERE add_day = 'Yes'
-      ),
-
-
-      result2 as (select
-      user_id
-      ,status
-      ,platform
-      ,billing_period
-      ,created_at
-      ,DATEADD(DAY, 0, report_date) as report_date
-      ,DATEADD(DAY, -1, report_date) as re_acquisitions_date
-      ,CASE
-      WHEN status = 'active' AND LAG(status) OVER (PARTITION BY user_id ORDER BY report_date) ='in_trial'
-      THEN 'Yes'
-      ELSE 'No'
-      END AS trials_converted
-      ,CASE
-      WHEN status in('cancelled','paused') AND LAG(status) OVER (PARTITION BY user_id ORDER BY report_date) ='in_trial'
-      THEN 'Yes'
-      ELSE 'No'
-      END AS trials_not_converted
-      ,CASE
-      WHEN status in ('active') AND ( LAG(status) OVER (PARTITION BY user_id ORDER BY report_date) ='paused' or LAG(status) OVER (PARTITION BY user_id ORDER BY report_date) is NULL)
-      THEN 'Yes'
-      ELSE 'No'
-      END AS re_acquisition
-      ,CASE
-      WHEN status in('cancelled','paused') AND LAG(status) OVER (PARTITION BY user_id ORDER BY report_date) ='active'
-      THEN 'Yes'
-      ELSE 'No'
-      END AS sub_cancelled
-
-      from vimeo_raw2),
-      result3 as(
-      select *,
-      CASE
-      WHEN((DATEDIFF(DAY, date(report_date),date(created_at)) = -21) or (DATEDIFF(DAY, date(report_date),date(created_at)) = -20)) and sub_cancelled = 'Yes' THEN 'Yes'
-      ELSE 'No'
-      END AS charge_failed
-      from result2)
-
-      ,final as(
-      SELECT
-      user_id,
-      status,
-      platform,
-      billing_period,
-      date(created_at) as created_at,
-      date(report_date) as report_date,
-      date(re_acquisitions_date) as re_acquisition_date,
-
-      -- Fix for trials_converted logic
-      CASE
-      WHEN trials_converted = 'Yes'
-      AND user_id IN (
-      SELECT user_id
-      FROM result3
-      WHERE charge_failed = 'Yes'
-      )
-      THEN 'No'::VARCHAR
-      ELSE trials_converted::VARCHAR
-      END AS trials_converted,
-
-      -- Fix for trials_not_converted logic
-      CASE
-      WHEN trials_converted = 'Yes'
-      AND user_id IN (
-      SELECT user_id
-      FROM result3
-      WHERE charge_failed = 'Yes'
-      )
-      THEN 'Yes'::VARCHAR
-      ELSE trials_not_converted::VARCHAR
-      END AS trial_not_converted,
-
-      re_acquisition,
-      CASE
-      WHEN sub_cancelled = 'Yes'
-      AND user_id IN (
-      SELECT user_id
-      FROM result3
-      WHERE charge_failed = 'Yes'
-      )
-      THEN 'No'::VARCHAR
-      ELSE sub_cancelled::VARCHAR
-      END AS sub_cancelled
-      ,charge_failed
 
       FROM result3
       ),
