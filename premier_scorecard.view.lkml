@@ -1547,7 +1547,93 @@ view: premier_scorecard {
       SELECT "A Solider for Christmas" UNION ALL
       SELECT "A Home for Christmas" UNION ALL
       SELECT "A Wedding for Belle" UNION ALL
-      SELECT "See You Aagain"
+      SELECT "See You Again"
+      ),
+
+      upff_premier_completion_rates AS
+      (
+      SELECT "The Happy Camper" AS title, 0.77 AS completion_rate UNION ALL
+      SELECT "Luckless in Love", 0.73 UNION ALL
+      SELECT "Infamously in Love", 0.64 UNION ALL
+      SELECT "The Princess and the Bodyguard", 0.79 UNION ALL
+      SELECT "Finding Love in Big Sky", 0.72 UNION ALL
+      SELECT "Plus One At An Amish Wedding", 0.78 UNION ALL
+      SELECT "The Confession: An Amish Musical", 0.33 UNION ALL
+      SELECT "When Love Blooms", 0.77 UNION ALL
+      SELECT "Star Crossed Romance", 0.7 UNION ALL
+      SELECT "Southern Gospel", 0.7 UNION ALL
+      SELECT "Mixed Baggage", 0.77 UNION ALL
+      SELECT "Just Jake", 0.74 UNION ALL
+      SELECT "Sweet on You", 0.77 UNION ALL
+      SELECT "The Wedding Wish", 0.71 UNION ALL
+      SELECT "A Royal Christmas Match", 0.66 UNION ALL
+      SELECT "Unperfect Christmas Wish", 0.74 UNION ALL
+      SELECT "The Christmas Retreat", 0.71 UNION ALL
+      SELECT "Something's Brewing", 0.76 UNION ALL
+      SELECT "Lucky Hearts", 0.71 UNION ALL
+      SELECT "Love at the Lodge", 0.68 UNION ALL
+      SELECT "Romance in Hawaii", 0.77 UNION ALL
+      SELECT "Cowboy And Movie Star", 0.74 UNION ALL
+      SELECT "Baked with a Kiss", 0.78 UNION ALL
+      SELECT "Love by Design", 0.68 UNION ALL
+      SELECT "We're Scrooged", 0.71 UNION ALL
+      SELECT "Christmas Time Capsule", 0.82 UNION ALL
+      SELECT "A Tiny Home Christmas", 0.79 UNION ALL
+      SELECT "Yuletide the Knot", 0.74 UNION ALL
+      SELECT "Country Hearts", 0.7 UNION ALL
+      SELECT "Mistletoe Connection", 0.76 UNION ALL
+      SELECT "Christmas at the Amish Bakery", 0.78 UNION ALL
+      SELECT "Christmas on the Rocks", 0.71 UNION ALL
+      SELECT "The Holiday Swap", 0.75 UNION ALL
+      SELECT "A Christmas Masquerade", 0.72 UNION ALL
+      SELECT "An Eclectic Christmas", 0.77 UNION ALL
+      SELECT "Country Hearts Christmas", 0.01 UNION ALL
+      SELECT "Heart of a Champion", 0.73 UNION ALL
+      SELECT "The Single's Guidebook", 0.73 UNION ALL
+      SELECT "The Soulmate Search", 0.75 UNION ALL
+      SELECT "Romantic Friction", 0.67 UNION ALL
+      SELECT "Sweetly Salted", 0.75 UNION ALL
+      SELECT "May the Best Wedding Win", 0.71 UNION ALL
+      SELECT "The Wedding Rule", 0.78 UNION ALL
+      SELECT "A Match for the Prince", 0.76 UNION ALL
+      SELECT "The Love Advisor", 0.67 UNION ALL
+      SELECT "Love On Retreat", 0.71 UNION ALL
+      SELECT "A Royal Makeover", 0.75 UNION ALL
+      SELECT "I Can", 0.76 UNION ALL
+      SELECT "Summer at Charlotte's", 0.73 UNION ALL
+      SELECT "Fragile Heart", 0.54 UNION ALL
+      SELECT "Counter Column", 0.63 UNION ALL
+      SELECT "Writing a Love Song", 0.76 UNION ALL
+      SELECT "Lucky Louie", 0.56 UNION ALL
+      SELECT "Silent Night in Algona", 0.49 UNION ALL
+      SELECT "Christmas by the Book", 0.73 UNION ALL
+      SELECT "Far Haven", 0.68 UNION ALL
+      SELECT "Discovering Love", 0.69 UNION ALL
+      SELECT "A Carpenter's Prayer", 0.72 UNION ALL
+      SELECT "Grace by Night", 0.62 UNION ALL
+      SELECT "Identity Crisis", 0.64 UNION ALL
+      SELECT "Festival of Trees", 0.7 UNION ALL
+      SELECT "A Bluegrass Christmas", 0.77 UNION ALL
+      SELECT "Dial S for Santa", 0.78 UNION ALL
+      SELECT "A Novel Christmas", 0.76 UNION ALL
+      SELECT "A Country Music Christmas", 0.77 UNION ALL
+      SELECT "Jingle Smells", 0.65 UNION ALL
+      SELECT "Return to Sender", 0.7 UNION ALL
+      SELECT "The Love Club Moms: Tory", 0.78 UNION ALL
+      SELECT "The Love Club Moms: Jo", 0.77 UNION ALL
+      SELECT "The Love Club Moms: Harper", 0.79 UNION ALL
+      SELECT "The Love Club Moms: Nila", 0.78 UNION ALL
+      SELECT "The Thorn", 0.38 UNION ALL
+      SELECT "What We Find on the Road", 0.72 UNION ALL
+      SELECT "A Bestselling Kind of Love", 0.7 UNION ALL
+      SELECT "Mr. Pawsitively Perfect", 0.7 UNION ALL
+      SELECT "The Wedding Contest", 0.7 UNION ALL
+      SELECT "Sugarcreek Amish Mysteries: Blessings in Disguise", 0.73 UNION ALL
+      SELECT "Two Chefs and a Wedding Cake", 0.76 UNION ALL
+      SELECT "A Solider for Christmas", 0.68 UNION ALL
+      SELECT "A Home for Christmas", 0.74 UNION ALL
+      SELECT "A Wedding for Belle", 0.75 UNION ALL
+      SELECT "See You Aagain", 0.77
       ),
 
       upff_premier_dates AS
@@ -1746,6 +1832,16 @@ view: premier_scorecard {
       GROUP BY 1,2,3
       ),
 
+      title_views_cr AS
+      (
+      SELECT
+      a.*
+      , b.completion_rate
+      FROM title_views_raw AS a
+      LEFT JOIN upff_premier_completion_rates AS b
+      ON a.collection = b.title
+      ),
+
       title_views_benchmarked AS
       (
       SELECT
@@ -1761,6 +1857,7 @@ view: premier_scorecard {
       , round(views_7_days / subscriber_count, 2) AS views_per_weekly_sub_7d
       , round(views_30_days / subscriber_count, 2) AS views_per_weekly_sub_30d
       , round(views_90_days / subscriber_count, 2) AS views_per_weekly_sub_90d
+      , completion_rate
       FROM title_views_raw
       )
 
@@ -1833,6 +1930,11 @@ view: premier_scorecard {
     sql: ${TABLE}.views_per_weekly_sub_90d ;;
   }
 
+  dimension: completion_rate {
+    type: number
+    sql: ${TABLE}.completion_rate ;;
+  }
+
   set: detail {
     fields: [
       collection,
@@ -1846,7 +1948,8 @@ view: premier_scorecard {
       uniques_90_days,
       views_per_weekly_sub_7d,
       views_per_weekly_sub_30d,
-      views_per_weekly_sub_90d
+      views_per_weekly_sub_90d,
+      completion_rate
     ]
   }
 }
