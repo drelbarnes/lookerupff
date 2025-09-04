@@ -1858,7 +1858,7 @@ view: premier_scorecard {
       , round(views_30_days / subscriber_count, 2) AS views_per_weekly_sub_30d
       , round(views_90_days / subscriber_count, 2) AS views_per_weekly_sub_90d
       , completion_rate
-      FROM title_views_raw
+      FROM title_views_cr
       )
 
       select * from title_views_benchmarked ;;
