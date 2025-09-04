@@ -1546,7 +1546,7 @@ view: premier_scorecard {
       SELECT "Two Chefs and a Wedding Cake" UNION ALL
       SELECT "A Solider for Christmas" UNION ALL
       SELECT "A Home for Christmas" UNION ALL
-      SELECT "A Wedding for Belle"
+      SELECT "A Wedding for Belle" UNION ALL
       SELECT "See You Aagain"
       ),
 
@@ -1632,7 +1632,7 @@ view: premier_scorecard {
       SELECT "Two Chefs and a Wedding Cake", DATE '2025-06-10' UNION ALL
       SELECT "A Solider for Christmas", DATE '2025-07-01' UNION ALL
       SELECT "A Home for Christmas", DATE '2025-07-15' UNION ALL
-      SELECT "A Wedding for Belle", DATE '2025-07-29'
+      SELECT "A Wedding for Belle", DATE '2025-07-29' UNION ALL
       SELECT "See You Again", DATE '2025-08-12'
       ),
 
