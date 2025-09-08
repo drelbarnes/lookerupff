@@ -1,4 +1,4 @@
-  view: sql_runner_query {
+  view: upff_datamart_views {
     derived_table: {
       sql: with
 
