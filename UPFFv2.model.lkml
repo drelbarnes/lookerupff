@@ -50,6 +50,12 @@ include: "/views/redshift_views/upff_webhook_events.view.lkml"
 include: "/views/chargebee_event_mapping/chargebee_vimeo_ott_id_mapping.view.lkml"
 include: "/views/redshift_views/bundle_analytics.view.lkml"
 
+#redshift upff datamart explores
+include: "upff_datamart_views.view.lkml"
+explore: upff_datamart_views {
+  label: "UPFF Datamart Views"
+}
+
 #redshift allfirstplay explores
 
 include: "redshift_allfirstplay_javascript_video_content_playing.view.lkml"

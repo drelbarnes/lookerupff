@@ -6,7 +6,7 @@
               (
               SELECT
                 *
-              FROM ${allfirst_play_p1_less_granular.SQL_TABLE_NAME}
+              FROM ${redshift_allfirst_play_p1_less_granular.SQL_TABLE_NAME}
               ),
 
               /* views */
