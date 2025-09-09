@@ -56,7 +56,7 @@ view: upff_datamart_customers {
                 , a.customer_billing_address_country AS country
                 , 'Chargebee' AS dsource
               FROM http_api.chargebee_subscriptions AS a
-              LEFT JOIN looker_scratch.lr$rm6a01757415226408_upff_webhook_events AS b
+              LEFT JOIN ${upff_webhook_events.SQL_TABLE_NAME} AS b
               ON a.customer_id = b.customer_id
               AND a.subscription_subscription_items_0_item_price_id in ('UP-Faith-Family-Monthly','UP-Faith-Family-Yearly')
               ),
