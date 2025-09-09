@@ -1633,7 +1633,7 @@ view: premier_scorecard {
       SELECT "A Solider for Christmas", 0.68 UNION ALL
       SELECT "A Home for Christmas", 0.74 UNION ALL
       SELECT "A Wedding for Belle", 0.75 UNION ALL
-      SELECT "See You Aagain", 0.77
+      SELECT "See You Again", 0.77
       ),
 
       upff_premier_dates AS
