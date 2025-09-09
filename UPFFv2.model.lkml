@@ -56,6 +56,13 @@ explore: upff_datamart_views {
   label: "UPFF Datamart Views"
 }
 
+include: "upff_datamart_customers.view.lkml"
+explore: upff_datamart_customers {
+  label: "UPFF Datamart Customers"
+}
+
+#end redshift upff datamart explores
+
 #redshift allfirstplay explores
 
 include: "redshift_allfirstplay_javascript_video_content_playing.view.lkml"
