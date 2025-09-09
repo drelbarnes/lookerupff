@@ -1587,7 +1587,7 @@ view: premier_scorecard {
       SELECT "The Holiday Swap", 0.75 UNION ALL
       SELECT "A Christmas Masquerade", 0.72 UNION ALL
       SELECT "An Eclectic Christmas", 0.77 UNION ALL
-      SELECT "Country Hearts Christmas", 0.01 UNION ALL
+      SELECT "Country Hearts Christmas", 0.73 UNION ALL
       SELECT "Heart of a Champion", 0.73 UNION ALL
       SELECT "The Single's Guidebook", 0.73 UNION ALL
       SELECT "The Soulmate Search", 0.75 UNION ALL
