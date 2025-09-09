@@ -61,6 +61,7 @@ explore: upff_datamart_customers {
   label: "UPFF Datamart Customers"
 }
 
+
 #end redshift upff datamart explores
 
 #redshift allfirstplay explores
