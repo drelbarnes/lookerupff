@@ -66,6 +66,11 @@ explore: upff_datamart_customer_events {
   label: "UPFF Datamart Customer Events"
 }
 
+include: "upff_datamart_subscriptions.view.lkml"
+explore: upff_datamart_subscriptions {
+  label: "UPFF Datamart Subscriptions"
+}
+
 #end redshift upff datamart explores
 
 #redshift allfirstplay explores
