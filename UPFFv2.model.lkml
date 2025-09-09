@@ -61,6 +61,10 @@ explore: upff_datamart_customers {
   label: "UPFF Datamart Customers"
 }
 
+include: "upff_datamart_customer_events.view.lkml"
+explore: upff_datamart_customer_events {
+  label: "UPFF Datamart Customer Events"
+}
 
 #end redshift upff datamart explores
 
