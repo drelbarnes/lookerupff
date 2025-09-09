@@ -1857,7 +1857,7 @@ view: premier_scorecard {
       , round(views_7_days / subscriber_count, 2) AS views_per_weekly_sub_7d
       , round(views_30_days / subscriber_count, 2) AS views_per_weekly_sub_30d
       , round(views_90_days / subscriber_count, 2) AS views_per_weekly_sub_90d
-      , completion_rate
+      , completion_rate AS lifetime_completion_rate
       FROM title_views_cr
       )
 
@@ -1930,9 +1930,9 @@ view: premier_scorecard {
     sql: ${TABLE}.views_per_weekly_sub_90d ;;
   }
 
-  dimension: completion_rate {
+  dimension: lifetime_completion_rate {
     type: number
-    sql: ${TABLE}.completion_rate ;;
+    sql: ${TABLE}.lifetime_completion_rate ;;
   }
 
   set: detail {
@@ -1949,7 +1949,7 @@ view: premier_scorecard {
       views_per_weekly_sub_7d,
       views_per_weekly_sub_30d,
       views_per_weekly_sub_90d,
-      completion_rate
+      lifetime_completion_rate
     ]
   }
 }
