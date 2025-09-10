@@ -75,6 +75,7 @@ include: "/video_views.view.lkml"
 include: "/Gaither_page_views.view.lkml"
 include: "/gaither_segment_consent.view.lkml"
 
+
 explore: video_views {
   label: "Video Views"
 }

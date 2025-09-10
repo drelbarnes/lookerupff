@@ -1587,7 +1587,7 @@ view: premier_scorecard {
       SELECT "The Holiday Swap", 0.75 UNION ALL
       SELECT "A Christmas Masquerade", 0.72 UNION ALL
       SELECT "An Eclectic Christmas", 0.77 UNION ALL
-      SELECT "Country Hearts Christmas", 0.01 UNION ALL
+      SELECT "Country Hearts Christmas", 0.73 UNION ALL
       SELECT "Heart of a Champion", 0.73 UNION ALL
       SELECT "The Single's Guidebook", 0.73 UNION ALL
       SELECT "The Soulmate Search", 0.75 UNION ALL
@@ -1633,7 +1633,7 @@ view: premier_scorecard {
       SELECT "A Solider for Christmas", 0.68 UNION ALL
       SELECT "A Home for Christmas", 0.74 UNION ALL
       SELECT "A Wedding for Belle", 0.75 UNION ALL
-      SELECT "See You Aagain", 0.77
+      SELECT "See You Again", 0.77
       ),
 
       upff_premier_dates AS
@@ -1857,7 +1857,7 @@ view: premier_scorecard {
       , round(views_7_days / subscriber_count, 2) AS views_per_weekly_sub_7d
       , round(views_30_days / subscriber_count, 2) AS views_per_weekly_sub_30d
       , round(views_90_days / subscriber_count, 2) AS views_per_weekly_sub_90d
-      , completion_rate
+      , completion_rate AS lifetime_completion_rate
       FROM title_views_cr
       )
 
@@ -1930,9 +1930,9 @@ view: premier_scorecard {
     sql: ${TABLE}.views_per_weekly_sub_90d ;;
   }
 
-  dimension: completion_rate {
+  dimension: lifetime_completion_rate {
     type: number
-    sql: ${TABLE}.completion_rate ;;
+    sql: ${TABLE}.lifetime_completion_rate ;;
   }
 
   set: detail {
@@ -1949,7 +1949,7 @@ view: premier_scorecard {
       views_per_weekly_sub_7d,
       views_per_weekly_sub_30d,
       views_per_weekly_sub_90d,
-      completion_rate
+      lifetime_completion_rate
     ]
   }
 }
