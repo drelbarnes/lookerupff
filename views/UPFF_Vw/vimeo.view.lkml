@@ -33,6 +33,20 @@ view: vimeo {
 
       FROM chargebee_webhook_events.subscription_reactivated
       WHERE content_subscription_subscription_items like '%UP%'
+
+      UNION ALL
+
+      SELECT
+        content_subscription_id AS user_id
+        ,'web' AS platform
+        ,CASE
+          WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'
+          ELSE 'yearly'
+        END AS billing_period
+        ,'Direct to Paid' as event_type
+        ,date(DATEADD(HOUR, -5, timestamp)) AS report_date
+      FROM chargebee_webhook_events.subscription_resumed
+      WHERE content_subscription_subscription_items LIKE '%UP%'
       ),
 
     vimeo as (
