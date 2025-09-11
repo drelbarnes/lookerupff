@@ -145,6 +145,7 @@ view: upff_datamart_subscriptions {
               (
               SELECT
                 a.id
+                , a.id AS user_id
                 , a.subscription_id
                 , a.received_at
                 , a.event
@@ -169,6 +170,11 @@ view: upff_datamart_subscriptions {
     dimension: id {
       type: number
       sql: ${TABLE}.id ;;
+    }
+
+    dimension: user_id {
+      type: number
+      sql: ${TABLE}.user_id ;;
     }
 
     dimension: subscription_id {
@@ -214,6 +220,7 @@ view: upff_datamart_subscriptions {
     set: detail {
       fields: [
         id,
+        user_id,
         subscription_id,
         received_at_time,
         event,
