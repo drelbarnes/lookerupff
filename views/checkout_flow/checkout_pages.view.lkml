@@ -33,32 +33,32 @@ view: checkout_pages {
 
       UNION ALL
       SELECT
-         context_page_path
-        ,context_ip
-        ,'order_completed' AS data_table
-        ,id
-        ,timestamp
+      context_page_path
+      ,context_ip
+      ,'order_completed' AS data_table
+      ,id
+      ,timestamp
       FROM javascript.order_completed
 
 
       union all
       select
-        context_page_path
-        ,context_ip
-        ,'order_completed' as data_table
-        ,id
-        ,timestamp
+      context_page_path
+      ,context_ip
+      ,'order_completed' as data_table
+      ,id
+      ,timestamp
       from javaScript_upentertainment_checkout.order_completed
       UNION all
       SELECT
-        url as context_page_path
-        ,anonymous_id as context_ip
-        ,'marketing' as data_table
-        ,id
-        ,timestamp
+      url as context_page_path
+      ,anonymous_id as context_ip
+      ,'marketing' as data_table
+      ,id
+      ,timestamp
       FROM javascript_upff_home.pages
       ;;
-      }
+  }
   parameter: include_marketing_pages {
     type: string
     allowed_value: {
@@ -128,15 +128,15 @@ view: checkout_pages {
     label: "Create Account Page Count"
     filters: [context_page_path:
       "/index.php/welcome/create_account,
-      /create_account/"]
-}
+    /create_account/"]
+  }
   measure: select_payment_page_count {
     type: count_distinct
     sql: ${TABLE}.context_ip ;;
     label: "Select Payment Page Count"
     filters: [context_page_path:
       "/index.php/welcome/select_payment,
-      /payment"]
+    /payment"]
   }
 
   measure: upsell_page_count {
