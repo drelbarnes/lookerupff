@@ -16,6 +16,7 @@
                 video_id
                 , user_id
                 , ts AS streamed_at
+                , ts AS received_at
                 , title
                 , collection
                 , episode
@@ -47,6 +48,11 @@
     dimension_group: streamed_at {
       type: time
       sql: ${TABLE}.streamed_at ;;
+    }
+
+    dimension_group: received_at {
+      type: time
+      sql: ${TABLE}.received_at ;;
     }
 
     dimension: title {
