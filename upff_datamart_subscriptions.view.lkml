@@ -11,6 +11,7 @@ view: upff_datamart_subscriptions {
                 , user_id
                 , CAST(report_date AS TIMESTAMP) AS received_at
                 , DATE(customer_created_at) AS created_at
+                , NULL AS activated_at
                 , frequency
                 , status
                 , platform
@@ -20,6 +21,7 @@ view: upff_datamart_subscriptions {
                 , cast(NULL AS VARCHAR) AS zipcode
                 , country
                 , 'Vimeo' AS dsource
+                , NULL AS amount
               FROM customers.all_customers
               WHERE report_date = current_date
               AND platform NOT in ('web','api')
@@ -40,6 +42,7 @@ view: upff_datamart_subscriptions {
                       ELSE DATEADD(second,      CAST(a.customer_created_at AS BIGINT), TIMESTAMP 'epoch')
                     END
                   AS DATE) AS created_at
+                , subscription_started_at AS activated_at
                 , CASE WHEN subscription_subscription_items_0_amount = 599 THEN 'monthly' ELSE 'yearly' END AS frequency
                 , CASE
                     WHEN a.subscription_status = 'in_trial' THEN 'free_trial'
@@ -55,6 +58,7 @@ view: upff_datamart_subscriptions {
                 , a.customer_billing_address_zip AS zipcode
                 , a.customer_billing_address_country AS country
                 , 'Chargebee' AS dsource
+                , a.subscription_subscription_items_0_amount AS amount
               FROM http_api.chargebee_subscriptions AS a
               LEFT JOIN ${upff_webhook_events.SQL_TABLE_NAME} AS b
               ON a.customer_id = b.customer_id
@@ -70,12 +74,15 @@ view: upff_datamart_subscriptions {
               SELECT DISTINCT
                 a.user_id AS id
                 , a.subscription_id
+                , a.created_at
                 , b.timestamp AS received_at
+                , a.activated_at
                 , b.event
                 , a.frequency
                 , a.status
+                , a.amount
               FROM unionized_customer_data AS a
-              LEFT JOIN ${upff_webhook_events.SQL_TABLE_NAME} AS b
+              LEFT JOIN looker_scratch.lr$rm6a01757588017313_upff_webhook_events AS b
               ON a.user_id = b.user_id
               ),
 
@@ -149,11 +156,13 @@ view: upff_datamart_subscriptions {
                 , a.subscription_id
                 , a.received_at
                 , a.event
-                , a.received_at AS created_at
+                , a.created_at
+                , a.activated_at
                 , b.active_end_date AS cancel_at
                 , a.frequency
                 , a.status
                 , b.active_end_date AS trial_end_date
+                , a.amount
               FROM customer_data_postjoin AS a
               LEFT JOIN customer_lifetime AS b
               ON a.id = b.user_id
@@ -197,6 +206,11 @@ view: upff_datamart_subscriptions {
       sql: ${TABLE}.created_at ;;
     }
 
+  dimension_group: activated_at {
+    type: time
+    sql: ${TABLE}.activated_at ;;
+  }
+
     dimension_group: cancel_at {
       type: time
       sql: ${TABLE}.cancel_at ;;
@@ -212,6 +226,11 @@ view: upff_datamart_subscriptions {
       sql: ${TABLE}.status ;;
     }
 
+  dimension: amount {
+    type: number
+    sql: ${TABLE}.amount ;;
+  }
+
     dimension_group: trial_end_date {
       type: time
       sql: ${TABLE}.trial_end_date ;;
@@ -225,10 +244,12 @@ view: upff_datamart_subscriptions {
         received_at_time,
         event,
         created_at_time,
+        activated_at_time,
         cancel_at_time,
         frequency,
         status,
-        trial_end_date_time
+        trial_end_date_time,
+        amount
       ]
     }
   }
