@@ -26,7 +26,7 @@
               FROM plays_less_granular
               )
 
-              select * from views limit 1000 ;;
+              select * from views;;
     }
 
     measure: count {
