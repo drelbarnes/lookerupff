@@ -42,7 +42,7 @@ view: upff_datamart_subscriptions {
                       ELSE DATEADD(second,      CAST(a.customer_created_at AS BIGINT), TIMESTAMP 'epoch')
                     END
                   AS DATE) AS created_at
-                , subscription_started_at AS activated_at
+                , a.subscription_started_at AS activated_at
                 , CASE WHEN subscription_subscription_items_0_amount = 599 THEN 'monthly' ELSE 'yearly' END AS frequency
                 , CASE
                     WHEN a.subscription_status = 'in_trial' THEN 'free_trial'
