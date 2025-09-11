@@ -64,6 +64,15 @@ view: upff_datamart_customers {
               /* union of all platforms */
               unionized_customer_data AS (SELECT * FROM vimeo_nonweb_customers UNION ALL SELECT * FROM chargebee_web_api_users),
 
+              number_of_payments AS
+              (
+              SELECT DISTINCT
+                user_id
+                , SUM(CASE WHEN event = 'customer_product_renewed' THEN 1 ELSE 0 END) AS renewed_count
+              FROM looker_scratch.lr$rm6a01757588017313_upff_webhook_events
+              GROUP BY 1
+              ),
+
               /* pulls in content_customer attributes from subscription_created event */
               chargebee_enhanced_data AS
               (
@@ -75,9 +84,12 @@ view: upff_datamart_customers {
                 , b.content_customer_cf_news_letter
                 , b.content_customer_cf_promotions
                 , b.content_customer_cf_streaming
+                , c.renewed_count AS total_payments
               FROM unionized_customer_data AS a
               LEFT JOIN chargebee_webhook_events.subscription_created AS b
               ON a.customer_id = b.content_customer_id
+              LEFT JOIN number_of_payments AS c
+              ON a.customer_id = b.user_id
               ),
 
               /* customer table */
@@ -93,6 +105,7 @@ view: upff_datamart_customers {
                 , city
                 , state
                 , zipcode
+                , total_payments
                 , country
                 , content_customer_cf_branding
                 , content_customer_cf_news_letter
@@ -159,6 +172,11 @@ view: upff_datamart_customers {
       sql: ${TABLE}.country ;;
     }
 
+  dimension: total_payments {
+    type: number
+    sql: ${TABLE}.total_payments ;;
+  }
+
     dimension: content_customer_cf_branding {
       type: string
       sql: ${TABLE}.content_customer_cf_branding ;;
@@ -191,6 +209,7 @@ view: upff_datamart_customers {
         state,
         zipcode,
         country,
+        total_payments,
         content_customer_cf_branding,
         content_customer_cf_news_letter,
         content_customer_cf_promotions,
