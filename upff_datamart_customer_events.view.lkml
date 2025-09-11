@@ -69,6 +69,7 @@ view: upff_datamart_customer_events {
               (
               SELECT DISTINCT
                 a.user_id AS id
+                , user_id
                 , a.subscription_id
                 , b.timestamp AS received_at
                 , b.event
@@ -93,6 +94,11 @@ view: upff_datamart_customer_events {
       type: number
       sql: ${TABLE}.id ;;
     }
+
+  dimension: user_id {
+    type: number
+    sql: ${TABLE}.user_id ;;
+  }
 
     dimension: subscription_id {
       type: string
@@ -132,6 +138,7 @@ view: upff_datamart_customer_events {
     set: detail {
       fields: [
         id,
+        user_id,
         subscription_id,
         received_at_time,
         event,
