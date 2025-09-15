@@ -13,7 +13,7 @@ view: upff_datamart_customers {
                 , DATE(customer_created_at) AS created_at
                 , frequency
                 , status
-                , platform
+                , platform AS inital_join_platform
                 , marketing_opt_in
                 , cast(NULL AS VARCHAR) AS city
                 , cast(NULL AS VARCHAR) AS state
@@ -48,7 +48,7 @@ view: upff_datamart_customers {
                     WHEN a.subscription_status = 'paused' THEN 'paused'
                     WHEN a.subscription_status = 'refunded' THEN 'refunded'
                   ELSE NULL END AS status
-                , a.subscription_channel AS platform
+                , a.subscription_channel AS inital_join_platform
                 , a.customer_cs_marketing_opt_in AS marketing_opt_in
                 , b.city
                 , a.customer_billing_address_state AS state
@@ -106,7 +106,7 @@ view: upff_datamart_customers {
                 , last_name
                 , received_at
                 , created_at
-                , platform
+                , inital_join_platform
                 , marketing_opt_in
                 , city
                 , state
@@ -158,9 +158,9 @@ view: upff_datamart_customers {
       sql: ${TABLE}.created_at ;;
     }
 
-    dimension: platform {
+    dimension: inital_join_platform {
       type: string
-      sql: ${TABLE}.platform ;;
+      sql: ${TABLE}.inital_join_platform ;;
     }
 
     dimension: marketing_opt_in {
@@ -221,7 +221,7 @@ view: upff_datamart_customers {
         last_name,
         received_at_time,
         created_at,
-        platform,
+        inital_join_platform,
         marketing_opt_in,
         city,
         state,
