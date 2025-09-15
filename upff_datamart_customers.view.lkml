@@ -13,7 +13,7 @@ view: upff_datamart_customers {
                 , DATE(customer_created_at) AS created_at
                 , frequency
                 , status
-                , platform
+                , platform AS inital_join_platform
                 , marketing_opt_in
                 , cast(NULL AS VARCHAR) AS city
                 , cast(NULL AS VARCHAR) AS state
@@ -48,7 +48,7 @@ view: upff_datamart_customers {
                     WHEN a.subscription_status = 'paused' THEN 'paused'
                     WHEN a.subscription_status = 'refunded' THEN 'refunded'
                   ELSE NULL END AS status
-                , a.subscription_channel AS platform
+                , a.subscription_channel AS inital_join_platform
                 , a.customer_cs_marketing_opt_in AS marketing_opt_in
                 , b.city
                 , a.customer_billing_address_state AS state
@@ -68,9 +68,11 @@ view: upff_datamart_customers {
               (
               SELECT DISTINCT
                 user_id
+                , first_name
+                , last_name
                 , SUM(CASE WHEN event = 'customer_product_renewed' THEN 1 ELSE 0 END) AS renewed_count
               FROM looker_scratch.lr$rm6a01757588017313_upff_webhook_events
-              GROUP BY 1
+              GROUP BY 1,2,3
               ),
 
               /* pulls in content_customer attributes from subscription_created event */
@@ -85,6 +87,8 @@ view: upff_datamart_customers {
                 , b.content_customer_cf_promotions
                 , b.content_customer_cf_streaming
                 , c.renewed_count AS total_payments
+                , c.first_name
+                , c.last_name
               FROM unionized_customer_data AS a
               LEFT JOIN chargebee_webhook_events.subscription_created AS b
               ON a.customer_id = b.content_customer_id
@@ -98,9 +102,11 @@ view: upff_datamart_customers {
               SELECT
                 user_id
                 , anonymous_id
+                , first_name
+                , last_name
                 , received_at
                 , created_at
-                , platform
+                , inital_join_platform
                 , marketing_opt_in
                 , city
                 , state
@@ -132,6 +138,16 @@ view: upff_datamart_customers {
       sql: ${TABLE}.anonymous_id ;;
     }
 
+    dimension: first_name {
+      type: string
+      sql: ${TABLE}.first_name ;;
+    }
+
+    dimension: last_name {
+      type: string
+      sql: ${TABLE}.last_name ;;
+    }
+
     dimension_group: received_at {
       type: time
       sql: ${TABLE}.received_at ;;
@@ -142,9 +158,9 @@ view: upff_datamart_customers {
       sql: ${TABLE}.created_at ;;
     }
 
-    dimension: platform {
+    dimension: inital_join_platform {
       type: string
-      sql: ${TABLE}.platform ;;
+      sql: ${TABLE}.inital_join_platform ;;
     }
 
     dimension: marketing_opt_in {
@@ -201,9 +217,11 @@ view: upff_datamart_customers {
       fields: [
         user_id,
         anonymous_id,
+        first_name,
+        last_name,
         received_at_time,
         created_at,
-        platform,
+        inital_join_platform,
         marketing_opt_in,
         city,
         state,
