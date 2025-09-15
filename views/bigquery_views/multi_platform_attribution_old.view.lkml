@@ -1,4 +1,4 @@
-view: upff_multi_platform_attribution {
+view: upff_multi_platform_attribution_old {
   derived_table: {
     sql:
     with attributable_events as (
