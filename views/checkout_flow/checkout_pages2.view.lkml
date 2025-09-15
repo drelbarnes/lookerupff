@@ -27,7 +27,7 @@ view: checkout_pages2 {
       ELSE NULL
     END) AS create_account_page_count,
     COUNT(DISTINCT CASE
-      WHEN ((checkout_pages.context_page_path LIKE '/index.php/welcome/select_payment' OR checkout_pages.context_page_path = '/payment')and data_table ='checkout_page')
+      WHEN ((checkout_pages.context_page_path LIKE '/index.php/welcome/select_payment%' OR checkout_pages.context_page_path = '/payment')and data_table ='checkout_page')
       THEN checkout_pages.context_ip
       ELSE NULL
     END) AS select_payment_page_count,
