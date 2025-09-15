@@ -68,9 +68,11 @@ view: upff_datamart_customers {
               (
               SELECT DISTINCT
                 user_id
+                , first_name
+                , last_name
                 , SUM(CASE WHEN event = 'customer_product_renewed' THEN 1 ELSE 0 END) AS renewed_count
               FROM looker_scratch.lr$rm6a01757588017313_upff_webhook_events
-              GROUP BY 1
+              GROUP BY 1,2,3
               ),
 
               /* pulls in content_customer attributes from subscription_created event */
@@ -85,6 +87,8 @@ view: upff_datamart_customers {
                 , b.content_customer_cf_promotions
                 , b.content_customer_cf_streaming
                 , c.renewed_count AS total_payments
+                , c.first_name
+                , c.last_name
               FROM unionized_customer_data AS a
               LEFT JOIN chargebee_webhook_events.subscription_created AS b
               ON a.customer_id = b.content_customer_id
@@ -98,6 +102,8 @@ view: upff_datamart_customers {
               SELECT
                 user_id
                 , anonymous_id
+                , first_name
+                , last_name
                 , received_at
                 , created_at
                 , platform
@@ -130,6 +136,16 @@ view: upff_datamart_customers {
     dimension: anonymous_id {
       type: string
       sql: ${TABLE}.anonymous_id ;;
+    }
+
+    dimension: first_name {
+      type: string
+      sql: ${TABLE}.first_name ;;
+    }
+
+    dimension: last_name {
+      type: string
+      sql: ${TABLE}.last_name ;;
     }
 
     dimension_group: received_at {
@@ -201,6 +217,8 @@ view: upff_datamart_customers {
       fields: [
         user_id,
         anonymous_id,
+        first_name,
+        last_name,
         received_at_time,
         created_at,
         platform,
