@@ -1761,7 +1761,7 @@ view: premier_scorecard {
       SELECT "A Solider for Christmas", DATE '2025-07-01' UNION ALL
       SELECT "A Home for Christmas", DATE '2025-07-15' UNION ALL
       SELECT "A Wedding for Belle", DATE '2025-07-29' UNION ALL
-      SELECT "See You Again", DATE '2025-08-12'
+      SELECT "See You Again", DATE '2025-08-12' UNION ALL
       SELECT "Heartstrings Attached", DATE '2025-08-26' UNION ALL
       SELECT "Break the Cycle", DATE '2025-09-09' UNION ALL
       SELECT "Technically Yours", DATE '2025-09-09'
