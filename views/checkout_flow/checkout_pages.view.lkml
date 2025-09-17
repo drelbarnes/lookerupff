@@ -16,7 +16,7 @@ view: checkout_pages {
         ,id
         ,timestamp
       from javascript_upentertainment_checkout.pages
-      WHERE referrer NOT LIKE '%gaither%'
+      WHERE referrer is NULL or referrer NOT LIKE '%gaither%'
       UNION ALL
       SELECT
         context_page_path
