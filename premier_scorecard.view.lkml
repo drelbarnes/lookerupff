@@ -1461,7 +1461,43 @@ view: premier_scorecard {
                     SELECT DATE '2025-08-09', 390438 UNION ALL
                     SELECT DATE '2025-08-10', 390683 UNION ALL
                     SELECT DATE '2025-08-11', 390438 UNION ALL
-                    SELECT DATE '2025-08-12', 390683
+                    SELECT DATE '2025-08-12', 391122 UNION ALL
+                    SELECT DATE '2025-08-13', 390959 UNION ALL
+                    SELECT DATE '2025-08-14', 390768 UNION ALL
+                    SELECT DATE '2025-08-15', 390689 UNION ALL
+                    SELECT DATE '2025-08-16', 390521 UNION ALL
+                    SELECT DATE '2025-08-17', 390478 UNION ALL
+                    SELECT DATE '2025-08-18', 390240 UNION ALL
+                    SELECT DATE '2025-08-19', 389882 UNION ALL
+                    SELECT DATE '2025-08-20', 389437 UNION ALL
+                    SELECT DATE '2025-08-21', 389082 UNION ALL
+                    SELECT DATE '2025-08-22', 388839 UNION ALL
+                    SELECT DATE '2025-08-23', 388902 UNION ALL
+                    SELECT DATE '2025-08-24', 389191 UNION ALL
+                    SELECT DATE '2025-08-25', 389520 UNION ALL
+                    SELECT DATE '2025-08-26', 389282 UNION ALL
+                    SELECT DATE '2025-08-27', 389182 UNION ALL
+                    SELECT DATE '2025-08-28', 388812 UNION ALL
+                    SELECT DATE '2025-08-29', 388681 UNION ALL
+                    SELECT DATE '2025-08-30', 388622 UNION ALL
+                    SELECT DATE '2025-08-31', 388978 UNION ALL
+                    SELECT DATE '2025-09-01', 389445 UNION ALL
+                    SELECT DATE '2025-09-02', 389757 UNION ALL
+                    SELECT DATE '2025-09-03', 389778 UNION ALL
+                    SELECT DATE '2025-09-04', 389639 UNION ALL
+                    SELECT DATE '2025-09-05', 389533 UNION ALL
+                    SELECT DATE '2025-09-06', 389410 UNION ALL
+                    SELECT DATE '2025-09-07', 389667 UNION ALL
+                    SELECT DATE '2025-09-08', 389878 UNION ALL
+                    SELECT DATE '2025-09-09', 389765 UNION ALL
+                    SELECT DATE '2025-09-10', 389650 UNION ALL
+                    SELECT DATE '2025-09-11', 389431 UNION ALL
+                    SELECT DATE '2025-09-12', 389139 UNION ALL
+                    SELECT DATE '2025-09-13', 388743 UNION ALL
+                    SELECT DATE '2025-09-14', 388608 UNION ALL
+                    SELECT DATE '2025-08-15', 388492 UNION ALL
+                    SELECT DATE '2025-08-16', 400000 UNION ALL
+                    SELECT DATE '2025-08-17', 400000
                     ),
 
       upff_premier_titles AS
@@ -1547,7 +1583,10 @@ view: premier_scorecard {
       SELECT "A Solider for Christmas" UNION ALL
       SELECT "A Home for Christmas" UNION ALL
       SELECT "A Wedding for Belle" UNION ALL
-      SELECT "See You Again"
+      SELECT "See You Again" UNION ALL
+      SELECT "Heartstrings Attached" UNION ALL
+      SELECT "Break the Cycle" UNION ALL
+      SELECT "Technically Yours"
       ),
 
       upff_premier_completion_rates AS
@@ -1633,7 +1672,10 @@ view: premier_scorecard {
       SELECT "A Solider for Christmas", 0.68 UNION ALL
       SELECT "A Home for Christmas", 0.74 UNION ALL
       SELECT "A Wedding for Belle", 0.75 UNION ALL
-      SELECT "See You Again", 0.77
+      SELECT "See You Again", 0.77 UNION ALL
+      SELECT "Heartstrings Attached", 0.76 UNION ALL
+      SELECT "Break the Cycle", 0.69 UNION ALL
+      SELECT "Technically Yours" 0.75
       ),
 
       upff_premier_dates AS
@@ -1720,6 +1762,9 @@ view: premier_scorecard {
       SELECT "A Home for Christmas", DATE '2025-07-15' UNION ALL
       SELECT "A Wedding for Belle", DATE '2025-07-29' UNION ALL
       SELECT "See You Again", DATE '2025-08-12'
+      SELECT "Heartstrings Attached", DATE '2025-08-26' UNION ALL
+      SELECT "Break the Cycle", DATE '2025-09-09' UNION ALL
+      SELECT "Technically Yours", DATE '2025-09-09'
       ),
 
       upff_subscriber_counts AS
