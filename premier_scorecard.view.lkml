@@ -1675,7 +1675,7 @@ view: premier_scorecard {
       SELECT "See You Again", 0.77 UNION ALL
       SELECT "Heartstrings Attached", 0.76 UNION ALL
       SELECT "Break the Cycle", 0.69 UNION ALL
-      SELECT "Technically Yours" 0.75
+      SELECT "Technically Yours", 0.75
       ),
 
       upff_premier_dates AS
