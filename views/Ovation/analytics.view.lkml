@@ -5,6 +5,7 @@ view: analytics {
       SELECT
         *
       FROM customers.ovationarts_all_customers
+      where report_date >= '2025-08-18'
       ),
    vimeo_raw as (
       select
