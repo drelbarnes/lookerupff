@@ -67,6 +67,7 @@ result as (
     ,mp.campaign_source
     ,mp.campaign_name
     ,mp.report_date as click_date
+    ,campaign_medium
   FROM join_data jd
   LEFT JOIN marketing_page mp
   ON mp.context_ip = jd.context_ip
