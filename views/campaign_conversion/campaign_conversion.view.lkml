@@ -7,6 +7,7 @@ view: campaign_conversion {
     ,context_ip
     ,context_campaign_source as campaign_source
     ,context_campaign_name as campaign_name
+    ,context_campaign_medium as campaign_medium
   FROM javascript_upff_home.pages
   WHERE 1=1
     {% if start_date._parameter_value != "NULL" %}
@@ -83,8 +84,9 @@ visit_count as (
     COUNT(distinct context_ip) as visit_count
     ,campaign_name
     ,campaign_source
+    ,campaign_medium
   FROM marketing_page
-  GROUP BY 2,3
+  GROUP BY 2,3,4
 ),
 
 trial_count as(
@@ -92,8 +94,9 @@ trial_count as(
     COUNT(DISTINCT user_id) as trial_started_count
     ,campaign_source
     ,campaign_name
+    ,campaign_medium
   FROM result
-  GROUP BY 2,3
+  GROUP BY 2,3,4
 ),
 
 in_trial_count as (
@@ -101,9 +104,10 @@ in_trial_count as (
     COUNT(DISTINCT user_id) as in_trial_count
     ,campaign_source
     ,campaign_name
+    ,campaign_medium
   FROM result
   WHERE has_converted = 'in trial'
-  GROUP BY 2,3
+  GROUP BY 2,3,4
 
 ),
 
@@ -112,10 +116,11 @@ SELECT
     COUNT(DISTINCT user_id) as converted_count
     ,campaign_source
     ,campaign_name
+    ,campaign_medium
   FROM result
 
   WHERE has_converted = 'Yes'
-  GROUP BY 2,3
+  GROUP BY 2,3,4
 )
 
 SELECT
@@ -125,6 +130,7 @@ SELECT
   ,cc.converted_count
   ,vc.campaign_source
   ,vc.campaign_name
+  ,vc.campaign_medium
 FROM visit_count vc
 LEFT JOIN trial_count tc
 ON vc.campaign_name = tc.campaign_name
@@ -147,6 +153,11 @@ ON vc.campaign_name = cc.campaign_name
   dimension: campaign_name {
     type: string
     sql: ${TABLE}.campaign_name ;;
+  }
+
+  dimension: campaign_memium {
+    type: string
+    sql: ${TABLE}.campaign_memium ;;
   }
 
   dimension: visit_count {
