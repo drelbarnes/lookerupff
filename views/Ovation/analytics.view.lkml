@@ -13,7 +13,6 @@ view: analytics {
       ,platform
       ,CASE
       WHEN status = 'free_trial' THEN 'in_trial'
-      WHEN status = 'expired' THEN 'cancelled'
       WHEN status = 'enabled' THEN 'active'
       ELSE status
       END AS status
@@ -45,7 +44,7 @@ view: analytics {
       ELSE 'No'
       END AS re_acquisition
       ,CASE
-      WHEN status in('cancelled','paused') AND LAG(status) OVER (PARTITION BY email ORDER BY report_date) ='active'
+      WHEN status in('cancelled','paused','disabled','refunded') AND LAG(status) OVER (PARTITION BY email ORDER BY report_date) ='active'
       THEN 'Yes'
       ELSE 'No'
       END AS sub_cancelled
