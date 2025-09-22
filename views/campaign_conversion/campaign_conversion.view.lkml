@@ -58,8 +58,9 @@ view: campaign_conversion {
     ON a.user_id = b.user_id
     LEFT JOIN not_converted c
     ON a.user_id = c.user_id
-  )
+  ),
 
+result as (
   SELECT
     jd.*
     ,mp.campaign_source
@@ -75,7 +76,62 @@ view: campaign_conversion {
     CASE WHEN mp.campaign_name IS NULL THEN 1 ELSE 0 END,
     mp.report_date DESC
   ) = 1
+  ),
 
+visit_count as (
+  SELECT
+    COUNT(distinct context_ip) as visit_count
+    ,campaign_name
+    ,campaign_source
+  FROM marketing_page
+  GROUP BY 2,3
+),
+
+trial_count as(
+  SELECT
+    COUNT(DISTINCT user_id) as trial_started_count
+    ,campaign_source
+    ,campaign_name
+  FROM result
+  GROUP BY 2,3
+),
+
+in_trial_count as (
+  SELECT
+    COUNT(DISTINCT user_id) as in_trial_count
+    ,campaign_source
+    ,campaign_name
+  FROM result
+  WHERE has_converted = 'in trial'
+  GROUP BY 2,3
+
+),
+
+converted_count as (
+SELECT
+    COUNT(DISTINCT user_id) as converted_count
+    ,campaign_source
+    ,campaign_name
+  FROM result
+
+  WHERE has_converted = 'Yes'
+  GROUP BY 2,3
+)
+
+SELECT
+  vc.visit_count
+  ,tc.trial_started_count
+  ,itc.in_trial_count
+  ,cc.converted_count
+  ,vc.campaign_source
+  ,vc.campaign_name
+FROM visit_count vc
+LEFT JOIN trial_count tc
+ON vc.campaign_name = tc.campaign_name
+LEFT JOIN in_trial_count itc
+ON vc.campaign_name = itc.campaign_name
+LEFT JOIN converted_count cc
+ON vc.campaign_name = cc.campaign_name
   ;;
  }
 
@@ -83,55 +139,57 @@ view: campaign_conversion {
     type: date
     default_value: "30 days ago"
   }
-  dimension: trial_start_date {
-    type: date
-    sql: ${TABLE}.trial_start_date ;;
-  }
-
-  dimension: click_date {
-    type: date
-    sql: ${TABLE}.click_date ;;
-  }
-
-
-  dimension: ip_address {
-    type: string
-    sql: ${TABLE}.context_ip ;;
-  }
-
-  dimension: has_converted {
-    type: string
-    sql: ${TABLE}.has_converted ;;
-  }
-
-  dimension: user_id{
-    type: string
-    sql: ${TABLE}.user_id ;;
-  }
-
-  dimension: campaign_source{
+   dimension: campaign_source {
     type: string
     sql: ${TABLE}.campaign_source ;;
   }
 
-  dimension: campaign_name{
+  dimension: campaign_name {
     type: string
     sql: ${TABLE}.campaign_name ;;
   }
 
-  measure: trial_start_count{
-    type: count_distinct
-    sql:${TABLE}.context_ip;;
+  dimension: visit_count {
+    type: number
+    sql: ${TABLE}.visit_count ;;
   }
 
-  measure: converted_count {
-    type: count_distinct
-    sql:${TABLE}.context_ip;;
-    filters:[has_converted: "Yes"]
+  dimension: trial_started_count {
+    type: number
+    sql: ${TABLE}.trial_started_count ;;
   }
 
+  dimension: in_trial_count {
+    type: number
+    sql: ${TABLE}.in_trial_count ;;
+  }
 
+  dimension: converted_count {
+    type: number
+    sql: ${TABLE}.converted_count ;;
+  }
+  measure: total_visits {
+    type: sum
+    sql: ${visit_count} ;;
+    value_format_name: decimal_0
+  }
 
+  measure: total_trials_started {
+    type: sum
+    sql: ${trial_started_count} ;;
+    value_format_name: decimal_0
+  }
 
+  measure: total_in_trial {
+    type: sum
+    sql: ${in_trial_count} ;;
+    value_format_name: decimal_0
+  }
+
+  measure: total_converted {
+    type: sum
+    sql: ${converted_count} ;;
+    value_format_name: decimal_0
+  }
 
  }
