@@ -138,7 +138,7 @@ ON vc.campaign_name = tc.campaign_name and vc.campaign_source = tc.campaign_sour
 LEFT JOIN in_trial_count itc
 ON vc.campaign_name = itc.campaign_name and vc.campaign_source = itc.campaign_source
 LEFT JOIN converted_count cc
-ON vc.campaign_name = cc.campaign_nameand vc.campaign_source = cc.campaign_source
+ON vc.campaign_name = cc.campaign_name and vc.campaign_source = cc.campaign_source
   ;;
  }
 
