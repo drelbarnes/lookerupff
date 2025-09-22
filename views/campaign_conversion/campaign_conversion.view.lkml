@@ -155,9 +155,9 @@ ON vc.campaign_name = cc.campaign_name
     sql: ${TABLE}.campaign_name ;;
   }
 
-  dimension: campaign_memium {
+  dimension: campaign_medium {
     type: string
-    sql: ${TABLE}.campaign_memium ;;
+    sql: ${TABLE}.campaign_medium ;;
   }
 
   dimension: visit_count {
