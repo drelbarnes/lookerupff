@@ -12,6 +12,10 @@ view: checkout_split {
         ,context_ip
         ,anonymous_id
         ,'checkout_page' as data_table
+        ,CASE
+          WHEN path like '%monthly%' THEN 'monthly'
+          ELSE 'yearly'
+        END AS plan
         ,date(timestamp) as report_date
       from javascript_upentertainment_checkout.pages
       WHERE context_page_path NOT LIKE '%gaither%'
@@ -28,6 +32,7 @@ order_completed as (
       ,b.context_page_path
       ,a.brand
       ,a.timestamp
+      ,b.plan
       from javaScript_upentertainment_checkout.order_completed a
       LEFT JOIN payment b
       on a.anonymous_id = b.anonymous_id and date(a.timestamp) = b.report_date
@@ -43,6 +48,7 @@ order_completed as (
     ,context_ip
     ,anonymous_id
     ,data_table
+    ,plan
     ,date(timestamp) as report_date
     FROM order_completed
     WHERE brand LIKE '%up%'
@@ -70,6 +76,11 @@ order_completed as (
     sql: ${TABLE}.context_page_path ;;
   }
 
+  dimension: plan {
+    type: string
+    sql: ${TABLE}.plan ;;
+  }
+
   dimension: ip_address {
     type: string
     sql: ${TABLE}.context_ip ;;
@@ -80,30 +91,77 @@ order_completed as (
     sql: ${TABLE}.data_table ;;
   }
 
-  measure: control_traffic_count {
+  measure: control_traffic_count_monthly {
     type: count_distinct
-    sql:${TABLE}.context_ip;;
-    filters:[context_page_path: "/index.php/welcome/payment"]
+    sql: ${TABLE}.context_ip ;;
+    filters: [
+      context_page_path: "/index.php/welcome/payment",
+      plan: "monthly"
+    ]
   }
 
-
-  measure: variant_traffic_count {
+  measure: control_traffic_count_yearly {
     type: count_distinct
-    sql: ${TABLE}.anonymous_id ;;
-    filters: [context_page_path: "/index.php/welcome/payment_condensed"]
+    sql: ${TABLE}.context_ip ;;
+    filters: [
+      context_page_path: "/index.php/welcome/payment",
+      plan: "yearly"
+    ]
   }
 
-  measure: control_order_completed_count {
-    type: count_distinct
-    sql:${TABLE}.anonymous_id;;
-    filters:[context_page_path: "control"]
-  }
-
-
-  measure: variant_order_completed_count {
+  measure: variant_traffic_count_monthly {
     type: count_distinct
     sql: ${TABLE}.anonymous_id ;;
-    filters: [context_page_path: "variant"]
+    filters: [
+      context_page_path: "/index.php/welcome/payment_condensed",
+      plan: "monthly"
+    ]
   }
+
+  measure: variant_traffic_count_yearly {
+    type: count_distinct
+    sql: ${TABLE}.anonymous_id ;;
+    filters: [
+      context_page_path: "/index.php/welcome/payment_condensed",
+      plan: "yearly"
+    ]
+  }
+
+  measure: control_order_completed_count_monthly {
+    type: count_distinct
+    sql: ${TABLE}.anonymous_id ;;
+    filters: [
+      context_page_path: "control",
+      plan: "monthly"
+    ]
+  }
+
+  measure: control_order_completed_count_yearly {
+    type: count_distinct
+    sql: ${TABLE}.anonymous_id ;;
+    filters: [
+      context_page_path: "control",
+      plan: "yearly"
+    ]
+  }
+
+  measure: variant_order_completed_count_monthly {
+    type: count_distinct
+    sql: ${TABLE}.anonymous_id ;;
+    filters: [
+      context_page_path: "variant",
+      plan: "monthly"
+    ]
+  }
+
+  measure: variant_order_completed_count_yearly {
+    type: count_distinct
+    sql: ${TABLE}.anonymous_id ;;
+    filters: [
+      context_page_path: "variant",
+      plan: "yearly"
+    ]
+  }
+
 
   }
