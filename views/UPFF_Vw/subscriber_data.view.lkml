@@ -1,7 +1,7 @@
 view: subscriber_data {
   derived_table:{
     sql:
-    WITH latest_failed AS (
+    , latest_failed AS (
   SELECT content_customer_email as email, MAX(timestamp) AS last_failed_time
   FROM chargebee_webhook_events.payment_failed
   WHERE content_invoice_dunning_status = 'in_progress'
@@ -116,14 +116,17 @@ END AS subscription_end_date
 from customers.all_customers
 where action = 'subscription' and report_date = CURRENT_DATE and platform not in ('api')),
 
-hubspot AS (
-  SELECT *
-  FROM (
-    SELECT *,
-           ROW_NUMBER() OVER (PARTITION BY LOWER(email) ORDER BY received_at DESC) AS row_num
-    FROM hubspot.contacts
-  ) sub
-  WHERE row_num = 1
+
+
+vimeo_events as (
+  SELECT
+    *
+  FROM  ${vimeo_webhook.SQL_TABLE_NAME}
+),
+chargebee_events as (
+  SELECT
+    *
+  FROM  ${chargebee_webhook.SQL_TABLE_NAME}
 ),
 
 get_active_user as (
@@ -137,20 +140,31 @@ get_active_user as (
   ON CAST(a.user_id AS VARCHAR) = b.user_id
 ),
 
-
 final as(
-SELECT distinct
-a.*
-,b.properties_topic_value as topic
-,CASE
-  WHEN c.email IS NOT NULL THEN 'Yes'
-  ELSE 'No'
-END AS is_active_user
+SELECT DISTINCT
+  a.*,
+  ce.event AS topic,
+  CASE WHEN c.email IS NOT NULL THEN 'Yes' ELSE 'No' END AS is_active_user
 FROM result a
-LEFT JOIN hubspot b
-ON LOWER(a.email) = LOWER(b.email)
+LEFT JOIN chargebee_events ce
+  ON LOWER(a.email) = ce.email
 LEFT JOIN get_active_user c
-ON LOWER(a.email) = c.email),
+  ON LOWER(a.email) = LOWER(c.email)
+WHERE a.platform = 'api'
+
+UNION ALL
+
+SELECT DISTINCT
+  a.*,
+  ve.event_text AS topic,
+  CASE WHEN c.email IS NOT NULL THEN 'Yes' ELSE 'No' END AS is_active_user
+FROM result a
+LEFT JOIN vimeo_events ve
+  ON a.user_id = ve.user_id
+LEFT JOIN get_active_user c
+  ON LOWER(a.email) = LOWER(c.email)
+WHERE a.platform != 'api' or a.platform is NULL
+),
 
 ranked_emails AS (
   SELECT
@@ -160,8 +174,12 @@ ranked_emails AS (
 )
 SELECT *
 FROM ranked_emails
-WHERE rn = 1
-;;
+WHERE rn = 1;;
+
+
+    sql_trigger_value: SELECT TO_CHAR(DATEADD(minute, -555, GETDATE()), 'YYYY-MM-DD');;
+    distribution: "user_id"
+    sortkeys: ["user_id"]
   }
 
   dimension: user_id {

@@ -19,7 +19,7 @@ view: analytics {
       ,date(customer_created_at) AS created_at
       ,report_date
       from ovation_subscriptions
-      where action = 'subscription' and action_type != 'free_access'
+      where action = 'subscription' and action_type not in ( 'free_access','doorkeeper::application')
       ),
 
       result2 as (select

@@ -15,7 +15,8 @@ include: "/views/UPFF_Vw/converted.view.lkml"
 include: "/views/UPFF_Vw/sub_count.view.lkml"
 include: "/views/UPFF_Vw/sub_count_v2.view.lkml"
 include: "/views/UPFF_Vw/churn_gain.view.lkml"
-
+include: "/views/UPFF_Vw/vimeo_webhook.view.lkml"
+include: "/views/UPFF_Vw/chargebee_webhook.view.lkml"
 
 explore: UPFF_analytics_Vw {
   label: "UPFF_analytics_Vw"
