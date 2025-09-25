@@ -41,6 +41,11 @@
       drill_fields: [detail*]
     }
 
+    measure: total_users {
+      type: count
+      drill_fields: [detail*]
+    }
+
     dimension: video_id {
       type: number
       sql: ${TABLE}.video_id ;;
