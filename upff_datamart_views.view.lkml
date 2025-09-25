@@ -41,7 +41,7 @@
       drill_fields: [detail*]
     }
 
-    measure: total_users {
+    measure: total_views {
       type: count
       drill_fields: [detail*]
     }
