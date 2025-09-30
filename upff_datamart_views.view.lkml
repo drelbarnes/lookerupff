@@ -35,6 +35,17 @@
       drill_fields: [detail*]
     }
 
+    measure: unique_users {
+      type: count_distinct
+      sql: ${user_id} ;;
+      drill_fields: [detail*]
+    }
+
+    measure: total_views {
+      type: count
+      drill_fields: [detail*]
+    }
+
     dimension: video_id {
       type: number
       sql: ${TABLE}.video_id ;;
