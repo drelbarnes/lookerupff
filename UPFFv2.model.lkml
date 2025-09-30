@@ -71,6 +71,11 @@ explore: upff_datamart_subscriptions {
   label: "UPFF Datamart Subscriptions"
 }
 
+include: "upff_heartland_fans.view.lkml"
+explore: upff_heartland_fans {
+  label: "UPFF Heartland Fans"
+}
+
 #end redshift upff datamart explores
 
 #redshift allfirstplay explores
