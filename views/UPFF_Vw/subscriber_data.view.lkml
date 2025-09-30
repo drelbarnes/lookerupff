@@ -42,7 +42,7 @@ SELECT
       customer_id as user_id
       ,customer_first_name as first_name
       ,customer_last_name as last_name
-      ,customer_email as email
+      ,customer_email::VARCHAR as email
       ,customer_cs_marketing_opt_in as marketing_opt_in
       ,CASE
         WHEN subscription_status = 'in_trial' THEN 'free_trial'
@@ -96,7 +96,10 @@ SELECT
   WHEN frequency = 'monthly' THEN 'UP-Faith-Family-Monthly'
   ELSE 'UP-Faith-Family-Yearly'
 END AS plan_name
-,platform
+,CASE
+  WHEN platform = 'web' THEN 'web(Vimeo)'
+  ELSE platform
+END AS platform
 ,NULL as postal_code
 ,DATE(TRY_CAST(TRIM(REPLACE(customer_created_at, 'UTC', '')) AS TIMESTAMP)) AS subscription_start_date,
 
@@ -144,26 +147,28 @@ final as(
 SELECT DISTINCT
   a.*,
   ce.event AS topic,
+  date(ce.timestamp) as report_date,
   CASE WHEN c.email IS NOT NULL THEN 'Yes' ELSE 'No' END AS is_active_user
 FROM result a
 LEFT JOIN chargebee_events ce
-  ON LOWER(a.email) = ce.email
+  ON LOWER(TRIM(a.email)) = LOWER(TRIM(ce.email))
 LEFT JOIN get_active_user c
   ON LOWER(a.email) = LOWER(c.email)
-WHERE a.platform = 'api'
+WHERE a.platform in ('web')
 
 UNION ALL
 
 SELECT DISTINCT
   a.*,
   ve.event_text AS topic,
+  date(ve.timestamp) as report_date,
   CASE WHEN c.email IS NOT NULL THEN 'Yes' ELSE 'No' END AS is_active_user
 FROM result a
 LEFT JOIN vimeo_events ve
   ON a.user_id = ve.user_id
 LEFT JOIN get_active_user c
   ON LOWER(a.email) = LOWER(c.email)
-WHERE a.platform != 'api' or a.platform is NULL
+WHERE a.platform not in ( 'api','web') or a.platform is NULL
 ),
 
 ranked_emails AS (
@@ -192,7 +197,10 @@ WHERE rn = 1;;
     sql: ${TABLE}.first_name ;;
   }
 
-
+  dimension: report_date {
+    type:  date
+    sql: ${TABLE}.report_date ;;
+  }
 
   dimension: last_name {
     type:  string
