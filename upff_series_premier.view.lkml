@@ -1582,45 +1582,45 @@ view: upff_series_premier {
                     WHERE collection in (SELECT collection FROM upff_premier_titles)
                     ),
 
-                    plays_most_granular AS
-                    (
-                    SELECT
-                    user_id
-                    , row_number() over (partition BY user_id, DATE(ts), video_id ORDER BY DATE(ts)) AS min_count
-                    , ts
-                    , collection
-                    , TYPE
-                    , video_id
-                    , series
-                    , title
-                    , source
-                    , episode
-                    FROM play_data_global
-                    ),
+                    # plays_most_granular AS
+                    # (
+                    # SELECT
+                    # user_id
+                    # , row_number() over (partition BY user_id, DATE(ts), video_id ORDER BY DATE(ts)) AS min_count
+                    # , ts
+                    # , collection
+                    # , TYPE
+                    # , video_id
+                    # , series
+                    # , title
+                    # , source
+                    # , episode
+                    # FROM play_data_global
+                    # ),
 
-                    plays_max_duration AS
-                    (
-                    SELECT
-                    user_id
-                    , video_id
-                    , DATE(ts) AS DATE
-                    , max(min_count) AS min_count
-                    FROM plays_most_granular
-                    GROUP BY 1,2,3
-                    ),
+                    # plays_max_duration AS
+                    # (
+                    # SELECT
+                    # user_id
+                    # , video_id
+                    # , DATE(ts) AS DATE
+                    # , max(min_count) AS min_count
+                    # FROM plays_most_granular
+                    # GROUP BY 1,2,3
+                    # ),
 
-                    plays_less_granular AS
-                    (
-                    SELECT
-                    a.*
-                    , row_number() over (partition BY a.user_id ORDER BY a.ts) AS play_number
-                    FROM plays_most_granular AS a
-                    INNER JOIN plays_max_duration AS b
-                    ON a.user_id = b.user_id
-                    AND a.video_id = b.video_id
-                    AND DATE(a.ts) = b.DATE
-                    AND a.min_count = b.min_count
-                    ),
+                    # plays_less_granular AS
+                    # (
+                    # SELECT
+                    # a.*
+                    # , row_number() over (partition BY a.user_id ORDER BY a.ts) AS play_number
+                    # FROM plays_most_granular AS a
+                    # INNER JOIN plays_max_duration AS b
+                    # ON a.user_id = b.user_id
+                    # AND a.video_id = b.video_id
+                    # AND DATE(a.ts) = b.DATE
+                    # AND a.min_count = b.min_count
+                    # ),
 
                     movie_play_counts AS
                     (
@@ -1629,7 +1629,7 @@ view: upff_series_premier {
                     , b.release_date
                     , b.subscriber_count
                     , count(DISTINCT a.user_id) AS number_views
-                    FROM plays_less_granular AS a
+                    FROM play_data_global AS a
                     LEFT JOIN upff_subscriber_counts AS b
                     ON a.collection = b.collection
                     GROUP BY 1,2,3
