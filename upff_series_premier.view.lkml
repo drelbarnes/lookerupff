@@ -1581,48 +1581,48 @@ view: upff_series_premier {
                     SELECT * FROM ${redshift_allfirst_play_p1_less_granular.SQL_TABLE_NAME}
                     WHERE collection in (SELECT collection FROM upff_premier_titles)
                     ),
+/*
+                    plays_most_granular AS
+                    (
+                    SELECT
+                    user_id
+                    , row_number() over (partition BY user_id, DATE(ts), video_id ORDER BY DATE(ts)) AS min_count
+                    , ts
+                    , collection
+                    , TYPE
+                    , video_id
+                    , series
+                    , title
+                    , source
+                    , episode
+                    FROM play_data_global
+                    ),
 
-                    # plays_most_granular AS
-                    # (
-                    # SELECT
-                    # user_id
-                    # , row_number() over (partition BY user_id, DATE(ts), video_id ORDER BY DATE(ts)) AS min_count
-                    # , ts
-                    # , collection
-                    # , TYPE
-                    # , video_id
-                    # , series
-                    # , title
-                    # , source
-                    # , episode
-                    # FROM play_data_global
-                    # ),
+                    plays_max_duration AS
+                    (
+                    SELECT
+                    user_id
+                    , video_id
+                    , DATE(ts) AS DATE
+                    , max(min_count) AS min_count
+                    FROM plays_most_granular
+                    GROUP BY 1,2,3
+                    ),
 
-                    # plays_max_duration AS
-                    # (
-                    # SELECT
-                    # user_id
-                    # , video_id
-                    # , DATE(ts) AS DATE
-                    # , max(min_count) AS min_count
-                    # FROM plays_most_granular
-                    # GROUP BY 1,2,3
-                    # ),
-
-                    # plays_less_granular AS
-                    # (
-                    # SELECT
-                    # a.*
-                    # , row_number() over (partition BY a.user_id ORDER BY a.ts) AS play_number
-                    # FROM plays_most_granular AS a
-                    # INNER JOIN plays_max_duration AS b
-                    # ON a.user_id = b.user_id
-                    # AND a.video_id = b.video_id
-                    # AND DATE(a.ts) = b.DATE
-                    # AND a.min_count = b.min_count
-                    # ),
-
-                    movie_play_counts AS
+                    plays_less_granular AS
+                    (
+                    SELECT
+                    a.*
+                    , row_number() over (partition BY a.user_id ORDER BY a.ts) AS play_number
+                    FROM plays_most_granular AS a
+                    INNER JOIN plays_max_duration AS b
+                    ON a.user_id = b.user_id
+                    AND a.video_id = b.video_id
+                    AND DATE(a.ts) = b.DATE
+                    AND a.min_count = b.min_count
+                    ),
+*/
+                    series_play_counts AS
                     (
                     SELECT
                     a.collection as collection /* removed a.collection here and in left join condition */
@@ -1635,7 +1635,7 @@ view: upff_series_premier {
                     GROUP BY 1,2,3
                     ),
 
-                    title_views_raw AS
+                    series_views_raw AS
                     (
                     SELECT
                     m.collection
@@ -1647,26 +1647,26 @@ view: upff_series_premier {
                     , count(DISTINCT CASE WHEN p.ts BETWEEN m.release_date::TIMESTAMP AND m.release_date::TIMESTAMP + INTERVAL '7 days' THEN p.user_id ELSE NULL END) AS uniques_7_days
                     , count(DISTINCT CASE WHEN p.ts BETWEEN m.release_date::TIMESTAMP AND m.release_date::TIMESTAMP + INTERVAL '30 days' THEN p.user_id ELSE NULL END) AS uniques_30_days
                     , count(DISTINCT CASE WHEN p.ts BETWEEN m.release_date::TIMESTAMP AND m.release_date::TIMESTAMP + INTERVAL '90 days' THEN p.user_id ELSE NULL END) AS uniques_90_days
-                    FROM movie_play_counts AS m
+                    FROM series_play_counts AS m
                     INNER JOIN plays_less_granular AS p
                     ON m.collection = p.collection
                     GROUP BY 1,2,3
                     ),
 
-                    title_views_cr AS
+                    series_views_cr AS
                     (
                     SELECT
                     a.*
                     , b.completion_rate
                     , c.eps
-                    FROM title_views_raw AS a
+                    FROM series_views_raw AS a
                     LEFT JOIN upff_premier_completion_rates AS b
                     ON a.collection = b.collection
                     LEFT JOIN upff_premier_episodes AS c
                     ON a.collection = c.collection
                     ),
 
-                    title_views_benchmarked AS
+                    series_views_benchmarked AS
                     (
                     SELECT
                     collection
@@ -1686,10 +1686,10 @@ view: upff_series_premier {
                     , to_char(views_30_days::DECIMAL / nullif(eps,0), '999999999.00') AS views_per_ep_30d
                     , to_char(views_90_days::DECIMAL / nullif(eps,0), '999999999.00') AS views_per_ep_90d
                     , completion_rate AS lifetime_completion_rate
-                    FROM title_views_cr
+                    FROM series_views_cr
                     )
 
-              select * from title_views_benchmarked ;;
+              select * from series_views_benchmarked ;;
     }
 
     measure: count {
