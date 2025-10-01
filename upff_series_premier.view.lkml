@@ -1578,7 +1578,7 @@ view: upff_series_premier {
 
                     play_data_global AS
                     (
-                    SELECT * FROM looker_scratch.lr$rm8tg1759214993398_redshift_allfirst_play_p1_less_granular
+                    SELECT * FROM ${redshift_allfirst_play_p1_less_granular.SQL_TABLE_NAME}
                     WHERE collection in (SELECT collection FROM upff_premier_titles)
                     ),
 
