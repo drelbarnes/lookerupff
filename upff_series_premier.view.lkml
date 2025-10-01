@@ -1648,7 +1648,7 @@ view: upff_series_premier {
                     , count(DISTINCT CASE WHEN p.ts BETWEEN m.release_date::TIMESTAMP AND m.release_date::TIMESTAMP + INTERVAL '30 days' THEN p.user_id ELSE NULL END) AS uniques_30_days
                     , count(DISTINCT CASE WHEN p.ts BETWEEN m.release_date::TIMESTAMP AND m.release_date::TIMESTAMP + INTERVAL '90 days' THEN p.user_id ELSE NULL END) AS uniques_90_days
                     FROM series_play_counts AS m
-                    INNER JOIN plays_less_granular AS p
+                    INNER JOIN play_data_global AS p
                     ON m.collection = p.collection
                     GROUP BY 1,2,3
                     ),
