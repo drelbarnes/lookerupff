@@ -1,6 +1,11 @@
 # Define the database connection to be used for this model.
 connection: "upff"
 
+datagroup: linear_tv_schedule_default_datagroup {
+  sql_trigger: SELECT MAX(updated_at) FROM customers.up_airtable_reports ;;
+  max_cache_age: "24 hours"
+}
+
 # include all the views
 include: "/views/up_airtable_reports.view.lkml"
 

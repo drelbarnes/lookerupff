@@ -1,93 +1,101 @@
-# The name of this view in Looker is "Up Airtable Reports"
 view: up_airtable_reports {
-  # The sql_table_name parameter indicates the underlying database table
-  # to be used for all fields in this view.
-  sql_table_name: customers.up_airtable_reports ;;
-  drill_fields: [tx_id]
+  derived_table: {
+    sql:
+      SELECT *
+      FROM (
+        SELECT
+          *,
+          ROW_NUMBER() OVER (PARTITION BY tx_id ORDER BY date DESC, start_time DESC) AS rn
+        FROM customers.up_airtable_reports
+      ) t
+      WHERE rn = 1 ;;
 
-  # This primary key is the unique key for this table in the underlying database.
-  # You need to define a primary key in a view in order to join to other views.
+    # Persist the derived table to avoid re-running window query each time
+      persist_for: "24 hours"
 
-  dimension: tx_id {
-    primary_key: yes
-    type: number
-    sql: ${TABLE}.tx_id ;;
-  }
-    # Here's what a typical dimension looks like in LookML.
-    # A dimension is a groupable field that can be used to filter query results.
-    # This dimension will be called "Alt Title Code" in Explore.
+    # Set distribution style for Redshift
+    distribution: "KEY(tx_id)"
+    sortkeys: ["date", "start_time"]
+    }
 
-  dimension: alt_title_code {
-    type: string
-    sql: ${TABLE}.alt_title_code ;;
-  }
+    dimension: tx_id {
+      primary_key: yes
+      type: number
+      sql: ${TABLE}.tx_id ;;
+    }
 
-  dimension: channel {
-    type: string
-    sql: ${TABLE}.channel ;;
-  }
+    dimension: alt_title_code {
+      type: string
+      sql: ${TABLE}.alt_title_code ;;
+    }
 
-  dimension: contract {
-    type: string
-    sql: ${TABLE}.contract ;;
-  }
+    dimension: channel {
+      type: string
+      sql: ${TABLE}.channel ;;
+    }
 
-  dimension: date {
-    type: string
-    sql: ${TABLE}.date ;;
-  }
+    dimension: contract {
+      type: string
+      sql: ${TABLE}.contract ;;
+    }
 
-  dimension: duration {
-    type: string
-    sql: ${TABLE}.duration ;;
-  }
+    dimension: date {
+      type: string
+      sql: ${TABLE}.date ;;
+    }
 
-  dimension: end_time {
-    type: string
-    sql: ${TABLE}.end_time ;;
-  }
+    dimension: duration {
+      type: string
+      sql: ${TABLE}.duration ;;
+    }
 
-  dimension: product_code {
-    type: string
-    sql: ${TABLE}.product_code ;;
-  }
+    dimension: end_time {
+      type: string
+      sql: ${TABLE}.end_time ;;
+    }
 
-  dimension: product_title {
-    type: string
-    sql: ${TABLE}.product_title ;;
-  }
+    dimension: product_code {
+      type: string
+      sql: ${TABLE}.product_code ;;
+    }
 
-  dimension: program_id {
-    type: number
-    sql: ${TABLE}.program_id ;;
-  }
+    dimension: product_title {
+      type: string
+      sql: ${TABLE}.product_title ;;
+    }
 
-  dimension: requires_special_attention {
-    type: string
-    sql: ${TABLE}.requires_special_attention ;;
-  }
+    dimension: program_id {
+      type: number
+      sql: ${TABLE}.program_id ;;
+    }
 
-  dimension: series_title {
-    type: string
-    sql: ${TABLE}.series_title ;;
-  }
+    dimension: requires_special_attention {
+      type: string
+      sql: ${TABLE}.requires_special_attention ;;
+    }
 
-  dimension: start_time {
-    type: string
-    sql: ${TABLE}.start_time ;;
-  }
+    dimension: series_title {
+      type: string
+      sql: ${TABLE}.series_title ;;
+    }
 
-  dimension: tms_id {
-    type: string
-    sql: ${TABLE}.tms_id ;;
-  }
+    dimension: start_time {
+      type: string
+      sql: ${TABLE}.start_time ;;
+    }
 
-  dimension: transmission_duration {
-    type: string
-    sql: ${TABLE}.transmission_duration ;;
+    dimension: tms_id {
+      type: string
+      sql: ${TABLE}.tms_id ;;
+    }
+
+    dimension: transmission_duration {
+      type: string
+      sql: ${TABLE}.transmission_duration ;;
+    }
+
+    measure: count {
+      type: count
+      drill_fields: [tx_id]
+    }
   }
-  measure: count {
-    type: count
-    drill_fields: [tx_id]
-  }
-}
