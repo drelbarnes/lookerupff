@@ -28,7 +28,7 @@ view: up_airtable_reports {
     persist_for: "24 hours"
 
     # Redshift-specific options
-    distribution: "ALL"
+    distribution: "EVEN"
     sortkeys: ["date","start_time"]
   }
 
