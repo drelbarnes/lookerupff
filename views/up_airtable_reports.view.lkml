@@ -1,37 +1,30 @@
 view: up_airtable_reports {
   derived_table: {
     sql:
-    SELECT
-      tx_id,
-      alt_title_code,
-      channel,
-      contract,
-      date,
-      duration,
-      end_time,
-      product_code,
-      product_title,
-      program_id,
-      requires_special_attention,
-      series_title,
-      start_time,
-      tms_id,
-      transmission_duration
-    FROM (
       SELECT
-        *,
-        ROW_NUMBER() OVER (PARTITION BY tx_id ORDER BY date DESC, start_time DESC) AS rn
-      FROM customers.up_airtable_reports
-    ) t
-    WHERE rn = 1 ;;
-
-    persist_for: "24 hours"
-
-    # Redshift-specific options
-    distribution: "EVEN"
-    sortkeys: ["date","start_time"]
+        tx_id,
+        alt_title_code,
+        channel,
+        contract,
+        date,
+        duration,
+        end_time,
+        product_code,
+        product_title,
+        program_id,
+        requires_special_attention,
+        series_title,
+        start_time,
+        tms_id,
+        transmission_duration
+      FROM (
+        SELECT
+          *,
+          ROW_NUMBER() OVER (PARTITION BY tx_id ORDER BY date DESC, start_time DESC) AS rn
+        FROM customers.up_airtable_reports
+      ) t
+      WHERE rn = 1 ;;
   }
-
 
   dimension: tx_id {
     primary_key: yes
