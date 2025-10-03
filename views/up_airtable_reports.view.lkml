@@ -1,22 +1,36 @@
 view: up_airtable_reports {
   derived_table: {
     sql:
-      SELECT *
-      FROM (
-        SELECT
-          *,
-          ROW_NUMBER() OVER (PARTITION BY tx_id ORDER BY date DESC, start_time DESC) AS rn
-        FROM customers.up_airtable_reports
-      ) t
-      WHERE rn = 1 ;;
+    SELECT
+      tx_id,
+      alt_title_code,
+      channel,
+      contract,
+      date,
+      duration,
+      end_time,
+      product_code,
+      product_title,
+      program_id,
+      requires_special_attention,
+      series_title,
+      start_time,
+      tms_id,
+      transmission_duration
+    FROM (
+      SELECT
+        *,
+        ROW_NUMBER() OVER (PARTITION BY tx_id ORDER BY date DESC, start_time DESC) AS rn
+      FROM customers.up_airtable_reports
+    ) t
+    WHERE rn = 1 ;;
 
-    # Persist the derived table to avoid re-running window query each time
       persist_for: "24 hours"
 
-    # Set distribution style for Redshift
-    distribution: "KEY(tx_id)"
-    sortkeys: ["date", "start_time"]
+      distribution: "KEY(tx_id)"
+      sortkeys: ["date","start_time"]
     }
+
 
     dimension: tx_id {
       primary_key: yes
