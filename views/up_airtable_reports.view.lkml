@@ -25,11 +25,12 @@ view: up_airtable_reports {
     ) t
     WHERE rn = 1 ;;
 
-      persist_for: "24 hours"
+    persist_for: "24 hours"
 
-      distribution: "KEY(tx_id)"
-      sortkeys: ["date","start_time"]
-    }
+    distribution: "KEY(tx_id)"
+    sortkeys: ["date","start_time"]
+  }
+
 
 
     dimension: tx_id {
