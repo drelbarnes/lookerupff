@@ -74,11 +74,18 @@ include: "test_all_customers.view.lkml"
 include: "/video_views.view.lkml"
 include: "/Gaither_page_views.view.lkml"
 include: "/gaither_segment_consent.view.lkml"
+include: "/views/up_airtable_reports.view.lkml"
 
+
+explore: up_airtable_reports {
+  label: "Linear TV Schedule"
+  description: "Explore programming schedule from Mediagenix for UPtv, Ovation, and Gaither"
+}
 
 explore: video_views {
   label: "Video Views"
 }
+
 explore: test_all_customers {
   label: "Test All Customers"
 }
