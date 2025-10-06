@@ -135,7 +135,7 @@ view: redshift_php_get_churn_survey {
         label: "not_enough_usage"
       }
 
-      hen: {
+      when: {
         sql: ${reason} ILIKE '%on%' ;;
         label: "on"
       }
