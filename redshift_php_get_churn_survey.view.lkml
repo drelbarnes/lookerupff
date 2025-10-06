@@ -166,6 +166,7 @@ view: redshift_php_get_churn_survey {
   dimension: user_id {
     type: string
     sql: ${TABLE}.user_id ;;
+    tags: ["user_id"]
   }
 
   dimension: uuid {
