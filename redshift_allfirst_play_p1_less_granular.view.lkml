@@ -2,6 +2,7 @@ view: redshift_allfirst_play_p1_less_granular {
     derived_table: {
       sql: with
 
+/*
               vimeo_purchase_event_p0 AS
               (
               SELECT
@@ -14,7 +15,6 @@ view: redshift_allfirst_play_p1_less_granular {
                 , platform
                 , ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY timestamp ASC) AS event_num
                 , DATE(timestamp) AS date_stamp
-              /* ---- UPDATE DAILY PDT HERE ---- */
               FROM ${upff_webhook_events.SQL_TABLE_NAME}
               WHERE user_id <> '0'
               AND user_id ~ '^[0-9]*$'
@@ -36,7 +36,6 @@ view: redshift_allfirst_play_p1_less_granular {
                 , platform
                 , ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY timestamp DESC) AS event_num
                 , DATE(timestamp) AS date_stamp
-              /* ---- UPDATE DAILY PDT HERE ---- */
               FROM ${upff_webhook_events.SQL_TABLE_NAME}
               WHERE user_id <> '0'
               AND user_id ~ '^[0-9]*$'
@@ -94,7 +93,7 @@ view: redshift_allfirst_play_p1_less_granular {
               LEFT JOIN audience_first_event AS c
               ON b.user_id = c.user_id
               ),
-
+*/
               play_data_global AS
               (
               SELECT
@@ -107,7 +106,6 @@ view: redshift_allfirst_play_p1_less_granular {
                 , title
                 , source
                 , episode
-                /* ---- UPDATE DAILY PDT HERE ---- */
               FROM ${redshift_allfirst_play_p0.SQL_TABLE_NAME}
               WHERE user_id <> '0'
               AND user_id ~ '^[0-9]*$'
