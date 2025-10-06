@@ -104,6 +104,44 @@ view: redshift_php_get_churn_survey {
     sql: ${TABLE}.reason ;;
   }
 
+  dimension: reason_category {
+    type: string
+    case: {
+      when: {
+        sql: ${reason} ILIKE '%No time to watch%' ;;
+        label: "no_time_to_watch"
+      }
+      when: {
+        sql: ${reason} ILIKE '%Price%' OR
+          ${reason} ILIKE '%The price is too high%' ;;
+        label: "price"
+      }
+      when: {
+        sql: ${reason} ILIKE '%Content Not Interesting%' OR
+          ${reason} ILIKE '%There was not enough that I wanted to watch%' ;;
+        label: "content_not_interesting"
+      }
+      when: {
+        sql: ${reason} ILIKE '%Content Not Meeting Expectations%' OR
+          ${reason} ILIKE '%The quality of content did not meet my expectations%' ;;
+        label: "content_not_meeting_expectations"
+      }
+      when: {
+        sql: ${reason} ILIKE '%There were too many technical/ functionality issues%' or ${reason} ILIKE '%Streaming Issues%' ;;
+        label: "too_many_technical_issues"
+      }
+      when: {
+        sql: ${reason} ILIKE '%I did not use it enough to continue the membership%' ;;
+        label: "not_enough_usage"
+      }
+
+      hen: {
+        sql: ${reason} ILIKE '%on%' ;;
+        label: "on"
+      }
+    }
+  }
+
   dimension_group: received {
     type: time
     timeframes: [
