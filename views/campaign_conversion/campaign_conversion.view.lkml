@@ -134,11 +134,20 @@ SELECT
   ,vc.campaign_medium
 FROM visit_count vc
 LEFT JOIN trial_count tc
-ON vc.campaign_name = tc.campaign_name and vc.campaign_source = tc.campaign_source
+  ON vc.campaign_source = tc.campaign_source
+ AND vc.campaign_name   = tc.campaign_name
+ AND COALESCE(vc.campaign_medium,'(none)') = COALESCE(tc.campaign_medium,'(none)')
+
 LEFT JOIN in_trial_count itc
-ON vc.campaign_name = itc.campaign_name and vc.campaign_source = itc.campaign_source
+  ON vc.campaign_source = itc.campaign_source
+ AND vc.campaign_name   = itc.campaign_name
+ AND COALESCE(vc.campaign_medium,'(none)') = COALESCE(itc.campaign_medium,'(none)')
+
 LEFT JOIN converted_count cc
-ON vc.campaign_name = cc.campaign_name and vc.campaign_source = cc.campaign_source
+  ON vc.campaign_source = cc.campaign_source
+ AND vc.campaign_name   = cc.campaign_name
+ AND COALESCE(vc.campaign_medium,'(none)') = COALESCE(cc.campaign_medium,'(none)')
+
   ;;
  }
 
