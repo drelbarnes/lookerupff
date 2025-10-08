@@ -6,7 +6,7 @@ view: upff_datamart_subscriptions {
               vimeo_nonweb_customers AS
               (
               SELECT
-                row_number() over () AS subscription_id
+                ROW_NUMBER() OVER () AS subscription_id
                 , 'NULL' AS customer_id
                 , user_id
                 , CAST(report_date AS TIMESTAMP) AS received_at
