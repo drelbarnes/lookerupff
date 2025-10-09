@@ -5,7 +5,8 @@ view: chargebee_webhook {
   SELECT
     content_customer_email::VARCHAR AS email,
     'customer_created' AS event,
-    "timestamp"::TIMESTAMP AS "timestamp"
+    "timestamp"::TIMESTAMP AS "timestamp",
+    null::VARCHAR as plan
   FROM chargebee_webhook_events.customer_created
 
   UNION ALL
@@ -13,7 +14,8 @@ view: chargebee_webhook {
   SELECT
     content_customer_email::VARCHAR AS email,
     'customer_deleted' AS event,
-    "timestamp"::TIMESTAMP
+    "timestamp"::TIMESTAMP,
+    null::VARCHAR as plan
   FROM chargebee_webhook_events.customer_deleted
 
   UNION ALL
@@ -21,7 +23,8 @@ view: chargebee_webhook {
   SELECT
     content_customer_email::VARCHAR AS email,
     'customer_updated' AS event,
-    "timestamp"::TIMESTAMP
+    "timestamp"::TIMESTAMP,
+    null::VARCHAR as plan
   FROM chargebee_webhook_events.customer_changed
 
   UNION ALL
@@ -33,7 +36,14 @@ view: chargebee_webhook {
         THEN 'customer_product_free_trial_created'
       ELSE 'customer_product_created'
     END AS event,
-    "timestamp"::TIMESTAMP
+    "timestamp"::TIMESTAMP,
+    COALESCE(
+      content_subscription_subscription_items_0_item_price_id::VARCHAR,
+      json_extract_path_text(
+        json_extract_array_element_text(content_subscription_subscription_items, 0),
+        'item_price_id'
+      )::VARCHAR
+    ) AS plan
   FROM chargebee_webhook_events.subscription_created
 
   UNION ALL
@@ -41,7 +51,14 @@ view: chargebee_webhook {
   SELECT
     content_customer_email::VARCHAR AS email,
     'customer_product_free_trial_converted' AS event,
-    "timestamp"::TIMESTAMP
+    "timestamp"::TIMESTAMP,
+    COALESCE(
+      content_subscription_subscription_items_0_item_price_id::VARCHAR,
+      json_extract_path_text(
+        json_extract_array_element_text(content_subscription_subscription_items, 0),
+        'item_price_id'
+      )::VARCHAR
+    ) AS plan
   FROM chargebee_webhook_events.subscription_activated
   WHERE content_subscription_due_invoices_count = 0
 
@@ -50,7 +67,14 @@ view: chargebee_webhook {
   SELECT
     a.content_customer_email::VARCHAR AS email,
     'customer_product_free_trial_converted' AS event,
-    a."timestamp"::TIMESTAMP
+    a."timestamp"::TIMESTAMP,
+    COALESCE(
+      a.content_subscription_subscription_items_0_item_price_id::VARCHAR,
+      json_extract_path_text(
+        json_extract_array_element_text(a.content_subscription_subscription_items, 0),
+        'item_price_id'
+      )::VARCHAR
+    ) AS plan
   FROM chargebee_webhook_events.subscription_activated a
   INNER JOIN chargebee_webhook_events.payment_succeeded b
     ON a.content_invoice_id = b.content_invoice_id
@@ -61,7 +85,14 @@ view: chargebee_webhook {
   SELECT
     content_customer_email::VARCHAR AS email,
     'customer_product_created' AS event,
-    "timestamp"::TIMESTAMP
+    "timestamp"::TIMESTAMP,
+    COALESCE(
+      content_subscription_subscription_items_0_item_price_id::VARCHAR,
+      json_extract_path_text(
+        json_extract_array_element_text(content_subscription_subscription_items, 0),
+        'item_price_id'
+      )::VARCHAR
+    ) AS plan
   FROM chargebee_webhook_events.subscription_reactivated
 
   UNION ALL
@@ -69,7 +100,14 @@ view: chargebee_webhook {
   SELECT
     content_customer_email::VARCHAR AS email,
     'customer_product_renewed' AS event,
-    "timestamp"::TIMESTAMP
+    "timestamp"::TIMESTAMP,
+    COALESCE(
+      content_subscription_subscription_items_0_item_price_id::VARCHAR,
+      json_extract_path_text(
+        json_extract_array_element_text(content_subscription_subscription_items, 0),
+        'item_price_id'
+      )::VARCHAR
+    ) AS plan
   FROM chargebee_webhook_events.subscription_renewed
 
   UNION ALL
@@ -81,7 +119,14 @@ view: chargebee_webhook {
         THEN 'customer_product_free_trial_expired'
       ELSE 'customer_product_cancelled'
     END AS event,
-    "timestamp"::TIMESTAMP
+    "timestamp"::TIMESTAMP,
+    COALESCE(
+      content_subscription_subscription_items_0_item_price_id::VARCHAR,
+      json_extract_path_text(
+        json_extract_array_element_text(content_subscription_subscription_items, 0),
+        'item_price_id'
+      )::VARCHAR
+    ) AS plan
   FROM chargebee_webhook_events.subscription_cancelled
   WHERE (
     content_subscription_cancel_reason_code NOT IN (
@@ -100,7 +145,14 @@ view: chargebee_webhook {
         THEN 'customer_product_free_trial_expired'
       ELSE 'customer_product_cancelled'
     END AS event,
-    "timestamp"::TIMESTAMP
+    "timestamp"::TIMESTAMP,
+    COALESCE(
+      content_subscription_subscription_items_0_item_price_id::VARCHAR,
+      json_extract_path_text(
+        json_extract_array_element_text(content_subscription_subscription_items, 0),
+        'item_price_id'
+      )::VARCHAR
+    ) AS plan
   FROM chargebee_webhook_events.subscription_cancelled
   WHERE content_subscription_cancel_reason_code IN (
     'Not Paid','No Card','Fraud Review Failed','Non Compliant EU Customer',
@@ -112,7 +164,14 @@ view: chargebee_webhook {
   SELECT
     content_customer_email::VARCHAR AS email,
     'customer_product_paused' AS event,
-    "timestamp"::TIMESTAMP
+    "timestamp"::TIMESTAMP,
+    COALESCE(
+      content_subscription_subscription_items_0_item_price_id::VARCHAR,
+      json_extract_path_text(
+        json_extract_array_element_text(content_subscription_subscription_items, 0),
+        'item_price_id'
+      )::VARCHAR
+    ) AS plan
   FROM chargebee_webhook_events.subscription_paused
 
   UNION ALL
@@ -120,7 +179,14 @@ view: chargebee_webhook {
   SELECT
     content_customer_email::VARCHAR AS email,
     'customer_product_resumed' AS event,
-    "timestamp"::TIMESTAMP
+    "timestamp"::TIMESTAMP,
+    COALESCE(
+      content_subscription_subscription_items_0_item_price_id::VARCHAR,
+      json_extract_path_text(
+        json_extract_array_element_text(content_subscription_subscription_items, 0),
+        'item_price_id'
+      )::VARCHAR
+    ) AS plan
   FROM chargebee_webhook_events.subscription_resumed
 
   UNION ALL
@@ -128,7 +194,14 @@ view: chargebee_webhook {
   SELECT
     content_customer_email::VARCHAR AS email,
     'customer_product_charge_failed' AS event,
-    "timestamp"::TIMESTAMP
+    "timestamp"::TIMESTAMP,
+    COALESCE(
+      content_subscription_subscription_items_0_item_price_id::VARCHAR,
+      json_extract_path_text(
+        json_extract_array_element_text(content_subscription_subscription_items, 0),
+        'item_price_id'
+      )::VARCHAR
+    ) AS plan
   FROM chargebee_webhook_events.payment_failed
 
   UNION ALL
@@ -136,7 +209,14 @@ view: chargebee_webhook {
   SELECT
     content_customer_email::VARCHAR AS email,
     'customer_product_set_cancellation' AS event,
-    "timestamp"::TIMESTAMP
+    "timestamp"::TIMESTAMP,
+    COALESCE(
+      content_subscription_subscription_items_0_item_price_id::VARCHAR,
+      json_extract_path_text(
+        json_extract_array_element_text(content_subscription_subscription_items, 0),
+        'item_price_id'
+      )::VARCHAR
+    ) AS plan
   FROM chargebee_webhook_events.subscription_cancellation_scheduled
 
   UNION ALL
@@ -144,7 +224,14 @@ view: chargebee_webhook {
   SELECT
     content_customer_email::VARCHAR AS email,
     'customer_product_undo_set_cancellation' AS event,
-    "timestamp"::TIMESTAMP
+    "timestamp"::TIMESTAMP,
+    COALESCE(
+      content_subscription_subscription_items_0_item_price_id::VARCHAR,
+      json_extract_path_text(
+        json_extract_array_element_text(content_subscription_subscription_items, 0),
+        'item_price_id'
+      )::VARCHAR
+    ) AS plan
   FROM chargebee_webhook_events.subscription_scheduled_cancellation_removed
 
   UNION ALL
@@ -152,7 +239,14 @@ view: chargebee_webhook {
   SELECT
     content_customer_email::VARCHAR AS email,
     'customer_product_set_paused' AS event,
-    "timestamp"::TIMESTAMP
+    "timestamp"::TIMESTAMP,
+    COALESCE(
+      content_subscription_subscription_items_0_item_price_id::VARCHAR,
+      json_extract_path_text(
+        json_extract_array_element_text(content_subscription_subscription_items, 0),
+        'item_price_id'
+      )::VARCHAR
+    ) AS plan
   FROM chargebee_webhook_events.subscription_pause_scheduled
 
   UNION ALL
@@ -160,19 +254,27 @@ view: chargebee_webhook {
   SELECT
     content_customer_email::VARCHAR AS email,
     'customer_product_undo_set_paused' AS event,
-    "timestamp"::TIMESTAMP
+    "timestamp"::TIMESTAMP,
+    COALESCE(
+      content_subscription_subscription_items_0_item_price_id::VARCHAR,
+      json_extract_path_text(
+        json_extract_array_element_text(content_subscription_subscription_items, 0),
+        'item_price_id'
+      )::VARCHAR
+    ) AS plan
   FROM chargebee_webhook_events.subscription_scheduled_pause_removed
 )
-SELECT email, event, "timestamp"
+SELECT email, event, "timestamp", plan
 FROM (
   SELECT
     email,
     event,
     "timestamp",
+    plan,
     ROW_NUMBER() OVER (PARTITION BY email ORDER BY "timestamp" DESC) AS rn
   FROM event_mapping
 ) s
-WHERE rn = 1
+WHERE rn = 1;
 
 ;;
 

@@ -130,6 +130,7 @@ chargebee_events as (
   SELECT
     *
   FROM  ${chargebee_webhook.SQL_TABLE_NAME}
+  where (plan not like 'Min%' and plan not like 'Gaither%')
 ),
 
 get_active_user as (
