@@ -274,7 +274,7 @@ FROM (
     ROW_NUMBER() OVER (PARTITION BY email ORDER BY "timestamp" DESC) AS rn
   FROM event_mapping
 ) s
-WHERE rn = 1;
+WHERE rn = 1
 
 ;;
 
