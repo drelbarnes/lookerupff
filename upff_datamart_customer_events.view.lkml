@@ -69,7 +69,7 @@ view: upff_datamart_customer_events {
               (
               SELECT DISTINCT
                 a.user_id AS id
-                , user_id
+                , b.user_id
                 , a.subscription_id
                 , b.timestamp AS received_at
                 , b.event
