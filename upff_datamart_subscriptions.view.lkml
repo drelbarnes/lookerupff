@@ -184,6 +184,7 @@ view: upff_datamart_subscriptions {
     dimension: user_id {
       type: number
       sql: ${TABLE}.user_id ;;
+      tags: ["user_id"]
     }
 
     dimension: subscription_id {

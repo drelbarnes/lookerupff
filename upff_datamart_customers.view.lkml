@@ -131,6 +131,7 @@ view: upff_datamart_customers {
     dimension: user_id {
       type: number
       sql: ${TABLE}.user_id ;;
+      tags: ["user_id"]
     }
 
     dimension: anonymous_id {

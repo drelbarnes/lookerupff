@@ -98,6 +98,7 @@ view: upff_datamart_customer_events {
   dimension: user_id {
     type: number
     sql: ${TABLE}.user_id ;;
+    tags: ["user_id"]
   }
 
     dimension: subscription_id {

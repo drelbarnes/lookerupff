@@ -20,6 +20,7 @@ view: analytics {
       ,report_date
       from ovation_subscriptions
       where action = 'subscription' and action_type not in ( 'free_access','doorkeeper::application')
+      and email not LIKE '%drebarnes+ovationart%' and email not LIKE '%travisnunnally%' and email not like '%philipmanwaring%'
       ),
 
       result2 as (select
