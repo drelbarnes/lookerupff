@@ -159,5 +159,11 @@ view: vimeo {
     sql: ${TABLE}.user_id  ;;
   }
 
+  measure: resubscribed_vizio {
+    type: count_distinct
+    filters: [event_type: "Direct to Paid",platform :"vizio_tv"]
+    sql: ${TABLE}.user_id  ;;
+  }
+
 
 }

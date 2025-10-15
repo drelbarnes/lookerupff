@@ -57,7 +57,7 @@ view: upff_datamart_customers {
                 , 'Chargebee' AS dsource
               FROM http_api.chargebee_subscriptions AS a
               LEFT JOIN ${upff_webhook_events.SQL_TABLE_NAME} AS b
-              ON a.customer_id = b.customer_id
+              ON a.customer_email = b.email
               AND a.subscription_subscription_items_0_item_price_id in ('UP-Faith-Family-Monthly','UP-Faith-Family-Yearly')
               ),
 
