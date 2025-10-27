@@ -273,6 +273,7 @@ FROM (
     plan,
     ROW_NUMBER() OVER (PARTITION BY email ORDER BY "timestamp" DESC) AS rn
   FROM event_mapping
+  WHERE (plan not like 'Min%' and plan not like 'Gaither%') or plan is NULL
 ) s
 WHERE rn = 1
 
