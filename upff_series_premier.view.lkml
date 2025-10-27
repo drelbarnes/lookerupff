@@ -1690,6 +1690,10 @@ view: upff_series_premier {
                     )
 
               select * from series_views_benchmarked ;;
+
+      distribution_style: "even"
+      sortkeys: ["collection"]
+      datagroup_trigger: redshift_upff_datagroup
     }
 
     measure: count {
