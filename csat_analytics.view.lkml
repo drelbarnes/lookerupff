@@ -1,4 +1,5 @@
 view: csat_analytics {
+
     derived_table: {
       sql: with
 
@@ -26,12 +27,12 @@ view: csat_analytics {
               , survey_analytics AS
               (
               SELECT
-                format_timestamp('%m-%Y', TIMESTAMP(submit_date)) AS month_year
-                , round(avg(q1), 2) AS avg_q1_scr
-                , round(avg(q2), 2) AS avg_q2_scr
-                , round(avg(q3), 2) AS avg_q3_scr
-                , round(avg(q4), 2) AS avg_q4_scr
-                , round(avg(q5), 2) AS avg_q5_scr
+                submit_date
+                , round(avg(q1), 3) AS avg_q1_scr
+                , round(avg(q2), 3) AS avg_q2_scr
+                , round(avg(q3), 3) AS avg_q3_scr
+                , round(avg(q4), 3) AS avg_q4_scr
+                , round(avg(q5), 3) AS avg_q5_scr
               FROM survey_select
               GROUP BY 1
               )
@@ -44,9 +45,9 @@ view: csat_analytics {
       drill_fields: [detail*]
     }
 
-    dimension: month_year {
-      type: string
-      sql: ${TABLE}.month_year ;;
+    dimension_group: submit_date {
+      type: time
+      sql: ${TABLE}.submit_date ;;
     }
 
     dimension: avg_q1_scr {
@@ -76,7 +77,7 @@ view: csat_analytics {
 
     set: detail {
       fields: [
-        month_year,
+        submit_date_time,
         avg_q1_scr,
         avg_q2_scr,
         avg_q3_scr,
