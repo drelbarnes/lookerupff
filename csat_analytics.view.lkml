@@ -50,30 +50,60 @@ view: csat_analytics {
       sql: ${TABLE}.submit_date ;;
     }
 
-    dimension: avg_q1_scr {
-      type: number
-      sql: ${TABLE}.avg_q1_scr ;;
-    }
+ #   dimension: avg_q1_scr {
+ #   type: number
+ #   sql: ${TABLE}.avg_q1_scr ;;
+ #  }
 
-    dimension: avg_q2_scr {
-      type: number
-      sql: ${TABLE}.avg_q2_scr ;;
-    }
+  #  dimension: avg_q2_scr {
+  #    type: number
+  #    sql: ${TABLE}.avg_q2_scr ;;
+  #  }
 
-    dimension: avg_q3_scr {
-      type: number
-      sql: ${TABLE}.avg_q3_scr ;;
-    }
+  #  dimension: avg_q3_scr {
+  #    type: number
+  #    sql: ${TABLE}.avg_q3_scr ;;
+  #  }
 
-    dimension: avg_q4_scr {
-      type: number
-      sql: ${TABLE}.avg_q4_scr ;;
-    }
+  #  dimension: avg_q4_scr {
+  #    type: number
+  #    sql: ${TABLE}.avg_q4_scr ;;
+  #  }
 
-    dimension: avg_q5_scr {
-      type: number
-      sql: ${TABLE}.avg_q5_scr ;;
-    }
+  #  dimension: avg_q5_scr {
+  #    type: number
+  #    sql: ${TABLE}.avg_q5_scr ;;
+  #  }
+
+  measure: avg_q1_scr {
+    type: average
+    sql: ${TABLE}.avg_q1_scr ;;
+    value_format_name: decimal_2
+  }
+
+  measure: avg_q2_scr {
+    type: average
+    sql: ${TABLE}.avg_q2_scr ;;
+    value_format_name: decimal_2
+  }
+
+  measure: avg_q3_scr {
+    type: average
+    sql: ${TABLE}.avg_q3_scr ;;
+    value_format_name: decimal_2
+  }
+
+  measure: avg_q4_scr {
+    type: average
+    sql: ${TABLE}.avg_q4_scr ;;
+    value_format_name: decimal_2
+  }
+
+  measure: avg_q5_scr {
+    type: average
+    sql: ${TABLE}.avg_q5_scr ;;
+    value_format_name: decimal_2
+  }
 
     set: detail {
       fields: [
