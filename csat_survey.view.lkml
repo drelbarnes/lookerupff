@@ -99,6 +99,12 @@ view: csat_survey {
       sql: ${TABLE}.q5 ;;
     }
 
+  measure: csat_q1_avg {
+    type: number
+    sql: SUM(${q1} * ${count}) / NULLIF(SUM(${count}), 0) ;;
+    value_format_name: "decimal_2"
+  }
+
     set: detail {
       fields: [
         id,
