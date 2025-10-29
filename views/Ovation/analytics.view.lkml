@@ -18,8 +18,9 @@ view: analytics {
       END AS status
       ,date(customer_created_at) AS created_at
       ,report_date
+      ,action
       from ovation_subscriptions
-      where action = 'subscription' and action_type not in ( 'free_access','doorkeeper::application')
+      where  action_type not in ( 'free_access','doorkeeper::application')
       and email not LIKE '%drebarnes+ovationart%' and email not LIKE '%travisnunnally%' and email not like '%philipmanwaring%'
       ),
 
@@ -29,6 +30,7 @@ view: analytics {
       ,platform
       ,created_at
       ,report_date
+      ,action
       ,CASE
       WHEN status = 'active' AND LAG(status) OVER (PARTITION BY email ORDER BY report_date) ='in_trial'
       THEN 'Yes'
@@ -67,6 +69,7 @@ view: analytics {
       ,sub_cancelled
       ,re_acquisition
       ,trial_created
+      ,action
       from result2
       ;;
   }
@@ -85,6 +88,11 @@ view: analytics {
   dimension: re_acquisitions_date {
     type: date
     sql: ${TABLE}.re_acquisition_date ;;
+  }
+
+  dimension: action {
+    type: string
+    sql: ${TABLE}.action ;;
   }
 
   dimension: email {
@@ -136,7 +144,7 @@ view: analytics {
     type: count_distinct
     # for Chargebee : active,non_rewing
     # for Vimeo : enabled
-    filters: [status: "active,non_renewing,enabled"]
+    filters: [status: "active,non_renewing,enabled",action: "subscription"]
     sql:${TABLE}.email   ;;
   }
 
@@ -144,7 +152,15 @@ view: analytics {
     type: count_distinct
     # for Chargebee : in_trial
     # for Vimeo : free_trial
-    filters: [status: "in_trial,free_trial"]
+    filters: [status: "in_trial,free_trial",action: "subscription"]
+    sql: ${TABLE}.email  ;;
+  }
+
+  measure: total_follows {
+    type: count_distinct
+    # for Chargebee : in_trial
+    # for Vimeo : free_trial
+    filters: [action: "follow"]
     sql: ${TABLE}.email  ;;
   }
 

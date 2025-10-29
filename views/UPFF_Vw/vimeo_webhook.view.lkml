@@ -47,7 +47,7 @@ SELECT
   platform,
   "timestamp"
 FROM purchase_events
-WHERE platform != 'api'
+WHERE platform != 'api' or platform is NULL
 QUALIFY ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY "timestamp" DESC) = 1
 
  ;;
