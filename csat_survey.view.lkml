@@ -100,8 +100,8 @@ view: csat_survey {
     }
 
   measure: csat_q1_avg {
-    type: number
-    sql: SUM(${q1} * ${count}) / NULLIF(SUM(${count}), 0) ;;
+    type: average
+    sql: ${q1} ;;
     value_format_name: "decimal_2"
   }
 
