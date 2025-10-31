@@ -224,6 +224,8 @@ include: "first_n_plays_v2.view.lkml"
 include: "minutes_distribution_by_title.view.lkml"
 include: "n_day_views.view.lkml"
 include: "premier_scorecard.view.lkml"
+include: "csat_survey.view.lkml"
+include: "csat_analytics.view.lkml"
 
 include: "/views/uptv_web/uptv_page_events.view.lkml"
 include: "/views/uptv_web/uptv_web_sessions.view.lkml"
@@ -487,6 +489,14 @@ label: "Hudson & Rex S2 E19 Completers"
 
 explore: search_and_discovery {
   label: "Search"
+}
+
+explore: csat_survey {
+  label: "CSAT Survey"
+}
+
+explore: csat_analytics {
+  label: "CSAT Analytics"
 }
 
 explore: search_and_discovery2 {
