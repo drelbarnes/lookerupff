@@ -47,27 +47,27 @@ view: csat_tables {
       sql: ${TABLE}.ds ;;
     }
 
-    dimension: q1_s {
+    measure: q1_s {
       type: number
       sql: ${TABLE}.q1_s ;;
     }
 
-    dimension: q2_s {
+    measure: q2_s {
       type: number
       sql: ${TABLE}.q2_s ;;
     }
 
-    dimension: q3_s {
+    measure: q3_s {
       type: number
       sql: ${TABLE}.q3_s ;;
     }
 
-    dimension: q4_s {
+    measure: q4_s {
       type: number
       sql: ${TABLE}.q4_s ;;
     }
 
-    dimension: q5_s {
+    measure: q5_s {
       type: number
       sql: ${TABLE}.q5_s ;;
     }
