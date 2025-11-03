@@ -17,6 +17,7 @@ include: "/views/UPFF_Vw/sub_count_v2.view.lkml"
 include: "/views/UPFF_Vw/churn_gain.view.lkml"
 include: "/views/UPFF_Vw/vimeo_webhook.view.lkml"
 include: "/views/UPFF_Vw/chargebee_webhook.view.lkml"
+include: "/views/UPFF_Vw/post_trial_refund.view.lkml"
 
 explore: UPFF_analytics_Vw {
   label: "UPFF_analytics_Vw"
@@ -78,4 +79,8 @@ explore: sub_count_v2 {
 
 explore: churn_gain {
   label: "UPFF V2 New Paid Sub | Churn"
+}
+
+explore: post_trial_refund {
+  label: "UPFF Post Trial Refund"
 }
