@@ -22,19 +22,43 @@ view: csat_tables {
                             , Tags AS tags
                             , ticket_id
                             , DATE(Submit_Date__UTC_) AS ds
+                            , EXTRACT(MONTH FROM CAST(Stage_Date__UTC_ AS DATE)) AS month_number
                     FROM ad_hoc.csat_survey
+                    ),
+
+                    a2 AS
+                    (
+                    SELECT
+                      month_number
+                      , sum(CASE WHEN q1 = 1 THEN 1 END) AS q1_1
+                      , sum(CASE WHEN q1 = 2 THEN 1 END) AS q1_2
+                      , sum(CASE WHEN q1 = 3 THEN 1 END) AS q1_3
+                      , sum(CASE WHEN q1 = 4 THEN 1 END) AS q1_4
+                      , sum(CASE WHEN q1 = 5 THEN 1 END) AS q1_5
+                      , sum(CASE WHEN q2 = 1 THEN 1 END) AS q2_1
+                      , sum(CASE WHEN q2 = 2 THEN 1 END) AS q2_2
+                      , sum(CASE WHEN q2 = 3 THEN 1 END) AS q2_3
+                      , sum(CASE WHEN q2 = 4 THEN 1 END) AS q2_4
+                      , sum(CASE WHEN q2 = 5 THEN 1 END) AS q2_5
+                      , sum(CASE WHEN q3 = 1 THEN 1 END) AS q3_1
+                      , sum(CASE WHEN q3 = 2 THEN 1 END) AS q3_2
+                      , sum(CASE WHEN q3 = 3 THEN 1 END) AS q3_3
+                      , sum(CASE WHEN q3 = 4 THEN 1 END) AS q3_4
+                      , sum(CASE WHEN q3 = 5 THEN 1 END) AS q3_5
+                      , sum(CASE WHEN q4 = 0 THEN 1 END) AS q4_0
+                      , sum(CASE WHEN q4 = 1 THEN 1 END) AS q4_1
+                      , sum(CASE WHEN q5 = 0 THEN 1 END) AS q5_0
+                      , sum(CASE WHEN q5 = 1 THEN 1 END) AS q5_1
+                      , sum(CASE WHEN q1 is NOT NULL THEN 1 END) AS q1_total
+                      , sum(CASE WHEN q2 is NOT NULL THEN 1 END) AS q2_total
+                      , sum(CASE WHEN q3 is NOT NULL THEN 1 END) AS q3_total
+                      , sum(CASE WHEN q4 is NOT NULL THEN 1 END) AS q4_total
+                      , sum(CASE WHEN q5 is NOT NULL THEN 1 END) AS q5_total
+                    FROM a1
+                    GROUP BY month_number
                     )
 
-                    select
-                      ds, q1, q2, q3, q4, q5
-/*                      ,sum(q1) as q1_s
-                      ,sum(q2) as q2_s
-                      ,sum(q3) as q3_s
-                      ,sum(q4) as q4_s
-                      ,sum(q5) as q5_s
-*/
-                    from a1
---                    group by ds ;;
+                select * from a2 ;;
     }
 
     measure: count {
@@ -42,50 +66,158 @@ view: csat_tables {
       drill_fields: [detail*]
     }
 
-    dimension: ds {
-      type: date
-      datatype: date
-      sql: ${TABLE}.ds ;;
+    dimension: month_number {
+      type: number
+      sql: ${TABLE}.month_number ;;
     }
 
-    dimension_group: submit_date {
-      type: time
-      sql: ${TABLE}.ds ;;
+    dimension: q1_1 {
+      type: number
+      sql: ${TABLE}.q1_1 ;;
     }
 
-    measure: q1 {
-      type: sum
-      sql: ${TABLE}.q1 ;;
+    dimension: q1_2 {
+      type: number
+      sql: ${TABLE}.q1_2 ;;
     }
 
-    measure: q2 {
-      type: sum
-      sql: ${TABLE}.q2 ;;
+    dimension: q1_3 {
+      type: number
+      sql: ${TABLE}.q1_3 ;;
     }
 
-    measure: q3 {
-      type: sum
-      sql: ${TABLE}.q3 ;;
+    dimension: q1_4 {
+      type: number
+      sql: ${TABLE}.q1_4 ;;
     }
 
-    measure: q4 {
-      type: sum
-      sql: ${TABLE}.q4 ;;
+    dimension: q1_5 {
+      type: number
+      sql: ${TABLE}.q1_5 ;;
     }
 
-    measure: q5 {
-      type: sum
-      sql: ${TABLE}.q5 ;;
+    dimension: q2_1 {
+      type: number
+      sql: ${TABLE}.q2_1 ;;
+    }
+
+    dimension: q2_2 {
+      type: number
+      sql: ${TABLE}.q2_2 ;;
+    }
+
+    dimension: q2_3 {
+      type: number
+      sql: ${TABLE}.q2_3 ;;
+    }
+
+    dimension: q2_4 {
+      type: number
+      sql: ${TABLE}.q2_4 ;;
+    }
+
+    dimension: q2_5 {
+      type: number
+      sql: ${TABLE}.q2_5 ;;
+    }
+
+    dimension: q3_1 {
+      type: number
+      sql: ${TABLE}.q3_1 ;;
+    }
+
+    dimension: q3_2 {
+      type: number
+      sql: ${TABLE}.q3_2 ;;
+    }
+
+    dimension: q3_3 {
+      type: number
+      sql: ${TABLE}.q3_3 ;;
+    }
+
+    dimension: q3_4 {
+      type: number
+      sql: ${TABLE}.q3_4 ;;
+    }
+
+    dimension: q3_5 {
+      type: number
+      sql: ${TABLE}.q3_5 ;;
+    }
+
+    dimension: q4_0 {
+      type: number
+      sql: ${TABLE}.q4_0 ;;
+    }
+
+    dimension: q4_1 {
+      type: number
+      sql: ${TABLE}.q4_1 ;;
+    }
+
+    dimension: q5_0 {
+      type: number
+      sql: ${TABLE}.q5_0 ;;
+    }
+
+    dimension: q5_1 {
+      type: number
+      sql: ${TABLE}.q5_1 ;;
+    }
+
+    dimension: q1_total {
+      type: number
+      sql: ${TABLE}.q1_total ;;
+    }
+
+    dimension: q2_total {
+      type: number
+      sql: ${TABLE}.q2_total ;;
+    }
+
+    dimension: q3_total {
+      type: number
+      sql: ${TABLE}.q3_total ;;
+    }
+
+    dimension: q4_total {
+      type: number
+      sql: ${TABLE}.q4_total ;;
+    }
+
+    dimension: q5_total {
+      type: number
+      sql: ${TABLE}.q5_total ;;
     }
 
     set: detail {
       fields: [
-        ds,
-        q1,
-        q2,
-        q3,
-        q4,
-        q5
+        month_number,
+        q1_1,
+        q1_2,
+        q1_3,
+        q1_4,
+        q1_5,
+        q2_1,
+        q2_2,
+        q2_3,
+        q2_4,
+        q2_5,
+        q3_1,
+        q3_2,
+        q3_3,
+        q3_4,
+        q3_5,
+        q4_0,
+        q4_1,
+        q5_0,
+        q5_1,
+        q1_total,
+        q2_total,
+        q3_total,
+        q4_total,
+        q5_total
       ]
     }
   }
