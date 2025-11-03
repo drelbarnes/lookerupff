@@ -47,6 +47,11 @@ view: csat_tables {
     sql: ${TABLE}.ds ;;
   }
 
+  dimension_group: submit_date {
+    type: time
+    sql: ${TABLE}.ds ;;
+  }
+
   measure: q1_n {
     type: sum
     sql: ${TABLE}.q1_n ;;
