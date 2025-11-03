@@ -48,27 +48,27 @@ view: csat_tables {
     }
 
     measure: q1_s {
-      type: number
+      type: sum
       sql: ${TABLE}.q1_s ;;
     }
 
     measure: q2_s {
-      type: number
+      type: sum
       sql: ${TABLE}.q2_s ;;
     }
 
     measure: q3_s {
-      type: number
+      type: sum
       sql: ${TABLE}.q3_s ;;
     }
 
     measure: q4_s {
-      type: number
+      type: sum
       sql: ${TABLE}.q4_s ;;
     }
 
     measure: q5_s {
-      type: number
+      type: sum
       sql: ${TABLE}.q5_s ;;
     }
 
