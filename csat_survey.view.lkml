@@ -44,22 +44,22 @@ view: csat_survey {
       sql: ${TABLE}.ending ;;
     }
 
-    measure: q1 {
+    dimension: q1 {
       type: number
       sql: ${TABLE}.q1 ;;
     }
 
-    measure: q2 {
+    dimension: q2 {
       type: number
       sql: ${TABLE}.q2 ;;
     }
 
-    measure: q3 {
+    dimension: q3 {
       type: number
       sql: ${TABLE}.q3 ;;
     }
 
-    measure: q4 {
+    dimension: q4 {
       type: number
       sql: ${TABLE}.q4 ;;
     }
@@ -94,10 +94,35 @@ view: csat_survey {
       sql: ${TABLE}.ticket_id ;;
     }
 
-    measure: q5 {
+    dimension: q5 {
       type: number
       sql: ${TABLE}.q5 ;;
     }
+
+  measure: q1_n {
+    type: number
+    sql: ${TABLE}.q1 ;;
+  }
+
+  measure: q2_n {
+    type: number
+    sql: ${TABLE}.q2 ;;
+  }
+
+  measure: q3_n {
+    type: number
+    sql: ${TABLE}.q3 ;;
+  }
+
+  measure: q4_n {
+    type: number
+    sql: ${TABLE}.q4 ;;
+  }
+
+  measure: q5_n {
+    type: number
+    sql: ${TABLE}.q5 ;;
+  }
 
 
     set: detail {
@@ -110,13 +135,18 @@ view: csat_survey {
         q2,
         q3,
         q4,
+        q5,
         response_type,
         stage_date,
         start_date_time,
         submit_date_time,
         tags,
         ticket_id,
-        q5
+        q1_n,
+        q2_2,
+        q3_n,
+        q4_n,
+        q5_n
       ]
     }
   }
