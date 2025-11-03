@@ -21,7 +21,7 @@ view: analytics {
       ,action
       from ovation_subscriptions
       where  action_type not in ( 'free_access','doorkeeper::application')
-      and email not LIKE '%drebarnes+ovationart%' and email not LIKE '%travisnunnally%' and email not like '%philipmanwaring%'
+      and email not LIKE '%drebarnes+ovationart%' and email not LIKE '%travisnunnally%' and email not like '%philipmanwaring%' and email not like 'drebarne%' and email not like 'myrah.murrel%'
       ),
 
       result2 as (select
@@ -193,7 +193,11 @@ view: analytics {
     sql: ${TABLE}.email  ;;
   }
 
-
+  measure: post_trial_leads {
+    type: count_distinct
+    filters: [status : "cancelled,paused,disabled,refunded,expired"]
+    sql: ${TABLE}.email  ;;
+  }
 
 
 }
