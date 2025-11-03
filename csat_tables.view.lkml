@@ -49,7 +49,7 @@ view: csat_tables {
 
     dimension_group: submit_date {
       type: time
-      sql: ${TABLE}.submit_date ;;
+      sql: ${TABLE}.ds ;;
     }
 
     measure: q1_s {
