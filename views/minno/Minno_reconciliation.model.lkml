@@ -2,7 +2,11 @@ connection: "upff"
 
 include: "/views/minno/reconciliation.view.lkml"
 include: "/views/minno/minno_schema.view.lkml"
+include: "/views/minno/subs.view.lkml"
 
+explore: subs {
+  label: "Minno Subs"
+}
 explore: reconciliation {
   label: "Minno reconciliation"
 
