@@ -44,22 +44,22 @@ view: csat_survey {
       sql: ${TABLE}.ending ;;
     }
 
-    dimension: q1 {
+    measure: q1 {
       type: number
       sql: ${TABLE}.q1 ;;
     }
 
-    dimension: q2 {
+    measure: q2 {
       type: number
       sql: ${TABLE}.q2 ;;
     }
 
-    dimension: q3 {
+    measure: q3 {
       type: number
       sql: ${TABLE}.q3 ;;
     }
 
-    dimension: q4 {
+    measure: q4 {
       type: number
       sql: ${TABLE}.q4 ;;
     }
@@ -94,7 +94,7 @@ view: csat_survey {
       sql: ${TABLE}.ticket_id ;;
     }
 
-    dimension: q5 {
+    measure: q5 {
       type: number
       sql: ${TABLE}.q5 ;;
     }
