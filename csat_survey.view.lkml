@@ -143,7 +143,7 @@ view: csat_survey {
         tags,
         ticket_id,
         q1_n,
-        q2_2,
+        q2_n,
         q3_n,
         q4_n,
         q5_n
