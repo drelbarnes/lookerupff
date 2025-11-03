@@ -26,14 +26,15 @@ view: csat_tables {
                     )
 
                     select
-                      ds
-                      ,sum(q1) as q1_s
+                      ds, q1, q2, q3, q4, q5
+/*                      ,sum(q1) as q1_s
                       ,sum(q2) as q2_s
                       ,sum(q3) as q3_s
                       ,sum(q4) as q4_s
                       ,sum(q5) as q5_s
+*/
                     from a1
-                    group by ds ;;
+--                    group by ds ;;
     }
 
     measure: count {
@@ -52,39 +53,39 @@ view: csat_tables {
       sql: ${TABLE}.ds ;;
     }
 
-    measure: q1_s {
+    measure: q1 {
       type: sum
-      sql: ${TABLE}.q1_s ;;
+      sql: ${TABLE}.q1 ;;
     }
 
-    measure: q2_s {
+    measure: q2 {
       type: sum
-      sql: ${TABLE}.q2_s ;;
+      sql: ${TABLE}.q2 ;;
     }
 
-    measure: q3_s {
+    measure: q3 {
       type: sum
-      sql: ${TABLE}.q3_s ;;
+      sql: ${TABLE}.q3 ;;
     }
 
-    measure: q4_s {
+    measure: q4 {
       type: sum
-      sql: ${TABLE}.q4_s ;;
+      sql: ${TABLE}.q4 ;;
     }
 
-    measure: q5_s {
+    measure: q5 {
       type: sum
-      sql: ${TABLE}.q5_s ;;
+      sql: ${TABLE}.q5 ;;
     }
 
     set: detail {
       fields: [
         ds,
-        q1_s,
-        q2_s,
-        q3_s,
-        q4_s,
-        q5_s
+        q1,
+        q2,
+        q3,
+        q4,
+        q5
       ]
     }
   }
