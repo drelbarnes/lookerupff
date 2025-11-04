@@ -218,97 +218,97 @@ view: csat_tables {
     }
 
     measure: q1_1_pct {
-      type: number
+      type: sum
       sql: ${TABLE}.q1_1_pct ;;
     }
 
     measure: q1_2_pct {
-      type: number
+      type: sum
       sql: ${TABLE}.q1_2_pct ;;
     }
 
     measure: q1_3_pct {
-      type: number
+      type: sum
       sql: ${TABLE}.q1_3_pct ;;
     }
 
     measure: q1_4_pct {
-      type: number
+      type: sum
       sql: ${TABLE}.q1_4_pct ;;
     }
 
     measure: q1_5_pct {
-      type: number
+      type: sum
       sql: ${TABLE}.q1_5_pct ;;
     }
 
     measure: q2_1_pct {
-      type: number
+      type: sum
       sql: ${TABLE}.q2_1_pct ;;
     }
 
     measure: q2_2_pct {
-      type: number
+      type: sum
       sql: ${TABLE}.q2_2_pct ;;
     }
 
     measure: q2_3_pct {
-      type: number
+      type: sum
       sql: ${TABLE}.q2_3_pct ;;
     }
 
     measure: q2_4_pct {
-      type: number
+      type: sum
       sql: ${TABLE}.q2_4_pct ;;
     }
 
     measure: q2_5_pct {
-      type: number
+      type: sum
       sql: ${TABLE}.q2_5_pct ;;
     }
 
     measure: q3_1_pct {
-      type: number
+      type: sum
       sql: ${TABLE}.q3_1_pct ;;
     }
 
     measure: q3_2_pct {
-      type: number
+      type: sum
       sql: ${TABLE}.q3_2_pct ;;
     }
 
     measure: q3_3_pct {
-      type: number
+      type: sum
       sql: ${TABLE}.q3_3_pct ;;
     }
 
     measure: q3_4_pct {
-      type: number
+      type: sum
       sql: ${TABLE}.q3_4_pct ;;
     }
 
     measure: q3_5_pct {
-      type: number
+      type: sum
       sql: ${TABLE}.q3_5_pct ;;
     }
 
     measure: q4_0_pct {
-      type: number
+      type: sum
       sql: ${TABLE}.q4_0_pct ;;
     }
 
     measure: q4_1_pct {
-      type: number
+      type: sum
       sql: ${TABLE}.q4_1_pct ;;
     }
 
     measure: q5_0_pct {
-      type: number
+      type: sum
       sql: ${TABLE}.q5_0_pct ;;
     }
 
     measure: q5_1_pct {
-      type: number
+      type: sum
       sql: ${TABLE}.q5_1_pct ;;
     }
 
