@@ -1,22 +1,25 @@
 view: csat_survey {
     derived_table: {
       sql: SELECT
-        _ AS id
-        , brand_name
-        , Comments AS verbatim
-        , Ending AS ending
-        , How_easy_was_it_to_get_your_issue_resolved_ AS q1
-        , How_satisfied_were_you_with_the_support_you_received_ AS q2
-        , How_would_you_rate_the_friendliness_and_professionalism_of_the_support_representative_ AS q3
-        , Our_goal_is_to_show_care__compassion_or_respect_in_every_support_interaction___Did_your_recent_experience_feel_that_way_ AS q4
-        , Were_your_questions_addressed_and_or_resolved_ AS q5
-        , Response_Type AS response_type
-        , Stage_Date__UTC_ AS stage_date
-        , Start_Date__UTC_ AS start_date
-        , Submit_Date__UTC_ AS submit_date
-        , Tags AS tags
-        , ticket_id
-      FROM ad_hoc.csat_survey ;;
+              _ AS id
+              , brand_name
+              , Comments AS verbatim
+              , Ending AS ending
+              , How_easy_was_it_to_get_your_issue_resolved_ AS q1
+              , How_satisfied_were_you_with_the_support_you_received_ AS q2
+              , How_would_you_rate_the_friendliness_and_professionalism_of_the_support_representative_ AS q3
+              , Our_goal_is_to_show_care__compassion_or_respect_in_every_support_interaction___Did_your_recent_experience_feel_that_way_ AS q4
+              , Were_your_questions_addressed_and_or_resolved_ AS q5
+              , Response_Type AS response_type
+              , Stage_Date__UTC_ AS stage_date
+              , Start_Date__UTC_ AS start_date
+              , Submit_Date__UTC_ AS submit_date
+              , Tags AS tags
+              , ticket_id
+              , sentiment_score
+              , sentiment_label
+              , Class AS feedback_type
+            FROM ad_hoc.csat_survey ;;
     }
 
     measure: count {
@@ -64,6 +67,11 @@ view: csat_survey {
       sql: ${TABLE}.q4 ;;
     }
 
+    dimension: q5 {
+      type: number
+      sql: ${TABLE}.q5 ;;
+    }
+
     dimension: response_type {
       type: string
       sql: ${TABLE}.response_type ;;
@@ -94,36 +102,20 @@ view: csat_survey {
       sql: ${TABLE}.ticket_id ;;
     }
 
-    dimension: q5 {
+    dimension: sentiment_score {
       type: number
-      sql: ${TABLE}.q5 ;;
+      sql: ${TABLE}.sentiment_score ;;
     }
 
-  measure: q1_n {
-    type: number
-    sql: ${TABLE}.q1 ;;
-  }
+    dimension: sentiment_label {
+      type: string
+      sql: ${TABLE}.sentiment_label ;;
+    }
 
-  measure: q2_n {
-    type: number
-    sql: ${TABLE}.q2 ;;
-  }
-
-  measure: q3_n {
-    type: number
-    sql: ${TABLE}.q3 ;;
-  }
-
-  measure: q4_n {
-    type: number
-    sql: ${TABLE}.q4 ;;
-  }
-
-  measure: q5_n {
-    type: number
-    sql: ${TABLE}.q5 ;;
-  }
-
+    dimension: feedback_type {
+      type: string
+      sql: ${TABLE}.feedback_type ;;
+    }
 
     set: detail {
       fields: [
@@ -142,11 +134,9 @@ view: csat_survey {
         submit_date_time,
         tags,
         ticket_id,
-        q1_n,
-        q2_n,
-        q3_n,
-        q4_n,
-        q5_n
+        sentiment_score,
+        sentiment_label,
+        feedback_type
       ]
     }
   }
