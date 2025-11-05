@@ -1496,9 +1496,9 @@ view: upff_series_premier {
                     SELECT DATE '2025-09-12', 389139 UNION ALL
                     SELECT DATE '2025-09-13', 388743 UNION ALL
                     SELECT DATE '2025-09-14', 388608 UNION ALL
-                    SELECT DATE '2025-08-15', 388492 UNION ALL
-                    SELECT DATE '2025-08-16', 400000 UNION ALL
-                    SELECT DATE '2025-08-17', 400000
+                    SELECT DATE '2025-09-15', 388492 UNION ALL
+                    SELECT DATE '2025-09-16', 400000 UNION ALL
+                    SELECT DATE '2025-09-17', 400000
                     ),
 
                     upff_premier_titles AS
