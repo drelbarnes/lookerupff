@@ -14,13 +14,13 @@ view: csat_analytics {
                 , How_satisfied_were_you_with_the_support_you_received_ AS q2
                 , How_would_you_rate_the_friendliness_and_professionalism_of_the_support_representative_ AS q3
                 , Our_goal_is_to_show_care__compassion_or_respect_in_every_support_interaction___Did_your_recent_experience_feel_that_way_ AS q4
+                , Were_your_questions_addressed_and_or_resolved_ AS q5
                 , Response_Type AS response_type
                 , Stage_Date__UTC_ AS stage_date
                 , Start_Date__UTC_ AS start_date
                 , Submit_Date__UTC_ AS submit_date
                 , Tags AS tags
                 , ticket_id
-                , Were_your_questions_addressed_and_or_resolved_ AS q5
               FROM ad_hoc.csat_survey
               )
 
