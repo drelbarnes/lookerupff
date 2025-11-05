@@ -117,6 +117,11 @@ view: csat_survey {
       sql: ${TABLE}.feedback_type ;;
     }
 
+    measure: sentiment_score_numeric {
+      type: sum
+      sql: ${TABLE}.sentiment_score ;;
+    }
+
     set: detail {
       fields: [
         id,
