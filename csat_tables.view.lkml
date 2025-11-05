@@ -7,7 +7,7 @@ view: csat_tables {
                     SELECT
                       _ AS id
                       , brand_name
-                      , Comment AS verbatim
+                      , Comments AS verbatim
                       , Ending AS ending
                       , How_easy_was_it_to_get_your_issue_resolved_ AS q1
                       , How_satisfied_were_you_with_the_support_you_received_ AS q2
