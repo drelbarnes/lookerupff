@@ -103,7 +103,7 @@ select
     then cast(platform_id as integer)
   end as platform_id,
   episode,
-  null as tv_cast
+  null as tv_cast,
   a.duration,
   a.timecode
 from javascript.video_content_playing as a
