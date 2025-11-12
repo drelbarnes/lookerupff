@@ -101,7 +101,9 @@ select
     when platform_id is not null then cast(platform_id as integer)
   end as platform_id,
   episode,
-  null as tv_cast
+  null as tv_cast,
+  a.duration,
+  a.timecode
 from ios.firstplay as a
 left join titles_id_mapping as b
 on a.video_id = cast(b.id as varchar)
