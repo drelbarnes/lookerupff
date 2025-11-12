@@ -101,6 +101,8 @@ select
   end as platform_id,
   episode,
   null as tv_cast
+  a.duration,
+  a.timecode
 from roku.video_content_playing as a
 left join titles_id_mapping as b
 on cast(a.video_id as varchar) = cast(b.id as varchar)
