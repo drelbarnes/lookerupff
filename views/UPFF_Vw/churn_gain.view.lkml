@@ -20,10 +20,13 @@ view: churn_gain {
       'web'::VARCHAR AS platform
       FROM chargebee_webhook_events.subscription_cancelled
       WHERE
-      ((content_subscription_cancel_reason_code not in ('Not Paid', 'No Card', 'Fraud Review Failed', 'Non Compliant EU Customer', 'Tax Calculation Failed', 'Currency incompatible with Gateway', 'Non Compliant Customer') and  (content_subscription_cancelled_at - content_subscription_trial_end) > 10000)or content_subscription_cancel_reason_code is null)
+      (
+      --(content_subscription_cancel_reason_code not in ('Not Paid', 'No Card', 'Fraud Review Failed', 'Non Compliant EU Customer', 'Tax Calculation Failed', 'Currency incompatible with Gateway', 'Non Compliant Customer') and
+      (content_subscription_cancelled_at - content_subscription_trial_end) > 10000)
+      --or content_subscription_cancel_reason_code is null)
       AND content_subscription_subscription_items LIKE '%UP%'
       ),
-
+-- remove comment for dunning cases
       vm_user AS (
       SELECT
       report_date,
@@ -159,8 +162,10 @@ view: churn_gain {
       FROM chargebee_webhook_events.subscription_activated
       WHERE content_subscription_subscription_items LIKE '%UP%'
       AND DATE(received_at) >= '2025-07-01'
-      AND content_subscription_due_invoices_count = 0
+      --AND content_subscription_due_invoices_count = 0
 
+-- remove comment to not include dunning as a conversion
+/*
       UNION ALL
 
       SELECT
@@ -176,7 +181,7 @@ view: churn_gain {
       AND DATE(received_at) >= '2025-07-01'
       AND (report_date::date - DATE(TIMESTAMP 'epoch' + content_customer_created_at * INTERVAL '1 second')) <= 14
       AND content_invoice_dunning_attempts != '[]'
-
+*/
 
       UNION ALL
 
