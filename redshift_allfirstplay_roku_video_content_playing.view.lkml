@@ -100,7 +100,7 @@ select
     when platform_id is not null then cast(platform_id as integer)
   end as platform_id,
   episode,
-  null as tv_cast
+  null as tv_cast,
   a.duration,
   a.timecode
 from roku.video_content_playing as a
