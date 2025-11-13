@@ -63,6 +63,8 @@ view: ios {
             FROM new_apple2
           ) sub
         )
+
+      -- Test comment to try git handlding
       SELECT report_date, 'monthly' AS billing_period, total_paid_subs_monthly AS paid_subscribers
 FROM result
 UNION ALL
