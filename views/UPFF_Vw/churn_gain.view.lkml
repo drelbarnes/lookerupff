@@ -42,7 +42,7 @@ view: churn_gain {
       CAST(customer_id AS VARCHAR) AS user_id,
       subscription_frequency::VARCHAR AS billing_period,
       event_type::VARCHAR AS event_type,
-      DATE(event_occurred_at) AS report_date
+      DATE(DATEADD(HOUR, -5, event_occurred_at)) AS report_date
       FROM customers.new_customers
       WHERE subscription_frequency != 'custom'
       AND DATE(event_occurred_at) >= '2025-07-01'
@@ -103,7 +103,7 @@ view: churn_gain {
 
       re_acquisitions AS (
       SELECT
-      DATE(received_at) AS report_date,
+      date(DATEADD(HOUR, -5, timestamp)) AS report_date,
       content_subscription_id::VARCHAR AS user_id,
       CASE
       WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'::VARCHAR
@@ -117,7 +117,7 @@ view: churn_gain {
       UNION ALL
 
       SELECT
-        date(timestamp) AS report_date,
+      date(DATEADD(HOUR, -5, timestamp)) AS report_date,
       content_subscription_id::VARCHAR AS user_id,
       CASE
       WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'::VARCHAR

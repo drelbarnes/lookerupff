@@ -72,7 +72,7 @@ SELECT
     COALESCE(SUM(create_account_page_count), 0) AS value,
     2 AS page_order
 FROM checkout_pages2
-
+/*
 UNION ALL
 
 SELECT
@@ -80,13 +80,13 @@ SELECT
     COALESCE(SUM(select_payment_page_count), 0) AS value,
     3 AS page_order
 FROM checkout_pages2
-
+*/
 UNION ALL
 
 SELECT
     'Payment Page Count' AS column_name,
     COALESCE(SUM(payment_page_count), 0) AS value,
-    4 AS page_order
+    3 AS page_order
 FROM checkout_pages2
 
 UNION ALL
@@ -94,7 +94,7 @@ UNION ALL
 SELECT
     'UPSell Page/Order Completed Count' AS column_name,
     COALESCE(SUM(upsell_page_count), 0) AS value,
-    5 AS page_order
+    4 AS page_order
 FROM checkout_pages2
 
 UNION ALL
@@ -102,7 +102,7 @@ UNION ALL
 SELECT
     'Confirmation Page Count' AS column_name,
     COALESCE(SUM(confirmation_page_count), 0) AS value,
-    6 AS page_order
+    5 AS page_order
 FROM checkout_pages2)
 SELECT *
 from result
