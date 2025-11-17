@@ -53,7 +53,7 @@ view: upff_heartland_fans {
                     (
                     SELECT DISTINCT
                       user_id
-                    FROM looker_scratch.lr$rmyay1761897840434_redshift_allfirst_play_p1_less_granular
+                    FROM ${redshift_allfirst_play_p1_less_granular.SQL_TABLE_NAME}
                     WHERE collection = 'Heartland - Season 18'
                     AND min_count > 10
                     GROUP BY user_id
@@ -64,7 +64,7 @@ view: upff_heartland_fans {
                     (
                     SELECT
                       *
-                    FROM looker_scratch.lr$rmyay1761897840434_redshift_allfirst_play_p1_less_granular
+                    FROM ${redshift_allfirst_play_p1_less_granular.SQL_TABLE_NAME}
                     WHERE user_id in (SELECT user_id FROM target_audience)
                     ),
 
@@ -109,7 +109,7 @@ view: upff_heartland_fans {
                       , a.heartland_only_flag
                       , a.sum_hl_s18_flag
                     FROM target_flags_p2 AS a
-                    LEFT JOIN looker_scratch.lr$rmyay1761897840434_redshift_allfirst_play_p1_less_granular AS b
+                    LEFT JOIN ${redshift_allfirst_play_p1_less_granular.SQL_TABLE_NAME} AS b
                     ON a.user_id = b.user_id
                     ),
 
