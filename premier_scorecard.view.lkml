@@ -1652,7 +1652,7 @@ view: premier_scorecard {
       SELECT "Break the Cycle" UNION ALL
       SELECT "Technically Yours" UNION ALL
       SELECT "Five Date Rule" UNION ALL
-      SELECT "Batters Box" UNION ALL
+      SELECT "Batter's Box" UNION ALL
       SELECT "The Great Christmas Snow-In" UNION ALL
       SELECT "Princess for a Day" UNION ALL
       SELECT "A Royal Christmas Manor"
@@ -1746,7 +1746,7 @@ view: premier_scorecard {
       SELECT "Break the Cycle", 0.69 UNION ALL
       SELECT "Technically Yours", 0.75 UNION ALL
       SELECT "Five Date Rule", 0.77 UNION ALL
-      SELECT "Batters Box", 0.68 UNION ALL
+      SELECT "Batter's Box", 0.68 UNION ALL
       SELECT "The Great Christmas Snow-In", 0.64 UNION ALL
       SELECT "Princess for a Day", 0.73 UNION ALL
       SELECT "A Royal Christmas Manor", 0.79
@@ -1840,7 +1840,7 @@ view: premier_scorecard {
       SELECT "Break the Cycle", DATE '2025-09-09' UNION ALL
       SELECT "Technically Yours", DATE '2025-09-09' UNION ALL
       SELECT "Five Date Rule", DATE '2025-09-23' UNION ALL
-      SELECT "Batters Box", DATE '2025-11-04' UNION ALL
+      SELECT "Batter's Box", DATE '2025-11-04' UNION ALL
       SELECT "The Great Christmas Snow-In", DATE '2025-11-04' UNION ALL
       SELECT "Princess for a Day", DATE '2025-11-11' UNION ALL
       SELECT "A Royal Christmas Manor", DATE '2025-11-11'
