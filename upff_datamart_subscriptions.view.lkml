@@ -6,7 +6,7 @@ view: upff_datamart_subscriptions {
               vimeo_nonweb_customers AS
               (
               SELECT
-                'NULL' AS subscription_id
+                ROW_NUMBER() OVER () AS subscription_id
                 , 'NULL' AS customer_id
                 , user_id
                 , CAST(report_date AS TIMESTAMP) AS received_at
@@ -31,7 +31,7 @@ view: upff_datamart_subscriptions {
               chargebee_web_api_users AS
               (
               SELECT
-                cast(a.subscription_id AS VARCHAR) AS subscription_id
+                cast(a.subscription_id AS INT) AS subscription_id
                 , cast(a.customer_id AS VARCHAR) AS customer_id
                 , cast(coalesce(b.user_id, NULL) AS INT) AS user_id
                 , a.uploaded_at AS received_at
@@ -184,6 +184,7 @@ view: upff_datamart_subscriptions {
     dimension: user_id {
       type: number
       sql: ${TABLE}.user_id ;;
+      tags: ["user_id"]
     }
 
     dimension: subscription_id {

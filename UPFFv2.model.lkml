@@ -49,6 +49,9 @@ include: "/views/chargebee_event_mapping/chargebee_webhook_events.view.lkml"
 include: "/views/redshift_views/upff_webhook_events.view.lkml"
 include: "/views/chargebee_event_mapping/chargebee_vimeo_ott_id_mapping.view.lkml"
 include: "/views/redshift_views/bundle_analytics.view.lkml"
+include: "/views/UPFF_Vw/subscriber_data.view.lkml"
+include: "/views/UPFF_Vw/chargebee_webhook.view.lkml"
+include: "/views/UPFF_Vw/vimeo_webhook.view.lkml"
 
 #redshift upff datamart explores
 include: "upff_datamart_views.view.lkml"

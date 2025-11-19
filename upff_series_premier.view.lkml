@@ -1496,9 +1496,9 @@ view: upff_series_premier {
                     SELECT DATE '2025-09-12', 389139 UNION ALL
                     SELECT DATE '2025-09-13', 388743 UNION ALL
                     SELECT DATE '2025-09-14', 388608 UNION ALL
-                    SELECT DATE '2025-08-15', 388492 UNION ALL
-                    SELECT DATE '2025-08-16', 400000 UNION ALL
-                    SELECT DATE '2025-08-17', 400000
+                    SELECT DATE '2025-09-15', 388492 UNION ALL
+                    SELECT DATE '2025-09-16', 400000 UNION ALL
+                    SELECT DATE '2025-09-17', 400000
                     ),
 
                     upff_premier_titles AS
@@ -1644,9 +1644,11 @@ view: upff_series_premier {
                     , count(CASE WHEN p.ts BETWEEN m.release_date::TIMESTAMP AND m.release_date::TIMESTAMP + INTERVAL '7 days' THEN p.user_id END) AS views_7_days
                     , count(CASE WHEN p.ts BETWEEN m.release_date::TIMESTAMP AND m.release_date::TIMESTAMP + INTERVAL '30 days' THEN p.user_id END) AS views_30_days
                     , count(CASE WHEN p.ts BETWEEN m.release_date::TIMESTAMP AND m.release_date::TIMESTAMP + INTERVAL '90 days' THEN p.user_id END) AS views_90_days
+                    , count(CASE WHEN p.ts BETWEEN m.release_date::TIMESTAMP AND m.release_date::TIMESTAMP + INTERVAL '120 days' THEN p.user_id END) AS views_120_days
                     , count(DISTINCT CASE WHEN p.ts BETWEEN m.release_date::TIMESTAMP AND m.release_date::TIMESTAMP + INTERVAL '7 days' THEN p.user_id ELSE NULL END) AS uniques_7_days
                     , count(DISTINCT CASE WHEN p.ts BETWEEN m.release_date::TIMESTAMP AND m.release_date::TIMESTAMP + INTERVAL '30 days' THEN p.user_id ELSE NULL END) AS uniques_30_days
                     , count(DISTINCT CASE WHEN p.ts BETWEEN m.release_date::TIMESTAMP AND m.release_date::TIMESTAMP + INTERVAL '90 days' THEN p.user_id ELSE NULL END) AS uniques_90_days
+                    , count(DISTINCT CASE WHEN p.ts BETWEEN m.release_date::TIMESTAMP AND m.release_date::TIMESTAMP + INTERVAL '120 days' THEN p.user_id ELSE NULL END) AS uniques_120_days
                     FROM series_play_counts AS m
                     INNER JOIN play_data_global AS p
                     ON m.collection = p.collection
@@ -1675,21 +1677,29 @@ view: upff_series_premier {
                     , views_7_days
                     , views_30_days
                     , views_90_days
+                    , viewd_120_days
                     , uniques_7_days
                     , uniques_30_days
                     , uniques_90_days
+                    , uniques_120_days
                     , eps AS num_eps
                     , to_char(views_7_days::DECIMAL / nullif(subscriber_count,0), '999999999.00') AS views_per_sub_7d
                     , to_char(views_30_days::DECIMAL / nullif(subscriber_count,0), '999999999.00') AS views_per_sub_30d
                     , to_char(views_90_days::DECIMAL / nullif(subscriber_count,0), '999999999.00') AS views_per_sub_90d
+                    , to_char(views_120_days::DECIMAL / nullif(subscriber_count,0), '999999999.00') AS views_per_sub_120d
                     , to_char(views_7_days::DECIMAL / nullif(eps,0), '999999999.00') AS views_per_ep_7d
                     , to_char(views_30_days::DECIMAL / nullif(eps,0), '999999999.00') AS views_per_ep_30d
                     , to_char(views_90_days::DECIMAL / nullif(eps,0), '999999999.00') AS views_per_ep_90d
+                    , to_char(views_120_days::DECIMAL / nullif(eps,0), '999999999.00') AS views_per_ep_120d
                     , completion_rate AS lifetime_completion_rate
                     FROM series_views_cr
                     )
 
               select * from series_views_benchmarked ;;
+
+      distribution_style: "even"
+      sortkeys: ["collection"]
+      datagroup_trigger: redshift_upff_datagroup
     }
 
     measure: count {
@@ -1727,6 +1737,11 @@ view: upff_series_premier {
       sql: ${TABLE}.views_90_days ;;
     }
 
+    dimension: views_120_days {
+      type: number
+      sql: ${TABLE}.views_90_days ;;
+    }
+
     dimension: uniques_7_days {
       type: number
       sql: ${TABLE}.uniques_7_days ;;
@@ -1742,6 +1757,10 @@ view: upff_series_premier {
       sql: ${TABLE}.uniques_90_days ;;
     }
 
+    dimension: uniques_120_days {
+      type: number
+      sql: ${TABLE}.uniques_120_days ;;
+    }
     dimension: num_eps {
       type: number
       sql: ${TABLE}.num_eps ;;
@@ -1762,6 +1781,11 @@ view: upff_series_premier {
       sql: ${TABLE}.views_per_sub_90d ;;
     }
 
+    dimension: views_per_sub_120d {
+      type: string
+      sql: ${TABLE}.views_per_sub_120d ;;
+    }
+
     dimension: views_per_ep_7d {
       type: string
       sql: ${TABLE}.views_per_ep_7d ;;
@@ -1775,6 +1799,11 @@ view: upff_series_premier {
     dimension: views_per_ep_90d {
       type: string
       sql: ${TABLE}.views_per_ep_90d ;;
+    }
+
+    dimension: views_per_ep_120d {
+      type: string
+      sql: ${TABLE}.views_per_ep_120d ;;
     }
 
     dimension: lifetime_completion_rate {
@@ -1797,9 +1826,11 @@ view: upff_series_premier {
         views_per_sub_7d,
         views_per_sub_30d,
         views_per_sub_90d,
+        views_per_sub_120d,
         views_per_ep_7d,
         views_per_ep_30d,
         views_per_ep_90d,
+        views_per_ep_120d,
         lifetime_completion_rate
       ]
     }

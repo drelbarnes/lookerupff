@@ -113,4 +113,10 @@ view: free_trials {
     filters: [platform: "roku"]
   }
 
+  measure: free_trials_vizio {
+    type: count_distinct
+    sql: ${TABLE}.user_id ;;
+    filters: [platform: "vizio_tv"]
+  }
+
 }

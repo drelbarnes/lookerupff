@@ -59,7 +59,21 @@ view: campaign_conversion {
     ON a.user_id = b.user_id
     LEFT JOIN not_converted c
     ON a.user_id = c.user_id
+
+    UNION ALL
+
+    select
+        distinct
+        user_id
+        ,context_ip
+        ,date(timestamp) as trial_start_date
+        ,'Resubscribed' as has_converted
+      from javascript_upentertainment_checkout.pages where context_page_path like '%welcome/confirmation_resubscribe/upfaithandfamily%'
+      {% if start_date._parameter_value != "NULL" %}
+    AND date(timestamp) >= {% parameter start_date %}
+    {% endif %}
   ),
+
 
 result as (
   SELECT
@@ -122,23 +136,51 @@ SELECT
 
   WHERE has_converted = 'Yes'
   GROUP BY 2,3,4
+),
+resubscribed_count as (
+SELECT
+    COUNT(DISTINCT user_id) as resubscribed_count
+    ,campaign_source
+    ,campaign_name
+    ,campaign_medium
+  FROM result
+
+  WHERE has_converted = 'Resubscribed'
+  GROUP BY 2,3,4
 )
+
+
 
 SELECT
   vc.visit_count
   ,tc.trial_started_count
   ,itc.in_trial_count
   ,cc.converted_count
+  ,rc.resubscribed_count
   ,vc.campaign_source
   ,vc.campaign_name
   ,vc.campaign_medium
 FROM visit_count vc
 LEFT JOIN trial_count tc
-ON vc.campaign_name = tc.campaign_name and vc.campaign_source = tc.campaign_source
+  ON vc.campaign_source = tc.campaign_source
+ AND vc.campaign_name   = tc.campaign_name
+ AND COALESCE(vc.campaign_medium,'(none)') = COALESCE(tc.campaign_medium,'(none)')
+
 LEFT JOIN in_trial_count itc
-ON vc.campaign_name = itc.campaign_name and vc.campaign_source = itc.campaign_source
+  ON vc.campaign_source = itc.campaign_source
+ AND vc.campaign_name   = itc.campaign_name
+ AND COALESCE(vc.campaign_medium,'(none)') = COALESCE(itc.campaign_medium,'(none)')
+
 LEFT JOIN converted_count cc
-ON vc.campaign_name = cc.campaign_name and vc.campaign_source = cc.campaign_source
+  ON vc.campaign_source = cc.campaign_source
+ AND vc.campaign_name   = cc.campaign_name
+ AND COALESCE(vc.campaign_medium,'(none)') = COALESCE(cc.campaign_medium,'(none)')
+
+LEFT JOIN resubscribed_count rc
+  ON vc.campaign_source = rc.campaign_source
+ AND vc.campaign_name   = rc.campaign_name
+ AND COALESCE(rc.campaign_medium,'(none)') = COALESCE(rc.campaign_medium,'(none)')
+
   ;;
  }
 
@@ -180,6 +222,12 @@ ON vc.campaign_name = cc.campaign_name and vc.campaign_source = cc.campaign_sour
     type: number
     sql: ${TABLE}.converted_count ;;
   }
+
+  dimension: resubscribed_count {
+    type: number
+    sql: ${TABLE}.resubscribed_count ;;
+  }
+
   measure: total_visits {
     type: sum
     sql: ${visit_count} ;;
@@ -201,6 +249,12 @@ ON vc.campaign_name = cc.campaign_name and vc.campaign_source = cc.campaign_sour
   measure: total_converted {
     type: sum
     sql: ${converted_count} ;;
+    value_format_name: decimal_0
+  }
+
+  measure: total_resubsrcribed{
+    type: sum
+    sql: ${resubscribed_count};;
     value_format_name: decimal_0
   }
 

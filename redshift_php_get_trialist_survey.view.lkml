@@ -111,6 +111,33 @@ view: redshift_php_get_trialist_survey {
     type: string
     sql: ${TABLE}.reason ;;
   }
+  dimension: reason_category {
+    type: string
+    case: {
+      when: {
+        sql: ${reason} ILIKE '%No time to watch%' ;;
+        label: "no_time_to_watch"
+      }
+      when: {
+        sql: ${reason} ILIKE '%Price%' ;;
+        label: "price"
+      }
+      when: {
+        sql: ${reason} ILIKE '%Content Not Interesting%' ;;
+        label: "content_not_interesting"
+      }
+      when: {
+        sql: ${reason} ILIKE '%Streaming Issues%' ;;
+        label: "streaming_issues"
+      }
+      when: {
+        sql: ${reason} ILIKE '%Content Not Meeting Expectations%' ;;
+        label: "content_not_meeting_expectations"
+      }
+    }
+  }
+
+
 
   dimension_group: received {
     type: time
@@ -157,6 +184,7 @@ view: redshift_php_get_trialist_survey {
   dimension: user_id {
     type: string
     sql: ${TABLE}.user_id ;;
+    tags: ["user_id"]
   }
 
   dimension: uuid {

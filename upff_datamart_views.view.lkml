@@ -54,6 +54,7 @@
     dimension: user_id {
       type: string
       sql: ${TABLE}.user_id ;;
+      tags: ["user_id"]
     }
 
     dimension_group: streamed_at {

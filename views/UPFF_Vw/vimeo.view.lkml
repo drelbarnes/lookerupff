@@ -6,7 +6,7 @@ view: vimeo {
       select
         CAST(user_id AS VARCHAR) as user_id
         ,platform
-        ,report_date
+,(TO_DATE(report_date, 'YYYY-MM-DD') - INTERVAL '1 day') AS report_date
       from customers.all_customers
       where report_date >= '2025-01-01'
     ),
@@ -16,9 +16,9 @@ view: vimeo {
         CAST(customer_id AS VARCHAR)as user_id
         ,subscription_frequency as billing_period
         ,event_type
-        ,date(event_occurred_at) as report_date
+        ,DATE(DATEADD(HOUR, -5, event_occurred_at))as report_date
       FROM customers.new_customers
-      where subscription_frequency != 'custom' and date(event_occurred_at) >= '2025-01-01'),
+      where subscription_frequency != 'custom' and date(event_occurred_at) >= '2025-01-01' and current_customer_status = 'enabled'),
 
       chargebee_re_acquisition as(
       SELECT
@@ -29,7 +29,7 @@ view: vimeo {
         ELSE 'yearly'
       END AS billing_period
       ,'Direct to Paid' as event_type
-      ,date(received_at) as report_date
+      ,date(DATEADD(HOUR, -5, timestamp)) as report_date
 
       FROM chargebee_webhook_events.subscription_reactivated
       WHERE content_subscription_subscription_items like '%UP%'
@@ -159,5 +159,15 @@ view: vimeo {
     sql: ${TABLE}.user_id  ;;
   }
 
+  measure: resubscribed_vizio {
+    type: count_distinct
+    filters: [event_type: "Direct to Paid",platform :"vizio_tv"]
+    sql: ${TABLE}.user_id  ;;
+  }
+  measure: resubscribed{
+    type: count_distinct
+    filters: [event_type: "Direct to Paid"]
+    sql: ${TABLE}.user_id  ;;
+  }
 
 }

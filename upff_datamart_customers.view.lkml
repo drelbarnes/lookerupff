@@ -57,7 +57,7 @@ view: upff_datamart_customers {
                 , 'Chargebee' AS dsource
               FROM http_api.chargebee_subscriptions AS a
               LEFT JOIN ${upff_webhook_events.SQL_TABLE_NAME} AS b
-              ON a.customer_id = b.customer_id
+              ON a.customer_email = b.email
               AND a.subscription_subscription_items_0_item_price_id in ('UP-Faith-Family-Monthly','UP-Faith-Family-Yearly')
               ),
 
@@ -71,7 +71,7 @@ view: upff_datamart_customers {
                 , first_name
                 , last_name
                 , SUM(CASE WHEN event = 'customer_product_renewed' THEN 1 ELSE 0 END) AS renewed_count
-              FROM looker_scratch.lr$rm6a01757588017313_upff_webhook_events
+              FROM ${upff_webhook_events.SQL_TABLE_NAME}
               GROUP BY 1,2,3
               ),
 
@@ -131,6 +131,7 @@ view: upff_datamart_customers {
     dimension: user_id {
       type: number
       sql: ${TABLE}.user_id ;;
+      tags: ["user_id"]
     }
 
     dimension: anonymous_id {

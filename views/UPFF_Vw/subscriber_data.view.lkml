@@ -130,6 +130,7 @@ chargebee_events as (
   SELECT
     *
   FROM  ${chargebee_webhook.SQL_TABLE_NAME}
+
 ),
 
 get_active_user as (
@@ -190,6 +191,7 @@ WHERE rn = 1;;
   dimension: user_id {
     type:  string
     sql: ${TABLE}.user_id ;;
+    tags: ["user_id"]
   }
 
   dimension: first_name {
