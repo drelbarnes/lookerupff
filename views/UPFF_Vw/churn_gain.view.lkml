@@ -42,7 +42,8 @@ view: churn_gain {
       CAST(customer_id AS VARCHAR) AS user_id,
       subscription_frequency::VARCHAR AS billing_period,
       event_type::VARCHAR AS event_type,
-      DATE(event_occurred_at) AS report_date
+      DATE(DATEADD(HOUR, -5, event_occurred_at)) AS report_date
+      ,current_customer_status
       FROM customers.new_customers
       WHERE subscription_frequency != 'custom'
       AND DATE(event_occurred_at) >= '2025-07-01'
@@ -54,7 +55,8 @@ view: churn_gain {
       a.platform,
       b.billing_period,
       b.event_type,
-      b.report_date
+      b.report_date,
+      b.current_customer_status
       FROM vimeo0 b
       LEFT JOIN vm_user a
       ON a.report_date = b.report_date
@@ -103,7 +105,7 @@ view: churn_gain {
 
       re_acquisitions AS (
       SELECT
-      DATE(received_at) AS report_date,
+      date(DATEADD(HOUR, -5, timestamp)) AS report_date,
       content_subscription_id::VARCHAR AS user_id,
       CASE
       WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'::VARCHAR
@@ -117,7 +119,7 @@ view: churn_gain {
       UNION ALL
 
       SELECT
-        date(timestamp) AS report_date,
+      date(DATEADD(HOUR, -5, timestamp)) AS report_date,
       content_subscription_id::VARCHAR AS user_id,
       CASE
       WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'::VARCHAR
@@ -138,6 +140,7 @@ view: churn_gain {
       platform
       FROM vimeo
       WHERE event_type = 'Direct to Paid'
+      and current_customer_status = 'enabled'
       ),
 
       re_acquisition_count AS (

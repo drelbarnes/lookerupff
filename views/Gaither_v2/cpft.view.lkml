@@ -74,7 +74,7 @@ INNER JOIN g ON ads.ad_group_id = g.ad_group_id
 
       google_perf as (
       select apr.date_start,
-      b.name as channel,
+      'Google' as channel,
       b.spend as spend,
       sum(impressions) as impressions,
       sum(clicks) as clicks
