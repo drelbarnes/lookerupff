@@ -1,7 +1,7 @@
 view: configg {
   derived_table:{
     sql: with a as (SELECT
-           DATE '2025-07-01' as report_date)
+                DATEADD(month, -3, CURRENT_DATE) AS report_date)
           select * from a
     ;;
   }

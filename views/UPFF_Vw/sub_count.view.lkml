@@ -10,7 +10,7 @@ view: sub_count {
           ELSE platform
         END AS platform
         ,billing_period
-      FROM ${UPFF_analytics_Vw.SQL_TABLE_NAME}
+      FROM ${UPFF_analytics_Vw_v2.SQL_TABLE_NAME}
       WHERE status in ( 'active','non_renewing','enabled')
         ),
 
@@ -27,14 +27,14 @@ view: sub_count {
       SELECT * FROM ${ios.SQL_TABLE_NAME}
       ),
 
-      active_count as (
+      active_count_pre as (
       SELECT
       count(distinct user_id) as user_count
       ,report_date
       ,platform
       ,billing_period
       FROM active
-      WHERE platform != 'ios'
+      WHERE platform not in ('ios')
       GROUP BY 2,3,4
 
       UNION ALL
@@ -43,9 +43,39 @@ view: sub_count {
       paid_subscribers as user_count
       ,report_date
       ,'ios' as platform
-      ,billing_period
+      , billing_period
       FROM active_ios
 
+
+      ),
+      active_count as (
+      SELECT
+        user_count
+        ,report_date
+        ,platform
+        ,billing_period
+      from active_count_pre
+      where platform != 'roku'
+
+      UNION ALL
+
+      SELECT
+        user_count + 5700 as user_count
+        ,report_date
+        ,platform
+        ,billing_period
+      from active_count_pre
+      where platform = 'roku' and billing_period = 'monthly'
+
+      UNION ALL
+
+      SELECT
+        user_count + 2300 as user_count
+        ,report_date
+        ,platform
+        ,billing_period
+      from active_count_pre
+      where platform = 'roku' and billing_period = 'yearly'
       ),
 
       trial_count as (

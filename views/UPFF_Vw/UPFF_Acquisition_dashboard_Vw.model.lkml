@@ -1,6 +1,7 @@
 connection: "upff"
 
 include: "/views/UPFF_Vw/UPFF_analytics_Vw.view.lkml"
+include: "/views/UPFF_Vw/UPFF_analytics_Vw_v2.view.lkml"
 include: "/views/UPFF_Vw/rolling.view.lkml"
 include: "/views/UPFF_Vw/configg.view.lkml"
 include: "/views/UPFF_Vw/rolling_platform.view.lkml"
@@ -18,6 +19,7 @@ include: "/views/UPFF_Vw/churn_gain.view.lkml"
 include: "/views/UPFF_Vw/vimeo_webhook.view.lkml"
 include: "/views/UPFF_Vw/chargebee_webhook.view.lkml"
 include: "/views/UPFF_Vw/post_trial_refund.view.lkml"
+include: "/views/UPFF_Vw/roku.view.lkml"
 
 explore: UPFF_analytics_Vw {
   label: "UPFF_analytics_Vw"

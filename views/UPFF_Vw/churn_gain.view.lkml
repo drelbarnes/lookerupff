@@ -4,7 +4,7 @@ view: churn_gain {
 
     ,v2_table AS (
   SELECT *
-  FROM ${UPFF_analytics_Vw.SQL_TABLE_NAME}
+  FROM ${UPFF_analytics_Vw_v2.SQL_TABLE_NAME}
   WHERE report_date >= '2025-06-30'
 ),
 
