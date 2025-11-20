@@ -1545,7 +1545,23 @@ view: premier_scorecard {
       SELECT DATE '2025-10-31', 400000 UNION ALL
       SELECT DATE '2025-11-01', 400000 UNION ALL
       SELECT DATE '2025-11-02', 400000 UNION ALL
-      SELECT DATE '2025-11-03', 400000
+      SELECT DATE '2025-11-03', 400000 UNION ALL
+      SELECT DATE '2025-11-04', 400000 UNION ALL
+      SELECT DATE '2025-11-05', 400000 UNION ALL
+      SELECT DATE '2025-11-06', 400000 UNION ALL
+      SELECT DATE '2025-11-07', 400000 UNION ALL
+      SELECT DATE '2025-11-08', 400000 UNION ALL
+      SELECT DATE '2025-11-09', 400000 UNION ALL
+      SELECT DATE '2025-11-10', 400000 UNION ALL
+      SELECT DATE '2025-11-11', 400000 UNION ALL
+      SELECT DATE '2025-11-12', 400000 UNION ALL
+      SELECT DATE '2025-11-13', 400000 UNION ALL
+      SELECT DATE '2025-11-14', 400000 UNION ALL
+      SELECT DATE '2025-11-15', 400000 UNION ALL
+      SELECT DATE '2025-11-16', 400000 UNION ALL
+      SELECT DATE '2025-11-17', 400000 UNION ALL
+      SELECT DATE '2025-11-18', 400000 UNION ALL
+      SELECT DATE '2025-11-19', 400000
       ),
 
       upff_premier_titles AS
@@ -1635,7 +1651,11 @@ view: premier_scorecard {
       SELECT "Heartstrings Attached" UNION ALL
       SELECT "Break the Cycle" UNION ALL
       SELECT "Technically Yours" UNION ALL
-      SELECT "Five Date Rule"
+      SELECT "Five Date Rule" UNION ALL
+      SELECT "Batter's Box" UNION ALL
+      SELECT "The Great Christmas Snow-In" UNION ALL
+      SELECT "Princess for a Day" UNION ALL
+      SELECT "A Royal Christmas Manor"
       ),
 
       upff_premier_completion_rates AS
@@ -1725,7 +1745,11 @@ view: premier_scorecard {
       SELECT "Heartstrings Attached", 0.76 UNION ALL
       SELECT "Break the Cycle", 0.69 UNION ALL
       SELECT "Technically Yours", 0.75 UNION ALL
-      SELECT "Five Date Rule", 0.77
+      SELECT "Five Date Rule", 0.77 UNION ALL
+      SELECT "Batter's Box", 0.68 UNION ALL
+      SELECT "The Great Christmas Snow-In", 0.64 UNION ALL
+      SELECT "Princess for a Day", 0.73 UNION ALL
+      SELECT "A Royal Christmas Manor", 0.79
       ),
 
       upff_premier_dates AS
@@ -1815,7 +1839,11 @@ view: premier_scorecard {
       SELECT "Heartstrings Attached", DATE '2025-08-26' UNION ALL
       SELECT "Break the Cycle", DATE '2025-09-09' UNION ALL
       SELECT "Technically Yours", DATE '2025-09-09' UNION ALL
-      SELECT "Five Date Rule", DATE '2025-09-23'
+      SELECT "Five Date Rule", DATE '2025-09-23' UNION ALL
+      SELECT "Batter's Box", DATE '2025-11-04' UNION ALL
+      SELECT "The Great Christmas Snow-In", DATE '2025-11-04' UNION ALL
+      SELECT "Princess for a Day", DATE '2025-11-11' UNION ALL
+      SELECT "A Royal Christmas Manor", DATE '2025-11-11'
       ),
 
       upff_subscriber_counts AS

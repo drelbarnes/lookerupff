@@ -6,14 +6,29 @@ datagroup: linear_tv_schedule_default_datagroup {
   max_cache_age: "24 hours"
 }
 
-# include all the views
+# ---------- INCLUDE ALL VIEWS ----------
+
 include: "/views/up_airtable_reports.view.lkml"
+include: "/views/aspire_airtable_reports.view.lkml"
+include: "/views/ovation_airtable_reports.view.lkml"
 
-# Datagroups define a caching policy for an Explore. To learn more,
-# use the Quick Help panel on the right to see documentation.
 
+# ---------- EXPLORES ----------
 
+# UP
 explore: up_airtable_reports {
-  label: "Linear TV Schedule"
-  description: "Explore programming schedule data from Airtable (UPtv Linear TV)"
+  label: "Linear TV Schedule – UP"
+  description: "Explore UPtv programming schedule from Airtable (UP Linear TV)"
+}
+
+# Aspire
+explore: aspire_airtable_reports {
+  label: "Linear TV Schedule – Aspire"
+  description: "Explore Aspire programming schedule from Airtable (Aspire Linear TV)"
+}
+
+# Ovation
+explore: ovation_airtable_reports {
+  label: "Linear TV Schedule – Ovation"
+  description: "Explore Ovation programming schedule from Airtable (Ovation Linear TV)"
 }

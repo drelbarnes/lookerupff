@@ -1,4 +1,4 @@
-view: up_airtable_reports {
+view: aspire_airtable_reports {
 
   derived_table: {
     sql:
@@ -12,7 +12,7 @@ view: up_airtable_reports {
           end_time,
           product_code,
           product_title,
-          CAST(program_id AS VARCHAR) AS program_id,
+          program_id,   -- already VARCHAR in Aspire
           requires_special_attention,
           series_title,
           start_time,
@@ -20,10 +20,10 @@ view: up_airtable_reports {
           transmission_duration,
           tx_id,
           ROW_NUMBER() OVER (
-            PARTITION BY date, start_time, end_time, CAST(program_id AS VARCHAR)
+            PARTITION BY date, start_time, end_time, program_id
             ORDER BY CAST(date AS DATE) ASC, start_time ASC
           ) AS rn
-        FROM customers.up_airtable_reports
+        FROM customers.aspire_airtable_reports
         WHERE CAST(date AS DATE) >= CURRENT_DATE
           AND CAST(date AS DATE) <= CURRENT_DATE + INTERVAL '90 day'
       )
@@ -53,7 +53,7 @@ view: up_airtable_reports {
   dimension: product_title                { type: string sql: ${TABLE}.product_title ;; }
 
   dimension: program_id {
-    type: string        # MUST be string because of CAST in SQL
+    type: string
     sql: ${TABLE}.program_id ;;
   }
 
