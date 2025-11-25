@@ -2,7 +2,7 @@ view: churn_gain {
   derived_table: {
     sql:
 
-    ,v2_table AS (
+    with v2_table AS (
   SELECT *
   FROM ${UPFF_analytics_Vw_v2.SQL_TABLE_NAME}
   WHERE report_date >= '2025-06-30'
@@ -102,7 +102,8 @@ view: churn_gain {
       FROM vm2
       GROUP BY 2,3,4
       ),
-
+      re_acquisitions AS ( select * from ${vimeo.SQL_TABLE_NAME} where platform != 'api' and event_type = 'Direct to Paid' ),
+/*
       re_acquisitions AS (
       SELECT
       date(DATEADD(HOUR, -5, timestamp)) AS report_date,
@@ -142,6 +143,7 @@ view: churn_gain {
       WHERE event_type = 'Direct to Paid'
       and current_customer_status = 'enabled'
       ),
+      */
 
       re_acquisition_count AS (
       SELECT

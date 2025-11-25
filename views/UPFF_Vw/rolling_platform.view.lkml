@@ -1,11 +1,11 @@
 view: rolling_platform {
   derived_table: {
     sql:
-       WITH
+
 -- 1) Base filtered table
-v2_table AS (
+,v2_table AS (
   SELECT *
-  FROM ${UPFF_analytics_Vw.SQL_TABLE_NAME}
+  FROM ${UPFF_analytics_Vw_v2.SQL_TABLE_NAME}
   WHERE report_date >= '2025-06-30'
 ),
 
@@ -86,7 +86,7 @@ v2_table AS (
       ),
 
       -- 8) iOS paid subs (source of truth for iOS only)
-      new_apple AS (
+      new_apple0 AS (
       SELECT *
       FROM ${ios.SQL_TABLE_NAME}
       ),
@@ -97,8 +97,8 @@ v2_table AS (
       a.report_date,
       a.paid_subscribers AS total_paid_subs_monthly,
       b.paid_subscribers AS total_paid_subs_yearly
-      FROM (SELECT * FROM new_apple WHERE billing_period = 'monthly') a
-      LEFT JOIN (SELECT * FROM new_apple WHERE billing_period = 'yearly') b
+      FROM (SELECT * FROM new_apple0 WHERE billing_period = 'monthly') a
+      LEFT JOIN (SELECT * FROM new_apple0 WHERE billing_period = 'yearly') b
       ON a.report_date = b.report_date
       ),
 
@@ -175,6 +175,10 @@ v2_table AS (
       FROM result
       ORDER BY report_date, platform;;
 
+    sql_trigger_value: SELECT TO_CHAR(DATEADD(minute, -555, GETDATE()), 'YYYY-MM-DD');;
+    #sql_trigger_value:  SELECT TO_CHAR(DATE_TRUNC('day', CURRENT_TIMESTAMP) + INTERVAL '9 hours 45 minutes', 'YYYY-MM-DD');;
+    distribution: "report_date"
+    sortkeys: ["report_date"]
   }
 
   dimension: date {
