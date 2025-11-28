@@ -13,7 +13,7 @@ view: vimeo {
       from customers.all_customers
       where report_date >= (
       SELECT MAX(report_date)
-      FROM cfg)
+      FROM cfg) and action = 'subscription' and platform not in('api','web')
     ),
 
     customers as (
