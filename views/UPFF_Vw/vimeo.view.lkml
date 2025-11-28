@@ -1,14 +1,19 @@
 view: vimeo {
   derived_table: {
     sql:
-
-      with platform as (
+,cfg AS (  -- renamed from "cfg"
+  SELECT max(report_date) as report_date
+  FROM ${configg.SQL_TABLE_NAME}
+),
+      platform as (
       select
         CAST(user_id AS VARCHAR) as user_id
         ,platform
 ,(TO_DATE(report_date, 'YYYY-MM-DD') - INTERVAL '1 day') AS report_date
       from customers.all_customers
-      where report_date >= '2025-01-01'
+      where report_date >= (
+      SELECT MAX(report_date)
+      FROM cfg)
     ),
 
     customers as (
@@ -18,7 +23,9 @@ view: vimeo {
         ,event_type
         ,DATE(DATEADD(HOUR, -5, event_occurred_at))as report_date
       FROM customers.new_customers
-      where subscription_frequency != 'custom' and date(event_occurred_at) >= '2025-01-01' and current_customer_status = 'enabled'),
+      where subscription_frequency != 'custom' and date(event_occurred_at) >= (
+      SELECT MAX(report_date)
+      FROM cfg) and current_customer_status = 'enabled'),
 
       chargebee_re_acquisition as(
       SELECT
@@ -32,7 +39,8 @@ view: vimeo {
       ,date(DATEADD(HOUR, -5, timestamp)) as report_date
 
       FROM chargebee_webhook_events.subscription_reactivated
-      WHERE content_subscription_subscription_items like '%UP%'
+      WHERE content_subscription_subscription_items like '%UP%'and date(DATEADD(HOUR, -5, timestamp)) >= (SELECT MAX(report_date)
+      FROM cfg)
 
       UNION ALL
 
@@ -46,7 +54,7 @@ view: vimeo {
         ,'Direct to Paid' as event_type
         ,date(DATEADD(HOUR, -5, timestamp)) AS report_date
       FROM chargebee_webhook_events.subscription_resumed
-      WHERE content_subscription_subscription_items LIKE '%UP%'
+      WHERE content_subscription_subscription_items LIKE '%UP%' and date(DATEADD(HOUR, -5, timestamp)) >= (SELECT MAX(report_date)
       ),
 
     vimeo as (
