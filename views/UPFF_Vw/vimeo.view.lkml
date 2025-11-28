@@ -54,8 +54,8 @@ view: vimeo {
         ,'Direct to Paid' as event_type
         ,date(DATEADD(HOUR, -5, timestamp)) AS report_date
       FROM chargebee_webhook_events.subscription_resumed
-      WHERE content_subscription_subscription_items LIKE '%UP%' and date(DATEADD(HOUR, -5, timestamp)) >= (SELECT MAX(report_date)
-      ),
+      WHERE content_subscription_subscription_items LIKE '%UP%' and date(DATEADD(HOUR, -5, timestamp)) >= (SELECT MAX(report_date) from cfg
+      )),
 
     vimeo as (
 
