@@ -9,7 +9,7 @@ view: vimeo {
       select
         CAST(user_id AS VARCHAR) as user_id
         ,platform
-,(TO_DATE(report_date, 'YYYY-MM-DD') - INTERVAL '1 day') AS report_date
+,(TO_DATE(report_date, 'YYYY-MM-DD') ) AS report_date
       from customers.all_customers
       where report_date >= (
       SELECT MAX(report_date)
