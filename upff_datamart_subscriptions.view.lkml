@@ -82,7 +82,7 @@ view: upff_datamart_subscriptions {
                 , a.status
                 , a.amount
               FROM unionized_customer_data AS a
-              LEFT JOIN looker_scratch.lr$rm6a01757588017313_upff_webhook_events AS b
+              LEFT JOIN ${upff_webhook_events.SQL_TABLE_NAME} AS b
               ON a.user_id = b.user_id
               ),
 
