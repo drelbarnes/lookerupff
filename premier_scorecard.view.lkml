@@ -1574,7 +1574,7 @@ view: premier_scorecard {
       SELECT DATE '2025-11-29', 400000 UNION ALL
       SELECT DATE '2025-11-30', 400000 UNION ALL
       SELECT DATE '2025-12-01', 400000 UNION ALL
-      SELECT DATE '2025-12-02'
+      SELECT DATE '2025-12-02', 400000
       ),
 
       upff_premier_titles AS
