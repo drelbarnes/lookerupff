@@ -1863,8 +1863,8 @@ view: premier_scorecard {
       SELECT "The Great Christmas Snow-In", DATE '2025-11-04' UNION ALL
       SELECT "Princess for a Day", DATE '2025-11-11' UNION ALL
       SELECT "A Royal Christmas Manor", DATE '2025-11-11' UNION ALL
-      SELECT "Saving the Christmas Ranch" DATE '2025-11-18' UNION ALL
-      SELECt "North by North Pole: A Dial S Mystery (4K)", DATE '2025-11-25' UNION ALL
+      SELECT "Saving the Christmas Ranch", DATE '2025-11-18' UNION ALL
+      SELECT "North by North Pole: A Dial S Mystery (4K)", DATE '2025-11-25' UNION ALL
       SELECT "A Royal Christmas Hope", DATE '2025-11-25'
       ),
 
