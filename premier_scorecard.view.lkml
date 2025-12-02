@@ -1565,7 +1565,16 @@ view: premier_scorecard {
       SELECT DATE '2025-11-20', 400000 UNION ALL
       SELECT DATE '2025-11-21', 400000 UNION ALL
       SELECT DATE '2025-11-22', 400000 UNION ALL
-      SELECT DATE '2025-11-23', 400000
+      SELECT DATE '2025-11-23', 400000 UNION ALL
+      SELECT DATE '2025-11-24', 400000 UNION ALL
+      SELECT DATE '2025-11-25', 400000 UNION ALL
+      SELECT DATE '2025-11-26', 400000 UNION ALL
+      SELECT DATE '2025-11-27', 400000 UNION ALL
+      SELECT DATE '2025-11-28', 400000 UNION ALL
+      SELECT DATE '2025-11-29', 400000 UNION ALL
+      SELECT DATE '2025-11-30', 400000 UNION ALL
+      SELECT DATE '2025-12-01', 400000 UNION ALL
+      SELECT DATE '2025-12-02'
       ),
 
       upff_premier_titles AS
@@ -1659,7 +1668,10 @@ view: premier_scorecard {
       SELECT "Batter's Box" UNION ALL
       SELECT "The Great Christmas Snow-In" UNION ALL
       SELECT "Princess for a Day" UNION ALL
-      SELECT "A Royal Christmas Manor"
+      SELECT "A Royal Christmas Manor" UNION ALL
+      SELECT "Saving the Christmas Ranch" UNION ALL
+      SELECt "North by North Pole: A Dial S Mystery (4K)" UNION ALL
+      SELECT "A Royal Christmas Hope"
       ),
 
       upff_premier_completion_rates AS
@@ -1753,7 +1765,10 @@ view: premier_scorecard {
       SELECT "Batter's Box", 0.68 UNION ALL
       SELECT "The Great Christmas Snow-In", 0.64 UNION ALL
       SELECT "Princess for a Day", 0.73 UNION ALL
-      SELECT "A Royal Christmas Manor", 0.79
+      SELECT "A Royal Christmas Manor", 0.79 UNION ALL
+      SELECT "Saving the Christmas Ranch", 0.75 UNION ALL
+      SELECt "North by North Pole: A Dial S Mystery (4K)", 0.72 UNION ALL
+      SELECT "A Royal Christmas Hope", 0.78
       ),
 
       upff_premier_dates AS
@@ -1848,6 +1863,9 @@ view: premier_scorecard {
       SELECT "The Great Christmas Snow-In", DATE '2025-11-04' UNION ALL
       SELECT "Princess for a Day", DATE '2025-11-11' UNION ALL
       SELECT "A Royal Christmas Manor", DATE '2025-11-11'
+      SELECT "Saving the Christmas Ranch" DATE '2025-11-18' UNION ALL
+      SELECt "North by North Pole: A Dial S Mystery (4K)", DATE '2025-11-25' UNION ALL
+      SELECT "A Royal Christmas Hope", DATE '2025-11-25'
       ),
 
       upff_subscriber_counts AS
