@@ -1747,7 +1747,7 @@ view: upff_series_premier {
                     , views_7_days
                     , views_30_days
                     , views_90_days
-                    , viewd_120_days
+                    , views_120_days
                     , uniques_7_days
                     , uniques_30_days
                     , uniques_90_days
