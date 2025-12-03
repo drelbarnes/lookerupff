@@ -2,7 +2,12 @@ view: csat_survey {
     derived_table: {
       sql: SELECT
               _ AS id
-              , brand_name
+              , CASE
+                  WHEN brand_name = 'UP' THEN 'UPFF'
+                  WHEN brand_name = 'GaitherTV' THEN 'GTV'
+                  WHEN brand_name = 'UPtv' THEN 'UP'
+                  ELSE brand_name
+                END AS brand_name
               , Comments AS verbatim
               , Ending AS ending
               , How_easy_was_it_to_get_your_issue_resolved_ AS q1
