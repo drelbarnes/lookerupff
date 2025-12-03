@@ -227,6 +227,7 @@ include: "premier_scorecard.view.lkml"
 include: "csat_survey.view.lkml"
 include: "csat_analytics.view.lkml"
 include: "csat_tables.view.lkml"
+include: "csat_tickets.view.lkml"
 
 include: "/views/uptv_web/uptv_page_events.view.lkml"
 include: "/views/uptv_web/uptv_web_sessions.view.lkml"
@@ -502,6 +503,10 @@ explore: csat_analytics {
 
 explore: csat_tables {
   label: "CSAT Tables"
+}
+
+explore: csat_tickets {
+  label: "CSAT Tickets"
 }
 
 explore: search_and_discovery2 {
