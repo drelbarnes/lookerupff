@@ -6,7 +6,7 @@ view: csat_survey {
                   WHEN brand_name = 'UP' THEN 'UPFF'
                   WHEN brand_name = 'GaitherTV ' THEN 'GTV'
                   WHEN brand_name = 'UPtv' THEN 'UP'
-                  ELSE brand_name
+                  ELSE 'NULL'
                 END AS brand_name
               , Comments AS verbatim
               , Ending AS ending
