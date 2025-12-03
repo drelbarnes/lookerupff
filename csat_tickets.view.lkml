@@ -31,20 +31,20 @@ view: csat_tickets {
       sql: ${TABLE}.week_date ;;
     }
 
-    dimension: num_tickets {
-      type: number
-      sql: ${TABLE}.num_tickets ;;
-    }
+  measure: num_tickets {
+    type: sum
+    sql: ${TABLE}.num_tickets ;;
+  }
 
-    dimension: num_responses {
-      type: number
-      sql: ${TABLE}.num_responses ;;
-    }
+  measure: num_responses {
+    type: sum
+    sql: ${TABLE}.num_responses ;;
+  }
 
-    dimension: response_rate {
-      type: number
-      sql: ${TABLE}.response_rate ;;
-    }
+  measure: response_rate {
+    type: average
+    sql: ${TABLE}.response_rate ;;
+  }
 
     set: detail {
       fields: [
