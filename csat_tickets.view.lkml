@@ -44,7 +44,7 @@ view: csat_tickets {
   measure: response_rate {
     type: average
     sql: ${TABLE}.response_rate ;;
-    value_format_name: "percent_2"
+    value_format_name: "percent_0"
   }
 
     set: detail {
