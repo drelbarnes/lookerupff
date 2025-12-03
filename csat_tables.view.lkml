@@ -308,25 +308,25 @@ view: csat_tables {
     }
 
     measure: q4_0_pct {
-      label: "Q4 Score 0/1 Pct"
+      label: "Q4 No Pct"
       type: sum
       sql: ${TABLE}.q4_0_pct ;;
     }
 
     measure: q4_1_pct {
-      label: "Q4 Score 1/1 Pct"
+      label: "Q4 Yes Pct"
       type: sum
       sql: ${TABLE}.q4_1_pct ;;
     }
 
     measure: q5_0_pct {
-      label: "Q5 Score 0/1 Pct"
+      label: "Q5 No Pct"
       type: sum
       sql: ${TABLE}.q5_0_pct ;;
     }
 
     measure: q5_1_pct {
-      label: "Q5 Score 1/1 Pct"
+      label: "Q5 Yes Pct"
       type: sum
       sql: ${TABLE}.q5_1_pct ;;
     }
