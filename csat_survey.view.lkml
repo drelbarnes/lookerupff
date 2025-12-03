@@ -4,7 +4,7 @@ view: csat_survey {
               _ AS id
               , CASE
                   WHEN brand_name = 'UP' THEN 'UPFF'
-                  WHEN brand_name = 'GaitherTV' THEN 'GTV'
+                  WHEN brand_name = 'GaitherTV ' THEN 'GTV'
                   WHEN brand_name = 'UPtv' THEN 'UP'
                   ELSE brand_name
                 END AS brand_name
