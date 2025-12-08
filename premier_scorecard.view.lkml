@@ -1677,7 +1677,11 @@ view: premier_scorecard {
       SELECT "A Royal Christmas Manor" UNION ALL
       SELECT "Saving the Christmas Ranch" UNION ALL
       SELECt "North by North Pole: A Dial S Mystery" UNION ALL
-      SELECT "A Royal Christmas Hope"
+      SELECT "A Royal Christmas Hope" UNION ALL
+      SELECT "A Change in Heart" UNION ALL
+      SELECT "Christmas in Amish Country" UNION ALL
+      SELECT "Christmas Roses" UNION ALL
+      SELECT "A Christmas Murder Mystery"
       ),
 
       upff_premier_completion_rates AS
@@ -1774,7 +1778,11 @@ view: premier_scorecard {
       SELECT "A Royal Christmas Manor", 0.79 UNION ALL
       SELECT "Saving the Christmas Ranch", 0.75 UNION ALL
       SELECt "North by North Pole: A Dial S Mystery", 0.72 UNION ALL
-      SELECT "A Royal Christmas Hope", 0.78
+      SELECT "A Royal Christmas Hope", 0.78 UNION ALL
+      SELECT "A Change in Heart", 0.75 UNION ALL
+      SELECT "Christmas in Amish Country", 0.79 UNION ALL
+      SELECT "Christmas Roses", 0.00 UNION ALL
+      SELECT "A Christmas Murder Mystery", 0.00
       ),
 
       upff_premier_dates AS
@@ -1871,7 +1879,11 @@ view: premier_scorecard {
       SELECT "A Royal Christmas Manor", DATE '2025-11-11' UNION ALL
       SELECT "Saving the Christmas Ranch", DATE '2025-11-18' UNION ALL
       SELECT "North by North Pole: A Dial S Mystery", DATE '2025-11-25' UNION ALL
-      SELECT "A Royal Christmas Hope", DATE '2025-11-25'
+      SELECT "A Royal Christmas Hope", DATE '2025-11-25' UNION ALL
+      SELECT "A Change in Heart", DATE '2025-12-02' UNION ALL
+      SELECT "Christmas in Amish Country", DATE '2025-12-02' UNION ALL
+      SELECT "Christmas Roses", DATE '2025-12-09' UNION ALL
+      SELECT "A Christmas Murder Mystery", DATE '2025-12-09'
       ),
 
       upff_subscriber_counts AS
