@@ -1574,7 +1574,13 @@ view: premier_scorecard {
       SELECT DATE '2025-11-29', 400000 UNION ALL
       SELECT DATE '2025-11-30', 400000 UNION ALL
       SELECT DATE '2025-12-01', 400000 UNION ALL
-      SELECT DATE '2025-12-02', 400000
+      SELECT DATE '2025-12-02', 400000 UNION ALL
+      SELECT DATE '2025-12-03', 400000 UNION ALL
+      SELECT DATE '2025-12-04', 400000 UNION ALL
+      SELECT DATE '2025-12-05', 400000 UNION ALL
+      SELECT DATE '2025-12-06', 400000 UNION ALL
+      SELECT DATE '2025-12-07', 400000 UNION ALL
+      SELECT DATE '2025-12-08', 400000
       ),
 
       upff_premier_titles AS
@@ -1670,7 +1676,7 @@ view: premier_scorecard {
       SELECT "Princess for a Day" UNION ALL
       SELECT "A Royal Christmas Manor" UNION ALL
       SELECT "Saving the Christmas Ranch" UNION ALL
-      SELECt "North by North Pole: A Dial S Mystery (4K)" UNION ALL
+      SELECt "North by North Pole: A Dial S Mystery" UNION ALL
       SELECT "A Royal Christmas Hope"
       ),
 
@@ -1767,7 +1773,7 @@ view: premier_scorecard {
       SELECT "Princess for a Day", 0.73 UNION ALL
       SELECT "A Royal Christmas Manor", 0.79 UNION ALL
       SELECT "Saving the Christmas Ranch", 0.75 UNION ALL
-      SELECt "North by North Pole: A Dial S Mystery (4K)", 0.72 UNION ALL
+      SELECt "North by North Pole: A Dial S Mystery", 0.72 UNION ALL
       SELECT "A Royal Christmas Hope", 0.78
       ),
 
