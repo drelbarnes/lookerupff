@@ -1949,6 +1949,11 @@ view: upff_movie_premier {
                     )
 
               select * from title_views_benchmarked ;;
+
+      distribution_style: "even"
+      sortkeys: ["collection", "release_date"]
+      datagroup_trigger: redshift_upff_datagroup
+
     }
 
     measure: count {
