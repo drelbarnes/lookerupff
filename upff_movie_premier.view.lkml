@@ -1885,7 +1885,8 @@ view: upff_movie_premier {
                     *
                     , ts AS TIMESTAMP
                     FROM looker_scratch.lr$rmzpr1765180774941_redshift_allfirst_play_p1_less_granular
-                    WHERE timestamp::date >= '2023-01-01'
+                    WHERE title in (SELECT title FROM upff_premier_titles)
+                    AND timestamp::date >= '2023-01-01'
                     ),
 
                     movie_play_counts AS
