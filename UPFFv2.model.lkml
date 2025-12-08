@@ -84,6 +84,11 @@ explore: upff_series_premier {
   label: "UPFF Series Premier"
 }
 
+include: "upff_movie_premier.view.lkml"
+explore: upff_movie_premier {
+  label: "UPFF Movie Premier"
+}
+
 #end redshift upff datamart explores
 
 #redshift allfirstplay explores
