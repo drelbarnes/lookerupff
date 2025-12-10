@@ -36,6 +36,7 @@ view: profile_update {
   dimension: customer_id {
     type: string
     sql: ${TABLE}.customer_id ;;
+    tags: ["user_id"]
   }
 
   dimension: og_email {
