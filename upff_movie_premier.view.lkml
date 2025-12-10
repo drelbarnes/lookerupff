@@ -1884,7 +1884,7 @@ view: upff_movie_premier {
                     SELECT
                     *
                     , ts AS TIMESTAMP
-                    FROM looker_scratch.lr$rmzpr1765180774941_redshift_allfirst_play_p1_less_granular
+                    FROM ${redshift_allfirst_play_p1_less_granular.SQL_TABLE_NAME}
                     WHERE title in (SELECT title FROM upff_premier_titles)
                     AND timestamp::date >= '2023-01-01'
                     ),
@@ -1896,7 +1896,7 @@ view: upff_movie_premier {
                     , b.release_date
                     , b.subscriber_count
                     , count(DISTINCT a.user_id) AS number_views
-                    FROM looker_scratch.lr$rmzpr1765180774941_redshift_allfirst_play_p1_less_granular AS a
+                    FROM ${redshift_allfirst_play_p1_less_granular.SQL_TABLE_NAME} AS a
                     LEFT JOIN upff_subscriber_counts AS b
                     ON a.title = b.title
                     GROUP BY 1,2,3
