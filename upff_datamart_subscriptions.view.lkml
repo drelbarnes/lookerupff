@@ -1,174 +1,162 @@
 view: upff_datamart_subscriptions {
     derived_table: {
-      sql: with
+      sql:
 
-              /* vimeo customers from all platforms except web and api */
-              vimeo_nonweb_customers AS
-              (
-              SELECT
-                ROW_NUMBER() OVER () AS subscription_id
-                , 'NULL' AS customer_id
-                , user_id
-                , CAST(report_date AS TIMESTAMP) AS received_at
-                , DATE(customer_created_at) AS created_at
-                , NULL AS activated_at
-                , frequency
-                , status
-                , platform
-                , marketing_opt_in
-                , cast(NULL AS VARCHAR) AS city
-                , cast(NULL AS VARCHAR) AS state
-                , cast(NULL AS VARCHAR) AS zipcode
-                , country
-                , 'Vimeo' AS dsource
-                , NULL AS amount
-              FROM customers.all_customers
-              WHERE report_date = current_date
-              AND platform NOT in ('web','api')
-              ),
+with
 
-              /* chargebee customers from platforms web and api */
-              chargebee_web_api_users AS
-              (
-              SELECT
-                cast(a.subscription_id AS INT) AS subscription_id
-                , cast(a.customer_id AS VARCHAR) AS customer_id
-                , cast(coalesce(b.user_id, NULL) AS INT) AS user_id
-                , a.uploaded_at AS received_at
-                , CAST(
-                    CASE
-                      WHEN CAST(a.customer_created_at AS BIGINT) >= 1000000000000
-                      THEN DATEADD(millisecond, CAST(a.customer_created_at AS BIGINT), TIMESTAMP 'epoch')
-                      ELSE DATEADD(second,      CAST(a.customer_created_at AS BIGINT), TIMESTAMP 'epoch')
-                    END
-                  AS DATE) AS created_at
-                , a.subscription_started_at AS activated_at
-                , CASE WHEN subscription_subscription_items_0_amount = 599 THEN 'monthly' ELSE 'yearly' END AS frequency
-                , CASE
-                    WHEN a.subscription_status = 'in_trial' THEN 'free_trial'
-                    WHEN a.subscription_status = 'active' THEN 'enabled'
-                    WHEN a.subscription_status = 'cancelled' THEN 'cancelled'
-                    WHEN a.subscription_status = 'paused' THEN 'paused'
-                    WHEN a.subscription_status = 'refunded' THEN 'refunded'
-                  ELSE NULL END AS status
-                , a.subscription_channel AS platform
-                , a.customer_cs_marketing_opt_in AS marketing_opt_in
-                , b.city
-                , a.customer_billing_address_state AS state
-                , a.customer_billing_address_zip AS zipcode
-                , a.customer_billing_address_country AS country
-                , 'Chargebee' AS dsource
-                , a.subscription_subscription_items_0_amount AS amount
-              FROM http_api.chargebee_subscriptions AS a
-              LEFT JOIN ${upff_webhook_events.SQL_TABLE_NAME} AS b
-              ON a.customer_id = b.customer_id
-              AND a.subscription_subscription_items_0_item_price_id in ('UP-Faith-Family-Monthly','UP-Faith-Family-Yearly')
-              ),
+vimeo_nonweb_customers AS
+(
+  SELECT
+      ROW_NUMBER() OVER ()::VARCHAR AS subscription_id
+    , 'NULL'::VARCHAR AS customer_id
+    , user_id::BIGINT AS user_id
+    , report_date::timestamp AS received_at
+    , customer_created_at::timestamp AS created_at
+    , NULL::timestamp AS activated_at
+    , frequency
+    , status
+    , platform
+    , marketing_opt_in
+    , cast(NULL AS VARCHAR) AS city
+    , cast(NULL AS VARCHAR) AS state
+    , cast(NULL AS VARCHAR) AS zipcode
+    , country
+    , 'Vimeo' AS dsource
+    , NULL::NUMERIC AS amount
+  FROM customers.all_customers
+  WHERE report_date = current_date
+    AND platform NOT IN ('web','api')
+),
 
-              /* union of all platforms */
-              unionized_customer_data AS (SELECT * FROM vimeo_nonweb_customers UNION ALL SELECT * FROM chargebee_web_api_users),
+chargebee_web_api_users AS
+(
+  SELECT
+      a.subscription_id::VARCHAR AS subscription_id
+    , a.customer_id::VARCHAR AS customer_id
+    , b.user_id::BIGINT AS user_id
+    , a.uploaded_at::timestamp AS received_at
+    , (TIMESTAMP '1970-01-01 00:00:00' + CAST(a.customer_created_at AS BIGINT) * INTERVAL '1 second') AS created_at
+    , (TIMESTAMP '1970-01-01 00:00:00' + CAST(a.subscription_started_at AS BIGINT) * INTERVAL '1 second') AS activated_at
+    , CASE WHEN subscription_subscription_items_0_amount = 599 THEN 'monthly' ELSE 'yearly' END AS frequency
+    , CASE
+        WHEN a.subscription_status = 'in_trial' THEN 'free_trial'
+        WHEN a.subscription_status = 'active' THEN 'enabled'
+        WHEN a.subscription_status = 'cancelled' THEN 'cancelled'
+        WHEN a.subscription_status = 'paused' THEN 'paused'
+        WHEN a.subscription_status = 'refunded' THEN 'refunded'
+      ELSE NULL END AS status
+    , a.subscription_channel AS platform
+    , a.customer_cs_marketing_opt_in AS marketing_opt_in
+    , b.city
+    , a.customer_billing_address_state AS state
+    , a.customer_billing_address_zip AS zipcode
+    , a.customer_billing_address_country AS country
+    , 'Chargebee' AS dsource
+    , a.subscription_subscription_items_0_amount::NUMERIC AS amount
+  FROM http_api.chargebee_subscriptions AS a
+  LEFT JOIN ${upff_webhook_events.SQL_TABLE_NAME} AS b
+  ON a.customer_id = b.customer_id
+  WHERE a.subscription_subscription_items_0_item_price_id IN ('UP-Faith-Family-Monthly','UP-Faith-Family-Yearly')
+),
 
-              /* pulls in content_customer attributes from subscription_created event */
-              customer_events AS
-              (
-              SELECT DISTINCT
-                a.user_id AS id
-                , a.subscription_id
-                , a.created_at
-                , b.timestamp AS received_at
-                , a.activated_at
-                , b.event
-                , a.frequency
-                , a.status
-                , a.amount
-              FROM unionized_customer_data AS a
-              LEFT JOIN ${upff_webhook_events.SQL_TABLE_NAME} AS b
-              ON a.user_id = b.user_id
-              ),
+unionized_customer_data AS (SELECT * FROM vimeo_nonweb_customers UNION ALL SELECT * FROM chargebee_web_api_users),
 
-              /* ranks event chronologically */
-              ranked_events AS
-              (
-              SELECT
-                *
-                , ROW_NUMBER() OVER (PARTITION BY subscription_id ORDER BY received_at ASC) AS rn_first
-                , ROW_NUMBER() OVER (PARTITION BY subscription_id ORDER BY received_at DESC) AS rn_last
-              FROM customer_events
-              ),
+customer_events AS
+(
+  SELECT DISTINCT
+      a.user_id AS id
+    , a.subscription_id
+    , a.created_at
+    , b.timestamp AS received_at
+    , a.activated_at
+    , b.event
+    , a.frequency
+    , a.status
+    , a.amount
+  FROM unionized_customer_data AS a
+  LEFT JOIN ${upff_webhook_events.SQL_TABLE_NAME} AS b
+  ON a.user_id = b.user_id
+),
 
-              /* orders ranked events */
-              ranked_events_ordered AS
-              (
-              SELECT * FROM ranked_events
-              WHERE rn_first = 1 OR rn_last = 1
-              ORDER BY subscription_id, received_at
-              ),
+ranked_events AS
+(
+  SELECT
+      *
+    , ROW_NUMBER() OVER (PARTITION BY subscription_id ORDER BY received_at ASC) AS rn_first
+    , ROW_NUMBER() OVER (PARTITION BY subscription_id ORDER BY received_at DESC) AS rn_last
+  FROM customer_events
+),
 
-              /* labels ranked events */
-              ranked_events_labeled AS
-              (
-              SELECT
-                subscription_id
-                , MAX(CASE WHEN rn_first = 1 THEN event END) AS first_event
-                , MAX(CASE WHEN rn_last = 1 THEN event END) AS last_event
-                , MAX(CASE WHEN rn_first = 1 THEN received_at END) AS first_event_time
-                , MAX(CASE WHEN rn_last = 1 THEN received_at END) AS last_event_time
-              FROM ranked_events_ordered
-              GROUP BY subscription_id
-              ),
+ranked_events_ordered AS
+(
+  SELECT * FROM ranked_events
+  WHERE rn_first = 1 OR rn_last = 1
+  ORDER BY subscription_id, received_at
+),
 
-              /* appends ranked events */
-              customer_data_postjoin AS
-              (
-              SELECT
-                a.*
-                , b.first_event
-                , b.last_event
-                , b.first_event_time
-                , b.last_event_time
-              FROM customer_events AS a
-              LEFT JOIN ranked_events_labeled AS b
-              ON a.subscription_id = b.subscription_id
-              ),
+ranked_events_labeled AS
+(
+  SELECT
+      subscription_id
+    , MAX(CASE WHEN rn_first = 1 THEN event END) AS first_event
+    , MAX(CASE WHEN rn_last = 1 THEN event END) AS last_event
+    , MAX(CASE WHEN rn_first = 1 THEN received_at END) AS first_event_time
+    , MAX(CASE WHEN rn_last = 1 THEN received_at END) AS last_event_time
+  FROM ranked_events_ordered
+  GROUP BY subscription_id
+),
 
-              /* creates lifecyle events */
-              customer_lifetime AS
-              (
-              SELECT
-                id AS user_id
-                , subscription_id
-                , MAX(received_at) AS received_at
-                , MIN(CASE WHEN event = 'customer_product_free_trial_created' THEN received_at END) AS trial_start_date
-                , MIN(CASE WHEN event = 'customer_product_free_trial_converted' THEN received_at END) AS active_start_date
-                , MAX(CASE WHEN status IN ('free_trial_expired', 'customer_product_cancelled') THEN received_at END) AS active_end_date
-                , DATEDIFF(month, CAST(first_event_time AS date), CAST(last_event_time AS DATE)) AS active_tenure_months
-                , COUNT(DISTINCT CASE WHEN event = 'customer_product_renewed' THEN received_at END) AS total_payments
-              FROM customer_data_postjoin
-              GROUP BY 1,2,7
-              ),
+customer_data_postjoin AS
+(
+  SELECT
+      a.*
+    , b.first_event
+    , b.last_event
+    , b.first_event_time
+    , b.last_event_time
+  FROM customer_events AS a
+  LEFT JOIN ranked_events_labeled AS b
+  ON a.subscription_id = b.subscription_id
+),
 
-              /* subscriptions */
-              subscriptions AS
-              (
-              SELECT
-                a.id
-                , a.id AS user_id
-                , a.subscription_id
-                , a.received_at
-                , a.event
-                , a.created_at
-                , a.activated_at
-                , b.active_end_date AS cancel_at
-                , a.frequency
-                , a.status
-                , b.active_end_date AS trial_end_date
-                , a.amount
-              FROM customer_data_postjoin AS a
-              LEFT JOIN customer_lifetime AS b
-              ON a.id = b.user_id
-              )
+customer_lifetime AS
+(
+  SELECT
+      id AS user_id
+    , subscription_id
+    , MAX(received_at) AS received_at
+    , MIN(CASE WHEN event = 'customer_product_free_trial_created' THEN received_at END) AS trial_start_date
+    , MIN(CASE WHEN event = 'customer_product_free_trial_converted' THEN received_at END) AS active_start_date
+    , MAX(CASE WHEN status IN ('free_trial_expired', 'customer_product_cancelled') THEN received_at END) AS active_end_date
+    , DATEDIFF(month, CAST(first_event_time AS date), CAST(last_event_time AS DATE)) AS active_tenure_months
+    , COUNT(DISTINCT CASE WHEN event = 'customer_product_renewed' THEN received_at END) AS total_payments
+  FROM customer_data_postjoin
+  GROUP BY 1,2,7
+),
 
-              select * from subscriptions ;;
+subscriptions AS
+(
+  SELECT
+      a.id
+    , a.id AS user_id
+    , a.subscription_id
+    , a.received_at
+    , a.event
+    , a.created_at
+    , a.activated_at
+    , b.active_end_date AS cancel_at
+    , a.frequency
+    , a.status
+    , b.active_end_date AS trial_end_date
+    , a.amount
+  FROM customer_data_postjoin AS a
+  LEFT JOIN customer_lifetime AS b
+  ON a.id = b.user_id
+)
+
+select * from subscriptions ;;
+
+
     }
 
     measure: count {
