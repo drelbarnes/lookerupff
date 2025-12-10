@@ -60,7 +60,7 @@ view: sub_count {
       UNION ALL
 
       SELECT
-        user_count + 5700 as user_count
+        user_count + 6700 as user_count
         ,report_date
         ,platform
         ,billing_period

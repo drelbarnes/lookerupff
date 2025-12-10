@@ -33,8 +33,8 @@ view: chargebee_webhook {
     content_customer_email::VARCHAR AS email,
     CASE
       WHEN event = 'subscription_created' AND content_subscription_status = 'in_trial'
-        THEN 'customer_product_free_trial_created'
-      ELSE 'customer_product_created'
+        THEN 'customer.product.free_trial_created'
+      ELSE 'customer.product.created'
     END AS event,
     "timestamp"::TIMESTAMP,
     COALESCE(
@@ -50,7 +50,7 @@ view: chargebee_webhook {
   /* FREE TRIAL CONVERTED (no dunning) */
   SELECT
     content_customer_email::VARCHAR AS email,
-    'customer_product_free_trial_converted' AS event,
+    'customer.product.free_trial_converted' AS event,
     "timestamp"::TIMESTAMP,
     COALESCE(
       content_subscription_subscription_items_0_item_price_id::VARCHAR,
@@ -66,7 +66,7 @@ view: chargebee_webhook {
   /* FREE TRIAL CONVERTED (dunning) */
   SELECT
     a.content_customer_email::VARCHAR AS email,
-    'customer_product_free_trial_converted' AS event,
+    'customer.product.free_trial_converted' AS event,
     a."timestamp"::TIMESTAMP,
     COALESCE(
       a.content_subscription_subscription_items_0_item_price_id::VARCHAR,
@@ -84,7 +84,7 @@ view: chargebee_webhook {
   /* PRODUCT CREATED (REACQUISITION) */
   SELECT
     content_customer_email::VARCHAR AS email,
-    'customer_product_created' AS event,
+    'customer.product.created' AS event,
     "timestamp"::TIMESTAMP,
     COALESCE(
       content_subscription_subscription_items_0_item_price_id::VARCHAR,
@@ -99,7 +99,7 @@ view: chargebee_webhook {
   /* PRODUCT RENEWED */
   SELECT
     content_customer_email::VARCHAR AS email,
-    'customer_product_renewed' AS event,
+    'customer.product.renewed' AS event,
     "timestamp"::TIMESTAMP,
     COALESCE(
       content_subscription_subscription_items_0_item_price_id::VARCHAR,
@@ -116,8 +116,8 @@ view: chargebee_webhook {
     content_customer_email::VARCHAR AS email,
     CASE
       WHEN (content_subscription_cancelled_at - content_subscription_trial_end) < 10000
-        THEN 'customer_product_free_trial_expired'
-      ELSE 'customer_product_cancelled'
+        THEN 'customer.product.free_trial_expired'
+      ELSE 'customer.product.cancelled'
     END AS event,
     "timestamp"::TIMESTAMP,
     COALESCE(
@@ -142,8 +142,8 @@ view: chargebee_webhook {
     content_customer_email::VARCHAR AS email,
     CASE
       WHEN (content_subscription_cancelled_at - content_subscription_activated_at) < 2419200
-        THEN 'customer_product_free_trial_expired'
-      ELSE 'customer_product_cancelled'
+        THEN 'customer.product.free_trial_expired'
+      ELSE 'customer.product.cancelled'
     END AS event,
     "timestamp"::TIMESTAMP,
     COALESCE(
@@ -163,7 +163,7 @@ view: chargebee_webhook {
   /* PRODUCT PAUSED */
   SELECT
     content_customer_email::VARCHAR AS email,
-    'customer_product_paused' AS event,
+    'customer.product.paused' AS event,
     "timestamp"::TIMESTAMP,
     COALESCE(
       content_subscription_subscription_items_0_item_price_id::VARCHAR,
@@ -178,7 +178,7 @@ view: chargebee_webhook {
   /* PRODUCT RESUMED */
   SELECT
     content_customer_email::VARCHAR AS email,
-    'customer_product_resumed' AS event,
+    'customer.product.resumed' AS event,
     "timestamp"::TIMESTAMP,
     COALESCE(
       content_subscription_subscription_items_0_item_price_id::VARCHAR,
@@ -193,7 +193,7 @@ view: chargebee_webhook {
   /* PRODUCT CHARGE FAILED */
   SELECT
     content_customer_email::VARCHAR AS email,
-    'customer_product_charge_failed' AS event,
+    'customer.product.charge_failed' AS event,
     "timestamp"::TIMESTAMP,
     COALESCE(
       content_subscription_subscription_items_0_item_price_id::VARCHAR,
@@ -208,7 +208,7 @@ view: chargebee_webhook {
   /* PRODUCT SET CANCELLATION */
   SELECT
     content_customer_email::VARCHAR AS email,
-    'customer_product_set_cancellation' AS event,
+    'customer.product.set_cancellation' AS event,
     "timestamp"::TIMESTAMP,
     COALESCE(
       content_subscription_subscription_items_0_item_price_id::VARCHAR,
@@ -223,7 +223,7 @@ view: chargebee_webhook {
   /* PRODUCT UNDO SET CANCELLATION */
   SELECT
     content_customer_email::VARCHAR AS email,
-    'customer_product_undo_set_cancellation' AS event,
+    'customer.product.undo_set_cancellation' AS event,
     "timestamp"::TIMESTAMP,
     COALESCE(
       content_subscription_subscription_items_0_item_price_id::VARCHAR,
@@ -238,7 +238,7 @@ view: chargebee_webhook {
   /* PRODUCT SET PAUSED */
   SELECT
     content_customer_email::VARCHAR AS email,
-    'customer_product_set_paused' AS event,
+    'customer.product.set_paused' AS event,
     "timestamp"::TIMESTAMP,
     COALESCE(
       content_subscription_subscription_items_0_item_price_id::VARCHAR,
@@ -253,7 +253,7 @@ view: chargebee_webhook {
   /* PRODUCT UNDO SET PAUSED */
   SELECT
     content_customer_email::VARCHAR AS email,
-    'customer_product_undo_set_paused' AS event,
+    'customer.product.undo_set_paused' AS event,
     "timestamp"::TIMESTAMP,
     COALESCE(
       content_subscription_subscription_items_0_item_price_id::VARCHAR,
@@ -263,11 +263,33 @@ view: chargebee_webhook {
       )::VARCHAR
     ) AS plan
   FROM chargebee_webhook_events.subscription_scheduled_pause_removed
+
+  UNION ALL
+
+  SELECT
+  content_customer_email as email,
+  CASE
+    WHEN occurred_at - content_customer_created_at > 2419200 then 'customer.product.renewed'
+    ELSE'customer.product.free_trial_converted'
+  END AS event,
+  "timestamp"::TIMESTAMP,
+  COALESCE(
+      content_subscription_subscription_items_0_item_price_id::VARCHAR,
+      json_extract_path_text(
+        json_extract_array_element_text(content_subscription_subscription_items, 0),
+        'item_price_id'
+      )::VARCHAR
+    ) AS plan
+  FROM chargebee_webhook_events.payment_succeeded where content_invoice_dunning_status is not NULL
 )
+
+
+
+
 SELECT email, event, "timestamp", plan
 FROM (
   SELECT
-    email,
+    lower(email) as email,
     event,
     "timestamp",
     plan,
