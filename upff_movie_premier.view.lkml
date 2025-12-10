@@ -1942,9 +1942,9 @@ view: upff_movie_premier {
                     , uniques_7_days
                     , uniques_30_days
                     , uniques_90_days
-                    , round(views_7_days / subscriber_count, 2) AS views_per_weekly_sub_7d
-                    , round(views_30_days / subscriber_count, 2) AS views_per_weekly_sub_30d
-                    , round(views_90_days / subscriber_count, 2) AS views_per_weekly_sub_90d
+                    , round(views_7_days::decimal / NULLIF(subscriber_count, 0), 2) AS views_per_weekly_sub_7d
+                    , round(views_30_days::decimal / NULLIF(subscriber_count, 0), 2) AS views_per_weekly_sub_30d
+                    , round(views_90_days::decimal / NULLIF(subscriber_count, 0), 2) AS views_per_weekly_sub_90d
                     , completion_rate AS lifetime_completion_rate
                     FROM title_views_cr
                     )
