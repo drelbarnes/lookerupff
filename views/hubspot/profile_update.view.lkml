@@ -25,7 +25,7 @@ view: profile_update {
 
     c as (
       select
-        b.content_card_customer_id as customer_id,
+        b.content_card_customer_id as user_id,
         b.content_customer_email as changed_email,
         a.content_customer_email as og_email
       from a INNER JOIN b on a.content_card_customer_id = b.content_card_customer_id)
@@ -33,10 +33,9 @@ view: profile_update {
     select distinct * from c WHERE og_email != changed_email ;;
   }
 
-  dimension: customer_id {
+  dimension: user_id {
     type: string
-    label: "user_id"
-    sql: ${TABLE}.customer_id ;;
+    sql: ${TABLE}.user_id ;;
     tags: ["user_id"]
   }
 
