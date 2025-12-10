@@ -35,6 +35,7 @@ view: profile_update {
 
   dimension: customer_id {
     type: string
+    label: "user_id"
     sql: ${TABLE}.customer_id ;;
     tags: ["user_id"]
   }
