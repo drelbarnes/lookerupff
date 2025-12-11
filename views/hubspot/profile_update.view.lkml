@@ -9,7 +9,7 @@ view: profile_update {
         content_card_customer_id,
         date(timestamp) as subscription_created_at
       FROM chargebee_webhook_events.subscription_created
-      WHERE timestamp BETWEEN (CURRENT_DATE - INTERVAL '8 day')
+      WHERE timestamp BETWEEN (CURRENT_DATE - INTERVAL '30 day')
                    AND CURRENT_DATE
       ),
 
@@ -19,7 +19,7 @@ view: profile_update {
         content_card_customer_id,
         date(timestamp) as profile_changed_at
       FROM chargebee_webhook_events.customer_changed
-      WHERE timestamp BETWEEN (CURRENT_DATE - INTERVAL '8 day')
+      WHERE timestamp BETWEEN (CURRENT_DATE - INTERVAL '30 day')
                    AND CURRENT_DATE
       ),
 
@@ -38,7 +38,6 @@ view: profile_update {
     sql: ${TABLE}.user_id ;;
     tags: ["user_id"]
   }
-
   dimension: og_email {
     type: string
     sql: ${TABLE}.og_email ;;
