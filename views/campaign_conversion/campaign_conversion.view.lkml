@@ -275,7 +275,7 @@ FROM result2
     value_format_name: decimal_0
   }
 
-  measure: total_converted {
+  measure: total_free_trial_to_paid_converted {
     type: sum
     sql: ${converted_count} ;;
     value_format_name: decimal_0
