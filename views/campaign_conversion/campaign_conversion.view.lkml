@@ -5,7 +5,10 @@ view: campaign_conversion {
   SELECT
     date(received_at) as report_date
     ,context_ip
-    ,context_campaign_source as campaign_source
+    ,CASE
+      WHEN context_campaign_source like '%fb%' THEN 'Facebook'
+      ELSE context_campaign_source
+    END as campaign_source
     ,context_campaign_name as campaign_name
     ,context_campaign_medium as campaign_medium
   FROM javascript_upff_home.pages
