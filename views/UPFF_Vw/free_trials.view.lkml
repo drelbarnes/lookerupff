@@ -104,7 +104,7 @@ view: free_trials {
   measure: free_trials_fire_tablet {
     type: count_distinct
     sql: ${TABLE}.user_id ;;
-    filters: [platform: "amazon_fire_tv"]
+    filters: [platform: "amazon_fire_tablet"]
   }
 
   measure: free_trials_roku {
