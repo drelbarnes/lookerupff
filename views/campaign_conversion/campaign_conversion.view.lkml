@@ -13,10 +13,15 @@ view: campaign_conversion {
     {% if start_date._parameter_value != "NULL" %}
     AND DATE(received_at) >= {% parameter start_date %}
     {% endif %}
+
+    {% if end_date._parameter_value != "NULL" %}
+    AND DATE(received_at) <= {% parameter end_date %}
+    {% endif %}
   ),
 
   trial_created as (
   SELECT
+  distinct
     user_id
     ,context_ip
     ,date(timestamp) as report_date
@@ -29,6 +34,7 @@ view: campaign_conversion {
 
   converted as (
   SELECT
+  distinct
     date(received_at) as report_date
     ,user_id
   FROM chargebee_webhook_events.subscription_activated
@@ -37,6 +43,7 @@ view: campaign_conversion {
 
   not_converted as (
   SELECT
+  distinct
       user_id
       ,DATE("timestamp") AS report_date
       FROM chargebee_webhook_events.subscription_cancelled
@@ -60,6 +67,7 @@ view: campaign_conversion {
     LEFT JOIN not_converted c
     ON a.user_id = c.user_id
 
+/*
     UNION ALL
 
     select
@@ -72,6 +80,7 @@ view: campaign_conversion {
       {% if start_date._parameter_value != "NULL" %}
     AND date(timestamp) >= {% parameter start_date %}
     {% endif %}
+    */
   ),
 
 
@@ -147,10 +156,10 @@ SELECT
 
   WHERE has_converted = 'Resubscribed'
   GROUP BY 2,3,4
-)
+),
 
 
-
+result2 as (
 SELECT
   vc.visit_count
   ,tc.trial_started_count
@@ -180,7 +189,16 @@ LEFT JOIN resubscribed_count rc
   ON vc.campaign_source = rc.campaign_source
  AND vc.campaign_name   = rc.campaign_name
  AND COALESCE(rc.campaign_medium,'(none)') = COALESCE(rc.campaign_medium,'(none)')
+)
 
+SELECT
+  *,
+  CASE
+    WHEN campaign_name LIKE '%Instant%Nanny%' THEN 'Instant Nanny'
+    WHEN (campaign_name Like '%Hudson%Rex%') or (campaign_name Like '%hudson%rex%') THEN 'Hudson and Rex'
+    ELSE campaign_name
+  END AS campaign_name_grouped
+FROM result2
   ;;
  }
 
@@ -188,6 +206,12 @@ LEFT JOIN resubscribed_count rc
     type: date
     default_value: "30 days ago"
   }
+
+  parameter: end_date {
+    type: date
+    default_value: "CURRENT_DATE"
+  }
+
    dimension: campaign_source {
     type: string
     sql: ${TABLE}.campaign_source ;;
@@ -196,6 +220,11 @@ LEFT JOIN resubscribed_count rc
   dimension: campaign_name {
     type: string
     sql: ${TABLE}.campaign_name ;;
+  }
+
+  dimension: campaign_name_grouped {
+    type: string
+    sql: ${TABLE}.campaign_name_grouped ;;
   }
 
   dimension: campaign_medium {
