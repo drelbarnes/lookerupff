@@ -212,7 +212,6 @@ FROM result2
 
   parameter: end_date {
     type: date
-    default_value: "CURRENT_DATE"
   }
 
    dimension: campaign_source {
