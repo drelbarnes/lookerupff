@@ -1769,7 +1769,7 @@ view: upff_movie_premier {
                     SELECT 'A Novel Christmas', 0.76 UNION ALL
                     SELECT 'A Country Music Christmas', 0.77 UNION ALL
                     SELECT 'Jingle Smells', 0.65 UNION ALL
-                    SELECT 'Return to Sender', 0.7 UNION ALL
+                    SELECT 'Return to Sender', 0.70 UNION ALL
                     SELECT 'The Love Club Moms: Tory', 0.78 UNION ALL
                     SELECT 'The Love Club Moms: Jo', 0.77 UNION ALL
                     SELECT 'The Love Club Moms: Harper', 0.79 UNION ALL
