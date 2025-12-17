@@ -7,6 +7,7 @@ view: campaign_conversion {
     ,context_ip
     ,CASE
       WHEN context_campaign_source like '%fb%' THEN 'Facebook'
+      WHEN context_campaign_source like '%google_ads%' THEN 'google ads'
       ELSE context_campaign_source
     END as campaign_source
     ,context_campaign_name as campaign_name
@@ -19,6 +20,14 @@ view: campaign_conversion {
 
     {% if end_date._parameter_value != "NULL" %}
     AND DATE(received_at) <= {% parameter end_date %}
+    {% endif %}
+
+    {% if non_hl._parameter_value == "Yes" %}
+    AND (
+        DATE(received_at) BETWEEN DATE '2024-01-01' AND DATE '2024-04-05'
+        OR DATE(received_at) BETWEEN DATE '2024-07-11' AND DATE '2025-03-25'
+        OR DATE(received_at) BETWEEN DATE '2025-06-12' AND DATE '2025-10-24'
+      )
     {% endif %}
   ),
 
@@ -212,6 +221,10 @@ FROM result2
 
   parameter: end_date {
     type: date
+  }
+
+  parameter: non_hl {
+    type: yesno
   }
 
    dimension: campaign_source {
