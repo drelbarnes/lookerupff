@@ -1574,8 +1574,31 @@ view: upff_movie_premier {
                     SELECT DATE '2025-11-29', 400000 UNION ALL
                     SELECT DATE '2025-11-30', 400000 UNION ALL
                     SELECT DATE '2025-12-01', 400000 UNION ALL
-                    SELECT DATE '2025-12-02', 400000
-                    ),
+                    SELECT DATE '2025-12-02', 400000 UNION ALL
+                    SELECT DATE '2025-12-03', 400000 UNION ALL
+                    SELECT DATE '2025-12-04', 400000 UNION ALL
+                    SELECT DATE '2025-12-05', 400000 UNION ALL
+                    SELECT DATE '2025-12-06', 400000 UNION ALL
+                    SELECT DATE '2025-12-07', 400000 UNION ALL
+                    SELECT DATE '2025-12-08', 400000 UNION ALL
+                    SELECT DATE '2025-12-09', 400000 UNION ALL
+                    SELECT DATE '2025-12-10', 400000 UNION ALL
+                    SELECT DATE '2025-12-11', 400000 UNION ALL
+                    SELECT DATE '2025-12-12', 400000 UNION ALL
+                    SELECT DATE '2025-12-13', 400000 UNION ALL
+                    SELECT DATE '2025-12-14', 400000 UNION ALL
+                    SELECT DATE '2025-12-15', 400000 UNION ALL
+                    SELECT DATE '2025-12-16', 400000 UNION ALL
+                    SELECT DATE '2025-12-17', 400000 UNION ALL
+                    SELECT DATE '2025-12-18', 400000 UNION ALL
+                    SELECT DATE '2025-12-19', 400000 UNION ALL
+                    SELECT DATE '2025-12-20', 400000 UNION ALL
+                    SELECT DATE '2025-12-21', 400000 UNION ALL
+                    SELECT DATE '2025-12-22', 400000 UNION ALL
+                    SELECT DATE '2025-12-23', 400000 UNION ALL
+                    SELECT DATE '2025-12-24', 400000 UNION ALL
+                    SELECT DATE '2025-12-25', 400000
+),
 
                     upff_premier_titles AS
                     (
@@ -1671,7 +1694,11 @@ view: upff_movie_premier {
                     SELECT 'A Royal Christmas Manor' UNION ALL
                     SELECT 'Saving the Christmas Ranch' UNION ALL
                     SELECT 'North by North Pole: A Dial S Mystery (4K)' UNION ALL
-                    SELECT 'A Royal Christmas Hope'
+                    SELECT 'A Royal Christmas Hope' UNION ALL
+                    SELECT 'A Change in Heart' UNION ALL
+                    SELECT 'Christmas in Amish Country' UNION ALL
+                    SELECT 'Christmas Roses' UNION ALL
+                    SELECT 'A Christmas Murder Mystery'
                     ),
 
                     upff_premier_completion_rates AS
@@ -1768,7 +1795,11 @@ view: upff_movie_premier {
                     SELECT 'A Royal Christmas Manor', 0.79 UNION ALL
                     SELECT 'Saving the Christmas Ranch', 0.75 UNION ALL
                     SELECT 'North by North Pole: A Dial S Mystery', 0.72 UNION ALL
-                    SELECT 'A Royal Christmas Hope', 0.78
+                    SELECT 'A Royal Christmas Hope', 0.78 UNION ALL
+                    SELECT 'A Change in Heart', 0.76 UNION ALL
+                    SELECT 'Christmas in Amish Country', 0.79 UNION ALL
+                    SELECT 'Christmas Roses', 0.81 UNION ALL
+                    SELECT 'A Christmas Murder Mystery', 0.77
                     ),
 
                     upff_premier_dates AS
@@ -1865,7 +1896,11 @@ view: upff_movie_premier {
                     SELECT 'A Royal Christmas Manor', DATE '2025-11-11' UNION ALL
                     SELECT 'Saving the Christmas Ranch', DATE '2025-11-18' UNION ALL
                     SELECT 'North by North Pole: A Dial S Mystery', DATE '2025-11-25' UNION ALL
-                    SELECT 'A Royal Christmas Hope', DATE '2025-11-25'
+                    SELECT 'A Royal Christmas Hope', DATE '2025-11-25' UNION ALL
+                    SELECT 'A Change in Heart', DATE '2025-12-02' UNION ALL
+                    SELECT 'Christmas in Amish Country', DATE '2025-12-02' UNION ALL
+                    SELECT 'Christmas Roses', DATE '2025-12-09' UNION ALL
+                    SELECT 'A Christmas Murder Mystery', DATE '2025-12-09'
                     ),
 
                     upff_subscriber_counts AS
