@@ -1581,7 +1581,7 @@ view: upff_movie_premier {
                     SELECT DATE '2025-12-06', 400000 UNION ALL
                     SELECT DATE '2025-12-07', 400000 UNION ALL
                     SELECT DATE '2025-12-08', 400000 UNION ALL
-                    SELECT DATE '2025-12-09', 400000 UNION ALL
+                    SELECT DATE '2025-12-09', 448441   UNION ALL
                     SELECT DATE '2025-12-10', 400000 UNION ALL
                     SELECT DATE '2025-12-11', 400000 UNION ALL
                     SELECT DATE '2025-12-12', 400000 UNION ALL
