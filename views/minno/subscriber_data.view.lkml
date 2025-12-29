@@ -55,7 +55,17 @@ chargebee AS (
       END
       AS VARCHAR
     ) AS is_in_dunning,
-    CAST(customer_billing_address_state_code AS VARCHAR) AS state
+    CAST(customer_billing_address_state_code AS VARCHAR) AS state,
+    CASE
+    WHEN LOWER(customer_email) IN (
+        SELECT LOWER(customer_email)
+        FROM http_api.chargebee_subscriptions
+        WHERE DATE(timestamp) = CURRENT_DATE
+          AND subscription_subscription_items_0_item_price_id NOT LIKE '%Min%'
+    )
+    THEN False
+    ELSE True
+END AS minno_only
   FROM http_api.chargebee_subscriptions
   WHERE subscription_subscription_items_0_item_price_id LIKE '%Mi%'
     AND DATE(timestamp) = CURRENT_DATE
@@ -166,6 +176,11 @@ WHERE rn = 1;;
   dimension: topic {
     type: string
     sql: ${TABLE}.topic ;;
+  }
+
+  dimension: minno_only {
+    type: yesno
+    sql: ${TABLE}.minno_only ;;
   }
 
 
