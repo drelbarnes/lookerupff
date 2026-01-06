@@ -1568,20 +1568,11 @@ view: premier_scorecard {
       SELECT DATE '2025-11-23', 400000 UNION ALL
       SELECT DATE '2025-11-24', 400000 UNION ALL
       SELECT DATE '2025-11-25', 436701 UNION ALL
-      SELECT DATE '2025-11-26', 400000 UNION ALL
-      SELECT DATE '2025-11-27', 400000 UNION ALL
-      SELECT DATE '2025-11-28', 400000 UNION ALL
-      SELECT DATE '2025-11-29', 400000 UNION ALL
-      SELECT DATE '2025-11-30', 400000 UNION ALL
-      SELECT DATE '2025-12-01', 400000 UNION ALL
       SELECT DATE '2025-12-02', 443155 UNION ALL
-      SELECT DATE '2025-12-03', 400000 UNION ALL
-      SELECT DATE '2025-12-04', 400000 UNION ALL
-      SELECT DATE '2025-12-05', 400000 UNION ALL
-      SELECT DATE '2025-12-06', 400000 UNION ALL
-      SELECT DATE '2025-12-07', 400000 UNION ALL
-      SELECT DATE '2025-12-08', 400000 UNION ALL
-      SELECT DATE '2025-12-09', 450000
+      SELECT DATE '2025-12-09', 448440 UNION ALL
+      SELECT DATE '2025-12-16', 451769 UNION ALL
+      SELECT DATE '2025-12-23', 455429   UNION ALL
+      SELECT DATE '2025-12-30', 450000
       ),
 
       upff_premier_titles AS
@@ -1682,7 +1673,10 @@ view: premier_scorecard {
       SELECT "A Change in Heart" UNION ALL
       SELECT "Christmas in Amish Country" UNION ALL
       SELECT "Christmas Roses" UNION ALL
-      SELECT "A Christmas Murder Mystery"
+      SELECT "A Christmas Murder Mystery" UNION ALL
+      SELECT "Christmas in Big Sky Country" UNION ALL
+      SELECT "The Best Thing About Christmas" UNION ALL
+      SELECT "Christmas with the Knightlys"
       ),
 
       upff_premier_completion_rates AS
@@ -1782,8 +1776,11 @@ view: premier_scorecard {
       SELECT "A Royal Christmas Hope", 0.78 UNION ALL
       SELECT "A Change in Heart", 0.75 UNION ALL
       SELECT "Christmas in Amish Country", 0.79 UNION ALL
-      SELECT "Christmas Roses", 0.00 UNION ALL
-      SELECT "A Christmas Murder Mystery", 0.00
+      SELECT "Christmas Roses", 0.80 UNION ALL
+      SELECT "A Christmas Murder Mystery", 0.77
+      SELECT "Christmas in Big Sky Country", 0.76 UNION ALL
+      SELECT "The Best Thing About Christmas", 0.65 UNION ALL
+      SELECT "Christmas with the Knightlys", 0.81
       ),
 
       upff_premier_dates AS
@@ -1884,7 +1881,11 @@ view: premier_scorecard {
       SELECT "A Change in Heart", DATE '2025-12-02' UNION ALL
       SELECT "Christmas in Amish Country", DATE '2025-12-02' UNION ALL
       SELECT "Christmas Roses", DATE '2025-12-09' UNION ALL
-      SELECT "A Christmas Murder Mystery", DATE '2025-12-09'
+      SELECT "A Christmas Murder Mystery", DATE '2025-12-09' UNION ALL
+      SELECT "Christmas in Big Sky Country", DATE '2025-12-16' UNION ALL
+      SELECT "The Best Thing About Christmas", DATE '2025-12-23' UNION ALL
+      SELECT "Christmas with the Knightlys", DATE '2025-12-23'
+
       ),
 
       upff_subscriber_counts AS
