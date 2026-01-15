@@ -89,6 +89,11 @@ explore: upff_movie_premier {
   label: "UPFF Movie Premier"
 }
 
+include: "upff_weekly_recap_quarterly_benchmarks.view.lkml"
+explore: upff_weekly_recap_quarterly_benchmarks {
+  label: "UPFF Weekly Recap Benchmarks"
+}
+
 #end redshift upff datamart explores
 
 #redshift allfirstplay explores
