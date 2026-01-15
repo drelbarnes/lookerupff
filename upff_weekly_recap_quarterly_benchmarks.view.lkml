@@ -29,43 +29,43 @@ view: upff_weekly_recap_quarterly_benchmarks {
       sql: ${TABLE}.quarter ;;
     }
 
-    dimension: total_views {
-      type: number
+    measure: total_views {
+      type: sum
       sql: ${TABLE}.total_views ;;
     }
 
-    dimension: total_uniques {
-      type: number
+    measure: total_uniques {
+      type: sum
       sql: ${TABLE}.total_uniques ;;
     }
 
-    dimension: series_views {
-      type: number
+    measure: series_views {
+      type: sum
       sql: ${TABLE}.series_views ;;
     }
 
-    dimension: series_uniques {
-      type: number
+    measure: series_uniques {
+      type: sum
       sql: ${TABLE}.series_uniques ;;
     }
 
-    dimension: movie_views {
-      type: number
+    measure: movie_views {
+      type: sum
       sql: ${TABLE}.movie_views ;;
     }
 
-    dimension: movie_uniques {
-      type: number
+    measure: movie_uniques {
+      type: sum
       sql: ${TABLE}.movie_uniques ;;
     }
 
-    dimension: other_views {
-      type: number
+    measure: other_views {
+      type: sum
       sql: ${TABLE}.other_views ;;
     }
 
-    dimension: other_uniques {
-      type: number
+    measure: other_uniques {
+      type: sum
       sql: ${TABLE}.other_uniques ;;
     }
 
