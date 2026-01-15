@@ -1,20 +1,19 @@
 view: upff_weekly_recap_quarterly_benchmarks {
     derived_table: {
-      sql: with
+      sql:
 
-              benchmarks as
-              (
-              SELECT
-                '2025-4Q'AS quarter
-                , 590790 AS total_views
-                , 24703 AS total_uniques
-                , 423975 AS series_views
-                , 19664 AS series_uniques
-                , 139109 AS movie_views
-                , 16361 AS movie_uniques
-                , 15022 AS other_views
-                , 3915 AS other_uniques
-              )
+    WITH benchmarks AS (
+      SELECT
+        CAST('2025-4Q' AS VARCHAR(7)) AS quarter,
+        CAST(590790 AS BIGINT) AS total_views,
+        CAST(24703  AS BIGINT) AS total_uniques,
+        CAST(423975 AS BIGINT) AS series_views,
+        CAST(19664  AS BIGINT) AS series_uniques,
+        CAST(139109 AS BIGINT) AS movie_views,
+        CAST(16361  AS BIGINT) AS movie_uniques,
+        CAST(15022  AS BIGINT) AS other_views,
+        CAST(3915   AS BIGINT) AS other_uniques
+    )
 
               select * from benchmarks ;;
     }
