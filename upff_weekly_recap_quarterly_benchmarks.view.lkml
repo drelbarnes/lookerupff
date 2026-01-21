@@ -14,7 +14,7 @@ view: upff_weekly_recap_quarterly_benchmarks {
         CAST(24828 AS BIGINT) AS other_views,
         CAST(11109 AS BIGINT) AS other_uniques
  /*     UNION ALL SELECT
-        CAST('2026-1Q'),
+        CAST('2026-1Q' AS VARCHAR(7)),
         CAST(600000 AS BIGINT),
         CAST(250000 AS BIGINT),
         CAST(400000 AS BIGINT),
@@ -24,7 +24,7 @@ view: upff_weekly_recap_quarterly_benchmarks {
         CAST(15000 AS BIGINT),
         CAST(10000 AS BIGINT)
       UNION ALL SELECT
-        CAST('2026-2Q'),
+        CAST('2026-2Q' AS VARCHAR(7)),
         CAST(600000 AS BIGINT),
         CAST(250000 AS BIGINT),
         CAST(400000 AS BIGINT),
@@ -34,7 +34,7 @@ view: upff_weekly_recap_quarterly_benchmarks {
         CAST(15000 AS BIGINT),
         CAST(10000 AS BIGINT)
       UNION ALL SELECT
-        CAST('2026-3Q'),
+        CAST('2026-3Q' AS VARCHAR(7)),
         CAST(600000 AS BIGINT),
         CAST(250000 AS BIGINT),
         CAST(400000 AS BIGINT),
@@ -44,7 +44,7 @@ view: upff_weekly_recap_quarterly_benchmarks {
         CAST(15000 AS BIGINT),
         CAST(10000 AS BIGINT)
       UNION ALL SELECT
-        CAST('2026-4Q'),
+        CAST('2026-4Q' AS VARCHAR(7)),
         CAST(600000 AS BIGINT),
         CAST(250000 AS BIGINT),
         CAST(400000 AS BIGINT),
