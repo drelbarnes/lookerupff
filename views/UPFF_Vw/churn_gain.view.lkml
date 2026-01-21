@@ -334,7 +334,7 @@ view: churn_gain {
       FROM rolling_churn
       )
       SELECT *,
-      'AzZmVjUuQo25N2MFb'::VARCHAR as user_id
+      '1'::VARCHAR as user_id
       FROM final
       ;;
 
