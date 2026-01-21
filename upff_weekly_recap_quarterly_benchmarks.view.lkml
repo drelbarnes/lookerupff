@@ -13,7 +13,7 @@ view: upff_weekly_recap_quarterly_benchmarks {
         CAST(46980 AS BIGINT) AS movie_uniques,
         CAST(24828 AS BIGINT) AS other_views,
         CAST(11109 AS BIGINT) AS other_uniques
-      UNION ALL SELECT
+ /*     UNION ALL SELECT
         CAST('2026-1Q'),
         CAST(600000 AS BIGINT),
         CAST(250000 AS BIGINT),
@@ -53,6 +53,7 @@ view: upff_weekly_recap_quarterly_benchmarks {
         CAST(20000 AS BIGINT),
         CAST(15000 AS BIGINT),
         CAST(10000 AS BIGINT)
+  */
     )
 
 
