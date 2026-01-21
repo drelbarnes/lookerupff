@@ -318,8 +318,9 @@ view: churn_gain {
       'yearly'::VARCHAR AS billing_period,
       'rolling_total'::VARCHAR AS status
       FROM churn_rate
-      )
+      ),
 
+      final as(
       SELECT * FROM result2
 
       UNION ALL
@@ -331,6 +332,10 @@ view: churn_gain {
       status,
       platform   -- match column count & type
       FROM rolling_churn
+      )
+      SELECT *,
+      'AzZmVjUuQo25N2MFb'::VARCHAR as user_id
+      FROM final
       ;;
 
     sql_trigger_value: SELECT TO_CHAR(DATEADD(minute, -555, GETDATE()), 'YYYY-MM-DD');;
@@ -351,6 +356,12 @@ view: churn_gain {
     timeframes: [date, week]
     sql: ${TABLE}.report_date ;;
     convert_tz: yes  # Adjust for timezone conversion if needed
+  }
+
+  dimension: user_id {
+    type: string
+    sql: ${TABLE}.user_id ;;
+    tags: ["user_id"]
   }
 
   dimension: user_count {
