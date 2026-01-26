@@ -66,10 +66,13 @@ active_count as (
 SELECT
   a.total_free_trials
   ,b.user_count as total_paid_subs
+  ,c.user_count as trials_created
   ,a.report_date
 FROM total_trial_count a
 LEFT JOIN active_count b
-on a.report_date = b.report_date;;
+on a.report_date = b.report_date
+LEFT JOIN trial_count c
+ON a.report_date = c.report_date;;
   }
 
   dimension: report_date {

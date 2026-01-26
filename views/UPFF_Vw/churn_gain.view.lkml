@@ -101,6 +101,17 @@ view: churn_gain {
       platform
       FROM vm2
       GROUP BY 2,3,4
+
+      UNION ALL
+
+      SELECT
+      COUNT(DISTINCT user_id) AS user_count,
+      date(timestamp) as report_date,
+      subscription_frequency as billing_period,
+      platform
+      FROM vimeo_ott_webhook.customer_product_disabled
+      where platform != 'api'
+      GROUP BY 2,3,4
       ),
       re_acquisitions AS ( select * from ${vimeo.SQL_TABLE_NAME} where platform != 'api' and event_type = 'Direct to Paid' ),
 /*
