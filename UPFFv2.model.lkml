@@ -52,6 +52,7 @@ include: "/views/redshift_views/bundle_analytics.view.lkml"
 include: "/views/UPFF_Vw/subscriber_data.view.lkml"
 include: "/views/UPFF_Vw/chargebee_webhook.view.lkml"
 include: "/views/UPFF_Vw/vimeo_webhook.view.lkml"
+include: "/views/UPFF_Vw/free_trials.view.lkml"
 
 #redshift upff datamart explores
 include: "upff_datamart_views.view.lkml"
