@@ -20,6 +20,8 @@ include: "/views/UPFF_Vw/vimeo_webhook.view.lkml"
 include: "/views/UPFF_Vw/chargebee_webhook.view.lkml"
 include: "/views/UPFF_Vw/post_trial_refund.view.lkml"
 include: "/views/UPFF_Vw/roku.view.lkml"
+include: "/views/UPFF_Vw/paused.view.lkml"
+include: "/views/UPFF_Vw/ltv.view.lkml"
 
 explore: UPFF_analytics_Vw {
   label: "UPFF_analytics_Vw"
@@ -85,4 +87,12 @@ explore: churn_gain {
 
 explore: post_trial_refund {
   label: "UPFF Post Trial Refund"
+}
+
+explore: paused {
+  label: "UPFF Subscription Paused Data"
+}
+
+explore: ltv {
+  label: "UPFF non-web LTV"
 }

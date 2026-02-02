@@ -46,6 +46,15 @@ view: rolling_platform {
       DATE_TRUNC('month', timestamp)     AS month_start
       FROM vimeo_ott_webhook.customer_product_expired
       WHERE DATE(timestamp) >= '2025-07-01'
+
+      UNION ALL
+
+      SELECT
+      DATE(timestamp)                    AS report_date,
+      CAST(user_id AS VARCHAR)           AS user_id,
+      DATE_TRUNC('month', timestamp)     AS month_start
+      FROM vimeo_ott_webhook.customer_product_disabled
+      WHERE DATE(timestamp) >= '2025-07-01'
       ),
 
       -- 5) Map VM expirations to user metadata; avoid NULL platform buckets

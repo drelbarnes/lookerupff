@@ -37,6 +37,15 @@ view: rolling {
         ,DATE_TRUNC('month', timestamp) AS month_start
         FROM vimeo_ott_webhook.customer_product_expired
         where date(timestamp) >='2025-07-01'
+
+      union all
+      SELECT
+        date(timestamp) as report_date
+        ,CAST(user_id AS VARCHAR) as user_id
+        ,DATE_TRUNC('month', timestamp) AS month_start
+        FROM vimeo_ott_webhook.customer_product_disabled
+        where date(timestamp) >='2025-07-01'
+      and platform != 'api'
       ),
       vm2 as (
       SELECT
