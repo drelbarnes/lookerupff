@@ -2,13 +2,13 @@ view: churn_gain {
   derived_table: {
     sql:
 
-    with v2_table AS (
+    ,v2_table AS (
   SELECT *
   FROM ${UPFF_analytics_Vw_v2.SQL_TABLE_NAME}
   WHERE report_date >= '2025-06-30'
 ),
 
-
+/*
       chargebee_cancelled AS (
       SELECT
       content_subscription_id::VARCHAR AS user_id,
@@ -25,7 +25,7 @@ view: churn_gain {
       (content_subscription_cancelled_at - content_subscription_trial_end) > 10000)
       --or content_subscription_cancel_reason_code is null)
       AND content_subscription_subscription_items LIKE '%UP%'
-      ),
+      ),*/
 -- remove comment for dunning cases
       vm_user AS (
       SELECT
@@ -62,7 +62,7 @@ view: churn_gain {
       ON a.report_date = b.report_date
       AND a.user_id = b.user_id
       ),
-
+/*
       vm AS (
       SELECT
       DATE("timestamp") AS report_date,
@@ -112,7 +112,11 @@ view: churn_gain {
       FROM vimeo_ott_webhook.customer_product_disabled
       where platform != 'api'
       GROUP BY 2,3,4
+      ),*/
+      cancelled_user_count AS (
+      SELECT * FROM ${churn.SQL_TABLE_NAME}
       ),
+
       re_acquisitions AS ( select * from ${vimeo.SQL_TABLE_NAME} where platform != 'api' and event_type = 'Direct to Paid' ),
 /*
       re_acquisitions AS (

@@ -21,6 +21,7 @@ include: "/views/UPFF_Vw/chargebee_webhook.view.lkml"
 include: "/views/UPFF_Vw/post_trial_refund.view.lkml"
 include: "/views/UPFF_Vw/roku.view.lkml"
 include: "/views/UPFF_Vw/paused.view.lkml"
+include: "/views/UPFF_Vw/churn.view.lkml"
 include: "/views/UPFF_Vw/ltv.view.lkml"
 
 explore: UPFF_analytics_Vw {

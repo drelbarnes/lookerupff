@@ -3,8 +3,11 @@ view: ltv {
     sql: WITH v2_table AS (
   SELECT *
   FROM ${UPFF_analytics_Vw.SQL_TABLE_NAME}
-  where report_date >= '2025-06-30' ),
-
+  where report_date >= '2025-06-30'
+  ),
+  cancelled_user as (
+    SELECT * FROM ${churn.SQL_TABLE_NAME}
+  ),
   vm as (
       SELECT
         date(timestamp) as report_date
@@ -27,6 +30,7 @@ view: ltv {
         and platform !='api'
       ),
 
+/*
 rolling_churn AS (
   SELECT
     t1.report_date,
@@ -37,24 +41,55 @@ rolling_churn AS (
                           AND t1.report_date
   GROUP BY t1.report_date
   ORDER BY t1.report_date
+), */
+
+rolling_churn AS (
+  SELECT
+    report_date
+    ,platform
+    ,billing_period
+    ,SUM(user_count) OVER (
+      PARTITION BY platform, billing_period
+      ORDER BY report_date
+      ROWS BETWEEN 29 PRECEDING AND CURRENT ROW
+    ) AS rolling_churn_30_days
+  FROM cancelled_user
 ),
 subs as (
 SELECT
-    report_date,
-    sum(user_count) as user_count
+    report_date
+    ,platform
+    ,billing_period
+    ,user_count
   FROM ${sub_count.SQL_TABLE_NAME}
-  where platform != 'web'
-  group by 1
+  where status = 'active'
 ),
 prior_subs AS (
   SELECT
-    report_date,
-    LAG(user_count, 31) OVER (ORDER BY report_date) AS prior_31_days_subs
+    report_date
+    ,platform
+    ,billing_period
+    ,LAG(user_count, 31) OVER (
+      PARTITION BY platform, billing_period
+      ORDER BY report_date
+    ) AS prior_31_days_subs
   FROM subs
 ),
 
+result as (
+  SELECT
+    a.rolling_churn_30_days
+    ,b.prior_31_days_subs
+    ,a.platform
+    ,a.billing_period
+    ,a.report_date
+  FROM rolling_churn a
+  LEFT JOIN prior_subs b
+  ON a.report_date = b.report_date and a.platform = b.platform and a.billing_period = b.billing_period
+)
 
-
+select * from result
+/*
 result AS (
   SELECT
     rc.report_date,
@@ -81,7 +116,7 @@ SELECT
   LTV,
   churn_30_days,
   prior_31_days_subs
-FROM result
+FROM result */
 ;;
 
   }
@@ -93,19 +128,24 @@ FROM result
 
   }
 
-  dimension: LTV {
-    type: number
-    sql: ${TABLE}.LTV ;;
+  dimension: platform {
+    type: string
+    sql: ${TABLE}.platform ;;
 
   }
-  dimension: prior_31_days_subs {
-    type: number
-    sql: ${TABLE}.prior_31_days_subs ;;
+
+  dimension: billing_period {
+    type: string
+    sql: ${TABLE}.billing_period ;;
 
   }
-  dimension: churn_30_days {
-    type: number
-    sql: ${TABLE}.churn_30_days ;;
 
+  measure: prior_31_days_subs_count {
+    type: sum
+    sql: ${TABLE}.prior_31_days_subs;;
+  }
+  measure: rolling_churn_30_days_count {
+    type: sum
+    sql: ${TABLE}.rolling_churn_30_days;;
   }
   }
