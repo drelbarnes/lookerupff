@@ -95,5 +95,5 @@ explore: paused {
 }
 
 explore: ltv {
-  label: "UPFF non-web LTV"
+  label: "UPFF V2 LTV"
 }
