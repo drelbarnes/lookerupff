@@ -3,7 +3,7 @@ view: ltv {
     sql: WITH v2_table AS (
   SELECT *
   FROM ${UPFF_analytics_Vw.SQL_TABLE_NAME}
-  where report_date >= '2025-06-30'
+  where report_date >= '2024-12-30'
   ),
   cancelled_user as (
     SELECT * FROM ${churn.SQL_TABLE_NAME}
@@ -15,7 +15,7 @@ view: ltv {
         ,DATE_TRUNC('month', timestamp) AS month_start
         ,platform
         FROM vimeo_ott_webhook.customer_product_expired
-        where date(timestamp) >='2025-07-01'
+        where date(timestamp) >='2024-12-01'
         and platform !='api'
 
         UNION ALL
@@ -26,7 +26,7 @@ view: ltv {
         ,DATE_TRUNC('month', timestamp) AS month_start
         ,platform
         FROM vimeo_ott_webhook.customer_product_disabled
-        where date(timestamp) >='2025-07-01'
+        where date(timestamp) >='2024-12-01'
         and platform !='api'
       ),
 
