@@ -121,6 +121,18 @@ view: vimeo_ott_all_customers {
     sql: ${TABLE}.customer_created_at ;;
   }
 
+  dimension: current_date{
+    type: date
+    sql: current_date;;
+  }
+
+  dimension: days_in_trial{
+    description: "Number of days a user is in free trial"
+    value_format: "0"
+    type: number
+    sql:  DATEDIFF('day', ${customer_created_at}::timestamp, ${current_date}::timestamp);;
+  }
+
   dimension: expiration_date {
     type: date
     sql: ${TABLE}.expiration_date ;;
