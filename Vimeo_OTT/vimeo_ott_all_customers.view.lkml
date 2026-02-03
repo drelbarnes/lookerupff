@@ -2,6 +2,11 @@ view: vimeo_ott_all_customers {
 
   derived_table: {
     sql: {% raw %} SELECT * FROM customers.all_customers WHERE date(report_date) = TO_CHAR(CURRENT_DATE, 'YYYY-MM-DD') AND action != 'follow' AND status in ('free_trial','enabled') {% endraw %} ;;
+
+    sql_trigger_value: SELECT TO_CHAR(DATEADD(minute, -555, GETDATE()), 'YYYY-MM-DD');;
+    #sql_trigger_value:  SELECT TO_CHAR(DATE_TRUNC('day', CURRENT_TIMESTAMP) + INTERVAL '9 hours 45 minutes', 'YYYY-MM-DD');;
+    distribution: "report_date"
+    sortkeys: ["report_date"]
   }
 
   measure: count {
