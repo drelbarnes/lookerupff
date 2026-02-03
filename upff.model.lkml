@@ -75,7 +75,12 @@ include: "/video_views.view.lkml"
 include: "/Gaither_page_views.view.lkml"
 include: "/gaither_segment_consent.view.lkml"
 include: "/views/up_airtable_reports.view.lkml"
+include: "/Vimeo_OTT/vimeo_ott_all_customers.view.lkml"
 
+explore: vimeo_ott_all_customers {
+  label: "Vimeo OTT – All Customers"
+  description: "Explore UP Faith & Family All Customer dataset"
+}
 
 explore: up_airtable_reports {
   label: "Linear TV Schedule"
