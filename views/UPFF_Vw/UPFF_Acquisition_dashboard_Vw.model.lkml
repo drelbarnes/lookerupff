@@ -23,6 +23,7 @@ include: "/views/UPFF_Vw/roku.view.lkml"
 include: "/views/UPFF_Vw/paused.view.lkml"
 include: "/views/UPFF_Vw/churn.view.lkml"
 include: "/views/UPFF_Vw/ltv.view.lkml"
+include: "/views/UPFF_Vw/watch_time.view.lkml"
 
 explore: UPFF_analytics_Vw {
   label: "UPFF_analytics_Vw"
@@ -96,4 +97,8 @@ explore: paused {
 
 explore: ltv {
   label: "UPFF V2 LTV"
+}
+
+explore: watch_time {
+  label: "UPFF watch_duration"
 }
