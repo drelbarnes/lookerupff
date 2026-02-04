@@ -136,6 +136,53 @@ view: watch_time {
 
         ),
 
+        chargebee_monthly_users as (
+        select
+        customer_email as email
+        from  http_api.chargebee_subscriptions
+        where date(timestamp) = current_date - 1
+        and subscription_billing_period_unit = 'month'
+        and customer_cs_marketing_opt_in = 'true'
+        ),
+
+        vimeo as (
+        select
+        platform,
+        CAST(user_id AS VARCHAR(255)) as user_id,
+        email,
+        frequency
+        from customers.all_customers
+        where report_date = current_date - 1
+        and action != 'follow'
+        and platform = 'api'
+        ),
+
+        chargebee_users as (
+        SELECT
+        a.email,
+        b.user_id
+        FROM chargebee_monthly_users a
+        LEFT JOIN vimeo b
+        on a.email = b.email
+        ),
+
+        monthly_users as (
+        SELECT
+        *
+        FROM chargebee_users
+
+/*
+        UNION ALL
+
+        SELECT
+        email,
+        CAST(user_id AS VARCHAR(255)) as user_id
+        FROM vimeo
+        WHERE platform != 'api' and frequency = 'monthly'
+*/
+        ),
+
+
         -- =====================================
         -- DURATION LOGIC
         -- =====================================
@@ -147,6 +194,7 @@ view: watch_time {
         FROM a
         WHERE user_id IS NOT NULL
         AND user_id <> '0'
+        and user_id in (select user_id from monthly_users)
         GROUP BY 1,2
         ),
 
@@ -164,50 +212,9 @@ view: watch_time {
         user_id,
         total_watch_minutes
         FROM watch_duration
-        where total_watch_minutes >= {% parameter watch_time %}),
+        where total_watch_minutes >= {% parameter watch_time %})
 
-        chargebee_monthly_users as (
-        select
-        customer_email as email
-        from  http_api.chargebee_subscriptions
-        where date(timestamp) = current_date - 1
-        and subscription_billing_period_unit = 'month'
-        ),
 
-        vimeo as (
-        select
-        platform,
-        CAST(user_id AS VARCHAR(255)) as user_id,
-        email,
-        frequency
-        from customers.all_customers
-        where report_date = current_date - 1
-        and action != 'follow'
-        ),
-
-        chargebee_users as (
-        SELECT
-        a.email,
-        b.user_id
-        FROM chargebee_monthly_users a
-        LEFT JOIN vimeo b
-        on a.email = b.email
-        ),
-
-        monthly_users as (
-        SELECT
-        *
-        FROM chargebee_users
-
-        UNION ALL
-
-        SELECT
-        email,
-        CAST(user_id AS VARCHAR(255)) as user_id
-        FROM vimeo
-        WHERE platform != 'api' and frequency = 'monthly'
-
-        )
 
         select
         b.email
