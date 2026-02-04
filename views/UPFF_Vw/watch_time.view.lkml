@@ -143,6 +143,7 @@ view: watch_time {
         where date(timestamp) = current_date - 1
         and subscription_billing_period_unit = 'month'
         and customer_cs_marketing_opt_in = 'true'
+        and subscription_status = 'active'
         ),
 
         vimeo as (
@@ -155,7 +156,7 @@ view: watch_time {
         where report_date = current_date - 1
         and action != 'follow'
         and platform = 'api'
-        and subscription_status = 'active'
+
         ),
 
         chargebee_users as (
