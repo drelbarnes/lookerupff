@@ -60,7 +60,7 @@ view: churn {
         WHERE
         (
         --(content_subscription_cancel_reason_code not in ('Not Paid', 'No Card', 'Fraud Review Failed', 'Non Compliant EU Customer', 'Tax Calculation Failed', 'Currency incompatible with Gateway', 'Non Compliant Customer') and
-        (content_subscription_cancelled_at - content_subscription_trial_end) > 10000)
+        (content_subscription_cancelled_at - content_subscription_activated_at) > 10000)
         --or content_subscription_cancel_reason_code is null)
         AND content_subscription_subscription_items LIKE '%UP%'
         AND date(timestamp) >= (SELECT MAX(report_date) FROM cfg)
