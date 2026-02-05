@@ -129,11 +129,12 @@ view: upff_page_events {
           , timestamp
           , safe_cast(user_id as string) as ott_user_id
           , safe_cast(anonymous_id as string) as anonymous_id
-          , coalesce(safe_cast(email as string), safe_cast(user_email as string), safe_cast(context_traits_email as string)) as email
+           --coalesce(safe_cast(email as string), safe_cast(user_email as string), safe_cast(context_traits_email as string)) as email
+          , safe_cast(null as string) as email
           , safe_cast(context_ip as string) as ip_address
           , safe_cast(null as string) as checkout_id
           , safe_cast(null as string) as order_id
-          , safe_cast(context_traits_cross_domain_id as string) as cross_domain_id
+          , safe_cast(null as string) as cross_domain_id
           , safe_cast(context_user_agent as string) as user_agent
           , "Order Completed" as event
           , "web" as platform
@@ -144,7 +145,7 @@ view: upff_page_events {
           , case when NET.REG_DOMAIN(safe_cast(context_page_referrer as string)) = "entertainment.com" then "upentertainment.com" else NET.REG_DOMAIN(safe_cast(context_page_referrer as string)) end AS referrer_domain
           , safe_cast(context_page_title as string) as title
           , safe_cast(context_page_path as string) as path
-        from javascript.order_completed
+        from javascript_upentertainment_checkout.order_completed
         group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19
         )
       )
