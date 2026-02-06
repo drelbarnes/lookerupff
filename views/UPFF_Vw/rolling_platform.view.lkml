@@ -11,20 +11,24 @@ view: rolling_platform {
 
       -- 2) Chargebee cancellations -> treat as 'web' platform (adjust if you prefer a different label)
       user_cancelled_counts2 AS (
-      SELECT
-      DATE("timestamp") AS report_date,
-      content_subscription_id::VARCHAR AS user_id,
-      CASE
-      WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'::VARCHAR
-      ELSE 'yearly'::VARCHAR
-      END AS billing_period
-      ,DATE_TRUNC('month', report_date) AS month_start
-      ,'web' as platform
-      FROM chargebee_webhook_events.subscription_cancelled
-      WHERE
-      ((content_subscription_cancel_reason_code not in ('Not Paid', 'No Card', 'Fraud Review Failed', 'Non Compliant EU Customer', 'Tax Calculation Failed', 'Currency incompatible with Gateway', 'Non Compliant Customer') and  (content_subscription_cancelled_at - content_subscription_trial_end) > 10000)  or content_subscription_cancel_reason_code is null or (content_subscription_cancel_reason_code in ('Not Paid', 'No Card', 'Fraud Review Failed', 'Non Compliant EU Customer', 'Tax Calculation Failed', 'Currency incompatible with Gateway', 'Non Compliant Customer') and (content_subscription_cancelled_at - content_subscription_activated_at) > 2000800))
-      AND content_subscription_subscription_items LIKE '%UP%'
 
+ SELECT
+        content_subscription_id::VARCHAR AS user_id,
+        CASE
+        WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'::VARCHAR
+        ELSE 'yearly'::VARCHAR
+        END AS billing_period,
+        DATE("timestamp") AS report_date,
+        DATE_TRUNC('month', report_date) AS month_start,
+
+        'web'::VARCHAR AS platform
+        FROM chargebee_webhook_events.subscription_cancelled
+        WHERE
+        (
+        --(content_subscription_cancel_reason_code not in ('Not Paid', 'No Card', 'Fraud Review Failed', 'Non Compliant EU Customer', 'Tax Calculation Failed', 'Currency incompatible with Gateway', 'Non Compliant Customer') and
+        (content_subscription_cancelled_at - content_subscription_activated_at) > 10000)
+        --or content_subscription_cancel_reason_code is null)
+        AND content_subscription_subscription_items LIKE '%UP%'
       ),
 
       -- 33) Non-Chargebee users with platform/billing info (to enrich VM webhook expirations)

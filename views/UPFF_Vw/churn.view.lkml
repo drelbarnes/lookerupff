@@ -36,7 +36,7 @@ view: churn {
         LEFT JOIN non_web_user b
         ON a.report_date = b.report_date
         AND a.user_id = b.user_id
-/*
+
         UNION ALL
 
         SELECT
@@ -45,7 +45,7 @@ view: churn {
           subscription_frequency as billing_period,
           platform
         FROM vimeo_ott_webhook.customer_product_disabled
-        where platform != 'api'*/
+        where platform != 'api'
       ),
       chargebee_cancelled AS (
         SELECT
