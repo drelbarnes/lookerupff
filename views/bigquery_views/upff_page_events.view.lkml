@@ -148,7 +148,43 @@ view: upff_page_events {
         from javascript_upentertainment_checkout.order_completed
         group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19
         )
-      )
+
+        UNION ALL
+
+        SELECT *
+        , REPLACE(REGEXP_EXTRACT(search, '(?i)utm_campaign=([^&]+)'), '+', ' ') AS utm_campaign
+        , REPLACE(REGEXP_EXTRACT(search, '(?i)utm_source=([^&]+)'), '+', ' ') AS utm_source
+        , REPLACE(REGEXP_EXTRACT(search, '(?i)utm_medium=([^&]+)'), '+', ' ') AS utm_medium
+        , REPLACE(REGEXP_EXTRACT(search, '(?i)utm_content=([^&]+)'), '+', ' ') AS utm_content
+        , REPLACE(REGEXP_EXTRACT(search, '(?i)utm_term=([^&]+)'), '+', ' ') AS utm_term
+        , coalesce(REPLACE(REGEXP_EXTRACT(search, '(?i)ad_id=([^&]+)'), '+', ' '), REPLACE(REGEXP_EXTRACT(search, '(?i)hsa_ad=([^&]+)'), '+', ' ')) AS ad_id
+        , coalesce(REPLACE(REGEXP_EXTRACT(search, '(?i)adset_id=([^&]+)'), '+', ' '), REPLACE(REGEXP_EXTRACT(search, '(?i)hsa_grp=([^&]+)'), '+', ' ')) AS adset_id
+        , coalesce(REPLACE(REGEXP_EXTRACT(search, '(?i)campaign_id=([^&]+)'), '+', ' '), REPLACE(REGEXP_EXTRACT(search, '(?i)hsa_cam=([^&]+)'), '+', ' ')) AS campaign_id
+        FROM
+        (
+        select
+          id
+          , timestamp
+          , safe_cast(user_id as string) as customer_id
+          , safe_cast(anonymous_id as string) as anonymous_id
+          , safe_cast(null as string) as email
+          , safe_cast(context_ip as string) as ip_address
+          , safe_cast(null as string) as checkout_id
+          , safe_cast(null as string) as order_id
+          , safe_cast(null as string) as cross_domain_id
+          , safe_cast(context_user_agent as string) as user_agent
+          , "Order Completed" as event
+          , "web" as platform
+          , safe_cast(context_page_url as string) as url
+          , case when NET.REG_DOMAIN(safe_cast(context_page_url as string)) = "entertainment.com" then "upentertainment.com" else NET.REG_DOMAIN(safe_cast(context_page_url as string)) end AS domain
+          , URLDECODE(REGEXP_EXTRACT(safe_cast(context_page_url as string), '\\?(.+)')) as search
+          , safe_cast(context_page_referrer as string) as referrer
+          , case when NET.REG_DOMAIN(safe_cast(context_page_referrer as string)) = "entertainment.com" then "upentertainment.com" else NET.REG_DOMAIN(safe_cast(context_page_referrer as string)) end AS referrer_domain
+          , safe_cast(context_page_title as string) as title
+          , safe_cast(context_page_path as string) as path
+        from `up-faith-and-family-216419.javascript_upentertainment_checkout.pages`
+        where context_page_path like '%welcome/resubscribe_thank_you/upfaithandfamily%'
+      ))
       , web_events as (
         select * from site_pages
         union all
@@ -307,6 +343,45 @@ view: upff_page_events {
         from javascript_upentertainment_checkout.order_completed
         group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19
         )
+
+        UNION ALL
+
+        SELECT *
+        , REPLACE(REGEXP_EXTRACT(search, '(?i)utm_campaign=([^&]+)'), '+', ' ') AS utm_campaign
+        , REPLACE(REGEXP_EXTRACT(search, '(?i)utm_source=([^&]+)'), '+', ' ') AS utm_source
+        , REPLACE(REGEXP_EXTRACT(search, '(?i)utm_medium=([^&]+)'), '+', ' ') AS utm_medium
+        , REPLACE(REGEXP_EXTRACT(search, '(?i)utm_content=([^&]+)'), '+', ' ') AS utm_content
+        , REPLACE(REGEXP_EXTRACT(search, '(?i)utm_term=([^&]+)'), '+', ' ') AS utm_term
+        , coalesce(REPLACE(REGEXP_EXTRACT(search, '(?i)ad_id=([^&]+)'), '+', ' '), REPLACE(REGEXP_EXTRACT(search, '(?i)hsa_ad=([^&]+)'), '+', ' ')) AS ad_id
+        , coalesce(REPLACE(REGEXP_EXTRACT(search, '(?i)adset_id=([^&]+)'), '+', ' '), REPLACE(REGEXP_EXTRACT(search, '(?i)hsa_grp=([^&]+)'), '+', ' ')) AS adset_id
+        , coalesce(REPLACE(REGEXP_EXTRACT(search, '(?i)campaign_id=([^&]+)'), '+', ' '), REPLACE(REGEXP_EXTRACT(search, '(?i)hsa_cam=([^&]+)'), '+', ' ')) AS campaign_id
+        FROM
+        (
+        select
+          id
+          , timestamp
+          , safe_cast(user_id as string) as customer_id
+          , safe_cast(anonymous_id as string) as anonymous_id
+          , safe_cast(null as string) as email
+          , safe_cast(context_ip as string) as ip_address
+          , safe_cast(null as string) as checkout_id
+          , safe_cast(null as string) as order_id
+          , safe_cast(null as string) as cross_domain_id
+          , safe_cast(context_user_agent as string) as user_agent
+          , "Order Completed" as event
+          , "web" as platform
+          , safe_cast(context_page_url as string) as url
+          , case when NET.REG_DOMAIN(safe_cast(context_page_url as string)) = "entertainment.com" then "upentertainment.com" else NET.REG_DOMAIN(safe_cast(context_page_url as string)) end AS domain
+          , URLDECODE(REGEXP_EXTRACT(safe_cast(context_page_url as string), '\\?(.+)')) as search
+          , safe_cast(context_page_referrer as string) as referrer
+          , case when NET.REG_DOMAIN(safe_cast(context_page_referrer as string)) = "entertainment.com" then "upentertainment.com" else NET.REG_DOMAIN(safe_cast(context_page_referrer as string)) end AS referrer_domain
+          , safe_cast(context_page_title as string) as title
+          , safe_cast(context_page_path as string) as path
+        from `up-faith-and-family-216419.javascript_upentertainment_checkout.pages`
+        where context_page_path like '%welcome/resubscribe_thank_you/upfaithandfamily%'
+        )
+
+
       )
       , checkout_order_updated as (
           select *
