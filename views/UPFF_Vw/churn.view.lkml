@@ -64,8 +64,10 @@ view: churn {
         --or content_subscription_cancel_reason_code is null)
         AND content_subscription_subscription_items LIKE '%UP%'
         AND date(timestamp) >= (SELECT MAX(report_date) FROM cfg)
-        )
+        ),
 
+
+result as (
       SELECT
         COUNT(DISTINCT user_id) AS user_count
         ,report_date
@@ -82,7 +84,21 @@ view: churn {
         ,billing_period
         ,platform
       FROM chargebee_cancelled
-      GROUP BY 2,3,4
+      GROUP BY 2,3,4)
+
+      SELECT
+        report_date
+        ,billing_period
+        ,platform
+        ,CASE
+          WHEN platform = 'android' and billing_period = 'monthly' and report_date between '2026-01-10'and '2026-01-12' THEN 64
+          WHEN platform = 'android' and billing_period = 'yearly' and report_date between '2026-01-10'and '2026-01-12' THEN 5
+          WHEN platform = 'roku' and billing_period = 'yearly' and report_date between '2026-01-21'and '2026-01-25' THEN 13
+          WHEN platform = 'roku' and billing_period = 'monthly'and report_date between '2026-01-21'and '2026-01-25' THEN 200
+          ELSE user_count
+        END AS user_count
+      FROM result
+
 
 
 

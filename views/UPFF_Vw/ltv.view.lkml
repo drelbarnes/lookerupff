@@ -8,40 +8,7 @@ view: ltv {
   cancelled_user as (
     SELECT * FROM ${churn.SQL_TABLE_NAME}
   ),
-  vm as (
-      SELECT
-        date(timestamp) as report_date
-        ,CAST(user_id AS VARCHAR) as user_id
-        ,DATE_TRUNC('month', timestamp) AS month_start
-        ,platform
-        FROM vimeo_ott_webhook.customer_product_expired
-        where date(timestamp) >='2025-12-01'
-        and platform !='api'
 
-        UNION ALL
-
-        SELECT
-        date(timestamp) as report_date
-        ,CAST(user_id AS VARCHAR) as user_id
-        ,DATE_TRUNC('month', timestamp) AS month_start
-        ,platform
-        FROM vimeo_ott_webhook.customer_product_disabled
-        where date(timestamp) >='2025-12-01'
-        and platform !='api'
-      ),
-
-/*
-rolling_churn AS (
-  SELECT
-    t1.report_date,
-    COUNT(DISTINCT t2.user_id) AS churn_30_days
-  FROM vm t1
-  JOIN vm t2
-    ON t2.report_date BETWEEN t1.report_date - INTERVAL '29 days'
-                          AND t1.report_date
-  GROUP BY t1.report_date
-  ORDER BY t1.report_date
-), */
 
 rolling_churn AS (
   SELECT
