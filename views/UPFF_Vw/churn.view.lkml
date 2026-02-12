@@ -87,16 +87,18 @@ result as (
       GROUP BY 2,3,4)
 
       SELECT
-        report_date
-        ,billing_period
-        ,platform
-        ,CASE
+        CASE
           WHEN platform = 'android' and billing_period = 'monthly' and report_date between '2026-01-10'and '2026-01-12' THEN 64
           WHEN platform = 'android' and billing_period = 'yearly' and report_date between '2026-01-10'and '2026-01-12' THEN 5
+          WHEN platform = 'android_tv' and billing_period = 'monthly' and report_date between '2026-01-10'and '2026-01-12' THEN 11
+          WHEN platform = 'android_tv' and billing_period = 'yearly' and report_date between '2026-01-10'and '2026-01-12' THEN 1
           WHEN platform = 'roku' and billing_period = 'yearly' and report_date between '2026-01-21'and '2026-01-25' THEN 13
           WHEN platform = 'roku' and billing_period = 'monthly'and report_date between '2026-01-21'and '2026-01-25' THEN 200
           ELSE user_count
-        END AS user_count
+        END AS user_count,
+      report_date,
+      billing_period,
+      platform
       FROM result
 
 
@@ -104,4 +106,27 @@ result as (
 
       ;;
   }
+
+  dimension: user_count {
+    type: number
+    sql: ${TABLE}.user_count ;;
+  }
+
+  dimension: platform{
+    type: string
+    sql: ${TABLE}.platform ;;
+  }
+
+
+  dimension: report_date {
+    type: date
+    sql: ${TABLE}.report_date ;;
+  }
+
+  dimension: billing_period{
+    type: string
+    sql: ${TABLE}.billing_period ;;
+  }
+
+
   }

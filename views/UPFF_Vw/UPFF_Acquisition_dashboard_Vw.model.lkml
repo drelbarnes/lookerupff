@@ -102,3 +102,7 @@ explore: ltv {
 explore: watch_time {
   label: "UPFF watch_duration"
 }
+
+explore: churn {
+  label: "UPFF churn test"
+}
