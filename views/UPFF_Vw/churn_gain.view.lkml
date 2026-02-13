@@ -285,22 +285,15 @@ view: churn_gain {
       ),
 
       churn_rate AS (
-      SELECT
-      report_date,
-      platform,
-      rolling_30_day_unique_user_count_yearly,
-      rolling_30_day_unique_user_count_monthly,
-      total_rolling_monthly,
-      total_rolling_yearly
-      FROM ${rolling_platform.SQL_TABLE_NAME}
+      select * from  ${ltv.SQL_TABLE_NAME}
       ),
 
       rolling_churn AS (
       SELECT
       report_date,
       platform,
-      rolling_30_day_unique_user_count_monthly AS user_count,
-      'monthly'::VARCHAR AS billing_period,
+      rolling_churn_30_days AS user_count,
+      billing_period,
       'rolling_churn'::VARCHAR AS status
       FROM churn_rate
 
@@ -309,28 +302,8 @@ view: churn_gain {
       SELECT
       report_date,
       platform,
-      total_rolling_monthly AS user_count,
-      'monthly'::VARCHAR AS billing_period,
-      'rolling_total'::VARCHAR AS status
-      FROM churn_rate
-
-      UNION ALL
-
-      SELECT
-      report_date,
-      platform,
-      rolling_30_day_unique_user_count_yearly AS user_count,
-      'yearly'::VARCHAR AS billing_period,
-      'rolling_churn'::VARCHAR AS status
-      FROM churn_rate
-
-      UNION ALL
-
-      SELECT
-      report_date,
-      platform,
-      total_rolling_yearly AS user_count,
-      'yearly'::VARCHAR AS billing_period,
+      prior_31_days_subs AS user_count,
+      billing_period,
       'rolling_total'::VARCHAR AS status
       FROM churn_rate
       ),
