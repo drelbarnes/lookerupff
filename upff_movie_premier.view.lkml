@@ -1801,7 +1801,7 @@ view: upff_movie_premier {
                     SELECT 'Christmas in Amish Country', 0.79 UNION ALL
                     SELECT 'Christmas Roses', 0.79 UNION ALL
                     SELECT 'A Christmas Murder Mystery', 0.79 UNION ALL
-                    SELECT 'A Country Encore', 0.00
+                    SELECT 'A Country Encore', 0.70
                     ),
 
                     upff_premier_dates AS
