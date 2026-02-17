@@ -1698,7 +1698,8 @@ view: upff_movie_premier {
                     SELECT 'A Change in Heart' UNION ALL
                     SELECT 'Christmas in Amish Country' UNION ALL
                     SELECT 'Christmas Roses' UNION ALL
-                    SELECT 'A Christmas Murder Mystery'
+                    SELECT 'A Christmas Murder Mystery' UNION ALL
+                    SELECT 'A Country Encore'
                     ),
 
                     upff_premier_completion_rates AS
@@ -1799,7 +1800,8 @@ view: upff_movie_premier {
                     SELECT 'A Change in Heart', 0.76 UNION ALL
                     SELECT 'Christmas in Amish Country', 0.79 UNION ALL
                     SELECT 'Christmas Roses', 0.79 UNION ALL
-                    SELECT 'A Christmas Murder Mystery', 0.79
+                    SELECT 'A Christmas Murder Mystery', 0.79 UNION ALL
+                    SELECT 'A Country Encore', 0.00
                     ),
 
                     upff_premier_dates AS
@@ -1900,7 +1902,8 @@ view: upff_movie_premier {
                     SELECT 'A Change in Heart', DATE '2025-12-02' UNION ALL
                     SELECT 'Christmas in Amish Country', DATE '2025-12-02' UNION ALL
                     SELECT 'Christmas Roses', DATE '2025-12-09' UNION ALL
-                    SELECT 'A Christmas Murder Mystery', DATE '2025-12-09'
+                    SELECT 'A Christmas Murder Mystery', DATE '2025-12-09' UNION ALL
+                    SELECT 'A Country Encore', DATE '2025-10-12'
                     ),
 
                     upff_subscriber_counts AS
