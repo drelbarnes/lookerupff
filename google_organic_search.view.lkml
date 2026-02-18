@@ -15,7 +15,7 @@ view: google_organic_search {
       CASE
         WHEN LOWER(original_query) LIKE '%up%faith%and%family%'
           OR LOWER(original_query) LIKE '%up%faith%&%family%'
-          THEN 'upfaithandfamily'
+          THEN 'upfaith and family'
 
         WHEN LOWER(original_query) LIKE '%up family%'
           OR LOWER(original_query) LIKE '%upfamily%'
@@ -36,11 +36,11 @@ view: google_organic_search {
         WHEN LOWER(original_query) LIKE '%hudson and rex%'
           OR LOWER(original_query) LIKE '%hudson%&%rex%'
           OR LOWER(original_query) LIKE '%hudson rex%'
-          THEN 'hudsonandrex'
+          THEN 'hudson and rex'
 
         WHEN LOWER(original_query) LIKE '%blue skies%'
           OR LOWER(original_query) LIKE '%blueskies%'
-          THEN 'blueskies'
+          THEN 'blue skies'
         ELSE original_query
       END AS final_query
       FROM orig
