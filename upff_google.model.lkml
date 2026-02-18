@@ -268,7 +268,7 @@ include: "/views/bigquery_views/radiant_reporting.view.lkml"
 # Chargebee #
 
 include: "/views/Chargebee/chargebee_subscriptions.view.lkml"
-
+include: "/google_organic_search.view.lkml"
 # Datagroups for PDT Triggers #
 
 datagroup: upff_daily_refresh_datagroup {
@@ -298,7 +298,9 @@ datagroup: chargebee_reporting {
 # explore: chargebee_analytics {
 #   label: "Chargebee Analytics"
 # }
-
+explore: google_organic_search {
+  label: "Google Organic Search"
+}
 explore: chargebee_subscriptions {
   label: "Chargebee Subscriptions"
 }
