@@ -40,7 +40,7 @@ view: google_organic_search {
 
         WHEN LOWER(original_query) LIKE '%blue skies%'
           OR LOWER(original_query) LIKE '%blueskies%'
-          THEN 'blues kies'
+          THEN 'blue skies'
         ELSE original_query
       END AS final_query
       FROM orig
