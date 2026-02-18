@@ -1572,7 +1572,9 @@ view: premier_scorecard {
       SELECT DATE '2025-12-09', 448440 UNION ALL
       SELECT DATE '2025-12-16', 451769 UNION ALL
       SELECT DATE '2025-12-23', 455429 UNION ALL
-      SELECT DATE '2025-12-30', 450000
+      SELECT DATE '2025-12-30', 450000 UNION ALL
+      SELECT DATE '2026-01-27', 450000 UNION ALL
+      SELECT DATE '2026-02-10', 450000
       ),
 
       upff_premier_titles AS
@@ -1676,7 +1678,9 @@ view: premier_scorecard {
       SELECT "A Christmas Murder Mystery" UNION ALL
       SELECT "Christmas in Big Sky Country" UNION ALL
       SELECT "The Best Thing About Christmas" UNION ALL
-      SELECT "Christmas with the Knightlys"
+      SELECT "Christmas with the Knightlys" UNION ALL
+      SELECT "A Country Encore" UNION ALL
+      SELECT "Where the Wind Blows"
       ),
 
       upff_premier_completion_rates AS
@@ -1780,7 +1784,9 @@ view: premier_scorecard {
       SELECT "A Christmas Murder Mystery", 0.77 UNION ALL
       SELECT "Christmas in Big Sky Country", 0.76 UNION ALL
       SELECT "The Best Thing About Christmas", 0.65 UNION ALL
-      SELECT "Christmas with the Knightlys", 0.81
+      SELECT "Christmas with the Knightlys", 0.81 UNION ALL
+      SELECT "A Country Encore", 0.77 UNION ALL
+      SELECT "Where the Wind Blows", 0.74
       ),
 
       upff_premier_dates AS
@@ -1884,7 +1890,9 @@ view: premier_scorecard {
       SELECT "A Christmas Murder Mystery", DATE '2025-12-09' UNION ALL
       SELECT "Christmas in Big Sky Country", DATE '2025-12-16' UNION ALL
       SELECT "The Best Thing About Christmas", DATE '2025-12-23' UNION ALL
-      SELECT "Christmas with the Knightlys", DATE '2025-12-23'
+      SELECT "Christmas with the Knightlys", DATE '2025-12-23' UNION ALL
+      SELECT "A Country Encore", DATE '2026-01-27' UNION ALL
+      SELECT "Where the Wind Blows", DATE '2026-02-10'
       ),
 
       upff_subscriber_counts AS
