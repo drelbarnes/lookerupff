@@ -10,7 +10,7 @@ view: google_organic_search {
 
     transform AS (
      SELECT
-      data_date as report_date,
+      timestamp(data_date) as report_date,
       original_query,
       CASE
         WHEN LOWER(original_query) LIKE '%up%faith%and%family%'
