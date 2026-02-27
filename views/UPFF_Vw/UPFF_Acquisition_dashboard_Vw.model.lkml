@@ -22,8 +22,11 @@ include: "/views/UPFF_Vw/post_trial_refund.view.lkml"
 include: "/views/UPFF_Vw/roku.view.lkml"
 include: "/views/UPFF_Vw/paused.view.lkml"
 include: "/views/UPFF_Vw/churn.view.lkml"
-include: "/views/UPFF_Vw/ltv.view.lkml"
+include: "/views/UPFF_Vw/ltv_cpa.view.lkml"
 include: "/views/UPFF_Vw/watch_time.view.lkml"
+include: "/views/UPFF_Vw/monthly_report.view.lkml"
+include: "/views/UPFF_Vw/daily_spend.view.lkml"
+include: "/views/UPFF_Vw/trial_converted.view.lkml"
 
 explore: UPFF_analytics_Vw {
   label: "UPFF_analytics_Vw"
@@ -95,8 +98,8 @@ explore: paused {
   label: "UPFF Subscription Paused Data"
 }
 
-explore: ltv {
-  label: "UPFF V2 LTV"
+explore: ltv_cpa {
+  label: "UPFF V2 LTV CPA"
 }
 
 explore: watch_time {
@@ -105,4 +108,8 @@ explore: watch_time {
 
 explore: churn {
   label: "UPFF churn test"
+}
+
+explore: monthly_report {
+  label: "UPFF monthly report"
 }

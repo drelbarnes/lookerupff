@@ -219,7 +219,7 @@ view: sub_count {
   }
   dimension_group: report_date {
     type: time
-    timeframes: [date, week]
+    timeframes: [date, week,month]
     sql: ${TABLE}.report_date ;;
     convert_tz: yes  # Adjust for timezone conversion if needed
   }
