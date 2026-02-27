@@ -544,6 +544,7 @@ view: upff_multi_platform_attribution {
     )
     select *, row_number() over (order by ordered_at) as row from union_all
     ;;
+    datagroup_trigger: upff_daily_refresh_datagroup
   }
 
   filter: date_filter {
