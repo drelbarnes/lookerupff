@@ -146,7 +146,7 @@ FROM result */
 
   dimension_group: report_date {
     type: time
-    timeframes: [date, week]
+    timeframes: [date, week, month]
     sql: ${TABLE}.report_date ;;
 
   }
