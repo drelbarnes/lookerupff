@@ -10,7 +10,7 @@ view: watch_time {
         user_id,
         'Web' AS source,
         'video_content_playing' AS event_type,
-        timestamp AS timestamp
+        received_at
         FROM javascript.video_content_playing a
         WHERE 1=1
         {% if start_date._parameter_value != "NULL" %}
@@ -29,7 +29,7 @@ view: watch_time {
         user_id,
         'iOS',
         'video_content_playing',
-        timestamp
+        received_at
         FROM ios.video_content_playing a
         WHERE 1=1
         {% if start_date._parameter_value != "NULL" %}
@@ -48,7 +48,7 @@ view: watch_time {
         user_id,
         'Android',
         'video_content_playing',
-        timestamp
+        received_at
         FROM android.video_content_playing a
         WHERE 1=1
         {% if start_date._parameter_value != "NULL" %}
@@ -67,7 +67,7 @@ view: watch_time {
         user_id,
         'FireTV',
         'video_content_playing',
-        timestamp
+        received_at
         FROM amazon_fire_tv.video_content_playing a
         WHERE 1=1
         {% if start_date._parameter_value != "NULL" %}
@@ -86,7 +86,7 @@ view: watch_time {
         user_id,
         'Roku',
         'video_content_playing',
-        timestamp
+        received_at
         FROM roku.video_content_playing a
         WHERE 1=1
         {% if start_date._parameter_value != "NULL" %}
@@ -104,7 +104,7 @@ view: watch_time {
         user_id,
         'iOS',
         'video_content_playing',
-        timestamp
+        received_at
         FROM ios.firstplay a
         WHERE 1=1
         {% if start_date._parameter_value != "NULL" %}
@@ -122,7 +122,7 @@ view: watch_time {
         user_id,
         'Android',
         'video_content_playing',
-        timestamp
+        received_at
         FROM android.firstplay a
         WHERE 1=1
         {% if start_date._parameter_value != "NULL" %}
@@ -191,7 +191,7 @@ view: watch_time {
         watch_events AS (
         SELECT
         user_id,
-        video_id,
+        DATE_TRUNC('week', timestamp) AS week_start,
         COUNT(*) AS heartbeat_events
         FROM a
         WHERE user_id IS NOT NULL

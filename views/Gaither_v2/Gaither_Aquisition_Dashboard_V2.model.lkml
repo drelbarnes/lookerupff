@@ -6,7 +6,7 @@ include: "/views/Gaither_v2/cpft.view.lkml"
 include: "/views/Gaither_v2/chargebee_webhook.view.lkml"
 include: "/views/Gaither_v2/vimeo_webhook.view.lkml"
 include: "/views/Gaither_v2/subscriber_data.view.lkml"
-
+include: "/views/Gaither_v2/free_trials.view.lkml"
 
 explore: gaither_analytics_v2 {
   label: "Gaither Analytics V2"
@@ -24,4 +24,8 @@ explore: cpft {
 
 explore: subscriber_data {
   label: "Gaither Subscriber Data"
+}
+
+explore: free_trials {
+  label: "Gaither free trials"
 }

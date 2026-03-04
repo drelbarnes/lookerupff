@@ -27,7 +27,7 @@ include: "/views/UPFF_Vw/watch_time.view.lkml"
 include: "/views/UPFF_Vw/monthly_report.view.lkml"
 include: "/views/UPFF_Vw/daily_spend.view.lkml"
 include: "/views/UPFF_Vw/trial_converted.view.lkml"
-
+include: "/views/UPFF_Vw/watch_time_average.view.lkml"
 explore: UPFF_analytics_Vw {
   label: "UPFF_analytics_Vw"
   join: rolling {
@@ -104,6 +104,10 @@ explore: ltv_cpa {
 
 explore: watch_time {
   label: "UPFF watch_duration"
+}
+
+explore: watch_time_average {
+  label: "UPFF average watch duration"
 }
 
 explore: churn {
