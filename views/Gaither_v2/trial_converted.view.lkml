@@ -7,7 +7,7 @@ view: trial_converted {
         ,user_id
         ,platform
       FROM ${gaither_analytics_v2.SQL_TABLE_NAME}
-      WHERE platform != 'Chargbee'
+      WHERE platform != 'Chargebee'
       and trials_converted = 'Yes'
 
       UNION ALL
@@ -25,14 +25,14 @@ view: trial_converted {
         FROM chargebee_webhook_events.subscription_activated
         WHERE content_subscription_subscription_items LIKE '%Gai%'
       --AND DATE(received_at) >= '2025-07-01'
-      ),
+      )
 
       SELECT
-        count(distinct user_id)
+        count(distinct user_id) as user_count
         ,report_date
         ,platform
       FROM users
-      GROUP BY 1,2
+      GROUP BY 2,3
 
     ;;
   }

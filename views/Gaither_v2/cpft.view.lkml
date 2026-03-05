@@ -131,8 +131,50 @@ INNER JOIN g ON ads.ad_group_id = g.ad_group_id
       on date(date_start) = date(timestamp)
       group by 1,2,3,4
 
+      ),
+
+      rolling_spend as (
+        SELECT
+            date_start,
+            SUM(spend)
+              OVER (
+                ORDER BY date_start
+                ROWS BETWEEN 29 PRECEDING AND CURRENT ROW
+              ) AS rolling_spend
+        FROM outer_query
+      ),
+
+      trial_conversion AS
+      (select
+        SUM(user_count) as user_count
+        ,report_date from ${trial_converted.SQL_TABLE_NAME}
+        group by 2
+      ),
+
+
+      rolling_converted as (
+        SELECT
+            report_date,
+            SUM(user_count)
+              OVER (
+                ORDER BY report_date
+                ROWS BETWEEN 29 PRECEDING AND CURRENT ROW
+              ) AS rolling_converted
+        FROM trial_conversion
       )
-            select * from outer_query
+
+      select
+      a.date_start
+      ,a.free_trial_created
+      ,a.channel
+      ,a.spend
+      ,b.rolling_converted
+      ,c.rolling_spend
+      from outer_query a
+      left join rolling_converted b
+      on a.date_start = b.report_date
+      LEFT JOIN rolling_spend c
+      on a.date_start = c.date_start
       ;;
   }
   dimension_group: timestamp {
@@ -146,6 +188,14 @@ INNER JOIN g ON ads.ad_group_id = g.ad_group_id
     sql: ${TABLE}.channel ;;
   }
 
+  measure: rolling_converted {
+    type: max
+    sql: ${TABLE}.rolling_converted;;
+  }
+  measure: rolling_spend {
+    type: max
+    sql: ${TABLE}.rolling_spend;;
+  }
 
   measure: spend {
     type: sum

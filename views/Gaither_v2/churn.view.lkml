@@ -1,6 +1,6 @@
 view: churn {
   derived_table: {
-    sql:  with chargebee_cancelled AS (
+    sql:  with churn AS (
         SELECT
         content_subscription_id::VARCHAR AS user_id,
         'cancelled'::VARCHAR AS status,
@@ -18,9 +18,10 @@ view: churn {
         --or content_subscription_cancel_reason_code is null)
         AND content_subscription_subscription_items LIKE '%Ga%'
         --AND date(timestamp) >= (SELECT MAX(report_date) FROM cfg)
-        ),
 
-       non_web_cancelled AS (
+        UNION ALL
+
+       --non_web_cancelled
         SELECT
         CAST(user_id AS VARCHAR) AS user_id,
         'cancelled'::VARCHAR AS status,
@@ -37,12 +38,41 @@ view: churn {
         subscription_frequency as billing_period,
         DATE("timestamp") AS report_date,
         platform
-        FROM vimeo_ott_webhook_gaithertv.customer_product_diabled
+        FROM vimeo_ott_webhook_gaithertv.customer_product_disabled
         WHERE platform != 'api'
-      )
-      select * from chargebee_cancelled
-      UNION ALL
-      SELECT * FROM non_web_cancelled
+      ),
+
+      churn_count as (
+        SELECT
+          COUNT(DISTINCT user_id) as user_count
+          ,report_date
+          ,platform
+        FROM churn
+        GROUP BY 2,3
+      ),
+
+      rolling_churn AS (
+        SELECT
+          report_date
+          ,platform
+          ,SUM(user_count) OVER (
+            PARTITION BY platform
+            ORDER BY report_date
+            ROWS BETWEEN 29 PRECEDING AND CURRENT ROW
+          ) AS rolling_churn_30_days
+        FROM churn_count
+    )
+
+    SELECT
+      a.user_count
+      ,b.rolling_churn_30_days
+      ,a.report_date
+      ,a.platform
+    FROM churn_count a
+    LEFT JOIN rolling_churn b
+    ON a.report_date = b.report_date and a.platform = b.platform
+
+
 
       ;;
   }

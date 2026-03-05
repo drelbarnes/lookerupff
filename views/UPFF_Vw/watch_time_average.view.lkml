@@ -185,7 +185,7 @@ qualified_weeks AS (
         user_id,
         COUNT(*) AS weeks_meeting_threshold
     FROM watch_events
-    WHERE heartbeat_events = {% parameter watch_time %}
+    WHERE CAST(heartbeat_events AS INT)>= CAST({% parameter watch_time %} as INT)
     GROUP BY 1
 ),
 

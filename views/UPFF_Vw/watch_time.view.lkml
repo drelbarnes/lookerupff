@@ -191,7 +191,7 @@ view: watch_time {
         watch_events AS (
         SELECT
         user_id,
-        DATE_TRUNC('week', timestamp) AS week_start,
+        DATE_TRUNC('week', received_at) AS week_start,
         COUNT(*) AS heartbeat_events
         FROM a
         WHERE user_id IS NOT NULL

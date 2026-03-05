@@ -7,7 +7,7 @@ view: free_trials {
         ,user_id
         ,platform
       FROM ${gaither_analytics_v2.SQL_TABLE_NAME}
-      WHERE platform != 'Chargbee'
+      WHERE platform != 'Chargebee'
       and status in ( 'in_trial','free_trial')
 
       UNION ALL

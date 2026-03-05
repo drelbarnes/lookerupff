@@ -38,16 +38,16 @@ view: reacquisition {
           ,platform
           ,report_date
         FROM ${gaither_analytics_v2.SQL_TABLE_NAME}
-        WHERE platform != 'Chargbee'
+        WHERE platform != 'Chargebee'
         and re_acquisition = 'Yes'
       )
 
       SELECT
-        count(distinct user_id)
+        count(distinct user_id) as user_count
         ,report_date
         ,platform
       FROM users
-      GROUP BY 1,2
+      GROUP BY 2,3
     ;;
   }
 }
