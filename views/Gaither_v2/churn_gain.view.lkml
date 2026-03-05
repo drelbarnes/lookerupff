@@ -1,7 +1,7 @@
 view: churn_gain {
   derived_table: {
     sql:
-      with churn AS (
+      ,get_churn AS (
       SELECT * FROM ${churn.SQL_TABLE_NAME}
       ),
 
@@ -10,7 +10,7 @@ view: churn_gain {
 
 
 
-      sub_count as (
+      get_sub_count as (
         SELECT * FROM  ${sub_count.SQL_TABLE_NAME}
       ),
 
@@ -79,7 +79,7 @@ view: churn_gain {
         ,report_date
         ,platform
         ,'churn' as status
-      FROM churn
+      FROM get_churn
 
       UNION ALL
       SELECT
@@ -95,7 +95,15 @@ view: churn_gain {
         ,report_date
         ,platform
         ,'rolling_total' as status
-      FROM sub_count
+      FROM get_sub_count
+
+      UNION ALL
+      SELECT
+         user_count
+        ,report_date
+        ,platform
+        ,'total' as status
+      FROM get_sub_count
 
       UNION ALL
       SELECT
@@ -105,6 +113,10 @@ view: churn_gain {
         )
       SELECT * FROM result
     ;;
+    sql_trigger_value: SELECT TO_CHAR(DATEADD(minute, -555, GETDATE()), 'YYYY-MM-DD');;
+    #sql_trigger_value:  SELECT TO_CHAR(DATE_TRUNC('day', CURRENT_TIMESTAMP) + INTERVAL '9 hours 45 minutes', 'YYYY-MM-DD');;
+    distribution: "report_date"
+    sortkeys: ["report_date"]
   }
 
   dimension_group: report_date {
@@ -136,6 +148,11 @@ view: churn_gain {
     sql: ${TABLE}.status ;;
   }
 
+  measure: paid_total {
+    type: sum
+    sql: ${user_count} ;;
+    filters: [status: "total"]
+  }
 
   measure: churn_count {
     type: sum
