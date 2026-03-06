@@ -25,7 +25,9 @@ explore: gaither_analytics_v2 {
 }
 
 explore: cpft {
-  label: "Gaither CPFT"}
+  label: "Gaither CPFT"
+
+  }
 
 
 explore: subscriber_data {
@@ -38,4 +40,7 @@ explore: free_trials {
 
 explore: churn_gain {
   label: "Gaither churn gain"
+
+
+
 }

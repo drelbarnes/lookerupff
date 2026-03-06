@@ -110,15 +110,36 @@ view: churn_gain {
         *
         ,'dunning'as status
       FROM dunning_count
-        )
-      SELECT * FROM result
+        ),
+
+    spend as (
+      SELECT
+      distinct
+      rolling_spend
+      ,rolling_converted
+      ,date_start
+      FROM ${cpft.SQL_TABLE_NAME}
+    )
+      SELECT
+        a.user_count
+        ,a.report_date
+        ,a.platform
+        ,a.status
+        ,b.rolling_spend/b.rolling_converted as cpa
+        FROM result a
+        LEFT JOIN spend b
+        ON a.report_date = b.date_start
     ;;
     sql_trigger_value: SELECT TO_CHAR(DATEADD(minute, -555, GETDATE()), 'YYYY-MM-DD');;
     #sql_trigger_value:  SELECT TO_CHAR(DATE_TRUNC('day', CURRENT_TIMESTAMP) + INTERVAL '9 hours 45 minutes', 'YYYY-MM-DD');;
     distribution: "report_date"
     sortkeys: ["report_date"]
   }
-
+  dimension: date {
+    type: date
+    primary_key: yes
+    sql:  ${TABLE}.report_date ;;
+  }
   dimension_group: report_date {
     type: time
 
@@ -126,6 +147,8 @@ view: churn_gain {
     sql: ${TABLE}.report_date ;;
     convert_tz: yes  # Adjust for timezone conversion if needed
   }
+
+
 
   dimension: user_id {
     type: string
@@ -137,6 +160,8 @@ view: churn_gain {
     type: number
     sql: ${TABLE}.user_count ;;
   }
+
+
 
   dimension: platform{
     type: string
@@ -152,6 +177,11 @@ view: churn_gain {
     type: sum
     sql: ${user_count} ;;
     filters: [status: "total"]
+  }
+
+  measure: cpa {
+    type: max
+    sql: ${TABLE}.cpa;;
   }
 
   measure: churn_count {

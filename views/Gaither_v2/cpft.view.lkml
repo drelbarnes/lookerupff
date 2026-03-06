@@ -162,7 +162,6 @@ INNER JOIN g ON ads.ad_group_id = g.ad_group_id
               ) AS rolling_converted
         FROM trial_conversion
       )
-
       select
       a.date_start
       ,a.free_trial_created
@@ -174,9 +173,16 @@ INNER JOIN g ON ads.ad_group_id = g.ad_group_id
       left join rolling_converted b
       on a.date_start = b.report_date
       LEFT JOIN rolling_spend c
-      on a.date_start = c.date_start
-      ;;
+      on a.date_start = c.date_start;;
+
   }
+
+  dimension: date {
+    type: date
+    primary_key: yes
+    sql:  ${TABLE}.date_start ;;
+  }
+
   dimension_group: timestamp {
     type: time
     timeframes: [raw, time, date, day_of_week, week, month]
@@ -186,6 +192,16 @@ INNER JOIN g ON ads.ad_group_id = g.ad_group_id
   dimension: channel {
     type: string
     sql: ${TABLE}.channel ;;
+  }
+
+  measure: rolling_churn {
+    type: max
+    sql: ${TABLE}.rolling_churn;;
+  }
+
+  measure: rolling_total {
+    type: max
+    sql: ${TABLE}.rolling_total;;
   }
 
   measure: rolling_converted {
