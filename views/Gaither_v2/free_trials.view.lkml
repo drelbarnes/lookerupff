@@ -1,7 +1,7 @@
 view: free_trials {
   derived_table: {
     sql:
-     with users as (
+      ,users as (
       SELECT
         created_at
         ,user_id
@@ -30,7 +30,10 @@ view: free_trials {
         *
       FROM users
     ;;
-
+    sql_trigger_value: SELECT TO_CHAR(DATEADD(minute, -555, GETDATE()), 'YYYY-MM-DD');;
+    #sql_trigger_value:  SELECT TO_CHAR(DATE_TRUNC('day', CURRENT_TIMESTAMP) + INTERVAL '9 hours 45 minutes', 'YYYY-MM-DD');;
+    distribution: "created_at"
+    sortkeys: ["created_at"]
   }
   dimension: user_id {
     type: string

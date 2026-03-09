@@ -18,6 +18,14 @@ view: churn_gain {
       (select * from ${trial_converted.SQL_TABLE_NAME}
       ),
 
+      free_trial as
+      (select
+      COUNT(DISTINCT user_id)
+      ,created_at as report_date
+      ,platform
+      from ${free_trials.SQL_TABLE_NAME}
+      GROUP BY 2,3
+      ),
 
       rolling_converted as (
         SELECT
@@ -110,6 +118,12 @@ view: churn_gain {
         *
         ,'dunning'as status
       FROM dunning_count
+
+      UNION ALL
+      SELECT
+        *
+        ,'free_trial' as status
+      FROM free_trial
         ),
 
     spend as (
@@ -182,6 +196,11 @@ view: churn_gain {
   measure: cpa {
     type: max
     sql: ${TABLE}.cpa;;
+  }
+  measure: free_trial {
+    type: sum
+    sql: ${user_count} ;;
+    filters: [status: "free_trial"]
   }
 
   measure: churn_count {
