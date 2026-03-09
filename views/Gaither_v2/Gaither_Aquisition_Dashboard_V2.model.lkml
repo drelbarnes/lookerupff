@@ -40,7 +40,8 @@ explore: free_trials {
 
 explore: churn_gain {
   label: "Gaither churn gain"
+  }
 
-
-
+explore: sub_count{
+  label: "Gaither sub count"
 }

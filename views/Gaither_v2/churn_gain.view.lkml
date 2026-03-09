@@ -27,6 +27,13 @@ view: churn_gain {
       GROUP BY 2,3
       ),
 
+      converted_sum as (
+      SELECT
+        SUM(user_count) as user_count
+        ,report_date
+      FROM trial_conversion
+      group by 2
+      ),
       rolling_converted as (
         SELECT
             report_date,
@@ -35,7 +42,7 @@ view: churn_gain {
                 ORDER BY report_date
                 ROWS BETWEEN 29 PRECEDING AND CURRENT ROW
               ) AS rolling_converted
-        FROM trial_conversion
+        FROM converted_sum
       ),
 
       dunning AS (
@@ -113,6 +120,24 @@ view: churn_gain {
         ,'total' as status
       FROM get_sub_count
 
+
+      UNION ALL
+      SELECT
+    user_count
+    ,month_max_date as report_date
+    ,'all' as platform
+    ,'month_end'as status
+FROM (
+    SELECT
+        user_count,
+        report_date,
+        MAX(report_date) OVER (
+            PARTITION BY DATE_TRUNC('month', report_date)
+        ) AS month_max_date
+    FROM get_sub_count
+) t
+WHERE report_date = month_max_date
+
       UNION ALL
       SELECT
         *
@@ -128,21 +153,47 @@ view: churn_gain {
 
     spend as (
       SELECT
-      distinct
-      rolling_spend
-      ,rolling_converted
-      ,date_start
+      *
       FROM ${cpft.SQL_TABLE_NAME}
+    ),
+
+    daily_spend AS (
+  SELECT
+      date_start,
+      SUM(spend) AS spend
+  FROM spend
+  GROUP BY date_start
+),
+    rolling_spend as (
+    SELECT
+            date_start as report_date,
+            SUM(spend)
+              OVER (
+                ORDER BY date_start
+                ROWS BETWEEN 29 PRECEDING AND CURRENT ROW
+              ) AS rolling_spend
+              from daily_spend
+    ),
+
+    cpa as (
+    SELECT
+    a.rolling_spend/b.rolling_converted as cpa
+    ,a.report_date
+    FROM rolling_spend a
+    LEFT JOIN rolling_converted b
+    on a.report_date = b.report_date
     )
       SELECT
-        a.user_count
-        ,a.report_date
-        ,a.platform
-        ,a.status
-        ,b.rolling_spend/b.rolling_converted as cpa
-        FROM result a
-        LEFT JOIN spend b
-        ON a.report_date = b.date_start
+    a.user_count,
+    a.report_date,
+    a.platform,
+    a.status,
+    (
+      SELECT cpa
+      FROM cpa b
+      WHERE b.report_date = a.report_date
+    ) AS cpa
+FROM result a
     ;;
     sql_trigger_value: SELECT TO_CHAR(DATEADD(minute, -555, GETDATE()), 'YYYY-MM-DD');;
     #sql_trigger_value:  SELECT TO_CHAR(DATE_TRUNC('day', CURRENT_TIMESTAMP) + INTERVAL '9 hours 45 minutes', 'YYYY-MM-DD');;
@@ -239,6 +290,13 @@ view: churn_gain {
     type: sum
     sql: ${user_count} ;;
     filters: [status: "rolling_total"]
+
+  }
+
+  measure: month_end_count {
+    type: sum
+    sql: ${user_count} ;;
+    filters: [status: "month_end"]
 
   }
 

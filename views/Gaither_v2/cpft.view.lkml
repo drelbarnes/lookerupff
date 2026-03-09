@@ -167,13 +167,16 @@ INNER JOIN g ON ads.ad_group_id = g.ad_group_id
       ,a.free_trial_created
       ,a.channel
       ,a.spend
+      /*
       ,b.rolling_converted
-      ,c.rolling_spend
+      ,c.rolling_spend */
       from outer_query a
+      /*
       left join rolling_converted b
       on a.date_start = b.report_date
       LEFT JOIN rolling_spend c
-      on a.date_start = c.date_start;;
+      on a.date_start = c.date_start */
+      ;;
 
   }
 
