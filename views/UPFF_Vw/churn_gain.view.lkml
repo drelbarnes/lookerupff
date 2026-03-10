@@ -138,6 +138,7 @@ view: churn_gain {
       WHERE (content_subscription_cancel_reason_code in ('Not Paid', 'No Card', 'Fraud Review Failed', 'Non Compliant EU Customer', 'Tax Calculation Failed', 'Currency incompatible with Gateway', 'Non Compliant Customer') and (content_subscription_cancelled_at - content_subscription_activated_at) > 1900800) AND content_subscription_subscription_items LIKE '%UP%'
       ),
 
+
       dunning_count AS (
       SELECT
       COUNT(DISTINCT user_id) AS user_count,
@@ -145,6 +146,29 @@ view: churn_gain {
       billing_period,
       platform
       FROM dunning
+      GROUP BY 2,3,4
+      ),
+
+      paused AS (
+        SELECT
+        content_subscription_id::VARCHAR AS user_id,
+        CASE
+        WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'::VARCHAR
+        ELSE 'yearly'::VARCHAR
+        END AS billing_period,
+        DATE("timestamp") AS report_date,
+        'web'::VARCHAR AS platform
+        FROM chargebee_webhook_events.subscription_paused
+        WHERE content_subscription_subscription_items LIKE '%UP%'
+        ),
+
+      paused_count as (
+      SELECT
+      COUNT(DISTINCT user_id) AS user_count,
+      report_date,
+      billing_period,
+      platform
+      FROM paused
       GROUP BY 2,3,4
       ),
 
@@ -171,6 +195,12 @@ view: churn_gain {
       *,
       'dunning'::VARCHAR AS status
       FROM dunning_count
+
+      UNION ALL
+      SELECT
+      *,
+      'paused'::VARCHAR AS status
+      FROM paused_count
       ),
 
       result2 AS (
@@ -294,6 +324,13 @@ view: churn_gain {
     type: sum
     sql: ${user_count} ;;
     filters: [status: "reacquisition"]
+
+  }
+
+  measure: paused_count {
+    type: sum
+    sql: ${user_count} ;;
+    filters: [status: "paused"]
 
   }
 

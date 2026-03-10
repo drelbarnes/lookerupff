@@ -5,11 +5,7 @@ view: campaign_conversion {
   SELECT
     date(received_at) as report_date
     ,context_ip
-    ,CASE
-      WHEN context_campaign_source like '%fb%' THEN 'Facebook'
-      WHEN context_campaign_source like '%google_ads%' THEN 'google ads'
-      ELSE context_campaign_source
-    END as campaign_source
+    ,context_campaign_source as campaign_source
     ,context_campaign_name as campaign_name
     ,context_campaign_medium as campaign_medium
   FROM javascript_upff_home.pages
@@ -17,23 +13,10 @@ view: campaign_conversion {
     {% if start_date._parameter_value != "NULL" %}
     AND DATE(received_at) >= {% parameter start_date %}
     {% endif %}
-
-    {% if end_date._parameter_value != "NULL" %}
-    AND DATE(received_at) <= {% parameter end_date %}
-    {% endif %}
-
-    {% if non_hl._parameter_value == "Yes" %}
-    AND (
-        DATE(received_at) BETWEEN DATE '2024-01-01' AND DATE '2024-04-05'
-        OR DATE(received_at) BETWEEN DATE '2024-07-11' AND DATE '2025-03-25'
-        OR DATE(received_at) BETWEEN DATE '2025-06-12' AND DATE '2025-10-24'
-      )
-    {% endif %}
   ),
 
   trial_created as (
   SELECT
-  distinct
     user_id
     ,context_ip
     ,date(timestamp) as report_date
@@ -46,7 +29,6 @@ view: campaign_conversion {
 
   converted as (
   SELECT
-  distinct
     date(received_at) as report_date
     ,user_id
   FROM chargebee_webhook_events.subscription_activated
@@ -55,7 +37,6 @@ view: campaign_conversion {
 
   not_converted as (
   SELECT
-  distinct
       user_id
       ,DATE("timestamp") AS report_date
       FROM chargebee_webhook_events.subscription_cancelled
@@ -78,23 +59,7 @@ view: campaign_conversion {
     ON a.user_id = b.user_id
     LEFT JOIN not_converted c
     ON a.user_id = c.user_id
-
-/*
-    UNION ALL
-
-    select
-        distinct
-        user_id
-        ,context_ip
-        ,date(timestamp) as trial_start_date
-        ,'Resubscribed' as has_converted
-      from javascript_upentertainment_checkout.pages where context_page_path like '%welcome/confirmation_resubscribe/upfaithandfamily%'
-      {% if start_date._parameter_value != "NULL" %}
-    AND date(timestamp) >= {% parameter start_date %}
-    {% endif %}
-    */
   ),
-
 
 result as (
   SELECT
@@ -157,60 +122,23 @@ SELECT
 
   WHERE has_converted = 'Yes'
   GROUP BY 2,3,4
-),
-resubscribed_count as (
-SELECT
-    COUNT(DISTINCT user_id) as resubscribed_count
-    ,campaign_source
-    ,campaign_name
-    ,campaign_medium
-  FROM result
+)
 
-  WHERE has_converted = 'Resubscribed'
-  GROUP BY 2,3,4
-),
-
-
-result2 as (
 SELECT
   vc.visit_count
   ,tc.trial_started_count
   ,itc.in_trial_count
   ,cc.converted_count
-  ,rc.resubscribed_count
   ,vc.campaign_source
   ,vc.campaign_name
   ,vc.campaign_medium
 FROM visit_count vc
 LEFT JOIN trial_count tc
-  ON vc.campaign_source = tc.campaign_source
- AND vc.campaign_name   = tc.campaign_name
- AND COALESCE(vc.campaign_medium,'(none)') = COALESCE(tc.campaign_medium,'(none)')
-
+ON vc.campaign_name = tc.campaign_name and vc.campaign_source = tc.campaign_source
 LEFT JOIN in_trial_count itc
-  ON vc.campaign_source = itc.campaign_source
- AND vc.campaign_name   = itc.campaign_name
- AND COALESCE(vc.campaign_medium,'(none)') = COALESCE(itc.campaign_medium,'(none)')
-
+ON vc.campaign_name = itc.campaign_name and vc.campaign_source = itc.campaign_source
 LEFT JOIN converted_count cc
-  ON vc.campaign_source = cc.campaign_source
- AND vc.campaign_name   = cc.campaign_name
- AND COALESCE(vc.campaign_medium,'(none)') = COALESCE(cc.campaign_medium,'(none)')
-
-LEFT JOIN resubscribed_count rc
-  ON vc.campaign_source = rc.campaign_source
- AND vc.campaign_name   = rc.campaign_name
- AND COALESCE(rc.campaign_medium,'(none)') = COALESCE(rc.campaign_medium,'(none)')
-)
-
-SELECT
-  *,
-  CASE
-    WHEN campaign_name LIKE '%Instant%Nanny%' THEN 'Instant Nanny'
-    WHEN (campaign_name Like '%Hudson%Rex%') or (campaign_name Like '%hudson%rex%') THEN 'Hudson and Rex'
-    ELSE campaign_name
-  END AS campaign_name_grouped
-FROM result2
+ON vc.campaign_name = cc.campaign_name and vc.campaign_source = cc.campaign_source
   ;;
  }
 
@@ -218,15 +146,6 @@ FROM result2
     type: date
     default_value: "30 days ago"
   }
-
-  parameter: end_date {
-    type: date
-  }
-
-  parameter: non_hl {
-    type: yesno
-  }
-
    dimension: campaign_source {
     type: string
     sql: ${TABLE}.campaign_source ;;
@@ -235,11 +154,6 @@ FROM result2
   dimension: campaign_name {
     type: string
     sql: ${TABLE}.campaign_name ;;
-  }
-
-  dimension: campaign_name_grouped {
-    type: string
-    sql: ${TABLE}.campaign_name_grouped ;;
   }
 
   dimension: campaign_medium {
@@ -266,12 +180,6 @@ FROM result2
     type: number
     sql: ${TABLE}.converted_count ;;
   }
-
-  dimension: resubscribed_count {
-    type: number
-    sql: ${TABLE}.resubscribed_count ;;
-  }
-
   measure: total_visits {
     type: sum
     sql: ${visit_count} ;;
@@ -290,15 +198,9 @@ FROM result2
     value_format_name: decimal_0
   }
 
-  measure: total_free_trial_to_paid_converted {
+  measure: total_converted {
     type: sum
     sql: ${converted_count} ;;
-    value_format_name: decimal_0
-  }
-
-  measure: total_resubsrcribed{
-    type: sum
-    sql: ${resubscribed_count};;
     value_format_name: decimal_0
   }
 

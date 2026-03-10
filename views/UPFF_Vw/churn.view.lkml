@@ -64,6 +64,21 @@ view: churn {
         --or content_subscription_cancel_reason_code is null)
         AND content_subscription_subscription_items LIKE '%UP%'
         AND date(timestamp) >= (SELECT MAX(report_date) FROM cfg)
+
+        UNION ALL
+
+        SELECT
+        content_subscription_id::VARCHAR AS user_id,
+        CASE
+        WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'::VARCHAR
+        ELSE 'yearly'::VARCHAR
+        END AS billing_period,
+        DATE("timestamp") AS report_date,
+        'web'::VARCHAR AS platform
+        FROM chargebee_webhook_events.subscription_paused
+        WHERE content_subscription_subscription_items LIKE '%UP%'
+        AND date(timestamp) >= (SELECT MAX(report_date) FROM cfg)
+
         ),
 
 
