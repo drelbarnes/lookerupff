@@ -1,7 +1,7 @@
 view: sub_count {
   derived_table: {
     sql:
-    WITH active as(
+    ,active as(
       SELECT
         report_date
         ,user_id
@@ -211,7 +211,13 @@ view: sub_count {
       SELECT *,
       'AzZmVjUuQo25N2MFb'::VARCHAR as user_id
       FROM result
+
+
       ;;
+    sql_trigger_value: SELECT TO_CHAR(DATEADD(minute, -555, GETDATE()), 'YYYY-MM-DD');;
+    #sql_trigger_value:  SELECT TO_CHAR(DATE_TRUNC('day', CURRENT_TIMESTAMP) + INTERVAL '9 hours 45 minutes', 'YYYY-MM-DD');;
+    distribution: "report_date"
+    sortkeys: ["report_date"]
   }
   dimension: date {
     type: date
