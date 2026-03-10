@@ -1,6 +1,6 @@
 view: ltv_cpa {
   derived_table: {
-    sql: WITH v2_table AS (
+    sql: , v2_table AS (
   SELECT *
   FROM ${UPFF_analytics_Vw.SQL_TABLE_NAME}
   where report_date >= '2025-12-30'
@@ -26,7 +26,7 @@ SELECT
 FROM spend
 ),
 
-trial_converted as (
+trials_converted as (
 select * from ${trial_converted.SQL_TABLE_NAME}
 ),
 daily_converted_counts AS (
@@ -141,6 +141,10 @@ SELECT
   prior_31_days_subs
 FROM result */
 ;;
+    sql_trigger_value: SELECT TO_CHAR(DATEADD(minute, -555, GETDATE()), 'YYYY-MM-DD');;
+    #sql_trigger_value:  SELECT TO_CHAR(DATE_TRUNC('day', CURRENT_TIMESTAMP) + INTERVAL '9 hours 45 minutes', 'YYYY-MM-DD');;
+    distribution: "report_date"
+    sortkeys: ["report_date"]
 
   }
 
