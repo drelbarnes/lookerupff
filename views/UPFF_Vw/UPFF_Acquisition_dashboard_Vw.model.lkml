@@ -28,6 +28,7 @@ include: "/views/UPFF_Vw/monthly_report.view.lkml"
 include: "/views/UPFF_Vw/daily_spend.view.lkml"
 include: "/views/UPFF_Vw/trial_converted.view.lkml"
 include: "/views/UPFF_Vw/watch_time_average.view.lkml"
+include: "/views/UPFF_Vw/paused_dates.view.lkml"
 explore: UPFF_analytics_Vw {
   label: "UPFF_analytics_Vw"
   join: rolling {
@@ -96,6 +97,10 @@ explore: post_trial_refund {
 
 explore: paused {
   label: "UPFF Subscription Paused Data"
+}
+
+explore: paused_dates {
+  label: "UPFF Subscription Paused Data2"
 }
 
 explore: ltv_cpa {

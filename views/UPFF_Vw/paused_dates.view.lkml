@@ -1,8 +1,8 @@
-view: paused {
-  derived_table: {
-    sql:
-    WITH one_paused AS (
+view: paused_dates {
+derived_table: {
+  sql: WITH one_paused AS (
           SELECT DISTINCT content_customer_id
+          ,date(timestamp) as paused_date
           FROM chargebee_webhook_events.subscription_paused
           WHERE DATE(timestamp) >= '2025-07-01' and content_subscription_subscription_items like '%UP%'
       ),
@@ -41,94 +41,48 @@ view: paused {
 
       resumed AS (
           SELECT DISTINCT content_customer_id
+          ,date(timestamp) as resume_date
           FROM chargebee_webhook_events.subscription_resumed
           WHERE DATE(timestamp) > '2025-07-01'
-      ),
-
-      revenue AS (
-          SELECT
-              content_customer_id,
-              SUM(content_invoice_sub_total) AS total_revenue
-          FROM chargebee_webhook_events.payment_succeeded
-          WHERE content_customer_id in (SELECT content_customer_id FROM no_bundles)
-          and content_subscription_subscription_items like '%UP%'
-          GROUP BY content_customer_id
       )
 
       SELECT
-          nb.content_customer_id,
-          CASE
-              WHEN r.content_customer_id IS NOT NULL THEN 'Yes'
-              ELSE 'No'
-          END AS resumed,
-          COALESCE(rev.total_revenue/100.0, 0) AS total_revenue
-      FROM no_bundles nb
-      LEFT JOIN resumed r
-        ON nb.content_customer_id = r.content_customer_id
-      LEFT JOIN revenue rev
-        ON nb.content_customer_id = rev.content_customer_id
-    ;;
-  }
+    p.content_customer_id,
+    p.paused_date,
+    r.resume_date,
+    DATEDIFF(day, p.paused_date, r.resume_date) AS days_paused
+FROM one_paused p
+JOIN resumed r
+    ON p.content_customer_id = r.content_customer_id
+    AND r.resume_date >= p.paused_date
+QUALIFY ROW_NUMBER() OVER (
+    PARTITION BY p.content_customer_id, p.paused_date
+    ORDER BY r.resume_date
+) = 1 ;;
+}
 
   dimension: customer_id {
     primary_key: yes
     type: string
     sql: ${TABLE}.content_customer_id ;;
   }
-dimension: paused_date {
-  type: date
-  sql: ${TABLE}.paused_date ;;
-}
+  dimension: paused_date {
+    type: date
+    sql: ${TABLE}.paused_date ;;
+  }
 
   dimension: resumed_date {
     type: date
     sql: ${TABLE}.resumed_date ;;
   }
 
-  dimension: resumed {
-    type: yesno
-    sql: ${TABLE}.resumed = 'Yes' ;;
-  }
-
-  dimension: resumed_label {
-    type: string
-    sql: ${TABLE}.resumed ;;
-  }
-
-  dimension: total_revenue {
+  dimension: days_paused {
     type: number
-    value_format_name: usd
-    sql: ${TABLE}.total_revenue ;;
+    sql: ${TABLE}.days_paused ;;
   }
 
-  ### =====================
-  ### Measures (Optional but useful)
-  ### =====================
-
-  measure: customers {
-    type: count
-  }
-
-  measure: resumed_customers {
-    type: count
-    filters: [resumed: "yes"]
-  }
-
-  measure: resumed_ratio {
-    type: number
-    value_format_name: percent_2
-    sql: ${resumed_customers} * 1.0 / NULLIF(${customers}, 0) ;;
-  }
-
-  measure: avg_revenue_per_customer {
+  measure:_average_days_paused {
     type: average
-    value_format_name: usd
-    sql: ${total_revenue} ;;
+    sql: ${TABLE}.days_paused ;;
   }
-
-  measure: total_revenue_sum {
-    type: sum
-    value_format_name: usd
-    sql: ${total_revenue} ;;
-  }
-  }
+}

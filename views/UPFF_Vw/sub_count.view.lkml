@@ -48,6 +48,59 @@ view: sub_count {
 
 
       ),
+
+      /*
+      active_count as (
+      SELECT
+        user_count
+        ,report_date
+        ,platform
+        ,billing_period
+      from active_count_pre
+      where platform != 'roku'
+
+      UNION ALL
+
+      SELECT
+  CASE
+    WHEN report_date = '2026-01-22' THEN user_count + 846 + 6600 - 66
+    WHEN report_date = '2026-01-23' THEN user_count + 846 + 1150 + 6600 - 81
+    WHEN report_date = '2026-01-24' THEN user_count + 846  + 630 + 6600 - 87
+    WHEN report_date = '2026-01-25' THEN user_count + 846 + 961 + 380 + 6600 - 88
+    WHEN report_date = '2026-01-26' THEN user_count + 9400
+    WHEN report_date = '2026-01-27' THEN user_count + 9400 - 188
+    WHEN report_date = '2026-01-28' THEN user_count + 9400 - 236
+    WHEN report_date = '2026-01-29' THEN user_count + 9400 - 544
+    WHEN report_date = '2026-01-30' THEN user_count + 9400 - 589
+    WHEN report_date = '2026-01-31' THEN user_count + 9400 - 632
+    WHEN report_date = '2026-02-01' THEN user_count + 9400 - 665
+    WHEN report_date = '2026-02-02' THEN user_count + 9400 - 665
+    WHEN report_date = '2026-02-03' THEN user_count + 9400 - 665
+    WHEN report_date >= '2026-02-04' THEN user_count + 7000 - 665
+    ELSE user_count --+ 6600
+  END AS user_count
+        ,report_date
+        ,platform
+        ,billing_period
+      from active_count_pre
+      where platform = 'roku' and billing_period = 'monthly'
+
+      UNION ALL
+
+      SELECT
+        CASE
+          WHEN report_date = '2026-01-22' THEN user_count + 290 + 400
+          WHEN report_date = '2026-01-23' THEN user_count + 290+ 418 + 400
+          WHEN report_date = '2026-01-24' THEN user_count + 290+ 418+ 330 + 400
+          WHEN report_date = '2026-01-25' THEN user_count + 290+ 418+ 330 + 130 + 400
+          ELSE user_count --+ 400
+        END as user_count
+        ,report_date
+        ,platform
+        ,billing_period
+      from active_count_pre
+      where platform = 'roku' and billing_period = 'yearly'
+      ), */
       active_count as (
       SELECT
         user_count
