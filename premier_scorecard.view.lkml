@@ -1572,9 +1572,11 @@ view: premier_scorecard {
       SELECT DATE '2025-12-09', 448440 UNION ALL
       SELECT DATE '2025-12-16', 451769 UNION ALL
       SELECT DATE '2025-12-23', 455429 UNION ALL
-      SELECT DATE '2025-12-30', 450000 UNION ALL
-      SELECT DATE '2026-01-27', 450000 UNION ALL
-      SELECT DATE '2026-02-10', 450000
+      SELECT DATE '2025-12-30', 459993 UNION ALL
+      SELECT DATE '2026-01-27', 468818 UNION ALL
+      SELECT DATE '2026-02-10', 478821 UNION ALL
+      SELECT DATE '2026-02-17', 478197 UNION ALL
+      SELECT DATE '2026-03-10', 468432
       ),
 
       upff_premier_titles AS
@@ -1680,7 +1682,9 @@ view: premier_scorecard {
       SELECT "The Best Thing About Christmas" UNION ALL
       SELECT "Christmas with the Knightlys" UNION ALL
       SELECT "A Country Encore" UNION ALL
-      SELECT "Where the Wind Blows"
+      SELECT "Where the Wind Blows" UNION ALL
+      SELECT "Who Gets The Dog" UNION ALL
+      SELECT "Forgiveness Girl"
       ),
 
       upff_premier_completion_rates AS
@@ -1786,7 +1790,9 @@ view: premier_scorecard {
       SELECT "The Best Thing About Christmas", 0.65 UNION ALL
       SELECT "Christmas with the Knightlys", 0.81 UNION ALL
       SELECT "A Country Encore", 0.77 UNION ALL
-      SELECT "Where the Wind Blows", 0.74
+      SELECT "Where the Wind Blows", 0.74 UNION ALL
+      SELECT "Who Gets The Dog", 0.65 UNION ALL
+      SELECT "Forgiveness Girl", 0.00
       ),
 
       upff_premier_dates AS
@@ -1892,7 +1898,9 @@ view: premier_scorecard {
       SELECT "The Best Thing About Christmas", DATE '2025-12-23' UNION ALL
       SELECT "Christmas with the Knightlys", DATE '2025-12-23' UNION ALL
       SELECT "A Country Encore", DATE '2026-01-27' UNION ALL
-      SELECT "Where the Wind Blows", DATE '2026-02-10'
+      SELECT "Where the Wind Blows", DATE '2026-02-10' UNION ALL
+      SELECT "Who Gets The Dog", DATE '2026-02-17' UNION ALL
+      SELECT "Forgivness Girl", DATE '2026-03-10'
       ),
 
       upff_subscriber_counts AS
