@@ -1,7 +1,7 @@
 view: cpft {
   derived_table: {
     sql:
-    with c as (
+    , c as (
 
 select id
 , name
@@ -177,6 +177,10 @@ INNER JOIN g ON ads.ad_group_id = g.ad_group_id
       LEFT JOIN rolling_spend c
       on a.date_start = c.date_start */
       ;;
+    sql_trigger_value: SELECT TO_CHAR(DATEADD(minute, -555, GETDATE()), 'YYYY-MM-DD');;
+    #sql_trigger_value:  SELECT TO_CHAR(DATE_TRUNC('day', CURRENT_TIMESTAMP) + INTERVAL '9 hours 45 minutes', 'YYYY-MM-DD');;
+    distribution: "date_start"
+    sortkeys: ["date_start"]
 
   }
 

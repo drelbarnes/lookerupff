@@ -122,3 +122,7 @@ explore: churn {
 explore: monthly_report {
   label: "UPFF monthly report"
 }
+
+explore: daily_spend {
+  label: "UPFF daily spend v2"
+}
