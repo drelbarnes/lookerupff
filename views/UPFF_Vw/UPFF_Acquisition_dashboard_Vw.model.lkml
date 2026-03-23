@@ -29,6 +29,9 @@ include: "/views/UPFF_Vw/daily_spend.view.lkml"
 include: "/views/UPFF_Vw/trial_converted.view.lkml"
 include: "/views/UPFF_Vw/watch_time_average.view.lkml"
 include: "/views/UPFF_Vw/paused_dates.view.lkml"
+
+
+
 explore: UPFF_analytics_Vw {
   label: "UPFF_analytics_Vw"
   join: rolling {
@@ -125,4 +128,10 @@ explore: monthly_report {
 
 explore: daily_spend {
   label: "UPFF daily spend v2"
+}
+
+datagroup: upff_acquisition_v2 {
+  description: "Datagroup for UPFF Acquisition PDTs. Triggers once per day at 9:15am"
+  sql_trigger: SELECT FLOOR((EXTRACT(epoch from GETDATE()) - 60*60*9.25)/(60*60*24)) ;;
+  max_cache_age: "5 minutes"
 }

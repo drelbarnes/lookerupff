@@ -256,10 +256,8 @@ view: churn_gain {
       FROM final
       ;;
 
-    sql_trigger_value: SELECT TO_CHAR(DATEADD(minute, -555, GETDATE()), 'YYYY-MM-DD');;
-    #sql_trigger_value:  SELECT TO_CHAR(DATE_TRUNC('day', CURRENT_TIMESTAMP) + INTERVAL '9 hours 45 minutes', 'YYYY-MM-DD');;
-    distribution: "report_date"
-    sortkeys: ["report_date"]
+    datagroup_trigger: upff_acquisition_v2
+    distribution_style: all
 
 
   }
