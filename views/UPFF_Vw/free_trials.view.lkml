@@ -36,7 +36,7 @@ view: free_trials {
     SELECT * from vimeo2
     UNION ALL
     SELECT * from chargebee;;
-    sql_trigger_value: SELECT TO_CHAR(DATEADD(minute, -555, GETDATE()), 'YYYY-MM-DD');;
+    sql_trigger_value: SELECT TO_CHAR(DATEADD(minute, -500, GETDATE()), 'YYYY-MM-DD');;
     #sql_trigger_value:  SELECT TO_CHAR(DATE_TRUNC('day', CURRENT_TIMESTAMP) + INTERVAL '9 hours 45 minutes', 'YYYY-MM-DD');;
     distribution: "report_date"
     sortkeys: ["report_date"]

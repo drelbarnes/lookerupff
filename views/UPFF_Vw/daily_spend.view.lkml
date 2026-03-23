@@ -63,20 +63,18 @@ view: daily_spend {
         ,subscription_frequency as billing_period
         FROM customers.new_customers
         WHERE event_type = 'New Free Trial' and report_date >='2025-06-01'
-        ),
-        vimeo2 as (
-        SELECT
-        a.email as user_id
-        ,a.billing_period
-        ,b.platform
-        ,a.report_date
-        FROM vimeo a
-        LEFT JOIN (SELECT email, platform, date(timestamp) as report_date FROM vimeo_ott_webhook.customer_product_free_trial_created where report_date >= '2025-06-01') b
-        ON a.email = b.email and a.report_date = b.report_date
         )
-        SELECT * from vimeo2
+
+        SELECT
+          report_date
+          ,email as user_id
+        from vimeo
+
         UNION ALL
-        SELECT * from chargebee),
+        SELECT
+          report_date
+          ,user_id
+        from chargebee),
 
         customers_analytics as (
         select
@@ -174,6 +172,7 @@ view: daily_spend {
         t1 as (
         -- manually adding spend to historical google adwords record
         select date_start,
+        /*
         case
         when TO_CHAR(DATE_TRUNC('month', date_start), 'YYYY-MM') = '2018-07' then spend+(1440/31)
         when TO_CHAR(DATE_TRUNC('month', date_start), 'YYYY-MM') = '2018-06' then spend+(19000/30)
@@ -184,7 +183,7 @@ view: daily_spend {
         when TO_CHAR(DATE_TRUNC('month', date_start ), 'YYYY-MM') = '2018-01' then spend+(21570/31)
         when date(date_start) between timestamp '2018-08-11' and timestamp '2018-09-08' then spend+((288.37+87.27)/28)
         else spend
-        end as spend,
+        end as */spend,
         impressions,
         clicks,
         installs,
@@ -230,7 +229,7 @@ view: daily_spend {
 
         )
         select * from outer_query   ;;
-      sql_trigger_value: SELECT TO_CHAR(DATEADD(minute, -555, GETDATE()), 'YYYY-MM-DD');;
+      sql_trigger_value: SELECT TO_CHAR(DATEADD(minute, -655, GETDATE()), 'YYYY-MM-DD');;
       #sql_trigger_value:  SELECT TO_CHAR(DATE_TRUNC('day', CURRENT_TIMESTAMP) + INTERVAL '9 hours 45 minutes', 'YYYY-MM-DD');;
       distribution: "date_start"
       sortkeys: ["date_start"]
