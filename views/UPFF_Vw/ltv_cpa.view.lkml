@@ -2,7 +2,7 @@ view: ltv_cpa {
   derived_table: {
     sql: , v2_table AS (
   SELECT *
-  FROM ${UPFF_analytics_Vw.SQL_TABLE_NAME}
+  FROM ${UPFF_analytics_Vw_v2.SQL_TABLE_NAME}
   where report_date >= '2025-12-30'
   ),
   cancelled_user as (
