@@ -86,8 +86,8 @@ result as (
     ,a.platform
     ,a.billing_period
     ,a.report_date
-  FROM rolling_churn a
-  LEFT JOIN prior_subs b
+  FROM prior_subs b
+  LEFT JOIN rolling_churn a
   ON a.report_date = b.report_date and a.platform = b.platform and a.billing_period = b.billing_period
 ),
 
