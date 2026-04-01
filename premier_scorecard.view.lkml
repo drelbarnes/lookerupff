@@ -1577,7 +1577,8 @@ view: premier_scorecard {
       SELECT DATE '2026-02-10', 478821 UNION ALL
       SELECT DATE '2026-02-17', 478197 UNION ALL
       SELECT DATE '2026-03-10', 468432 UNION ALL
-      SELECT DATE '2026-03-17', 470000
+      SELECT DATE '2026-03-17', 470000 UNION ALL
+      SELECT DATE '2026-03-24', 470000
       ),
 
       upff_premier_titles AS
@@ -1686,7 +1687,8 @@ view: premier_scorecard {
       SELECT "Where the Wind Blows" UNION ALL
       SELECT "Who Gets The Dog" UNION ALL
       SELECT "Forgiveness Girl" UNION ALL
-      SELECT "Sugarhouse"
+      SELECT "Sugarhouse" UNION ALL
+      SELECT "A Father's Fight: Director's Cut"
       ),
 
       upff_premier_completion_rates AS
@@ -1795,7 +1797,8 @@ view: premier_scorecard {
       SELECT "Where the Wind Blows", 0.74 UNION ALL
       SELECT "Who Gets The Dog", 0.65 UNION ALL
       SELECT "Forgiveness Girl", 0.77 UNION ALL
-      SELECT "Sugarhouse", 0.68
+      SELECT "Sugarhouse", 0.68 UNION ALL
+      SELECT "A Father's Fight: Director's Cut", 0.71
       ),
 
       upff_premier_dates AS
@@ -1904,7 +1907,8 @@ view: premier_scorecard {
       SELECT "Where the Wind Blows", DATE '2026-02-10' UNION ALL
       SELECT "Who Gets The Dog", DATE '2026-02-17' UNION ALL
       SELECT "Forgivness Girl", DATE '2026-03-10' UNION ALL
-      SELECT "Sugarhouse", DATE '2026-03-17'
+      SELECT "Sugarhouse", DATE '2026-03-17' UNION ALL
+      SELECT "A Father's Fight: Director's Cut", DATE '2026-03-24'
       ),
 
       upff_subscriber_counts AS
