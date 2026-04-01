@@ -1,7 +1,7 @@
 view: converted {
   derived_table: {
     sql:
-    , converted as (
+    with converted as (
       SELECT
         email
         ,subscription_frequency as billing_period
@@ -55,8 +55,6 @@ result2 as (
 )
 select * from result2
       ;;
-    datagroup_trigger: upff_acquisition_v2
-    distribution_style: all
 
   }
   dimension: date {

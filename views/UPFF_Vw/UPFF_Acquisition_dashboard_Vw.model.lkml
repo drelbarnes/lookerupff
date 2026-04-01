@@ -132,6 +132,6 @@ explore: daily_spend {
 
 datagroup: upff_acquisition_v2 {
   description: "Datagroup for UPFF Acquisition PDTs. "
-  sql_trigger: SELECT FLOOR((EXTRACT(epoch from CONVERT_TIMEZONE('UTC','America/New_York', GETDATE())) - 60*60*10.2) / (60*60*24));;
+  sql_trigger: SELECT FLOOR((EXTRACT(epoch from CONVERT_TIMEZONE('UTC','America/New_York', GETDATE())) - 60*60*12.2) / (60*60*24));;
   max_cache_age: "5 minutes"
 }

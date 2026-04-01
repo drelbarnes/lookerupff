@@ -182,8 +182,7 @@ SELECT *
 FROM ranked_emails
 WHERE rn = 1;;
 
-
-    sql_trigger_value: SELECT TO_CHAR(DATEADD(minute, -555, GETDATE()), 'YYYY-MM-DD');;
+sql_trigger_value: SELECT TO_CHAR(DATEADD(minute, -555, GETDATE()), 'YYYY-MM-DD');;
     distribution: "user_id"
     sortkeys: ["user_id"]
   }
