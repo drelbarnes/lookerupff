@@ -1906,7 +1906,7 @@ view: premier_scorecard {
       SELECT "A Country Encore", DATE '2026-01-27' UNION ALL
       SELECT "Where the Wind Blows", DATE '2026-02-10' UNION ALL
       SELECT "Who Gets The Dog", DATE '2026-02-17' UNION ALL
-      SELECT "Forgivness Girl", DATE '2026-03-10' UNION ALL
+      SELECT "Forgiveness Girl", DATE '2026-03-10' UNION ALL
       SELECT "Sugarhouse", DATE '2026-03-17' UNION ALL
       SELECT "A Father's Fight: Director's Cut", DATE '2026-03-24'
       ),
