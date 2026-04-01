@@ -2,7 +2,7 @@ view: churn_gain {
   derived_table: {
     sql:
 
-    ,v2_table AS (
+    with v2_table AS (
   SELECT *
   FROM ${UPFF_analytics_Vw_v2.SQL_TABLE_NAME}
   WHERE report_date >= '2025-06-30'
@@ -223,11 +223,41 @@ view: churn_gain {
       GROUP BY 2,3,4
       ),
 
+      paused as (
+      SELECT
+      DATE(received_at) AS report_date,
+      content_subscription_id::VARCHAR AS user_id,
+      CASE
+      WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'::VARCHAR
+      ELSE 'yearly'::VARCHAR
+      END AS billing_period,
+      'web'::VARCHAR AS platform
+      FROM chargebee_webhook_events.subscription_paused
+      WHERE content_subscription_subscription_items LIKE '%UP%'
+      AND DATE(received_at) >= '2025-07-01'
+      ),
+
+      paused_count AS (
+      SELECT
+      COUNT(DISTINCT user_id) AS user_count,
+      report_date,
+      billing_period,
+      platform
+      FROM paused
+      GROUP BY 2,3,4
+      ),
+
       result AS (
       SELECT
       *,
       'churn'::VARCHAR AS status
       FROM cancelled_user_count
+
+      UNION ALL
+      SELECT
+      *,
+      'paused'::VARCHAR AS status
+      FROM paused_count
 
       UNION ALL
       SELECT
@@ -365,6 +395,12 @@ view: churn_gain {
     type: sum
     sql: ${user_count} ;;
     filters: [status: "churn"]
+  }
+
+  measure:paused_count {
+    type: sum
+    sql: ${user_count} ;;
+    filters: [status: "paused"]
   }
   measure: dunning_count {
     type: sum
