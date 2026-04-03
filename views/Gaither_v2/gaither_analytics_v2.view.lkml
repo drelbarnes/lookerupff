@@ -272,7 +272,7 @@ view: gaither_analytics_v2 {
       ELSE 'No'
       END AS trials_converted
       ,CASE
-      WHEN status in('cancelled','paused') AND LAG(status) OVER (PARTITION BY user_id ORDER BY report_date) ='in_trial'
+      WHEN status in('cancelled','paused','disabled') AND LAG(status) OVER (PARTITION BY user_id ORDER BY report_date) ='in_trial'
       THEN 'Yes'
       ELSE 'No'
       END AS trials_not_converted
@@ -282,7 +282,7 @@ view: gaither_analytics_v2 {
       ELSE 'No'
       END AS re_acquisition
       ,CASE
-      WHEN status in('cancelled','paused') AND LAG(status) OVER (PARTITION BY user_id ORDER BY report_date) ='active'
+      WHEN status in('cancelled','paused','disabled') AND LAG(status) OVER (PARTITION BY user_id ORDER BY report_date) ='active'
       THEN 'Yes'
       ELSE 'No'
       END AS sub_cancelled
@@ -375,6 +375,10 @@ view: gaither_analytics_v2 {
       select *
       from final_join
       ;;
+    sql_trigger_value: SELECT TO_CHAR(DATEADD(minute, -515, GETDATE()), 'YYYY-MM-DD');;
+    #sql_trigger_value:  SELECT TO_CHAR(DATE_TRUNC('day', CURRENT_TIMESTAMP) + INTERVAL '9 hours 45 minutes', 'YYYY-MM-DD');;
+    distribution: "report_date"
+    sortkeys: ["report_date"]
   }
 
   dimension: date {

@@ -1,6 +1,7 @@
 connection: "upff"
 
 include: "/views/UPFF_Vw/UPFF_analytics_Vw.view.lkml"
+include: "/views/UPFF_Vw/UPFF_analytics_Vw_v2.view.lkml"
 include: "/views/UPFF_Vw/rolling.view.lkml"
 include: "/views/UPFF_Vw/configg.view.lkml"
 include: "/views/UPFF_Vw/rolling_platform.view.lkml"
@@ -18,6 +19,18 @@ include: "/views/UPFF_Vw/churn_gain.view.lkml"
 include: "/views/UPFF_Vw/vimeo_webhook.view.lkml"
 include: "/views/UPFF_Vw/chargebee_webhook.view.lkml"
 include: "/views/UPFF_Vw/post_trial_refund.view.lkml"
+include: "/views/UPFF_Vw/roku.view.lkml"
+include: "/views/UPFF_Vw/paused.view.lkml"
+include: "/views/UPFF_Vw/churn.view.lkml"
+include: "/views/UPFF_Vw/ltv_cpa.view.lkml"
+include: "/views/UPFF_Vw/watch_time.view.lkml"
+include: "/views/UPFF_Vw/monthly_report.view.lkml"
+include: "/views/UPFF_Vw/daily_spend.view.lkml"
+include: "/views/UPFF_Vw/trial_converted.view.lkml"
+include: "/views/UPFF_Vw/watch_time_average.view.lkml"
+include: "/views/UPFF_Vw/paused_dates.view.lkml"
+
+
 
 explore: UPFF_analytics_Vw {
   label: "UPFF_analytics_Vw"
@@ -83,4 +96,42 @@ explore: churn_gain {
 
 explore: post_trial_refund {
   label: "UPFF Post Trial Refund"
+}
+
+explore: paused {
+  label: "UPFF Subscription Paused Data"
+}
+
+explore: paused_dates {
+  label: "UPFF Subscription Paused Data2"
+}
+
+explore: ltv_cpa {
+  label: "UPFF V2 LTV CPA"
+}
+
+explore: watch_time {
+  label: "UPFF watch_duration"
+}
+
+explore: watch_time_average {
+  label: "UPFF average watch duration"
+}
+
+explore: churn {
+  label: "UPFF churn test"
+}
+
+explore: monthly_report {
+  label: "UPFF monthly report"
+}
+
+explore: daily_spend {
+  label: "UPFF daily spend v2"
+}
+
+datagroup: upff_acquisition_v2 {
+  description: "Datagroup for UPFF Acquisition PDTs. "
+  sql_trigger: SELECT FLOOR((EXTRACT(epoch from CONVERT_TIMEZONE('UTC','America/New_York', GETDATE())) - 60*60*12.2) / (60*60*24));;
+  max_cache_age: "5 minutes"
 }

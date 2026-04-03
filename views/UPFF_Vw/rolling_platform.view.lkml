@@ -1,30 +1,34 @@
 view: rolling_platform {
   derived_table: {
     sql:
-       WITH
+
 -- 1) Base filtered table
-v2_table AS (
+,v2_table AS (
   SELECT *
-  FROM ${UPFF_analytics_Vw.SQL_TABLE_NAME}
+  FROM ${UPFF_analytics_Vw_v2.SQL_TABLE_NAME}
   WHERE report_date >= '2025-06-30'
 ),
 
       -- 2) Chargebee cancellations -> treat as 'web' platform (adjust if you prefer a different label)
       user_cancelled_counts2 AS (
-      SELECT
-      DATE("timestamp") AS report_date,
-      content_subscription_id::VARCHAR AS user_id,
-      CASE
-      WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'::VARCHAR
-      ELSE 'yearly'::VARCHAR
-      END AS billing_period
-      ,DATE_TRUNC('month', report_date) AS month_start
-      ,'web' as platform
-      FROM chargebee_webhook_events.subscription_cancelled
-      WHERE
-      ((content_subscription_cancel_reason_code not in ('Not Paid', 'No Card', 'Fraud Review Failed', 'Non Compliant EU Customer', 'Tax Calculation Failed', 'Currency incompatible with Gateway', 'Non Compliant Customer') and  (content_subscription_cancelled_at - content_subscription_trial_end) > 10000)  or content_subscription_cancel_reason_code is null or (content_subscription_cancel_reason_code in ('Not Paid', 'No Card', 'Fraud Review Failed', 'Non Compliant EU Customer', 'Tax Calculation Failed', 'Currency incompatible with Gateway', 'Non Compliant Customer') and (content_subscription_cancelled_at - content_subscription_activated_at) > 2000800))
-      AND content_subscription_subscription_items LIKE '%UP%'
 
+ SELECT
+        content_subscription_id::VARCHAR AS user_id,
+        CASE
+        WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'::VARCHAR
+        ELSE 'yearly'::VARCHAR
+        END AS billing_period,
+        DATE("timestamp") AS report_date,
+        DATE_TRUNC('month', report_date) AS month_start,
+
+        'web'::VARCHAR AS platform
+        FROM chargebee_webhook_events.subscription_cancelled
+        WHERE
+        (
+        --(content_subscription_cancel_reason_code not in ('Not Paid', 'No Card', 'Fraud Review Failed', 'Non Compliant EU Customer', 'Tax Calculation Failed', 'Currency incompatible with Gateway', 'Non Compliant Customer') and
+        (content_subscription_cancelled_at - content_subscription_activated_at) > 10000)
+        --or content_subscription_cancel_reason_code is null)
+        AND content_subscription_subscription_items LIKE '%UP%'
       ),
 
       -- 33) Non-Chargebee users with platform/billing info (to enrich VM webhook expirations)
@@ -45,6 +49,15 @@ v2_table AS (
       CAST(user_id AS VARCHAR)           AS user_id,
       DATE_TRUNC('month', timestamp)     AS month_start
       FROM vimeo_ott_webhook.customer_product_expired
+      WHERE DATE(timestamp) >= '2025-07-01'
+
+      UNION ALL
+
+      SELECT
+      DATE(timestamp)                    AS report_date,
+      CAST(user_id AS VARCHAR)           AS user_id,
+      DATE_TRUNC('month', timestamp)     AS month_start
+      FROM vimeo_ott_webhook.customer_product_disabled
       WHERE DATE(timestamp) >= '2025-07-01'
       ),
 
@@ -86,7 +99,7 @@ v2_table AS (
       ),
 
       -- 8) iOS paid subs (source of truth for iOS only)
-      new_apple AS (
+      new_apple0 AS (
       SELECT *
       FROM ${ios.SQL_TABLE_NAME}
       ),
@@ -97,8 +110,8 @@ v2_table AS (
       a.report_date,
       a.paid_subscribers AS total_paid_subs_monthly,
       b.paid_subscribers AS total_paid_subs_yearly
-      FROM (SELECT * FROM new_apple WHERE billing_period = 'monthly') a
-      LEFT JOIN (SELECT * FROM new_apple WHERE billing_period = 'yearly') b
+      FROM (SELECT * FROM new_apple0 WHERE billing_period = 'monthly') a
+      LEFT JOIN (SELECT * FROM new_apple0 WHERE billing_period = 'yearly') b
       ON a.report_date = b.report_date
       ),
 
@@ -175,6 +188,10 @@ v2_table AS (
       FROM result
       ORDER BY report_date, platform;;
 
+    sql_trigger_value: SELECT TO_CHAR(DATEADD(minute, -555, GETDATE()), 'YYYY-MM-DD');;
+    #sql_trigger_value:  SELECT TO_CHAR(DATE_TRUNC('day', CURRENT_TIMESTAMP) + INTERVAL '9 hours 45 minutes', 'YYYY-MM-DD');;
+    distribution: "report_date"
+    sortkeys: ["report_date"]
   }
 
   dimension: date {

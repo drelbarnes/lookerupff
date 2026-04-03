@@ -42,7 +42,7 @@ SELECT
       customer_id as user_id
       ,customer_first_name as first_name
       ,customer_last_name as last_name
-      ,customer_email::VARCHAR as email
+      ,lower(customer_email)::VARCHAR as email
       ,customer_cs_marketing_opt_in as marketing_opt_in
       ,CASE
         WHEN subscription_status = 'in_trial' THEN 'free_trial'
@@ -73,7 +73,7 @@ web_user as (
     ,b.*
     FROM vimeo_info a
     LEFT JOIN chargebee b
-    ON a.email= b.email
+    ON lower(a.email)= lower(b.email)
     WHERE a.platform = 'api'
 ),
 
@@ -182,8 +182,7 @@ SELECT *
 FROM ranked_emails
 WHERE rn = 1;;
 
-
-    sql_trigger_value: SELECT TO_CHAR(DATEADD(minute, -555, GETDATE()), 'YYYY-MM-DD');;
+sql_trigger_value: SELECT TO_CHAR(DATEADD(minute, -555, GETDATE()), 'YYYY-MM-DD');;
     distribution: "user_id"
     sortkeys: ["user_id"]
   }

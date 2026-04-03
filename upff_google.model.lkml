@@ -227,6 +227,7 @@ include: "premier_scorecard.view.lkml"
 include: "csat_survey.view.lkml"
 include: "csat_analytics.view.lkml"
 include: "csat_tables.view.lkml"
+include: "csat_tickets.view.lkml"
 
 include: "/views/uptv_web/uptv_page_events.view.lkml"
 include: "/views/uptv_web/uptv_web_sessions.view.lkml"
@@ -267,7 +268,7 @@ include: "/views/bigquery_views/radiant_reporting.view.lkml"
 # Chargebee #
 
 include: "/views/Chargebee/chargebee_subscriptions.view.lkml"
-
+include: "/google_organic_search.view.lkml"
 # Datagroups for PDT Triggers #
 
 datagroup: upff_daily_refresh_datagroup {
@@ -297,7 +298,9 @@ datagroup: chargebee_reporting {
 # explore: chargebee_analytics {
 #   label: "Chargebee Analytics"
 # }
-
+explore: google_organic_search {
+  label: "Google Organic Search"
+}
 explore: chargebee_subscriptions {
   label: "Chargebee Subscriptions"
 }
@@ -504,6 +507,10 @@ explore: csat_tables {
   label: "CSAT Tables"
 }
 
+explore: csat_tickets {
+  label: "CSAT Tickets"
+}
+
 explore: search_and_discovery2 {
   label: "Results"
 }
@@ -609,12 +616,9 @@ explore: upff_android_attribution {
 }
 
 explore: upff_multi_platform_attribution {
-  label: "UPFF Multi Platform Attribution"
-  join: upff_web_sessions {
-    type: left_outer
-    sql_on: ${upff_multi_platform_attribution.session_id} = ${upff_web_sessions.session_id} ;;
-    relationship: many_to_many
-  }
+  label: "UPFF Multi Platform Attribution2"
+
+
 }
 
 explore: customer_record {

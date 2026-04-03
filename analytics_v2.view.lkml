@@ -53,7 +53,7 @@ view: analytics_v2 {
                 else 'v1'
               end as report_version
             from php.get_analytics
-            where date(sent_at)=current_date
+            where date(sent_at)=current_date -1
           )
           select
           analytics_timestamp as "timestamp"

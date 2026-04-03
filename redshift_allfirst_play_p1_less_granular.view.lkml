@@ -106,6 +106,8 @@ view: redshift_allfirst_play_p1_less_granular {
                 , title
                 , source
                 , episode
+                , timecode
+                , duration
               FROM ${redshift_allfirst_play_p0.SQL_TABLE_NAME}
               WHERE user_id <> '0'
               AND user_id ~ '^[0-9]*$'
@@ -126,6 +128,8 @@ view: redshift_allfirst_play_p1_less_granular {
                 , title
                 , source
                 , episode
+                , timecode
+                , duration
               FROM play_data_global
               ),
 
@@ -143,7 +147,9 @@ view: redshift_allfirst_play_p1_less_granular {
               plays_less_granular AS
               (
               SELECT
-                a.*, ROW_NUMBER() OVER (PARTITION BY a.user_id ORDER BY a.ts) AS play_number
+                a.*
+                , ROW_NUMBER() OVER (PARTITION BY a.user_id ORDER BY a.ts) AS play_number
+                , ROUND(NULLIF(timecode, 0)::decimal / NULLIF(duration, 0), 2) AS completion_rate
               FROM plays_most_granular as a
               INNER JOIN plays_max_duration as b
               ON a.user_id = b.user_id
@@ -219,6 +225,18 @@ view: redshift_allfirst_play_p1_less_granular {
       type: number
       sql: ${TABLE}.play_number ;;
     }
+
+  dimension: completion_rate {
+    type: number
+    sql: ${TABLE}.completion_rate ;;
+  }
+
+  measure: avg_completion_rate {
+    label: "Average Completion Rate"
+    type: average
+    sql: ${completion_rate} ;;
+    value_format_name: "percent_2"
+  }
 
     set: detail {
       fields: [

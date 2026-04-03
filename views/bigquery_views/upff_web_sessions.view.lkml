@@ -38,6 +38,7 @@ view: upff_web_sessions {
         with first_values as (
           select
           session_id
+          , first_value(event) over (partition by session_id order by event_number) as event
           , first_value(anonymous_id) over (partition by session_id order by event_number) as anonymous_id
           , first_value(ip_address) over (partition by session_id order by event_number) as ip_address
           , first_value(user_agent) over (partition by session_id order by event_number) as user_agent
@@ -53,7 +54,7 @@ view: upff_web_sessions {
             end as bounce
           from page_events
         )
-        select * from first_values group by 1,2,3,4,5,6,7,8,9,10,11
+        select * from first_values group by 1,2,3,4,5,6,7,8,9,10,11,12
       )
       , sessions_p1 as (
         with sessions_utm_values as (
@@ -178,6 +179,7 @@ view: upff_web_sessions {
       , sessions_final as (
         select
         a.session_id
+        ,a.event
         , a.event_id
         , a.anonymous_id
         , a.ip_address
@@ -215,7 +217,7 @@ view: upff_web_sessions {
         left join sessions_p4 e on a.session_id = e.session_id
         left join sessions_p5 f on a.session_id = f.session_id
         left join sessions_p6 g on a.session_id = g.session_id
-        group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+        group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32
       )
       select * from sessions_final where session_id is not null ;;
     datagroup_trigger: upff_daily_refresh_datagroup
@@ -230,6 +232,11 @@ view: upff_web_sessions {
   dimension: anonymous_id {
     type: string
     sql: ${TABLE}.anonymous_id ;;
+  }
+
+  dimension: event {
+    type: string
+    sql: ${TABLE}.event ;;
   }
 
   dimension: ip_address {

@@ -1,7 +1,9 @@
 view: sub_count {
   derived_table: {
     sql:
-    WITH active as(
+    --https://uptv.looker.com/looks/860
+
+    ,active as(
       SELECT
         report_date
         ,user_id
@@ -10,7 +12,7 @@ view: sub_count {
           ELSE platform
         END AS platform
         ,billing_period
-      FROM ${UPFF_analytics_Vw.SQL_TABLE_NAME}
+      FROM ${UPFF_analytics_Vw_v2.SQL_TABLE_NAME}
       WHERE status in ( 'active','non_renewing','enabled')
         ),
 
@@ -27,14 +29,14 @@ view: sub_count {
       SELECT * FROM ${ios.SQL_TABLE_NAME}
       ),
 
-      active_count as (
+      active_count_pre as (
       SELECT
       count(distinct user_id) as user_count
       ,report_date
       ,platform
       ,billing_period
       FROM active
-      WHERE platform != 'ios'
+      WHERE platform not in ('ios')
       GROUP BY 2,3,4
 
       UNION ALL
@@ -43,9 +45,92 @@ view: sub_count {
       paid_subscribers as user_count
       ,report_date
       ,'ios' as platform
-      ,billing_period
+      , billing_period
       FROM active_ios
 
+
+      ),
+
+      /*
+      active_count as (
+      SELECT
+        user_count
+        ,report_date
+        ,platform
+        ,billing_period
+      from active_count_pre
+      where platform != 'roku'
+
+      UNION ALL
+
+      SELECT
+  CASE
+    WHEN report_date = '2026-01-22' THEN user_count + 846 + 6600 - 66
+    WHEN report_date = '2026-01-23' THEN user_count + 846 + 1150 + 6600 - 81
+    WHEN report_date = '2026-01-24' THEN user_count + 846  + 630 + 6600 - 87
+    WHEN report_date = '2026-01-25' THEN user_count + 846 + 961 + 380 + 6600 - 88
+    WHEN report_date = '2026-01-26' THEN user_count + 9400
+    WHEN report_date = '2026-01-27' THEN user_count + 9400 - 188
+    WHEN report_date = '2026-01-28' THEN user_count + 9400 - 236
+    WHEN report_date = '2026-01-29' THEN user_count + 9400 - 544
+    WHEN report_date = '2026-01-30' THEN user_count + 9400 - 589
+    WHEN report_date = '2026-01-31' THEN user_count + 9400 - 632
+    WHEN report_date = '2026-02-01' THEN user_count + 9400 - 665
+    WHEN report_date = '2026-02-02' THEN user_count + 9400 - 665
+    WHEN report_date = '2026-02-03' THEN user_count + 9400 - 665
+    WHEN report_date >= '2026-02-04' THEN user_count + 7000 - 665
+    ELSE user_count --+ 6600
+  END AS user_count
+        ,report_date
+        ,platform
+        ,billing_period
+      from active_count_pre
+      where platform = 'roku' and billing_period = 'monthly'
+
+      UNION ALL
+
+      SELECT
+        CASE
+          WHEN report_date = '2026-01-22' THEN user_count + 290 + 400
+          WHEN report_date = '2026-01-23' THEN user_count + 290+ 418 + 400
+          WHEN report_date = '2026-01-24' THEN user_count + 290+ 418+ 330 + 400
+          WHEN report_date = '2026-01-25' THEN user_count + 290+ 418+ 330 + 130 + 400
+          ELSE user_count --+ 400
+        END as user_count
+        ,report_date
+        ,platform
+        ,billing_period
+      from active_count_pre
+      where platform = 'roku' and billing_period = 'yearly'
+      ), */
+      active_count as (
+      SELECT
+        user_count
+        ,report_date
+        ,platform
+        ,billing_period
+      from active_count_pre
+      where platform != 'roku'
+
+      UNION ALL
+
+      SELECT
+        user_count + 6700 as user_count
+        ,report_date
+        ,platform
+        ,billing_period
+      from active_count_pre
+      where platform = 'roku' and billing_period = 'monthly'
+
+      UNION ALL
+
+      SELECT
+        user_count + 2300 as user_count
+        ,report_date
+        ,platform
+        ,billing_period
+      from active_count_pre
+      where platform = 'roku' and billing_period = 'yearly'
       ),
 
       trial_count as (
@@ -181,7 +266,11 @@ view: sub_count {
       SELECT *,
       'AzZmVjUuQo25N2MFb'::VARCHAR as user_id
       FROM result
+
+
       ;;
+    datagroup_trigger: upff_acquisition_v2
+    distribution_style: all
   }
   dimension: date {
     type: date
@@ -189,7 +278,7 @@ view: sub_count {
   }
   dimension_group: report_date {
     type: time
-    timeframes: [date, week]
+    timeframes: [date, week,month]
     sql: ${TABLE}.report_date ;;
     convert_tz: yes  # Adjust for timezone conversion if needed
   }
@@ -205,9 +294,9 @@ view: sub_count {
   }
 
   dimension: user_id {
-    type: string
-    sql: ${TABLE}.user_id ;;
+    type: number
     tags: ["user_id"]
+    sql: 1 ;;
   }
 
   dimension: status {

@@ -1,8 +1,37 @@
 view: bigquery_allfirstplay {
   derived_table: {
     sql:
-
-select * from allfirstplay.p0
+with result as (
+ select user_id,
+      anonymous_id,
+      event_type,
+      timestamp,
+      EPOCH_TIMESTAMP,
+      platform_id,
+      release_date,
+      end_date,
+      days_since_release,
+      CASE
+        WHEN title = 'Season 19 Finale: 1910 - Forgiveness' THEN 'Heartland - Season 19'
+        ELSE collection
+      end as collection,
+      CASE
+        WHEN title = 'Season 19 Finale: 1910 - Forgiveness' THEN 'series'
+        ELSE type
+      END AS type,
+      video_id,
+      series,
+      title,
+      source,
+      episode,
+      email,
+      tv_cast,
+      promotion,
+      winback,
+      Quarter
+      from allfirstplay.p0
+)
+select * from result
 
 ;;
 

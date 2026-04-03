@@ -42,20 +42,48 @@ INNER JOIN g ON ads.ad_group_id = g.ad_group_id
 
 
 ),
+free_trial as (with chargebee as (
+      SELECT
+        content_subscription_id as user_id
+        ,CASE
+          WHEN content_subscription_billing_period_unit ='month' THEN 'monthly'
+          ELSE 'yearly'
+        END AS billing_period
+        ,'web' as platform
+        ,date(DATEADD(HOUR, -4, received_at)) as report_date
+      FROM chargebee_webhook_events.subscription_created
+      WHERE report_date >= '2025-06-01'
+      AND content_subscription_subscription_items like '%UP%'
+    ),
+
+    vimeo as (
+      SELECT distinct
+        email
+        ,date(event_occurred_at) as report_date
+        ,subscription_frequency as billing_period
+        FROM customers.new_customers
+        WHERE event_type = 'New Free Trial' and report_date >='2025-06-01'
+      ),
+    vimeo2 as (
+      SELECT
+        a.email as user_id
+        ,a.billing_period
+        ,b.platform
+        ,a.report_date
+      FROM vimeo a
+      LEFT JOIN (SELECT email, platform, date(timestamp) as report_date FROM vimeo_ott_webhook.customer_product_free_trial_created where report_date >= '2025-06-01') b
+      ON a.email = b.email and a.report_date = b.report_date
+      )
+    SELECT * from vimeo2
+    UNION ALL
+    SELECT * from chargebee),
+
      customers_analytics as (
         select
-        "timestamp",
-        existing_free_trials,
-        existing_paying,
-        free_trial_churn,
-        free_trial_converted,
-        free_trial_created,
-        paused_created,
-        paying_churn,
-        paying_created,
-        total_free_trials,
-        total_paying
-        from ${analytics_v2.SQL_TABLE_NAME}
+        report_date,
+        count(user_id) as free_trial_created
+        from free_trial
+        group by 1
       ),
 
 
@@ -193,14 +221,12 @@ INNER JOIN g ON ads.ad_group_id = g.ad_group_id
       select
       date_start,
       free_trial_created,
-      paying_created,
-      free_trial_created+paying_created as total_conversions,
        channel,
       spend
       from t1
       inner join customers_analytics
-      on date(date_start) = timestamp
-      group by 1,2,3,4,5,6
+      on date(date_start) =report_date
+      group by 1,2,3,4
 
       )
       select * from outer_query   ;;

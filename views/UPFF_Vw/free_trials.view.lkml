@@ -36,6 +36,10 @@ view: free_trials {
     SELECT * from vimeo2
     UNION ALL
     SELECT * from chargebee;;
+    sql_trigger_value: SELECT TO_CHAR(DATEADD(minute, -500, GETDATE()), 'YYYY-MM-DD');;
+    #sql_trigger_value:  SELECT TO_CHAR(DATE_TRUNC('day', CURRENT_TIMESTAMP) + INTERVAL '9 hours 45 minutes', 'YYYY-MM-DD');;
+    distribution: "report_date"
+    sortkeys: ["report_date"]
 
   }
   dimension: date {
@@ -104,7 +108,7 @@ view: free_trials {
   measure: free_trials_fire_tablet {
     type: count_distinct
     sql: ${TABLE}.user_id ;;
-    filters: [platform: "amazon_fire_tv"]
+    filters: [platform: "amazon_fire_tablet"]
   }
 
   measure: free_trials_roku {

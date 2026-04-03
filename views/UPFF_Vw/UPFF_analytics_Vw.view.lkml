@@ -488,14 +488,6 @@ chargebee_subscriptions as (
       ;;
 
 
-    # Option 1: Time-based rebuild
-    #persist_for: "2 hours"
-
-    # Option 2 (Redshift-friendly): Rebuild based on table update timestamp
-    sql_trigger_value: SELECT TO_CHAR(DATEADD(minute, -555, GETDATE()), 'YYYY-MM-DD');;
-    #sql_trigger_value:  SELECT TO_CHAR(DATE_TRUNC('day', CURRENT_TIMESTAMP) + INTERVAL '9 hours 45 minutes', 'YYYY-MM-DD');;
-    distribution: "user_id"
-    sortkeys: ["user_id"]
 
   }
 

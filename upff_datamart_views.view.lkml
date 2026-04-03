@@ -24,6 +24,9 @@
                 , type
                 , source AS platform
                 , min_count
+                , duration
+                , timecode
+                , completion_rate
               FROM plays_less_granular
               )
 
@@ -100,6 +103,22 @@
     dimension: min_count {
       type: number
       sql: ${TABLE}.min_count ;;
+    }
+
+    dimension: timecode {
+      type: number
+      sql: ${TABLE}.timecode ;;
+    }
+
+    dimension: duration {
+      type: number
+      sql: ${TABLE}.duration ;;
+    }
+
+    dimension: completion_rate {
+      type: number
+      sql: ${TABLE}.completion_rate ;;
+      value_format: "0.00"
     }
 
     set: detail {

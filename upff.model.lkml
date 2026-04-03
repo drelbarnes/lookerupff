@@ -75,11 +75,17 @@ include: "/video_views.view.lkml"
 include: "/Gaither_page_views.view.lkml"
 include: "/gaither_segment_consent.view.lkml"
 include: "/views/up_airtable_reports.view.lkml"
+include: "/Vimeo_OTT/vimeo_ott_all_customers.view.lkml"
 include: "/views/social_daily_snapshot.view.lkml"
 include: "/dashboards/social_performance.dashboard.lookml"
 
 explore: social_daily_snapshot {
   label: "Social Daily Snapshot"
+}
+
+explore: vimeo_ott_all_customers {
+  label: "Vimeo OTT – All Customers"
+  description: "Explore UP Faith & Family All Customer dataset"
 }
 
 explore: up_airtable_reports {

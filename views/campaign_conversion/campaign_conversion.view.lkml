@@ -17,6 +17,7 @@ view: campaign_conversion {
 
   trial_created as (
   SELECT
+  distinct
     user_id
     ,context_ip
     ,date(timestamp) as report_date
@@ -33,6 +34,9 @@ view: campaign_conversion {
     ,user_id
   FROM chargebee_webhook_events.subscription_activated
   WHERE content_subscription_subscription_items like '%UP%'
+    {% if start_date._parameter_value != "NULL" %}
+    AND DATE(received_at) >= {% parameter start_date %}
+    {% endif %}
   ),
 
   not_converted as (
@@ -42,10 +46,14 @@ view: campaign_conversion {
       FROM chargebee_webhook_events.subscription_cancelled
       WHERE (content_subscription_cancelled_at - content_subscription_trial_end) < 10000
       AND content_subscription_subscription_items LIKE '%UP%'
+    {% if start_date._parameter_value != "NULL" %}
+    AND DATE(timestamp) >= {% parameter start_date %}
+    {% endif %}
   ),
 
   join_data as (
   SELECT
+  distinct
     a.user_id
     ,a.context_ip
     ,a.report_date as trial_start_date
@@ -59,21 +67,7 @@ view: campaign_conversion {
     ON a.user_id = b.user_id
     LEFT JOIN not_converted c
     ON a.user_id = c.user_id
-
-    UNION ALL
-
-    select
-        distinct
-        user_id
-        ,context_ip
-        ,date(timestamp) as trial_start_date
-        ,'Resubscribed' as has_converted
-      from javascript_upentertainment_checkout.pages where context_page_path like '%welcome/confirmation_resubscribe/upfaithandfamily%'
-      {% if start_date._parameter_value != "NULL" %}
-    AND date(timestamp) >= {% parameter start_date %}
-    {% endif %}
   ),
-
 
 result as (
   SELECT
@@ -87,10 +81,10 @@ result as (
   ON mp.context_ip = jd.context_ip
   and mp.report_date <= jd.trial_start_date
   QUALIFY ROW_NUMBER() OVER (
-    PARTITION BY jd.context_ip
+    PARTITION BY jd.user_id, jd.trial_start_date
     ORDER BY
-    CASE WHEN mp.campaign_name IS NULL THEN 1 ELSE 0 END,
-    mp.report_date DESC
+      CASE WHEN mp.campaign_name IS NULL THEN 1 ELSE 0 END,
+      mp.report_date DESC
   ) = 1
   ),
 
@@ -136,51 +130,23 @@ SELECT
 
   WHERE has_converted = 'Yes'
   GROUP BY 2,3,4
-),
-resubscribed_count as (
-SELECT
-    COUNT(DISTINCT user_id) as resubscribed_count
-    ,campaign_source
-    ,campaign_name
-    ,campaign_medium
-  FROM result
-
-  WHERE has_converted = 'Resubscribed'
-  GROUP BY 2,3,4
 )
-
-
 
 SELECT
   vc.visit_count
   ,tc.trial_started_count
   ,itc.in_trial_count
   ,cc.converted_count
-  ,rc.resubscribed_count
   ,vc.campaign_source
   ,vc.campaign_name
   ,vc.campaign_medium
 FROM visit_count vc
 LEFT JOIN trial_count tc
-  ON vc.campaign_source = tc.campaign_source
- AND vc.campaign_name   = tc.campaign_name
- AND COALESCE(vc.campaign_medium,'(none)') = COALESCE(tc.campaign_medium,'(none)')
-
+ON vc.campaign_name = tc.campaign_name and vc.campaign_source = tc.campaign_source AND vc.campaign_medium = tc.campaign_medium
 LEFT JOIN in_trial_count itc
-  ON vc.campaign_source = itc.campaign_source
- AND vc.campaign_name   = itc.campaign_name
- AND COALESCE(vc.campaign_medium,'(none)') = COALESCE(itc.campaign_medium,'(none)')
-
+ON vc.campaign_name = itc.campaign_name and vc.campaign_source = itc.campaign_source AND vc.campaign_medium = itc.campaign_medium
 LEFT JOIN converted_count cc
-  ON vc.campaign_source = cc.campaign_source
- AND vc.campaign_name   = cc.campaign_name
- AND COALESCE(vc.campaign_medium,'(none)') = COALESCE(cc.campaign_medium,'(none)')
-
-LEFT JOIN resubscribed_count rc
-  ON vc.campaign_source = rc.campaign_source
- AND vc.campaign_name   = rc.campaign_name
- AND COALESCE(rc.campaign_medium,'(none)') = COALESCE(rc.campaign_medium,'(none)')
-
+ON vc.campaign_name = cc.campaign_name and vc.campaign_source = cc.campaign_source AND vc.campaign_medium = cc.campaign_medium
   ;;
  }
 
@@ -222,12 +188,6 @@ LEFT JOIN resubscribed_count rc
     type: number
     sql: ${TABLE}.converted_count ;;
   }
-
-  dimension: resubscribed_count {
-    type: number
-    sql: ${TABLE}.resubscribed_count ;;
-  }
-
   measure: total_visits {
     type: sum
     sql: ${visit_count} ;;
@@ -249,12 +209,6 @@ LEFT JOIN resubscribed_count rc
   measure: total_converted {
     type: sum
     sql: ${converted_count} ;;
-    value_format_name: decimal_0
-  }
-
-  measure: total_resubsrcribed{
-    type: sum
-    sql: ${resubscribed_count};;
     value_format_name: decimal_0
   }
 

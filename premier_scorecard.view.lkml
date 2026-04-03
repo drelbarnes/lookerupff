@@ -1490,7 +1490,7 @@ view: premier_scorecard {
       SELECT DATE '2025-09-06', 389410 UNION ALL
       SELECT DATE '2025-09-07', 389667 UNION ALL
       SELECT DATE '2025-09-08', 389878 UNION ALL
-      SELECT DATE '2025-09-09', 389765 UNION ALL
+      SELECT DATE '2025-09-09', 417156 UNION ALL
       SELECT DATE '2025-09-10', 389650 UNION ALL
       SELECT DATE '2025-09-11', 389431 UNION ALL
       SELECT DATE '2025-09-12', 389139 UNION ALL
@@ -1504,7 +1504,7 @@ view: premier_scorecard {
       SELECT DATE '2025-09-20', 400000 UNION ALL
       SELECT DATE '2025-09-21', 400000 UNION ALL
       SELECT DATE '2025-09-22', 400000 UNION ALL
-      SELECT DATE '2025-09-23', 400000 UNION ALL
+      SELECT DATE '2025-09-23', 416743 UNION ALL
       SELECT DATE '2025-09-24', 400000 UNION ALL
       SELECT DATE '2025-09-25', 400000 UNION ALL
       SELECT DATE '2025-09-26', 400000 UNION ALL
@@ -1546,22 +1546,39 @@ view: premier_scorecard {
       SELECT DATE '2025-11-01', 400000 UNION ALL
       SELECT DATE '2025-11-02', 400000 UNION ALL
       SELECT DATE '2025-11-03', 400000 UNION ALL
-      SELECT DATE '2025-11-04', 400000 UNION ALL
+      SELECT DATE '2025-11-04', 413466 UNION ALL
       SELECT DATE '2025-11-05', 400000 UNION ALL
       SELECT DATE '2025-11-06', 400000 UNION ALL
       SELECT DATE '2025-11-07', 400000 UNION ALL
       SELECT DATE '2025-11-08', 400000 UNION ALL
       SELECT DATE '2025-11-09', 400000 UNION ALL
       SELECT DATE '2025-11-10', 400000 UNION ALL
-      SELECT DATE '2025-11-11', 400000 UNION ALL
+      SELECT DATE '2025-11-11', 425861 UNION ALL
       SELECT DATE '2025-11-12', 400000 UNION ALL
       SELECT DATE '2025-11-13', 400000 UNION ALL
       SELECT DATE '2025-11-14', 400000 UNION ALL
       SELECT DATE '2025-11-15', 400000 UNION ALL
       SELECT DATE '2025-11-16', 400000 UNION ALL
       SELECT DATE '2025-11-17', 400000 UNION ALL
-      SELECT DATE '2025-11-18', 400000 UNION ALL
-      SELECT DATE '2025-11-19', 400000
+      SELECT DATE '2025-11-18', 430426 UNION ALL
+      SELECT DATE '2025-11-19', 400000 UNION ALL
+      SELECT DATE '2025-11-20', 400000 UNION ALL
+      SELECT DATE '2025-11-21', 400000 UNION ALL
+      SELECT DATE '2025-11-22', 400000 UNION ALL
+      SELECT DATE '2025-11-23', 400000 UNION ALL
+      SELECT DATE '2025-11-24', 400000 UNION ALL
+      SELECT DATE '2025-11-25', 436701 UNION ALL
+      SELECT DATE '2025-12-02', 443155 UNION ALL
+      SELECT DATE '2025-12-09', 448440 UNION ALL
+      SELECT DATE '2025-12-16', 451769 UNION ALL
+      SELECT DATE '2025-12-23', 455429 UNION ALL
+      SELECT DATE '2025-12-30', 459993 UNION ALL
+      SELECT DATE '2026-01-27', 468818 UNION ALL
+      SELECT DATE '2026-02-10', 478821 UNION ALL
+      SELECT DATE '2026-02-17', 478197 UNION ALL
+      SELECT DATE '2026-03-10', 468432 UNION ALL
+      SELECT DATE '2026-03-17', 470000 UNION ALL
+      SELECT DATE '2026-03-24', 470000
       ),
 
       upff_premier_titles AS
@@ -1655,7 +1672,23 @@ view: premier_scorecard {
       SELECT "Batter's Box" UNION ALL
       SELECT "The Great Christmas Snow-In" UNION ALL
       SELECT "Princess for a Day" UNION ALL
-      SELECT "A Royal Christmas Manor"
+      SELECT "A Royal Christmas Manor" UNION ALL
+      SELECT "Saving the Christmas Ranch" UNION ALL
+      SELECt "North by North Pole: A Dial S Mystery" UNION ALL
+      SELECT "A Royal Christmas Hope" UNION ALL
+      SELECT "A Change in Heart" UNION ALL
+      SELECT "Christmas in Amish Country" UNION ALL
+      SELECT "Christmas Roses" UNION ALL
+      SELECT "A Christmas Murder Mystery" UNION ALL
+      SELECT "Christmas in Big Sky Country" UNION ALL
+      SELECT "The Best Thing About Christmas" UNION ALL
+      SELECT "Christmas with the Knightlys" UNION ALL
+      SELECT "A Country Encore" UNION ALL
+      SELECT "Where the Wind Blows" UNION ALL
+      SELECT "Who Gets The Dog" UNION ALL
+      SELECT "Forgiveness Girl" UNION ALL
+      SELECT "Sugarhouse" UNION ALL
+      SELECT "A Father's Fight: Director's Cut"
       ),
 
       upff_premier_completion_rates AS
@@ -1749,7 +1782,23 @@ view: premier_scorecard {
       SELECT "Batter's Box", 0.68 UNION ALL
       SELECT "The Great Christmas Snow-In", 0.64 UNION ALL
       SELECT "Princess for a Day", 0.73 UNION ALL
-      SELECT "A Royal Christmas Manor", 0.79
+      SELECT "A Royal Christmas Manor", 0.79 UNION ALL
+      SELECT "Saving the Christmas Ranch", 0.75 UNION ALL
+      SELECt "North by North Pole: A Dial S Mystery", 0.72 UNION ALL
+      SELECT "A Royal Christmas Hope", 0.78 UNION ALL
+      SELECT "A Change in Heart", 0.75 UNION ALL
+      SELECT "Christmas in Amish Country", 0.79 UNION ALL
+      SELECT "Christmas Roses", 0.80 UNION ALL
+      SELECT "A Christmas Murder Mystery", 0.77 UNION ALL
+      SELECT "Christmas in Big Sky Country", 0.76 UNION ALL
+      SELECT "The Best Thing About Christmas", 0.65 UNION ALL
+      SELECT "Christmas with the Knightlys", 0.81 UNION ALL
+      SELECT "A Country Encore", 0.77 UNION ALL
+      SELECT "Where the Wind Blows", 0.74 UNION ALL
+      SELECT "Who Gets The Dog", 0.65 UNION ALL
+      SELECT "Forgiveness Girl", 0.77 UNION ALL
+      SELECT "Sugarhouse", 0.68 UNION ALL
+      SELECT "A Father's Fight: Director's Cut", 0.71
       ),
 
       upff_premier_dates AS
@@ -1843,7 +1892,23 @@ view: premier_scorecard {
       SELECT "Batter's Box", DATE '2025-11-04' UNION ALL
       SELECT "The Great Christmas Snow-In", DATE '2025-11-04' UNION ALL
       SELECT "Princess for a Day", DATE '2025-11-11' UNION ALL
-      SELECT "A Royal Christmas Manor", DATE '2025-11-11'
+      SELECT "A Royal Christmas Manor", DATE '2025-11-11' UNION ALL
+      SELECT "Saving the Christmas Ranch", DATE '2025-11-18' UNION ALL
+      SELECT "North by North Pole: A Dial S Mystery", DATE '2025-11-25' UNION ALL
+      SELECT "A Royal Christmas Hope", DATE '2025-11-25' UNION ALL
+      SELECT "A Change in Heart", DATE '2025-12-02' UNION ALL
+      SELECT "Christmas in Amish Country", DATE '2025-12-02' UNION ALL
+      SELECT "Christmas Roses", DATE '2025-12-09' UNION ALL
+      SELECT "A Christmas Murder Mystery", DATE '2025-12-09' UNION ALL
+      SELECT "Christmas in Big Sky Country", DATE '2025-12-16' UNION ALL
+      SELECT "The Best Thing About Christmas", DATE '2025-12-23' UNION ALL
+      SELECT "Christmas with the Knightlys", DATE '2025-12-23' UNION ALL
+      SELECT "A Country Encore", DATE '2026-01-27' UNION ALL
+      SELECT "Where the Wind Blows", DATE '2026-02-10' UNION ALL
+      SELECT "Who Gets The Dog", DATE '2026-02-17' UNION ALL
+      SELECT "Forgiveness Girl", DATE '2026-03-10' UNION ALL
+      SELECT "Sugarhouse", DATE '2026-03-17' UNION ALL
+      SELECT "A Father's Fight: Director's Cut", DATE '2026-03-24'
       ),
 
       upff_subscriber_counts AS

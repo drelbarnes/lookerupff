@@ -53,7 +53,7 @@ view: upff_web_event_processing {
     , order_completed_events as (
       with p0 as (
         select timestamp as ordered_at
-        , user_id as user_id
+        , coalesce(user_id,context_ip) as user_id
         , to_hex(sha1(concat(id,safe_cast(timestamp as string)))) as event_id
         , anonymous_id
         , device_id
@@ -63,9 +63,10 @@ view: upff_web_event_processing {
         , platform
         from ${upff_order_completed_events.SQL_TABLE_NAME}
         where platform in ("web")
-        and anonymous_id is not null
-      )
-      , p1 as (
+        and anonymous_id is not null)
+        ,
+
+       p1 as (
         select *
         , row_number() over (partition by anonymous_id, date(ordered_at)) as n
         from p0
@@ -82,7 +83,28 @@ view: upff_web_event_processing {
       , platform
       from p1
       where n = 1
-    )
+    ),
+    order_reac as (
+
+
+        -- update 2/9/2026
+
+        select
+        timestamp as ordered_at
+        , coalesce(user_id,context_ip) as user_id
+        , to_hex(sha1(concat(id,safe_cast(timestamp as string)))) as event_id
+        , anonymous_id
+        , CAST(NULL AS string) as device_id
+        , context_ip as ip_address
+        , context_user_agent as user_agent
+        , CAST(NULL AS string) as email
+        , 'web' as platform
+        from `up-faith-and-family-216419.javascript_upentertainment_checkout.pages`
+        where context_page_path like '%welcome/resubscribe_thank_you/upfaithandfamily%'
+        and anonymous_id is not null
+
+
+      )
     , web_orders as (
       select
       a.ordered_at
@@ -106,6 +128,23 @@ view: upff_web_event_processing {
         from ${upff_page_events.SQL_TABLE_NAME}
       ) as c
       on a.event_id = c.event_id
+
+      UNION ALL
+
+      select
+      ordered_at
+      ,user_id
+      ,anonymous_id as anonymous_id_raw
+      ,anonymous_id
+      ,device_id
+      ,event_id
+      ,user_agent
+      ,ip_address
+      ,platform
+      ,CAST (null as string) as plan_type
+      ,'customer_product_created' as topic
+      ,CAST (null as string)
+      from order_reac
     )
     , web_events_web_orders_anon as (
       select

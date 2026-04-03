@@ -52,6 +52,7 @@ include: "/views/redshift_views/bundle_analytics.view.lkml"
 include: "/views/UPFF_Vw/subscriber_data.view.lkml"
 include: "/views/UPFF_Vw/chargebee_webhook.view.lkml"
 include: "/views/UPFF_Vw/vimeo_webhook.view.lkml"
+include: "/views/UPFF_Vw/free_trials.view.lkml"
 
 #redshift upff datamart explores
 include: "upff_datamart_views.view.lkml"
@@ -82,6 +83,16 @@ explore: upff_heartland_fans {
 include: "upff_series_premier.view.lkml"
 explore: upff_series_premier {
   label: "UPFF Series Premier"
+}
+
+include: "upff_movie_premier.view.lkml"
+explore: upff_movie_premier {
+  label: "UPFF Movie Premier"
+}
+
+include: "upff_weekly_recap_quarterly_benchmarks.view.lkml"
+explore: upff_weekly_recap_quarterly_benchmarks {
+  label: "UPFF Weekly Recap Benchmarks"
 }
 
 #end redshift upff datamart explores
@@ -235,7 +246,7 @@ datagroup: upff_customer_file_reporting {
 
 datagroup: upff_acquisition_reporting {
   description: "Datagroup for UPFF Acquisition PDTs. Triggers once per day at 10:15am"
-  sql_trigger: SELECT FLOOR((EXTRACT(epoch from GETDATE()) - 60*60*10.25)/(60*60*24)) ;;
+  sql_trigger: SELECT FLOOR((EXTRACT(epoch from GETDATE()) - 60*60*3.25)/(60*60*24)) ;;
   max_cache_age: "5 minutes"
 }
 
