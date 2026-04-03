@@ -75,7 +75,11 @@ include: "/video_views.view.lkml"
 include: "/Gaither_page_views.view.lkml"
 include: "/gaither_segment_consent.view.lkml"
 include: "/views/up_airtable_reports.view.lkml"
+include: "/views/social_daily_snapshot.view.lkml"
 
+explore: social_daily_snapshot {
+  label: "Social Daily Snapshot"
+}
 
 explore: up_airtable_reports {
   label: "Linear TV Schedule"
