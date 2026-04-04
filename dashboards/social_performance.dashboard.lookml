@@ -68,10 +68,13 @@
       model: upff
       explore: social_daily_snapshot
       type: looker_area
-      dimensions: [social_daily_snapshot.snapshot_date_date, social_daily_snapshot.platform]
+      dimensions: [social_daily_snapshot.snapshot_date_date]
+      pivots: [social_daily_snapshot.platform]
       measures: [social_daily_snapshot.total_impressions]
-      sorts: [social_daily_snapshot.snapshot_date_date asc, social_daily_snapshot.platform asc]
-      x_axis_scale: time
+      sorts: [social_daily_snapshot.snapshot_date_date asc]
+      x_axis_scale: auto
+      width: 16
+      height: 10
       stacking: ""
       listen:
         snapshot_date: social_daily_snapshot.snapshot_date_date
@@ -83,6 +86,8 @@
       model: upff
       explore: social_daily_snapshot
       type: looker_bar
+      width: 8
+      height: 10
       dimensions: [social_daily_snapshot.brand]
       measures: [social_daily_snapshot.total_impressions]
       sorts: [social_daily_snapshot.total_impressions asc]
