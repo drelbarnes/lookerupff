@@ -51,3 +51,14 @@
         snapshot_date: social_daily_snapshot.snapshot_date_date
         brand: social_daily_snapshot.brand
         platform: social_daily_snapshot.platform
+
+    - name: engagement_rate_kpi
+      title: "Engagement rate"
+      model: upff
+      explore: social_daily_snapshot
+      type: single_value
+      measures: [social_daily_snapshot.avg_engagement_rate]
+      listen:
+        snapshot_date: social_daily_snapshot.snapshot_date_date
+        brand: social_daily_snapshot.brand
+        platform: social_daily_snapshot.platform
