@@ -3,7 +3,7 @@
 # If you use only lookml/models/social_snapshot.model.lkml, change every "upff" below to social_snapshot.
 
 - dashboard: social_performance
-  title: "Social — Total impressions (MVP)"
+  title: "Social Performance Dashboard"
   layout: newspaper
 
   filters:
@@ -36,6 +36,17 @@
       explore: social_daily_snapshot
       type: single_value
       measures: [social_daily_snapshot.total_impressions]
+      listen:
+        snapshot_date: social_daily_snapshot.snapshot_date_date
+        brand: social_daily_snapshot.brand
+        platform: social_daily_snapshot.platform
+
+    - name: total_video_views_kpi
+      title: "Total video views"
+      model: upff
+      explore: social_daily_snapshot
+      type: single_value
+      measures: [social_daily_snapshot.total_video_views]
       listen:
         snapshot_date: social_daily_snapshot.snapshot_date_date
         brand: social_daily_snapshot.brand
