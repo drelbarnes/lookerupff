@@ -13,9 +13,23 @@ view: social_daily_snapshot {
   }
 
   dimension: brand {
-    label: "Brand"
+    hidden: yes
+    label: "Brand (warehouse raw)"
     type: string
     sql: ${TABLE}.brand ;;
+    description: "Value as stored in Redshift. Use brand_canonical for filters and reporting."
+  }
+
+  dimension: brand_canonical {
+    label: "Brand"
+    type: string
+    sql:
+      CASE
+        WHEN LOWER(TRIM(${TABLE}.brand)) IN ('ovation', 'ovation tv', 'ovationtv') THEN 'Ovation TV'
+        WHEN LOWER(TRIM(${TABLE}.brand)) IN ('aspire', 'aspire tv', 'aspiretv') THEN 'Aspire TV'
+        ELSE ${TABLE}.brand
+      END ;;
+    description: "Normalized brand for rollup (Ovation / Aspire aliases). Matches PROFILE_MAP codes and legacy spellings."
   }
 
   dimension: platform {

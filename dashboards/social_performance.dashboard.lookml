@@ -20,7 +20,7 @@
       type: field_filter
       model: upff
       explore: social_daily_snapshot
-      field: social_daily_snapshot.brand
+      field: social_daily_snapshot.brand_canonical
 
     - name: platform
       title: "Platform"
@@ -38,7 +38,7 @@
       measures: [social_daily_snapshot.total_impressions]
       listen:
         snapshot_date: social_daily_snapshot.snapshot_date_date
-        brand: social_daily_snapshot.brand
+        brand: social_daily_snapshot.brand_canonical
         platform: social_daily_snapshot.platform
 
     - name: total_video_views_kpi
@@ -49,7 +49,7 @@
       measures: [social_daily_snapshot.total_video_views]
       listen:
         snapshot_date: social_daily_snapshot.snapshot_date_date
-        brand: social_daily_snapshot.brand
+        brand: social_daily_snapshot.brand_canonical
         platform: social_daily_snapshot.platform
 
     - name: engagement_rate_kpi
@@ -60,7 +60,7 @@
       measures: [social_daily_snapshot.avg_engagement_rate]
       listen:
         snapshot_date: social_daily_snapshot.snapshot_date_date
-        brand: social_daily_snapshot.brand
+        brand: social_daily_snapshot.brand_canonical
         platform: social_daily_snapshot.platform
 
     - name: impressions_over_time
@@ -78,7 +78,7 @@
       stacking: ""
       listen:
         snapshot_date: social_daily_snapshot.snapshot_date_date
-        brand: social_daily_snapshot.brand
+        brand: social_daily_snapshot.brand_canonical
         platform: social_daily_snapshot.platform
 
     - name: brand_performance_summary
@@ -88,7 +88,7 @@
       type: looker_bar
       width: 8
       height: 10
-      dimensions: [social_daily_snapshot.brand]
+      dimensions: [social_daily_snapshot.brand_canonical]
       measures: [social_daily_snapshot.total_impressions]
       sorts: [social_daily_snapshot.total_impressions asc]
       stacking: ""
@@ -98,5 +98,5 @@
       y_axis_gridlines: false
       listen:
         snapshot_date: social_daily_snapshot.snapshot_date_date
-        brand: social_daily_snapshot.brand
+        brand: social_daily_snapshot.brand_canonical
         platform: social_daily_snapshot.platform
