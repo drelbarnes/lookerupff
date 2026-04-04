@@ -64,14 +64,15 @@
         platform: social_daily_snapshot.platform
 
     - name: impressions_over_time
-      title: "Impressions over time"
+      title: "Impressions over time by platform"
       model: upff
       explore: social_daily_snapshot
-      type: looker_line
-      dimensions: [social_daily_snapshot.snapshot_date_date]
+      type: looker_area
+      dimensions: [social_daily_snapshot.snapshot_date_date, social_daily_snapshot.platform]
       measures: [social_daily_snapshot.total_impressions]
-      sorts: [social_daily_snapshot.snapshot_date_date asc]
+      sorts: [social_daily_snapshot.snapshot_date_date asc, social_daily_snapshot.platform asc]
       x_axis_scale: time
+      stacking: ""
       listen:
         snapshot_date: social_daily_snapshot.snapshot_date_date
         brand: social_daily_snapshot.brand
@@ -81,10 +82,15 @@
       title: "Brand performance summary"
       model: upff
       explore: social_daily_snapshot
-      type: looker_grid
+      type: looker_bar
       dimensions: [social_daily_snapshot.brand]
-      measures: [social_daily_snapshot.total_impressions, social_daily_snapshot.total_video_views, social_daily_snapshot.total_engagements, social_daily_snapshot.avg_engagement_rate]
-      sorts: [social_daily_snapshot.total_impressions desc]
+      measures: [social_daily_snapshot.total_impressions]
+      sorts: [social_daily_snapshot.total_impressions asc]
+      stacking: ""
+      hide_legend: true
+      show_value_labels: true
+      x_axis_gridlines: false
+      y_axis_gridlines: false
       listen:
         snapshot_date: social_daily_snapshot.snapshot_date_date
         brand: social_daily_snapshot.brand
