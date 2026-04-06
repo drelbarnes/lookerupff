@@ -1,7 +1,12 @@
 view: free_trials {
   derived_table: {
     sql:
-    with chargebee as (
+    ,cfg AS (
+    SELECT report_date
+    FROM ${configg.SQL_TABLE_NAME}
+),
+
+    chargebee as (
       SELECT
         content_subscription_id as user_id
         ,CASE
@@ -11,7 +16,7 @@ view: free_trials {
         ,'web' as platform
         ,date(DATEADD(HOUR, -4, received_at)) as report_date
       FROM chargebee_webhook_events.subscription_created
-      WHERE report_date >= '2025-06-01'
+      WHERE report_date >= (SELECT MAX(report_date) FROM cfg)
       AND content_subscription_subscription_items like '%UP%'
     ),
 
@@ -21,7 +26,7 @@ view: free_trials {
         ,date(event_occurred_at) as report_date
         ,subscription_frequency as billing_period
         FROM customers.new_customers
-        WHERE event_type = 'New Free Trial' and report_date >='2025-06-01'
+        WHERE event_type = 'New Free Trial' and report_date >= (SELECT MAX(report_date) FROM cfg)
       ),
     vimeo2 as (
       SELECT

@@ -1,7 +1,12 @@
 view: converted {
   derived_table: {
     sql:
-    with converted as (
+    with cfg AS (
+    SELECT report_date
+    FROM ${configg.SQL_TABLE_NAME}
+),
+
+    converted as (
       SELECT
         email
         ,subscription_frequency as billing_period
@@ -9,7 +14,8 @@ view: converted {
         ,date(event_occurred_at) as report_date
 
       FROM customers.new_customers
-      WHERE event_type = 'Free Trial to Paid' and report_date >='2025-06-01'
+      WHERE event_type = 'Free Trial to Paid'
+      AND DATE(event_occurred_at) >= (SELECT MAX(report_date) FROM cfg)
 
       UNION ALL
 
@@ -23,7 +29,8 @@ view: converted {
         ,date(DATEADD(HOUR, 0, received_at)) as report_date
 
         FROM chargebee_webhook_events.subscription_activated
-        WHERE content_subscription_subscription_items like '%UP%' and date(received_at) >='2025-06-01'
+        WHERE content_subscription_subscription_items like '%UP%'
+        and date(received_at) >= (SELECT MAX(report_date) FROM cfg)
          AND content_subscription_due_invoices_count = 0
 
        UNION ALL
@@ -38,9 +45,10 @@ view: converted {
     ,DATE(received_at) AS report_date
   FROM chargebee_webhook_events.payment_succeeded
   WHERE content_subscription_subscription_items LIKE '%UP%'
-    AND DATE(received_at) >= '2025-06-01'
+    AND DATE(received_at) >= (SELECT MAX(report_date) FROM cfg)
     AND (report_date::date - DATE(TIMESTAMP 'epoch' + content_customer_created_at * INTERVAL '1 second')) <= 14
     AND content_invoice_dunning_attempts != '[]'),
+
 
 result2 as (
       select

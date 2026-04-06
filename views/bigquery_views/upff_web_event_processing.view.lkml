@@ -122,7 +122,7 @@ view: upff_web_event_processing {
       , b.promotion_code
       from order_completed_events as a
       left join webhook_events as b
-      on a.user_id = b.user_id and date(a.ordered_at) = date(b.timestamp)
+      on a.email = b.email and date(a.ordered_at) = date(b.timestamp)
       left join (
         select anonymous_id, event_id
         from ${upff_page_events.SQL_TABLE_NAME}

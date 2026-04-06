@@ -2,7 +2,12 @@ view: churn_gain {
   derived_table: {
     sql:
 
-    with v2_table AS (
+     ,cfg AS (
+    SELECT report_date
+    FROM ${configg.SQL_TABLE_NAME}
+),
+
+    v2_table AS (
   SELECT *
   FROM ${UPFF_analytics_Vw_v2.SQL_TABLE_NAME}
   WHERE report_date >= '2025-06-30'
@@ -22,6 +27,7 @@ view: churn_gain {
       WHERE
       ((content_subscription_cancel_reason_code not in ('Not Paid', 'No Card', 'Fraud Review Failed', 'Non Compliant EU Customer', 'Tax Calculation Failed', 'Currency incompatible with Gateway', 'Non Compliant Customer') and  (content_subscription_cancelled_at - content_subscription_trial_end) > 10000)or content_subscription_cancel_reason_code is null)
       AND content_subscription_subscription_items LIKE '%UP%'
+      AND DATE(timestamp)>= (SELECT MAX(report_date) FROM cfg)
       ),
 
       vm_user AS (
@@ -42,7 +48,7 @@ view: churn_gain {
       DATE(event_occurred_at) AS report_date
       FROM customers.new_customers
       WHERE subscription_frequency != 'custom'
-      AND DATE(event_occurred_at) >= '2025-07-01'
+      AND DATE(event_occurred_at) >= (SELECT MAX(report_date) FROM cfg)
       ),
 
       vimeo AS (
@@ -63,7 +69,7 @@ view: churn_gain {
       DATE("timestamp") AS report_date,
       CAST(user_id AS VARCHAR) AS user_id
       FROM vimeo_ott_webhook.customer_product_expired
-      WHERE DATE("timestamp") >= '2025-07-01'
+      WHERE DATE("timestamp") >= (SELECT MAX(report_date) FROM cfg)
       ),
 
       vm2 AS (
@@ -109,7 +115,7 @@ view: churn_gain {
       'web'::VARCHAR AS platform
       FROM chargebee_webhook_events.subscription_reactivated
       WHERE content_subscription_subscription_items LIKE '%UP%'
-      AND DATE(received_at) >= '2025-07-01'
+      AND DATE(received_at) >= (SELECT MAX(report_date) FROM cfg)
 
       UNION ALL
 
@@ -123,7 +129,7 @@ view: churn_gain {
       'web'::VARCHAR AS platform
       FROM chargebee_webhook_events.subscription_resumed
       WHERE content_subscription_subscription_items LIKE '%UP%'
-      AND DATE(received_at) >= '2025-07-01'
+      AND DATE(received_at) >= (SELECT MAX(report_date) FROM cfg)
 
 
       UNION ALL
@@ -158,7 +164,7 @@ view: churn_gain {
       'web'::VARCHAR AS platform
       FROM chargebee_webhook_events.subscription_activated
       WHERE content_subscription_subscription_items LIKE '%UP%'
-      AND DATE(received_at) >= '2025-07-01'
+      AND DATE(received_at) >= (SELECT MAX(report_date) FROM cfg)
       AND content_subscription_due_invoices_count = 0
 
       UNION ALL
@@ -173,7 +179,7 @@ view: churn_gain {
       'web'::VARCHAR AS platform
       FROM chargebee_webhook_events.payment_succeeded
       WHERE content_subscription_subscription_items LIKE '%UP%'
-      AND DATE(received_at) >= '2025-07-01'
+      AND DATE(received_at) >= (SELECT MAX(report_date) FROM cfg)
       AND (report_date::date - DATE(TIMESTAMP 'epoch' + content_customer_created_at * INTERVAL '1 second')) <= 14
       AND content_invoice_dunning_attempts != '[]'
 
@@ -211,6 +217,7 @@ view: churn_gain {
       'web'::VARCHAR AS platform
       FROM chargebee_webhook_events.subscription_cancelled
       WHERE (content_subscription_cancel_reason_code in ('Not Paid', 'No Card', 'Fraud Review Failed', 'Non Compliant EU Customer', 'Tax Calculation Failed', 'Currency incompatible with Gateway', 'Non Compliant Customer') and (content_subscription_cancelled_at - content_subscription_activated_at) > 1900800) AND content_subscription_subscription_items LIKE '%UP%'
+        AND date(timestamp) >= (SELECT MAX(report_date) FROM cfg)
       ),
 
       dunning_count AS (
@@ -234,7 +241,7 @@ view: churn_gain {
       'web'::VARCHAR AS platform
       FROM chargebee_webhook_events.subscription_paused
       WHERE content_subscription_subscription_items LIKE '%UP%'
-      AND DATE(received_at) >= '2025-07-01'
+      AND DATE(received_at) >= (SELECT MAX(report_date) FROM cfg)
       ),
 
       paused_count AS (
