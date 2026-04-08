@@ -13,16 +13,17 @@ view: upff_weekly_recap_quarterly_benchmarks {
         CAST(46980 AS BIGINT) AS movie_uniques,
         CAST(24828 AS BIGINT) AS other_views,
         CAST(11109 AS BIGINT) AS other_uniques
- /*     UNION ALL SELECT
+      UNION ALL SELECT
         CAST('2026-1Q' AS VARCHAR(7)),
-        CAST(600000 AS BIGINT),
-        CAST(250000 AS BIGINT),
-        CAST(400000 AS BIGINT),
-        CAST(20000 AS BIGINT),
-        CAST(150000 AS BIGINT),
-        CAST(20000 AS BIGINT),
+        CAST(637544 AS BIGINT),
+        CAST(109703 AS BIGINT),
+        CAST(487751 AS BIGINT),
+        CAST(82984 AS BIGINT),
+        CAST(107513 AS BIGINT),
+        CAST(40433 AS BIGINT),
         CAST(15000 AS BIGINT),
         CAST(10000 AS BIGINT)
+/*
       UNION ALL SELECT
         CAST('2026-2Q' AS VARCHAR(7)),
         CAST(600000 AS BIGINT),
