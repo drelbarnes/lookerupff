@@ -18,10 +18,10 @@ view: upff_order_completed_events {
       select
       a.user_id as customer_id, to_hex(sha1(concat(a.id,safe_cast(a.timestamp as string)))) as event_id, anonymous_id, "UP Entertainment Checkout" as context_app_name, cast(null as string) as context_app_version, cast(null as string) as context_app_build, cast(null as string) as context_app_namespace, cast(null as boolean) as context_device_ad_tracking_enabled, cast(null as string) as context_device_advertising_id, cast(null as string) as context_device_id, cast(null as string) as context_device_manufacturer, cast(null as string) as context_device_model, cast(null as string) as context_device_name, cast(null as string) as context_device_type, context_locale, cast(null as string) as context_network_carrier, cast(null as boolean) as context_network_cellular, cast(null as boolean) as context_network_wifi, cast(null as string) as context_os_name, cast(null as string) as context_os_version, cast(null as int) as context_screen_height, cast(null as int) as context_screen_width, context_timezone, context_ip, cast(null as string) as context_external_ids, context_library_name, context_library_version, user_email as context_traits_email, first_name || ' ' || last_name as context_traits_name, cast(entitlements_ott_user_id as string) as context_traits_vimeo_id, cast(entitlements_product_id as string) as context_transaction_product_id, context_user_agent, cast(null as string) as conversion_type, "web" as device, cast(null as string) as device_id, event, event_text, id, loaded_at, event_text as name, original_timestamp, "web" as platform, cast(null as string) as platform_id, cast(null as string) as platform_version, cast(entitlements_product_id as int) as product_id, received_at, sent_at, cast(checkout_id as string) as session_id, cast(null as int) as site_id, timestamp, cast(null as string) as type, user_email, safe_cast(b.ott_user_id as string) as user_id, uuid_ts, cast(null as string) as view
       from javascript_upentertainment_checkout.order_completed a
-      left join (select email,user_id as ott_user_id,email from `up-faith-and-family-216419.vimeo_ott_webhook.customer_product_created`) b
-      on a.user_email = b.email
-      --left join ${chargebee_vimeo_ott_id_mapping.SQL_TABLE_NAME} b
-      --on cast(a.user_id as string) = b.customer_id
+      --left join (select email,user_id as ott_user_id,email from `up-faith-and-family-216419.vimeo_ott_webhook.customer_product_created`) b
+      --on a.user_email = b.email
+      left join ${chargebee_vimeo_ott_id_mapping.SQL_TABLE_NAME} b
+      on cast(a.user_id as string) = b.customer_id
       )
       select * from app_events
       union all

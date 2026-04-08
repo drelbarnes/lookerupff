@@ -365,6 +365,13 @@ view: churn_gain {
 
 
   }
+
+  dimension: user_id {
+    type: number
+    tags: ["user_id"]
+    sql: 1 ;;
+  }
+
   dimension: date {
     type: date
     primary_key: yes
