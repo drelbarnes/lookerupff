@@ -81,6 +81,24 @@
         brand: social_daily_snapshot.brand_canonical
         platform: social_daily_snapshot.platform
 
+    - name: video_views_over_time
+      title: "Video views over time by platform"
+      model: upff
+      explore: social_daily_snapshot
+      type: looker_area
+      dimensions: [social_daily_snapshot.snapshot_date_date]
+      pivots: [social_daily_snapshot.platform]
+      measures: [social_daily_snapshot.total_video_views]
+      sorts: [social_daily_snapshot.snapshot_date_date asc]
+      x_axis_scale: auto
+      width: 16
+      height: 10
+      stacking: ""
+      listen:
+        snapshot_date: social_daily_snapshot.snapshot_date_date
+        brand: social_daily_snapshot.brand_canonical
+        platform: social_daily_snapshot.platform
+
     - name: brand_performance_summary
       title: "Brand performance summary"
       model: upff
@@ -96,6 +114,48 @@
       show_value_labels: true
       x_axis_gridlines: false
       y_axis_gridlines: false
+      listen:
+        snapshot_date: social_daily_snapshot.snapshot_date_date
+        brand: social_daily_snapshot.brand_canonical
+        platform: social_daily_snapshot.platform
+
+    - name: platform_top_channels_impressions
+      title: "Top channels by impressions"
+      model: upff
+      explore: social_daily_snapshot
+      type: looker_bar
+      dimensions: [social_daily_snapshot.platform]
+      measures: [social_daily_snapshot.total_impressions]
+      sorts: [social_daily_snapshot.total_impressions desc]
+      stacking: ""
+      hide_legend: true
+      show_value_labels: true
+      x_axis_gridlines: false
+      y_axis_gridlines: false
+      note:
+        text: "Horizontal bar chart (Looker Bar). One bar per platform, sorted by total impressions for the selected date range and brand/platform filters—ranking headline volume (doc 07 §8)."
+        state: collapsed
+        display: hover
+      listen:
+        snapshot_date: social_daily_snapshot.snapshot_date_date
+        brand: social_daily_snapshot.brand_canonical
+        platform: social_daily_snapshot.platform
+
+    - name: platform_impressions_vs_weighted_engagement
+      title: "Platform reach vs engagement (weighted)"
+      model: upff
+      explore: social_daily_snapshot
+      type: looker_scatter
+      dimensions: [social_daily_snapshot.platform]
+      measures: [social_daily_snapshot.weighted_engagement_rate, social_daily_snapshot.total_impressions]
+      sorts: [social_daily_snapshot.platform asc]
+      x_axis_scale: linear
+      point_style: circle
+      show_value_labels: true
+      note:
+        text: "Y = weighted engagement rate (sum(engagements) ÷ sum(impressions)); X = total impressions—per platform for the same filters (doc 07 §6 Option B × §8). Surfaces high-reach vs high-engagement tradeoffs; differs from the Engagement rate KPI (avg_engagement_rate, Option A)."
+        state: collapsed
+        display: hover
       listen:
         snapshot_date: social_daily_snapshot.snapshot_date_date
         brand: social_daily_snapshot.brand_canonical
