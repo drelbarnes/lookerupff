@@ -21,8 +21,8 @@ view: upff_weekly_recap_quarterly_benchmarks {
         CAST(82984 AS BIGINT),
         CAST(107513 AS BIGINT),
         CAST(40433 AS BIGINT),
-        CAST(15000 AS BIGINT),
-        CAST(10000 AS BIGINT)
+        CAST(35513 AS BIGINT),
+        CAST(6911 AS BIGINT)
 /*
       UNION ALL SELECT
         CAST('2026-2Q' AS VARCHAR(7)),
