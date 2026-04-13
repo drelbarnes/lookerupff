@@ -177,7 +177,7 @@ view: upff_web_event_processing {
       , to_hex(sha1(concat(safe_cast(web_events.ip_address as string),safe_cast(web_events.user_agent as string)))) as user_agent_id
       from web_orders
       full join web_events
-      on web_orders.anonymous_id = web_events.anonymous_id
+      on web_orders.anonymous_id = web_events.anonymous_id or web_events.ip_address = web_orders.ip_address
     )
     , web_events_web_orders_ip as (
       with p0 as (
@@ -193,7 +193,7 @@ view: upff_web_event_processing {
         from web_orders
         full join web_events
         on web_events.ip_address = web_orders.ip_address
-        and web_events.user_agent = web_orders.user_agent
+        --and web_events.user_agent = web_orders.user_agent
       )
       , p1 as (
         select
