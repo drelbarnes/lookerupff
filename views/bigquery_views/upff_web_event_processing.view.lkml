@@ -27,26 +27,43 @@ view: upff_web_event_processing {
       with p0 as (
         select
         timestamp
-        , user_id
-        , email
-        , event as topic
+        , content_customer_id as user_id
+        , content_customer_email as email
+        ,"customer_product_free_trial_created" as topic
         , case
-          when subscription_frequency in (null, "custom", "monthly") then "monthly"
+          when content_subscription_billing_period_unit in ("month") then "monthly"
           else "yearly"
           end as plan_type
-        , platform
-        , promotion_code
-        from ${upff_webhook_events.SQL_TABLE_NAME}
-        where event in ("customer_product_created", "customer_product_free_trial_created")
-        and platform = "web"
-        and user_id is not null
+        , 'web' as platform
+        ,null as promotion_code
+        ,content_customer_id as customer_id
+        from `up-faith-and-family-216419.chargebee_webhook_events.subscription_created`
+        where
+        content_subscription_subscription_items like '%UP%'
+
+        UNION ALL
+
+        select
+        timestamp
+        , content_customer_id as user_id
+        , content_customer_email as email
+        ,'customer_product_created' as topic
+        , case
+          when content_subscription_billing_period_unit in ("month") then "monthly"
+          else "yearly"
+          end as plan_type
+        , 'web' as platform
+        ,null as promotion_code
+        ,content_customer_id as customer_id
+        from `up-faith-and-family-216419.chargebee_webhook_events.subscription_reactivated`
+        where content_subscription_subscription_items like '%UP%'
       )
       , p1 as (
         select *
         , row_number() over (partition by user_id, date(timestamp)) as n
         from p0
       )
-      select timestamp, user_id, email, topic, plan_type, platform, promotion_code
+      select timestamp, user_id, email, topic, plan_type, platform, promotion_code,customer_id
       from p1
       where n = 1
     )
@@ -61,6 +78,7 @@ view: upff_web_event_processing {
         , context_user_agent as user_agent
         , user_email as email
         , platform
+        ,customer_id
         from ${upff_order_completed_events.SQL_TABLE_NAME}
         where platform in ("web")
         and anonymous_id is not null)
@@ -81,6 +99,7 @@ view: upff_web_event_processing {
       , user_agent
       , email
       , platform
+      ,customer_id
       from p1
       where n = 1
     ),
@@ -119,10 +138,10 @@ view: upff_web_event_processing {
       , a.platform
       , b.plan_type
       , b.topic
-      , b.promotion_code
+      , cast(b.promotion_code as string) as promotion_code
       from order_completed_events as a
       left join webhook_events as b
-      on a.email = b.email and date(a.ordered_at) = date(b.timestamp)
+      on a.customer_id = b.customer_id and date(a.ordered_at) = date(b.timestamp)
       left join (
         select anonymous_id, event_id
         from ${upff_page_events.SQL_TABLE_NAME}
@@ -143,7 +162,7 @@ view: upff_web_event_processing {
       ,platform
       ,CAST (null as string) as plan_type
       ,'customer_product_created' as topic
-      ,CAST (null as string)
+      ,CAST (null as string) as promotion_code
       from order_reac
     )
     , web_events_web_orders_anon as (
@@ -271,7 +290,7 @@ view: upff_web_event_processing {
       , referrer_search
       , landing_page
       , source
-      , promotion_code
+      , cast(promotion_code as string) as promotion_code
       from final_p1
       where source is not null
       group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26
