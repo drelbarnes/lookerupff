@@ -602,6 +602,7 @@ view: bigquery_timeupdate {
   measure: play_count {
     type: count_distinct
     sql: concat(safe_cast(${video_id} as string),${user_id},cast(${timestamp_date} as string)) ;;
+    label: "plays"
   }
 
   measure: timecode_count {
@@ -625,6 +626,7 @@ view: bigquery_timeupdate {
   measure: user_count {
     type: count_distinct
     sql: ${user_id} ;;
+    label: "uniques"
   }
 
   measure: hours_watched_per_user {
