@@ -37,7 +37,7 @@
       type: single_value
       measures: [agorapulse_post_performance.total_posts]
       note:
-        text: "Count of distinct post_id where publish date (publishingDate) falls in the date filter. Audience tiles use snapshot reporting date on social_daily_snapshot."
+        text: "Count of distinct post_id where publish date (published_at) falls in the date filter. Audience tiles use snapshot reporting date on social_daily_snapshot."
         state: collapsed
         display: hover
       listen:

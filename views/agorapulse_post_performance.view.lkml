@@ -3,13 +3,13 @@ view: agorapulse_post_performance {
 
   sql_table_name: agorapulse_webhook.agorapulse_post_performance ;;
 
-  # Post publish time from Agorapulse content row (Segment properties). Cast if VARCHAR.
+  # Warehouse column is published_at (Segment flattens Agorapulse publishingDate → published_at).
   dimension_group: publishing {
     label: "Publish date"
     type: time
     datatype: timestamp
     timeframes: [raw, date, week, month, quarter, year]
-    sql: (${TABLE}.publishingDate)::timestamp ;;
+    sql: ${TABLE}.published_at ;;
   }
 
   dimension: brand {
@@ -44,11 +44,11 @@ view: agorapulse_post_performance {
     sql: ${TABLE}.post_id ;;
   }
 
-  dimension: job_type {
-    label: "Job type"
+  dimension: event {
+    label: "Event"
     type: string
-    sql: ${TABLE}.job_type ;;
-    description: "Ingest job: e.g. backfill, last_7 (future)."
+    sql: ${TABLE}.event ;;
+    description: "Segment event name (e.g. Social Post Snapshot)."
   }
 
   measure: total_posts {
