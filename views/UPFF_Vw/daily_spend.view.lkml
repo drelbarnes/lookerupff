@@ -89,28 +89,43 @@ view: daily_spend {
         group by 1
         ),
 
+        fb_campaign as (
+        SELECT
+          a.id
+          ,b.name as campaign_name
+        FROM facebook_ads.ads a
+        INNER JOIN facebook_ads.campaigns b
+        ON a.campaign_id = b.id
+        ),
+
+        fb_data as (
+        select
+        a.date_start,
+        a.spend,
+        a.impressions,
+        a.clicks,
+        null::integer as installs,
+        COALESCE(a.actions_1d_view_app_custom_event_fb_mobile_purchase, 0) +
+        COALESCE(a.actions_1d_view_offsite_conversion_fb_pixel_purchase, 0) +
+        COALESCE(a.actions_28d_click_app_custom_event_fb_mobile_purchase, 0) +
+        COALESCE(a.actions_28d_click_offsite_conversion_fb_pixel_purchase, 0) AS purchases_28d
+        ,b.campaign_name
+        from facebook_ads.insights a
+        LEFT JOIN fb_campaign b
+        ON a.ad_id = b.id
+        ),
 
         fb_perf as (
         select i.date_start,
         'Facebook' as channel,
+        i.campaign_name,
         sum(i.spend) as spend,
         sum(i.impressions) as impressions,
         sum(i.clicks) as clicks,
         sum(i.installs) as installs,
         sum(i.purchases_28d) as conversions
-        from (
-        select date_start,
-        spend,
-        impressions,
-        clicks,
-        null::integer as installs,
-        COALESCE(actions_1d_view_app_custom_event_fb_mobile_purchase, 0) +
-        COALESCE(actions_1d_view_offsite_conversion_fb_pixel_purchase, 0) +
-        COALESCE(actions_28d_click_app_custom_event_fb_mobile_purchase, 0) +
-        COALESCE(actions_28d_click_offsite_conversion_fb_pixel_purchase, 0) AS purchases_28d
-        from facebook_ads.insights
-        ) as i
-        group by 1,2
+        from fb_data i
+        group by 1,2,3
         ),
 
 
@@ -193,7 +208,8 @@ view: daily_spend {
         clicks,
         installs,
         conversions,
-        channel
+        channel,
+        null as campaign_name
         from google_perf
         union all
         select date_start,
@@ -203,6 +219,7 @@ view: daily_spend {
         installs,
         conversions,
         channel
+        ,campaign_name
         from fb_perf
         union all
         select date_start,
@@ -211,7 +228,8 @@ view: daily_spend {
         clicks,
         installs,
         conversions,
-        channel
+        channel,
+        null as campaign_name
         from others_perf
 
         )
@@ -226,11 +244,12 @@ view: daily_spend {
         date_start,
         free_trial_created,
         channel,
+        campaign_name,
         spend
         from t1
         inner join customers_analytics
         on date(date_start) =report_date
-        group by 1,2,3,4
+        group by 1,2,3,4,5
 
         )
         select * from outer_query   ;;
@@ -251,10 +270,15 @@ view: daily_spend {
       sql: ${TABLE}.date_start ;;
     }
 
-    dimension: channel {
+    dimension: campaign_name {
       type: string
-      sql: ${TABLE}.channel ;;
+      sql: ${TABLE}.campaign_name ;;
     }
+
+  dimension: channel {
+    type: string
+    sql: ${TABLE}.channel ;;
+  }
 
 
     measure: spend {

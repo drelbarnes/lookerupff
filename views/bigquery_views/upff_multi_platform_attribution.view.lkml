@@ -10,7 +10,7 @@ view: upff_multi_platform_attribution {
         select
         ordered_at
         , session_start
-        , user_id
+        , cast(user_id as string) as user_id
         , anonymous_id
         , event_id
         , session_id
@@ -40,7 +40,7 @@ view: upff_multi_platform_attribution {
         select
         ordered_at
         , session_start
-        , user_id
+        , cast(user_id as string) as user_id
         , anonymous_id
         , event_id
         , session_id
