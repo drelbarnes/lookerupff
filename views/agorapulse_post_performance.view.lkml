@@ -3,13 +3,13 @@ view: agorapulse_post_performance {
 
   sql_table_name: agorapulse_webhook.social_post_snapshot ;;
 
-  # Warehouse column is published_at (Segment flattens Agorapulse publishingDate → published_at).
+  # Warehouse column is publishing_date on social_post_snapshot.
   dimension_group: publishing {
     label: "Publish date"
     type: time
     datatype: timestamp
     timeframes: [raw, date, week, month, quarter, year]
-    sql: ${TABLE}.published_at ;;
+    sql: ${TABLE}.publishing_date ;;
   }
 
   dimension: brand {
