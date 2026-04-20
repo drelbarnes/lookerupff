@@ -35,6 +35,10 @@
       model: upff
       explore: agorapulse_post_performance
       type: single_value
+      row: 0
+      col: 0
+      width: 6
+      height: 4
       measures: [agorapulse_post_performance.total_posts]
       note:
         text: "Count of distinct post_id where publish date (published_at) falls in the date filter. Audience tiles use snapshot reporting date on social_daily_snapshot."
@@ -50,6 +54,10 @@
       model: upff
       explore: social_daily_snapshot
       type: single_value
+      row: 0
+      col: 6
+      width: 6
+      height: 4
       measures: [social_daily_snapshot.total_impressions]
       listen:
         snapshot_date: social_daily_snapshot.snapshot_date_date
@@ -61,6 +69,10 @@
       model: upff
       explore: social_daily_snapshot
       type: single_value
+      row: 0
+      col: 12
+      width: 6
+      height: 4
       measures: [social_daily_snapshot.total_video_views]
       listen:
         snapshot_date: social_daily_snapshot.snapshot_date_date
@@ -72,6 +84,10 @@
       model: upff
       explore: social_daily_snapshot
       type: single_value
+      row: 0
+      col: 18
+      width: 6
+      height: 4
       measures: [social_daily_snapshot.avg_engagement_rate]
       listen:
         snapshot_date: social_daily_snapshot.snapshot_date_date
@@ -83,6 +99,8 @@
       model: upff
       explore: social_daily_snapshot
       type: looker_area
+      row: 4
+      col: 0
       dimensions: [social_daily_snapshot.snapshot_date_date]
       pivots: [social_daily_snapshot.platform]
       measures: [social_daily_snapshot.total_impressions]
@@ -101,6 +119,8 @@
       model: upff
       explore: social_daily_snapshot
       type: looker_area
+      row: 14
+      col: 0
       dimensions: [social_daily_snapshot.snapshot_date_date]
       pivots: [social_daily_snapshot.platform]
       measures: [social_daily_snapshot.total_video_views]
@@ -119,6 +139,8 @@
       model: upff
       explore: social_daily_snapshot
       type: looker_bar
+      row: 24
+      col: 0
       width: 8
       height: 10
       dimensions: [social_daily_snapshot.brand_canonical]
@@ -134,11 +156,42 @@
         brand: social_daily_snapshot.brand_canonical
         platform: social_daily_snapshot.platform
 
+    # Horizontal bar: distinct posts by brand (publish date + filters). Matches KPI “Total posts” logic.
+    - name: posts_by_brand
+      title: "Posts by brand"
+      model: upff
+      explore: agorapulse_post_performance
+      type: looker_bar
+      row: 24
+      col: 16
+      width: 8
+      height: 10
+      dimensions: [agorapulse_post_performance.brand_canonical]
+      measures: [agorapulse_post_performance.total_posts]
+      sorts: [agorapulse_post_performance.total_posts desc]
+      stacking: ""
+      hide_legend: true
+      show_value_labels: true
+      x_axis_gridlines: false
+      y_axis_gridlines: false
+      note:
+        text: "Distinct post_id per brand for posts whose published_at falls in the date filter (same definition as the Total posts KPI). Horizontal bars compare volume across brands."
+        state: collapsed
+        display: hover
+      listen:
+        snapshot_date: agorapulse_post_performance.publishing_date
+        brand: agorapulse_post_performance.brand_canonical
+        platform: agorapulse_post_performance.platform
+
     - name: platform_top_channels_impressions
       title: "Top channels by impressions"
       model: upff
       explore: social_daily_snapshot
       type: looker_bar
+      row: 24
+      col: 8
+      width: 8
+      height: 10
       dimensions: [social_daily_snapshot.platform]
       measures: [social_daily_snapshot.total_impressions]
       sorts: [social_daily_snapshot.total_impressions desc]
@@ -161,6 +214,10 @@
       model: upff
       explore: social_daily_snapshot
       type: looker_scatter
+      row: 34
+      col: 0
+      width: 16
+      height: 10
       dimensions: [social_daily_snapshot.platform]
       measures: [social_daily_snapshot.total_impressions, social_daily_snapshot.weighted_engagement_rate]
       hidden_fields: [social_daily_snapshot.platform]
