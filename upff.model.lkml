@@ -77,10 +77,15 @@ include: "/gaither_segment_consent.view.lkml"
 include: "/views/up_airtable_reports.view.lkml"
 include: "/Vimeo_OTT/vimeo_ott_all_customers.view.lkml"
 include: "/views/social_daily_snapshot.view.lkml"
+include: "/views/agorapulse_post_performance.view.lkml"
 include: "/dashboards/social_performance.dashboard.lookml"
 
 explore: social_daily_snapshot {
   label: "Social Daily Snapshot"
+}
+
+explore: agorapulse_post_performance {
+  label: "Social Post Performance"
 }
 
 explore: vimeo_ott_all_customers {

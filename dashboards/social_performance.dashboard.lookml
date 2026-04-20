@@ -8,7 +8,7 @@
 
   filters:
     - name: snapshot_date
-      title: "Date range"
+      title: "Date range (snapshot / publish)"
       type: field_filter
       model: upff
       explore: social_daily_snapshot
@@ -30,6 +30,21 @@
       field: social_daily_snapshot.platform
 
   elements:
+    - name: total_posts_kpi
+      title: "Total posts"
+      model: upff
+      explore: agorapulse_post_performance
+      type: single_value
+      measures: [agorapulse_post_performance.total_posts]
+      note:
+        text: "Count of distinct post_id where publish date (publishingDate) falls in the date filter. Audience tiles use snapshot reporting date on social_daily_snapshot."
+        state: collapsed
+        display: hover
+      listen:
+        snapshot_date: agorapulse_post_performance.publishing_date
+        brand: agorapulse_post_performance.brand_canonical
+        platform: agorapulse_post_performance.platform
+
     - name: total_impressions_kpi
       title: "Total impressions"
       model: upff
@@ -147,7 +162,8 @@
       explore: social_daily_snapshot
       type: looker_scatter
       dimensions: [social_daily_snapshot.platform]
-      measures: [social_daily_snapshot.weighted_engagement_rate, social_daily_snapshot.total_impressions]
+      measures: [social_daily_snapshot.total_impressions, social_daily_snapshot.weighted_engagement_rate]
+      hidden_fields: [social_daily_snapshot.platform]
       sorts: [social_daily_snapshot.platform asc]
       x_axis_scale: linear
       point_style: circle
