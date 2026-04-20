@@ -1,7 +1,7 @@
 view: agorapulse_post_performance {
-  label: "Social Post Performance"
+  label: "Social Post Snapshot"
 
-  sql_table_name: agorapulse_webhook.agorapulse_post_performance ;;
+  sql_table_name: agorapulse_webhook.social_post_snapshot ;;
 
   # Warehouse column is published_at (Segment flattens Agorapulse publishingDate → published_at).
   dimension_group: publishing {
