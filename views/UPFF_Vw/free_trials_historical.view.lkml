@@ -7,7 +7,7 @@ view: free_trials_historical {
             user_id as email
             ,billing_period
             ,platform
-            ,report_date + INTERVAL '7 day' as report_date
+            ,report_date + INTERVAL '8 day' as report_date
           FROM trials
 ;;
     }

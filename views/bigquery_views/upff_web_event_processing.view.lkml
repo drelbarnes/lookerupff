@@ -177,7 +177,7 @@ view: upff_web_event_processing {
       , to_hex(sha1(concat(safe_cast(web_events.ip_address as string),safe_cast(web_events.user_agent as string)))) as user_agent_id
       from web_orders
       full join web_events
-      on web_orders.anonymous_id = web_events.anonymous_id or web_events.ip_address = web_orders.ip_address
+      on web_orders.anonymous_id = web_events.anonymous_id
     )
     , web_events_web_orders_ip as (
       with p0 as (
@@ -210,7 +210,7 @@ view: upff_web_event_processing {
       )
       select *
       from p0
-      where user_id not in (select user_id from p2)
+      --where user_id not in (select user_id from p2)
     )
     , all_joined_events as (
       select * from web_events_web_orders_anon
@@ -250,8 +250,9 @@ view: upff_web_event_processing {
         end as attribution_flag
       from all_joined_events
       where session_start is not null
+      and ordered_at is not null
       and session_start < ordered_at
-      and session_start >= timestamp_sub(ordered_at, INTERVAL 30 DAY)
+     and session_start >= timestamp_sub(ordered_at, INTERVAL 30 DAY)
       group by 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26
     )
     , final_p1 as (

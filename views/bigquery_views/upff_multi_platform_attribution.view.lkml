@@ -10,7 +10,7 @@ view: upff_multi_platform_attribution {
         select
         ordered_at
         , session_start
-        , cast(user_id as string) as user_id
+        , user_id
         , anonymous_id
         , event_id
         , session_id
@@ -40,7 +40,7 @@ view: upff_multi_platform_attribution {
         select
         ordered_at
         , session_start
-        , cast(user_id as string) as user_id
+        , user_id
         , anonymous_id
         , event_id
         , session_id
@@ -469,15 +469,15 @@ view: upff_multi_platform_attribution {
     , g.spend
     , g.social_spend
     from attributable_events a
-    left join last_touch_v2 b
+    inner join last_touch_v2 b
     on a.user_id = b.user_id and a.session_start = b.session_start
-    left join first_touch_v2 c
+    inner join first_touch_v2 c
     on a.user_id = c.user_id and a.session_start = c.session_start
-    left join linear_v2 d
+    inner join linear_v2 d
     on a.user_id = d.user_id and a.session_start = d.session_start
-    left join channel_decay e
+    inner join channel_decay e
     on a.user_id = e.user_id and a.session_start = e.session_start
-    left join conversion_window f
+    inner join conversion_window f
     on a.user_id = f.user_id and a.ordered_at = f.ordered_at
     left join paid_media_metrics g
     on coalesce(a.ad_id,a.adset_id,a.campaign_id) = g.ad_id and date(a.ordered_at) = date(g.date_start)
