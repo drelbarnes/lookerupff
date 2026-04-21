@@ -31,8 +31,13 @@ view: marketing_attribution {
   ),
 
   reacquisition as (
-
+  distinct
+    user_id
+    ,context_ip
+    ,anonymous_id
+    ,date(timestamp) as report_date
   FROM javascript_upentertainment_checkout.order_resubscribed
+  WHERE brand = 'upfaithandfamily'
   ),
 
   converted as (
