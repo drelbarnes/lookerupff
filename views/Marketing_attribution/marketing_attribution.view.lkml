@@ -1,19 +1,13 @@
 view: marketing_attribution {
   derived_table: {
     sql:
-    with marketing_page as(
+    ,marketing_page as(
       SELECT
-        date(received_at) as report_date
-        ,context_ip
-        ,anonymous_id
-        ,context_campaign_source as campaign_source
-        ,context_campaign_name as campaign_name
-        ,context_campaign_medium as campaign_medium
-        ,context_campaign_content as campaign_content
-      FROM javascript_upff_home.pages
+        *
+      FROM ${visits.SQL_TABLE_NAME}
       WHERE 1=1
         --and context_campaign_name LIKE '%blue_skies%'
-        AND DATE(received_at) >='2026-01-01'
+        AND report_date >='2026-01-01'
     ),
 
   trial_created as (
@@ -55,7 +49,7 @@ view: marketing_attribution {
   not_converted as (
   SELECT
       user_id
-      ,DATE("timestamp") AS report_date
+      ,DATE('timestamp') AS report_date
       FROM chargebee_webhook_events.subscription_cancelled
       WHERE (content_subscription_cancelled_at - content_subscription_trial_end) < 10000
       AND content_subscription_subscription_items LIKE '%UP%'
@@ -106,8 +100,9 @@ result as (
     ,mp.campaign_source
     ,mp.campaign_name
     ,mp.report_date as click_date
-    ,campaign_medium
-    ,campaign_content
+    ,mp.campaign_medium
+    ,mp.campaign_content
+    ,mp.marketing_platform
   ,ROW_NUMBER() OVER (
       PARTITION BY jd.user_id, jd.report_date
       ORDER BY
@@ -135,6 +130,7 @@ result as (
     ,campaign_name
     ,campaign_medium
     ,campaign_content
+    ,marketing_platform
     ,report_date
   FROM result2;;
 
@@ -162,6 +158,12 @@ result as (
     label: "Campaign Name"
     type: string
     sql: ${TABLE}.campaign_name ;;
+  }
+
+  dimension: marketing_platform {
+    label: "Marketing Platform"
+    type: string
+    sql: ${TABLE}.marketing_platform ;;
   }
 
   dimension: event {
@@ -195,84 +197,8 @@ result as (
   }
 
   dimension: campaign_source {
-    sql: CASE
-      WHEN LOWER(${TABLE}.campaign_source) = 'hs_email'
-        or LOWER(${TABLE}.campaign_source) = 'hs_automation'
-        or LOWER(${TABLE}.campaign_source) = 'hubspot_upff'
-        or LOWER(${TABLE}.campaign_source) = 'hubspot_uptv'
-        or LOWER(${TABLE}.campaign_source) = 'hubspot_gtv'
-        then 'HubSpot'
-      WHEN LOWER(${TABLE}.campaign_source) = 'fb'
-        or LOWER(${TABLE}.campaign_source) = 'facebook'
-        or LOWER(${TABLE}.campaign_source) = 'ig'
-        or LOWER(${TABLE}.campaign_source) = 'an'
-        or LOWER(${TABLE}.campaign_source) LIKE '%site.campaign_source.name%'
-        or LOWER(${TABLE}.campaign_source) LIKE '%site_source_name%'
-        or LOWER(${TABLE}.campaign_source) = 'instagram'
-        then 'Meta Ads'
-      WHEN (
-          LOWER(${TABLE}.campaign_source) = 'google_ads'
-          and (LOWER(${TABLE}.campaign_medium) = 'g' or LOWER(${TABLE}.campaign_medium) = 'search' or LOWER(${TABLE}.campaign_medium) = 's')
-        )
-        or LOWER(${TABLE}.campaign_source) = 'googleads'
-        or LOWER(${TABLE}.campaign_source) = 'google adwords'
-        then 'Google Search'
-      WHEN LOWER(${TABLE}.campaign_source) = 'pmax_upff'
-        or (
-          LOWER(${TABLE}.campaign_source) = 'google_ads'
-          and LOWER(${TABLE}.campaign_medium) = 'pmax'
-        )
-        then 'Google PMax'
-      WHEN LOWER(${TABLE}.campaign_source) = 'youtube_upff'
-        or (
-          LOWER(${TABLE}.campaign_source) = 'google_ads'
-          and (LOWER(${TABLE}.campaign_medium) = 'ytv' or LOWER(${TABLE}.campaign_medium) = 'x')
-        )
-        then 'Google Display'
-      WHEN LOWER(${TABLE}.campaign_source) = 'google marketing platform'
-        or LOWER(${TABLE}.campaign_source) = 'dv360_upff'
-        then 'Google Marketing Platform'
-      WHEN LOWER(${TABLE}.campaign_source) = 'bing_ads'
-        or LOWER(${TABLE}.campaign_source) = 'bing_upff'
-        or LOWER(${TABLE}.campaign_source) = 'bing'
-        or LOWER(${TABLE}.campaign_source) = 'bing ads'
-        then 'Bing Ads'
-      WHEN LOWER(${TABLE}.campaign_source) = 'uptv-linear'
-        or LOWER(${TABLE}.campaign_source) = 'linear-uptv'
-        then 'UPtv Linear'
-      WHEN LOWER(${TABLE}.campaign_source) = 'uptv_movies_app'
-        or LOWER(${TABLE}.campaign_source) = 'uptv-web'
-        or LOWER(${TABLE}.campaign_source) = 'uptv-app'
-        or LOWER(${TABLE}.campaign_source) = 'uptv'
-        or LOWER(${TABLE}.campaign_source) = 'uptv.com'
-        then 'UPtv Digital'
-      WHEN LOWER(${TABLE}.campaign_source) = 'aspire-linear'
-        then 'aspire TV Linear'
-      WHEN LOWER(${TABLE}.campaign_source) = 'aspire.tv'
-        then 'aspire TV Digital'
-      WHEN LOWER(${TABLE}.campaign_source) = 'zendesk'
-        or LOWER(${TABLE}.campaign_source) = 'support'
-        then 'Customer Support'
-      WHEN LOWER(${TABLE}.campaign_source) = 'google.com'
-        or LOWER(${TABLE}.campaign_source) = 'android.gm'
-        or LOWER(${TABLE}.campaign_source) = 'bing.com'
-        or LOWER(${TABLE}.campaign_source) = 'yahoo.com'
-        or LOWER(${TABLE}.campaign_source) = 'duckduckgo.com'
-        then 'Organic Search'
-      WHEN LOWER(${TABLE}.campaign_source) = 'facebook.com'
-        or LOWER(${TABLE}.campaign_source) = 'instagram.com'
-        or LOWER(${TABLE}.campaign_source) = 't.co'
-        or LOWER(${TABLE}.campaign_source) = 'youtube.com'
-        then 'Organic Social'
-
-      WHEN LOWER(${TABLE}.campaign_source) = 'seedtag'
-        then 'Seedtag'
-      WHEN LOWER(${TABLE}.campaign_source) = 'cj_uptv'
-        then 'CJ'
-      WHEN LOWER(${TABLE}.campaign_source) = 'unknown'
-        then 'Unknown'
-      ELSE 'Others'
-    END ;;
+    type: string
+    sql: ${TABLE}.campaign_source;;
     }
 
   # ── Measures ─────────────────────────────────────────────────────────────
