@@ -2,7 +2,7 @@ view: visits {
   derived_table: {
     sql:
       with result as (SELECT
-        date(timestamp) as report_date
+        date(received_at) as report_date
         ,context_ip
         ,anonymous_id
         ,context_campaign_source as campaign_source
@@ -147,6 +147,7 @@ view: visits {
     type: time
     timeframes: [date, week, month, quarter, year]
     datatype: date
+
     sql: ${TABLE}.report_date ;;
   }
   dimension: source {

@@ -49,7 +49,7 @@ view: marketing_attribution {
   not_converted as (
   SELECT
       user_id
-      ,DATE('timestamp') AS report_date
+      ,DATE(timestamp) AS report_date
       FROM chargebee_webhook_events.subscription_cancelled
       WHERE (content_subscription_cancelled_at - content_subscription_trial_end) < 10000
       AND content_subscription_subscription_items LIKE '%UP%'
@@ -143,8 +143,9 @@ result as (
 
   dimension_group: report_date {
     type: time
-    timeframes: [date, week, month, quarter, year]
     datatype: date
+
+    timeframes: [date, week, month, quarter, year]
     sql: ${TABLE}.report_date ;;
   }
 
