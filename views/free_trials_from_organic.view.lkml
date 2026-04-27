@@ -16,7 +16,7 @@ view: free_trials_from_organic {
     sql: ${TABLE}._anchor ;;
   }
 
-  # Listen target for dashboard: snapshot_date (maps here; drives liquid in the measure)
+  # Listen target for dashboard: snapshot_date. Do not put {% date_start %} inside '…' (Looker emits SQL, e.g. TIMESTAMP '…').
   filter: free_trials_organic_date_range {
     label: "Date range (page views / window)"
     type: date
@@ -40,20 +40,17 @@ view: free_trials_from_organic {
             FROM javascript_upff_home.pages m
             WHERE
               LOWER(TRIM(m.context_campaign_medium::varchar)) IN ('organic social', 'organic_social')
-              AND m."timestamp"::date >=
-                CASE
-                  WHEN NULLIF(TRIM('{% date_start free_trials_organic_date_range %}'), '') IS NULL
-                    THEN (CURRENT_DATE - 30)
-                  ELSE
-                    TO_DATE(NULLIF(TRIM('{% date_start free_trials_organic_date_range %}'), ''), 'YYYY-MM-DD')
-                END
-              AND m."timestamp"::date <
-                CASE
-                  WHEN NULLIF(TRIM('{% date_end free_trials_organic_date_range %}'), '') IS NULL
-                    THEN (CURRENT_DATE + 1)
-                  ELSE
-                    (TO_DATE(NULLIF(TRIM('{% date_end free_trials_organic_date_range %}'), ''), 'YYYY-MM-DD') + 1)
-                END
+              AND (
+                {% if free_trials_organic_date_range._in_query %}
+                m."timestamp"::date
+                  >= ( {% date_start free_trials_organic_date_range %} )::date
+                AND m."timestamp"::date
+                  < ( {% date_end free_trials_organic_date_range %} )::date + 1
+                {% else %}
+                m."timestamp"::date >= (CURRENT_DATE - 30)
+                AND m."timestamp"::date < (CURRENT_DATE + 1)
+                {% endif %}
+              )
           ),
           ordered AS (
             SELECT DISTINCT
