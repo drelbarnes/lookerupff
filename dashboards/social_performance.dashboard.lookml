@@ -37,11 +37,11 @@
       type: single_value
       row: 0
       col: 0
-      width: 6
+      width: 4
       height: 4
       measures: [agorapulse_post_performance.total_posts]
       note:
-        text: "Count of distinct post_id from social_post_snapshot where publish date (published_at) falls in the date filter. Audience tiles use snapshot reporting date on social_daily_snapshot."
+        text: "Count of distinct post_id from social_post_snapshot where publish date (publishing_date) falls in the date filter. Audience tiles use snapshot reporting date on social_daily_snapshot."
         state: collapsed
         display: hover
       listen:
@@ -55,8 +55,8 @@
       explore: social_daily_snapshot
       type: single_value
       row: 0
-      col: 6
-      width: 6
+      col: 4
+      width: 4
       height: 4
       measures: [social_daily_snapshot.total_impressions]
       listen:
@@ -70,8 +70,8 @@
       explore: social_daily_snapshot
       type: single_value
       row: 0
-      col: 12
-      width: 6
+      col: 8
+      width: 4
       height: 4
       measures: [social_daily_snapshot.total_video_views]
       listen:
@@ -85,14 +85,31 @@
       explore: social_daily_snapshot
       type: single_value
       row: 0
-      col: 18
-      width: 6
+      col: 12
+      width: 4
       height: 4
       measures: [social_daily_snapshot.avg_engagement_rate]
       listen:
         snapshot_date: social_daily_snapshot.snapshot_date_date
         brand: social_daily_snapshot.brand_canonical
         platform: social_daily_snapshot.platform
+
+    - name: free_trials_organic_kpi
+      title: "Free trials from organic"
+      model: upff
+      explore: free_trials_from_organic
+      type: single_value
+      row: 0
+      col: 16
+      width: 4
+      height: 4
+      measures: [free_trials_from_organic.organic_free_trial_ip_count]
+      note:
+        text: "Segment: distinct context_ip on order_completed with a same-window pages hit where UTM medium is organic social (docs/07). Date range filter maps to organic page timestamps. Brand/platform do not apply (not on this explore)."
+        state: collapsed
+        display: hover
+      listen:
+        snapshot_date: free_trials_from_organic.free_trials_organic_date_range
 
     - name: impressions_over_time
       title: "Impressions over time by platform"
@@ -126,7 +143,7 @@
       measures: [social_daily_snapshot.total_video_views]
       sorts: [social_daily_snapshot.snapshot_date_date asc]
       x_axis_scale: auto
-      width: 16
+      width: 24
       height: 10
       stacking: ""
       listen:
@@ -141,7 +158,7 @@
       type: looker_bar
       row: 24
       col: 0
-      width: 8
+      width: 12
       height: 10
       dimensions: [social_daily_snapshot.brand_canonical]
       measures: [social_daily_snapshot.total_impressions]
@@ -162,9 +179,9 @@
       model: upff
       explore: agorapulse_post_performance
       type: looker_bar
-      row: 24
-      col: 16
-      width: 8
+      row: 34
+      col: 0
+      width: 24
       height: 10
       dimensions: [agorapulse_post_performance.brand_canonical]
       measures: [agorapulse_post_performance.total_posts]
@@ -175,7 +192,7 @@
       x_axis_gridlines: false
       y_axis_gridlines: false
       note:
-        text: "Distinct post_id per brand from social_post_snapshot for posts whose published_at falls in the date filter (same definition as the Total posts KPI). Horizontal bars compare volume across brands."
+        text: "Distinct post_id per brand from social_post_snapshot for posts whose publishing_date falls in the date filter (same definition as the Total posts KPI). Horizontal bars compare volume across brands."
         state: collapsed
         display: hover
       listen:
@@ -189,8 +206,8 @@
       explore: social_daily_snapshot
       type: looker_bar
       row: 24
-      col: 8
-      width: 8
+      col: 12
+      width: 12
       height: 10
       dimensions: [social_daily_snapshot.platform]
       measures: [social_daily_snapshot.total_impressions]
@@ -202,31 +219,6 @@
       y_axis_gridlines: false
       note:
         text: "Horizontal bar chart (Looker Bar). One bar per platform, sorted by total impressions for the selected date range and brand/platform filters—ranking headline volume (doc 07 §8)."
-        state: collapsed
-        display: hover
-      listen:
-        snapshot_date: social_daily_snapshot.snapshot_date_date
-        brand: social_daily_snapshot.brand_canonical
-        platform: social_daily_snapshot.platform
-
-    - name: platform_impressions_vs_weighted_engagement
-      title: "Platform reach vs engagement (weighted)"
-      model: upff
-      explore: social_daily_snapshot
-      type: looker_scatter
-      row: 34
-      col: 0
-      width: 16
-      height: 10
-      dimensions: [social_daily_snapshot.platform]
-      measures: [social_daily_snapshot.total_impressions, social_daily_snapshot.weighted_engagement_rate]
-      hidden_fields: [social_daily_snapshot.platform]
-      sorts: [social_daily_snapshot.platform asc]
-      x_axis_scale: linear
-      point_style: circle
-      show_value_labels: true
-      note:
-        text: "Y = weighted engagement rate (sum(engagements) ÷ sum(impressions)); X = total impressions—per platform for the same filters (doc 07 §6 Option B × §8). Surfaces high-reach vs high-engagement tradeoffs; differs from the Engagement rate KPI (avg_engagement_rate, Option A)."
         state: collapsed
         display: hover
       listen:

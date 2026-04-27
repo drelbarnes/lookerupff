@@ -78,6 +78,7 @@ include: "/views/up_airtable_reports.view.lkml"
 include: "/Vimeo_OTT/vimeo_ott_all_customers.view.lkml"
 include: "/views/social_daily_snapshot.view.lkml"
 include: "/views/agorapulse_post_performance.view.lkml"
+include: "/views/free_trials_from_organic.view.lkml"
 include: "/dashboards/social_performance.dashboard.lookml"
 
 explore: social_daily_snapshot {
@@ -86,6 +87,12 @@ explore: social_daily_snapshot {
 
 explore: agorapulse_post_performance {
   label: "Social Post Performance"
+}
+
+explore: free_trials_from_organic {
+  label: "Free trials from organic (Segment)"
+  view_name: free_trials_from_organic
+  description: "Single-measure explore; the measure uses a templated date window (dashboard Date range → listen, or 30 days when unset in LookML). Add this include to upff in production, or set dashboard model: social_snapshot in this mirror."
 }
 
 explore: vimeo_ott_all_customers {
