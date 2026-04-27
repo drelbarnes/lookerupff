@@ -41,7 +41,7 @@
       height: 4
       measures: [agorapulse_post_performance.total_posts]
       note:
-        text: "Count of distinct post_id from social_post_snapshot where publish date (published_at) falls in the date filter. Audience tiles use snapshot reporting date on social_daily_snapshot."
+        text: "Count of distinct post_id from social_post_snapshot where publish date (publishing_date) falls in the date filter. Audience tiles use snapshot reporting date on social_daily_snapshot."
         state: collapsed
         display: hover
       listen:
@@ -126,7 +126,7 @@
       measures: [social_daily_snapshot.total_video_views]
       sorts: [social_daily_snapshot.snapshot_date_date asc]
       x_axis_scale: auto
-      width: 16
+      width: 24
       height: 10
       stacking: ""
       listen:
@@ -141,7 +141,7 @@
       type: looker_bar
       row: 24
       col: 0
-      width: 8
+      width: 12
       height: 10
       dimensions: [social_daily_snapshot.brand_canonical]
       measures: [social_daily_snapshot.total_impressions]
@@ -162,9 +162,9 @@
       model: upff
       explore: agorapulse_post_performance
       type: looker_bar
-      row: 24
-      col: 16
-      width: 8
+      row: 34
+      col: 0
+      width: 24
       height: 10
       dimensions: [agorapulse_post_performance.brand_canonical]
       measures: [agorapulse_post_performance.total_posts]
@@ -175,7 +175,7 @@
       x_axis_gridlines: false
       y_axis_gridlines: false
       note:
-        text: "Distinct post_id per brand from social_post_snapshot for posts whose published_at falls in the date filter (same definition as the Total posts KPI). Horizontal bars compare volume across brands."
+        text: "Distinct post_id per brand from social_post_snapshot for posts whose publishing_date falls in the date filter (same definition as the Total posts KPI). Horizontal bars compare volume across brands."
         state: collapsed
         display: hover
       listen:
@@ -189,8 +189,8 @@
       explore: social_daily_snapshot
       type: looker_bar
       row: 24
-      col: 8
-      width: 8
+      col: 12
+      width: 12
       height: 10
       dimensions: [social_daily_snapshot.platform]
       measures: [social_daily_snapshot.total_impressions]
@@ -202,31 +202,6 @@
       y_axis_gridlines: false
       note:
         text: "Horizontal bar chart (Looker Bar). One bar per platform, sorted by total impressions for the selected date range and brand/platform filters—ranking headline volume (doc 07 §8)."
-        state: collapsed
-        display: hover
-      listen:
-        snapshot_date: social_daily_snapshot.snapshot_date_date
-        brand: social_daily_snapshot.brand_canonical
-        platform: social_daily_snapshot.platform
-
-    - name: platform_impressions_vs_weighted_engagement
-      title: "Platform reach vs engagement (weighted)"
-      model: upff
-      explore: social_daily_snapshot
-      type: looker_scatter
-      row: 34
-      col: 0
-      width: 16
-      height: 10
-      dimensions: [social_daily_snapshot.platform]
-      measures: [social_daily_snapshot.total_impressions, social_daily_snapshot.weighted_engagement_rate]
-      hidden_fields: [social_daily_snapshot.platform]
-      sorts: [social_daily_snapshot.platform asc]
-      x_axis_scale: linear
-      point_style: circle
-      show_value_labels: true
-      note:
-        text: "Y = weighted engagement rate (sum(engagements) ÷ sum(impressions)); X = total impressions—per platform for the same filters (doc 07 §6 Option B × §8). Surfaces high-reach vs high-engagement tradeoffs; differs from the Engagement rate KPI (avg_engagement_rate, Option A)."
         state: collapsed
         display: hover
       listen:
