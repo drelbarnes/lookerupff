@@ -37,7 +37,7 @@
       type: single_value
       row: 0
       col: 0
-      width: 6
+      width: 4
       height: 4
       measures: [agorapulse_post_performance.total_posts]
       note:
@@ -55,8 +55,8 @@
       explore: social_daily_snapshot
       type: single_value
       row: 0
-      col: 6
-      width: 6
+      col: 4
+      width: 4
       height: 4
       measures: [social_daily_snapshot.total_impressions]
       listen:
@@ -70,8 +70,8 @@
       explore: social_daily_snapshot
       type: single_value
       row: 0
-      col: 12
-      width: 6
+      col: 8
+      width: 4
       height: 4
       measures: [social_daily_snapshot.total_video_views]
       listen:
@@ -85,14 +85,31 @@
       explore: social_daily_snapshot
       type: single_value
       row: 0
-      col: 18
-      width: 6
+      col: 12
+      width: 4
       height: 4
       measures: [social_daily_snapshot.avg_engagement_rate]
       listen:
         snapshot_date: social_daily_snapshot.snapshot_date_date
         brand: social_daily_snapshot.brand_canonical
         platform: social_daily_snapshot.platform
+
+    - name: free_trials_organic_kpi
+      title: "Free trials from organic"
+      model: upff
+      explore: free_trials_from_organic
+      type: single_value
+      row: 0
+      col: 16
+      width: 4
+      height: 4
+      measures: [free_trials_from_organic.organic_free_trial_ip_count]
+      note:
+        text: "Segment: distinct context_ip on order_completed with a same-window pages hit where UTM medium is organic social (docs/07). Date range filter maps to organic page timestamps. Brand/platform do not apply (not on this explore)."
+        state: collapsed
+        display: hover
+      listen:
+        snapshot_date: free_trials_from_organic.free_trials_organic_date_range
 
     - name: impressions_over_time
       title: "Impressions over time by platform"
