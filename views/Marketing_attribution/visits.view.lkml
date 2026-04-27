@@ -24,83 +24,106 @@ view: visits {
       result2 as (
       select *
       , CASE
-    WHEN LOWER(source) = 'hs_email'
-    or LOWER(source) = 'hs_automation'
-    or LOWER(source) = 'hubspot_upff'
-    or LOWER(source) = 'hubspot_uptv'
-    or LOWER(source) = 'hubspot_gtv'
-    then 'HubSpot'
-    WHEN LOWER(source) = 'fb'
-    or LOWER(source) = 'facebook'
-    or LOWER(source) = 'ig'
-    or LOWER(source) = 'an'
-    or LOWER(source) LIKE '%site.source.name%'
-    or LOWER(source) LIKE '%site_source_name%'
-    or LOWER(source) = 'instagram'
-    then 'Meta Ads'
-    WHEN (
-    LOWER(source) = 'google_ads'
-    and (LOWER(campaign_medium) = 'g' or LOWER(campaign_medium) = 'search' or LOWER(campaign_medium) = 's')
-    )
-    or LOWER(source) = 'googleads'
-    or LOWER(source) = 'google adwords'
-    then 'Google Search'
-    WHEN LOWER(source) = 'pmax_upff'
-    or (
-    LOWER(source) = 'google_ads'
-    and LOWER(campaign_medium) = 'pmax'
-    )
-    then 'Google PMax'
-    WHEN LOWER(source) = 'youtube_upff'
-    or (
-    LOWER(source) = 'google_ads'
-    and (LOWER(campaign_medium) = 'ytv' or LOWER(campaign_medium) = 'x')
-    )
-    then 'Google Display'
-    WHEN LOWER(source) = 'google marketing platform'
-    or LOWER(source) = 'dv360_upff'
-    then 'Google Marketing Platform'
-    WHEN LOWER(source) = 'bing_ads'
-    or LOWER(source) = 'bing_upff'
-    or LOWER(source) = 'bing'
-    or LOWER(source) = 'bing ads'
-    then 'Bing Ads'
-    WHEN LOWER(source) = 'uptv-linear'
-    or LOWER(source) = 'linear-uptv'
-    then 'UPtv Linear'
-    WHEN LOWER(source) = 'uptv_movies_app'
-    or LOWER(source) = 'uptv-web'
-    or LOWER(source) = 'uptv-app'
-    or LOWER(source) = 'uptv'
-    or LOWER(source) = 'uptv.com'
-    then 'UPtv Digital'
-    WHEN LOWER(source) = 'aspire-linear'
-    then 'aspire TV Linear'
-    WHEN LOWER(source) = 'aspire.tv'
-    then 'aspire TV Digital'
-    WHEN LOWER(source) = 'zendesk'
-    or LOWER(source) = 'support'
-    then 'Customer Support'
-    WHEN LOWER(source) = 'google.com'
-    or LOWER(source) = 'android.gm'
-    or LOWER(source) = 'bing.com'
-    or LOWER(source) = 'yahoo.com'
-    or LOWER(source) = 'duckduckgo.com'
-    then 'Organic Search'
-    WHEN LOWER(source) = 'facebook.com'
-    or LOWER(source) = 'instagram.com'
-    or LOWER(source) = 't.co'
-    or LOWER(source) = 'youtube.com'
-    then 'Organic Social'
+    WHEN LOWER(source) LIKE '%hs_email%'
+      OR LOWER(source) LIKE '%hs_automation%'
+      OR LOWER(source) LIKE '%hubspot_upff%'
+      OR LOWER(source) LIKE '%hubspot_uptv%'
+      OR LOWER(source) LIKE '%hubspot_gtv%'
+    THEN 'HubSpot'
 
-    WHEN LOWER(source) = 'seedtag'
-    then 'Seedtag'
-    WHEN LOWER(source) = 'cj_uptv'
-    then 'CJ'
-    WHEN LOWER(source) = 'unknown'
-    then 'Unknown'
+    WHEN LOWER(source) LIKE '%fb%'
+      OR LOWER(source) LIKE '%facebook%'
+      OR LOWER(source) LIKE '%ig%'
+      OR LOWER(source) LIKE '%an%'
+      OR LOWER(source) LIKE '%site.source.name%'
+      OR LOWER(source) LIKE '%site_source_name%'
+      OR LOWER(source) LIKE '%instagram%'
+    THEN 'Meta Ads'
+
+    WHEN (
+        LOWER(source) LIKE '%google_ads%'
+        AND (
+            LOWER(campaign_medium) LIKE '%g%'
+            OR LOWER(campaign_medium) LIKE '%search%'
+            OR LOWER(campaign_medium) LIKE '%s%'
+        )
+    )
+      OR LOWER(source) LIKE '%googleads%'
+      OR LOWER(source) LIKE '%google adwords%'
+    THEN 'Google Search'
+
+    WHEN LOWER(source) LIKE '%pmax_upff%'
+      OR (
+        LOWER(source) LIKE '%google_ads%'
+        AND LOWER(campaign_medium) LIKE '%pmax%'
+      )
+    THEN 'Google PMax'
+
+    WHEN LOWER(source) LIKE '%youtube_upff%'
+      OR (
+        LOWER(source) LIKE '%google_ads%'
+        AND (
+            LOWER(campaign_medium) LIKE '%ytv%'
+            OR LOWER(campaign_medium) LIKE '%x%'
+        )
+      )
+    THEN 'Google Display'
+
+    WHEN LOWER(source) LIKE '%google marketing platform%'
+      OR LOWER(source) LIKE '%dv360_upff%'
+    THEN 'Google Marketing Platform'
+
+    WHEN LOWER(source) LIKE '%bing_ads%'
+      OR LOWER(source) LIKE '%bing_upff%'
+      OR LOWER(source) LIKE '%bing%'
+      OR LOWER(source) LIKE '%bing ads%'
+    THEN 'Bing Ads'
+
+    WHEN LOWER(source) LIKE '%uptv-linear%'
+      OR LOWER(source) LIKE '%linear-uptv%'
+    THEN 'UPtv Linear'
+
+    WHEN LOWER(source) LIKE '%uptv_movies_app%'
+      OR LOWER(source) LIKE '%uptv-web%'
+      OR LOWER(source) LIKE '%uptv-app%'
+      OR LOWER(source) LIKE '%uptv%'
+      OR LOWER(source) LIKE '%uptv.com%'
+    THEN 'UPtv Digital'
+
+    WHEN LOWER(source) LIKE '%aspire-linear%'
+    THEN 'aspire TV Linear'
+
+    WHEN LOWER(source) LIKE '%aspire.tv%'
+    THEN 'aspire TV Digital'
+
+    WHEN LOWER(source) LIKE '%zendesk%'
+      OR LOWER(source) LIKE '%support%'
+    THEN 'Customer Support'
+
+    WHEN LOWER(source) LIKE '%google.com%'
+      OR LOWER(source) LIKE '%android.gm%'
+      OR LOWER(source) LIKE '%bing.com%'
+      OR LOWER(source) LIKE '%yahoo.com%'
+      OR LOWER(source) LIKE '%duckduckgo.com%'
+    THEN 'Organic Search'
+
+    WHEN LOWER(source) LIKE '%facebook.com%'
+      OR LOWER(source) LIKE '%instagram.com%'
+      OR LOWER(source) LIKE '%t.co%'
+      OR LOWER(source) LIKE '%youtube.com%'
+    THEN 'Organic Social'
+
+    WHEN LOWER(source) LIKE '%seedtag%'
+    THEN 'Seedtag'
+
+    WHEN LOWER(source) LIKE '%cj_uptv%'
+    THEN 'CJ'
+
+    WHEN LOWER(source) LIKE '%unknown%'
+    THEN 'Unknown'
+
     ELSE 'Others'
-    END AS marketing_platform
+END AS marketing_platform
     from result)
     select *
     ,case
@@ -153,6 +176,11 @@ view: visits {
   dimension: source {
     type: string
     sql:${TABLE}.source;;
+  }
+
+  dimension: referrer {
+    type: string
+    sql:${TABLE}.referrer;;
   }
 
   dimension: marketing_platform {

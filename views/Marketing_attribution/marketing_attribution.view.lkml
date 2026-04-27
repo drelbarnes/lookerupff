@@ -1,13 +1,32 @@
 view: marketing_attribution {
   derived_table: {
     sql:
-    ,marketing_page as(
+    ,marketing_page_orig as(
       SELECT
         *
+
+      ,ROW_NUMBER() OVER (
+      PARTITION BY anonymous_id
+      ORDER BY report_date DESC
+
+      /*
+      CASE WHEN campaign_name IS NULL THEN 1 ELSE 0 END,
+      {% if attribution_model._parameter_value == "first" %}
+      report_date ASC    -- first touch: earliest click within window wins
+      {% else %}
+      report_date DESC   -- last touch: most recent click within window wins
+      {% endif %} */
+      )                                 AS touch_rank
       FROM ${visits.SQL_TABLE_NAME}
       WHERE 1=1
-        --and context_campaign_name LIKE '%blue_skies%'
+        --AND campaign_name LIKE '%Blue Skies%'
 and DATE(report_date) >='2026-01-01'),
+
+   marketing_page as(
+  SELECT*
+
+    FROM marketing_page_orig
+   ),
 
   trial_created as (
   SELECT
@@ -88,7 +107,7 @@ and DATE(report_date) >='2026-01-01'),
   FROM reacquisition
   ),
 
-result as (
+result_ip as (
   SELECT
     jd.user_id
     ,jd.context_ip
@@ -102,20 +121,34 @@ result as (
     ,mp.campaign_medium
     ,mp.campaign_content
     ,mp.marketing_platform
-  ,ROW_NUMBER() OVER (
-      PARTITION BY jd.user_id, jd.report_date
-      ORDER BY
-      CASE WHEN mp.campaign_name IS NULL THEN 1 ELSE 0 END,
-      {% if attribution_model._parameter_value == "first" %}
-      mp.report_date ASC    -- first touch: earliest click within window wins
-      {% else %}
-      mp.report_date DESC   -- last touch: most recent click within window wins
-      {% endif %}
-      )                                 AS row_num
+    ,mp.touch_rank
       FROM join_data jd
-      LEFT JOIN marketing_page mp
-      ON  (mp.context_ip    = jd.context_ip
-      OR mp.anonymous_id = jd.anonymous_id)
+      right JOIN marketing_page mp
+      ON  mp.context_ip  = jd.context_ip
+      -- Upper bound: click must be on or before trial start
+      AND mp.report_date <= jd.report_date
+      -- Attribution window: DATEDIFF avoids DATEADD type-casting issues in Redshift
+      AND DATEDIFF(DAY, mp.report_date, jd.report_date) <= {% parameter attribution_window %}
+      ),
+
+result_anon as (
+  SELECT
+    jd.user_id
+    ,jd.context_ip
+    ,jd.anonymous_id
+    ,jd.report_date
+    ,jd.has_converted
+    ,jd.event
+    ,mp.campaign_source
+    ,mp.campaign_name
+    ,mp.report_date as click_date
+    ,mp.campaign_medium
+    ,mp.campaign_content
+    ,mp.marketing_platform
+    ,mp.touch_rank
+      FROM join_data jd
+      right JOIN marketing_page mp
+      ON  mp.anonymous_id  = jd.anonymous_id
       -- Upper bound: click must be on or before trial start
       AND mp.report_date <= jd.report_date
       -- Attribution window: DATEDIFF avoids DATEADD type-casting issues in Redshift
@@ -123,8 +156,11 @@ result as (
       ),
       result2 AS (
       SELECT *
-      FROM result
-      WHERE row_num = 1
+      FROM result_ip
+
+      UNION ALL
+      SELECT *
+      FROM result_anon
       )
 
   SELECT
@@ -139,7 +175,8 @@ result as (
     ,campaign_content
     ,marketing_platform
     ,report_date
-  FROM result2;;
+  FROM result2
+   where touch_rank = 1;;
 
     sql_trigger_value: SELECT TO_CHAR( DATEADD(minute, -300, GETDATE()), 'YYYY-MM-DD');;
     #sql_trigger_value:  SELECT TO_CHAR(DATE_TRUNC('day', CURRENT_TIMESTAMP) + INTERVAL '9 hours 45 minutes', 'YYYY-MM-DD');;
@@ -197,7 +234,13 @@ result as (
   dimension: marketing_platform {
     label: "Marketing Platform"
     type: string
-    sql: ${TABLE}.marketing_platform ;;
+    sql:
+    CASE
+      WHEN ${TABLE}.marketing_platform IS NULL
+        OR ${TABLE}.marketing_platform IN ('Unknown', 'Others')
+      THEN 'Others/Unknown'
+      ELSE ${TABLE}.marketing_platform
+    END ;;
   }
 
   dimension: event {
@@ -237,12 +280,6 @@ result as (
 
   # ── Measures ─────────────────────────────────────────────────────────────
 
-  measure: total_visits {
-    label: "Total Visits"
-    type: count_distinct
-    sql: ${TABLE}.user_id ;;
-    value_format_name: decimal_0
-  }
 
   measure: total_trials_started {
     label: "Total Trials Started"
