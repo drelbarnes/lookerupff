@@ -55,7 +55,7 @@ view: redshift_timeupdate {
                 b.title
                 , b.date as release
                 , a.user_id
-                , media_type --email
+                , media_type
                 , cast(a.video_id as integer) as video_id
                 , case when collection in ('Season 1','Season 2','Season 3') then series || ' ' || collection else collection end as collection
                 , series
@@ -81,7 +81,7 @@ view: redshift_timeupdate {
                 b.title
                 , b.date as release
                 , a.user_id
-                , media_type --email
+                , media_type
                 , cast(a.video_id as integer) as video_id
                 , case when collection in ('Season 1','Season 2','Season 3') then series || ' ' || collection else collection end as collection
                 , series
@@ -107,7 +107,7 @@ view: redshift_timeupdate {
                 b.title
                 , b.date as release
                 , a.user_id
-                , media_type --email
+                , media_type
                 , cast(a.video_id as integer) as video_id
                 , case when collection in ('Season 1','Season 2','Season 3') then series || ' ' || collection else collection end as collection
                 , series
@@ -133,7 +133,7 @@ view: redshift_timeupdate {
                 b.title
                 , b.date as release
                 , a.user_id
-                , media_type --email
+                , media_type
                 , cast(a.video_id as integer) as video_id
                 , case when collection in ('Season 1','Season 2','Season 3') then series || ' ' || collection else collection end as collection
                 , series
@@ -158,7 +158,7 @@ view: redshift_timeupdate {
                 b.title
                 , b.date as release
                 , a.user_id
-                , media_type --email
+                , media_type
                 , cast(a.video_id as integer) as video_id
                 , case when collection in ('Season 1','Season 2','Season 3') then series || ' ' || collection else collection end as collection
                 , series
@@ -183,7 +183,7 @@ view: redshift_timeupdate {
                 b.title
                 , b.date as release
                 , a.user_id
-                , media_type --email
+                , media_type
                 , cast(a.video_id as integer) as video_id
                 , case when collection in ('Season 1','Season 2','Season 3') then series || ' ' || collection else collection end as collection
                 , series
@@ -208,7 +208,7 @@ view: redshift_timeupdate {
                 b.title
                 , b.date as release
                 , a.user_id
-                , b.media_type --email
+                , b.media_type
                 , cast(a.video_id as integer) as video_id
                 , case when collection in ('Season 1','Season 2','Season 3') then series || ' ' || collection else collection end as collection
                 , series
@@ -233,7 +233,7 @@ view: redshift_timeupdate {
                 b.title
                 , b.date as release
                 , a.user_id
-                , b.media_type --email
+                , b.media_type
                 , cast(a.video_id as integer) as video_id
                 , case when collection in ('Season 1','Season 2','Season 3') then series || ' ' || collection else collection end as collection
                 , series
@@ -258,7 +258,7 @@ view: redshift_timeupdate {
                 b.title
                 , b.date as release
                 , a.user_id
-                , b.media_type --email
+                , b.media_type
                 , cast(a.video_id as integer) as video_id
                 , case when collection in ('Season 1','Season 2','Season 3') then series || ' ' || collection else collection end as collection
                 , series
@@ -283,7 +283,7 @@ view: redshift_timeupdate {
                 b.title
                 , b.date as release
                 , a.user_id
-                , b.media_type --email
+                , b.media_type
                 , cast(a.video_id as integer) as video_id
                 , case when collection in ('Season 1','Season 2','Season 3') then series || ' ' || collection else collection end as collection
                 , series
@@ -308,7 +308,7 @@ view: redshift_timeupdate {
                 b.title
                 , b.date as release
                 , a.user_id
-                , b.media_type --email
+                , b.media_type
                 , cast(a.video_id as integer) as video_id
                 , case when collection in ('Season 1','Season 2','Season 3') then series || ' ' || collection else collection end as collection
                 , series
@@ -333,7 +333,7 @@ view: redshift_timeupdate {
                 b.title
                 , b.date as release
                 , a.user_id
-                , b.media_type --email
+                , b.media_type
                 , cast(a.video_id as integer) as video_id
                 , case when collection in ('Season 1','Season 2','Season 3') then series || ' ' || collection else collection end as collection
                 , series
