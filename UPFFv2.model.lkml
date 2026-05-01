@@ -97,7 +97,12 @@ explore: upff_weekly_recap_quarterly_benchmarks {
 
 #end redshift upff datamart explores
 
-#redshift allfirstplay explores
+#redshift allfirstplay and timeupdate explores
+
+include: "redshift_timeupdate.view.lkml"
+explore: redshift_timeupdate {
+  label: "Redshift Timeupdate"
+}
 
 include: "redshift_allfirstplay_javascript_video_content_playing.view.lkml"
 explore: redshift_allfirstplay_javascript_video_content_playing {
