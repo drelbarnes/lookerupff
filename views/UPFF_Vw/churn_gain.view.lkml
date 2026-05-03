@@ -361,7 +361,8 @@ view: churn_gain {
       FROM rolling_churn
       ;;
 
-    sql_trigger_value: SELECT TO_CHAR( DATEADD(minute, -690, GETDATE()), 'YYYY-MM-DD');;
+    sql_trigger_value: SELECT TO_CHAR(DATEADD(hour, -12, GETDATE()), 'YYYY-MM-DD') ;;
+    #sql_trigger_value: SELECT TO_CHAR( DATEADD(minute, -690, GETDATE()), 'YYYY-MM-DD');;
     #sql_trigger_value:  SELECT TO_CHAR(DATE_TRUNC('day', CURRENT_TIMESTAMP) + INTERVAL '9 hours 45 minutes', 'YYYY-MM-DD');;
     distribution: "report_date"
     sortkeys: ["report_date"]
