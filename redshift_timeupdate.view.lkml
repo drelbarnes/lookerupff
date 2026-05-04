@@ -391,7 +391,6 @@ view: redshift_timeupdate {
       distribution_style: "even"
       sortkeys: ["user_id", "video_id"]
       datagroup_trigger: redshift_upff_datagroup
-
     }
 
     measure: count {
@@ -472,6 +471,41 @@ view: redshift_timeupdate {
     dimension: email {
       type: string
       sql: ${TABLE}.email ;;
+    }
+
+    dimension: hours_watched {
+      type: number
+      sql: ${timecode}/3600 ;;
+      value_format: "#,##0"
+    }
+
+    measure: timecode_count {
+      type: sum
+      value_format: "0"
+      sql: ${timecode} ;;
+    }
+
+    measure: duration_count {
+      type: sum
+      sql: ${duration} ;;
+    }
+
+    dimension: minutes_watched {
+      type: number
+      sql: case when ${duration}< ${timecode} then round(${duration}/60) else round(${timecode}/60) end ;;
+      value_format: "#,##0"
+    }
+
+    measure: percent_completed {
+      type: number
+      value_format: "0\%"
+      sql: case when ${timecode_count}>${duration_count} then 100.00 else 100.00*${timecode_count}/${duration_count} end ;;
+    }
+
+    measure: play_count {
+      type: count_distinct
+      sql: concat(safe_cast(${video_id} as string),${user_id},cast(${timestamp_date} as string)) ;;
+      label: "plays"
     }
 
     set: detail {
