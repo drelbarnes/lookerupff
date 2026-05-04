@@ -508,6 +508,12 @@ view: redshift_timeupdate {
       label: "plays"
     }
 
+    measure: user_count {
+      type: count_distinct
+      sql: ${user_id} ;;
+      label: "uniques"
+    }
+
     set: detail {
       fields: [
         title,
