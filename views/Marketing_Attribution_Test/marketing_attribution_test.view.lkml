@@ -25,7 +25,7 @@
 #   599 cents = $5.99 monthly | 5999 cents = $59.99 yearly.
 ################################################################################
 
-view: marketing_attribution_v2_1 {
+view: marketing_attribution_test {
   derived_table: {
     sql:
       WITH params AS (
