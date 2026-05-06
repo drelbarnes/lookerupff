@@ -1610,6 +1610,7 @@ view: marketing_attribution_test {
 # Datagroup
 ################################################################################
 datagroup: marketing_attribution_daily {
-  sql_trigger: SELECT CURRENT_DATE ;;
+  #sql_trigger: SELECT CURRENT_DATE ;;
+  sql_trigger: SELECT TO_CHAR(DATEADD(hour, -3, GETDATE()), 'YYYY-MM-DD') ;;
   max_cache_age: "24 hours"
 }
