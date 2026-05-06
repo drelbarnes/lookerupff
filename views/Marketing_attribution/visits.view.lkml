@@ -11,6 +11,7 @@ view: visits {
         ,context_campaign_content as campaign_content
         ,context_campaign_term as campaign_term
         ,referrer
+        ,context_page_url
         ,CASE
           when context_campaign_source is null and (referrer is null or referrer in ('upfaithandfamily.com/', 'upfaithandfamily.com', 'vhx.tv'))
       then 'unknown'
@@ -202,6 +203,12 @@ END AS marketing_platform
     label: "Campaign Medium"
     type: string
     sql: ${TABLE}.campaign_medium ;;
+  }
+
+  dimension: context_page_url {
+    label: "URL"
+    type: string
+    sql: ${TABLE}.context_page_url ;;
   }
 
   dimension: campaign_content {
