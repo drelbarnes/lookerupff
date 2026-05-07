@@ -771,7 +771,8 @@ view: marketing_attribution_test {
       SELECT * FROM conversion_rows
       ;;
 
-    datagroup_trigger: marketing_attribution_daily
+    #datagroup_trigger: marketing_attribution_daily
+    sql_trigger_value: SELECT TO_CHAR(DATEADD(hour, -3, GETDATE()), 'YYYY-MM-DD') ;;
     distribution_style: even
     indexes: ["report_date", "event_type", "campaign_source", "user_id"]
   }
@@ -940,6 +941,7 @@ view: marketing_attribution_test {
         ELSE 'Others'
       END
     ;;
+
   }
 
   ##############################################################
@@ -1604,13 +1606,4 @@ view: marketing_attribution_test {
       quality_grade
     ]
   }
-}
-
-################################################################################
-# Datagroup
-################################################################################
-datagroup: marketing_attribution_daily {
-  #sql_trigger: SELECT CURRENT_DATE ;;
-  sql_trigger: SELECT TO_CHAR(DATEADD(hour, -3, GETDATE()), 'YYYY-MM-DD') ;;
-  max_cache_age: "24 hours"
 }
