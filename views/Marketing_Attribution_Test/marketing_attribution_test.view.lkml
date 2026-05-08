@@ -815,19 +815,19 @@ view: marketing_attribution_test {
     description: "Normalized platform bucket"
     sql:
       CASE
-        WHEN LOWER(${TABLE}.campaign_source) IN ('google','google ads','adwords')
+        WHEN LOWER(${TABLE}.campaign_source) IN ('google','google_ads','adwords')
              AND LOWER(${TABLE}.campaign_medium) IN ('cpc','ppc','paid','g')
              AND LOWER(${TABLE}.campaign_name) LIKE '%display%'                 THEN 'Google Display'
-        WHEN LOWER(${TABLE}.campaign_source) IN ('google','google ads','adwords')
+        WHEN LOWER(${TABLE}.campaign_source) IN ('google','google_ads','adwords')
              AND LOWER(${TABLE}.campaign_medium) IN ('cpc','ppc','paid','g')
              AND (LOWER(${TABLE}.campaign_name) LIKE '%pmax%'
                   OR LOWER(${TABLE}.campaign_name) LIKE '%performance max%')    THEN 'Google PMax'
-        WHEN LOWER(${TABLE}.campaign_source) IN ('google','google ads','adwords')
+        WHEN LOWER(${TABLE}.campaign_source) IN ('google','google_ads','adwords')
              AND LOWER(${TABLE}.campaign_medium) IN ('cpc','ppc','paid','g')    THEN 'Google Search'
-        WHEN LOWER(${TABLE}.campaign_source) IN ('facebook','meta','instagram','ig','fb')
+        WHEN LOWER(${TABLE}.campaign_source) IN ('meta','instagram','ig','fb', 'an', 'campaign.name')
              OR LOWER(${TABLE}.campaign_source) LIKE 'meta%'                    THEN 'Meta Ads'
         WHEN LOWER(${TABLE}.campaign_source) IN ('bing','microsoft','msn')      THEN 'Bing Ads'
-        WHEN LOWER(${TABLE}.campaign_source) = 'hubspot'
+        WHEN LOWER(${TABLE}.campaign_source) IN ('hubspot', 'hubspot_upff', 'hubspot_uptv')
              OR LOWER(${TABLE}.campaign_medium) LIKE 'email%'                   THEN 'HubSpot'
         WHEN LOWER(${TABLE}.campaign_source) LIKE '%uptv%'                      THEN 'UPtv Digital'
         WHEN LOWER(${TABLE}.campaign_medium) = 'organic'
