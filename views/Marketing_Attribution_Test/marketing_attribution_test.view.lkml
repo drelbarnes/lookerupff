@@ -772,7 +772,11 @@ view: marketing_attribution_test {
       ;;
 
     #datagroup_trigger: marketing_attribution_daily
-    sql_trigger_value: SELECT TO_CHAR(DATEADD(hour, -3, GETDATE()), 'YYYY-MM-DD') ;;
+    sql_trigger_value:
+    SELECT TO_CHAR(
+    CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE()) - INTERVAL '3 hour',
+    'YYYY-MM-DD'
+    ) ;;
     distribution_style: even
     indexes: ["report_date", "event_type", "campaign_source", "user_id"]
   }

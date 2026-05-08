@@ -141,7 +141,11 @@ SELECT
   prior_31_days_subs
 FROM result */
 ;;
-    sql_trigger_value: SELECT TO_CHAR(DATEADD(hour, -9, GETDATE()), 'YYYY-MM-DD') ;;
+    sql_trigger_value:
+    SELECT TO_CHAR(
+    CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE()) - INTERVAL '10 hour',
+    'YYYY-MM-DD'
+    ) ;;
     #sql_trigger_value:  SELECT TO_CHAR(DATE_TRUNC('day', CURRENT_TIMESTAMP) + INTERVAL '9 hours 45 minutes', 'YYYY-MM-DD');;
     distribution: "report_date"
     sortkeys: ["report_date"]
