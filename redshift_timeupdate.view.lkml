@@ -504,7 +504,7 @@ view: redshift_timeupdate {
 
     measure: play_count {
       type: count_distinct
-      sql: concat(safe_cast(${video_id} as string), ${user_id}, cast(${timestamp_date} as string)) ;;
+      sql: ${video_id}::varchar || ${user_id}::varchar || ${timestamp_date}::varchar,'0' ;;
       label: "Views"
     }
 
