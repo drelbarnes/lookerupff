@@ -272,7 +272,7 @@ result_anon as (
     type: time
     datatype: date
 
-    timeframes: [date, week, month, quarter, year]
+    timeframes: [date]
     sql: ${TABLE}.report_date ;;
   }
 
