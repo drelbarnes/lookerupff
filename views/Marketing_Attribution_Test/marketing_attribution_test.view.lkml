@@ -4,25 +4,32 @@
 # Single consolidated view powering the Marketing Attribution V2 dashboard.
 # All SQL is centralized in the derived_table below.
 #
-# Output is a UNION of two row types (distinguished by `event_type`):
-#   1. 'page_visit'  — every marketing-site page view (carries user_id,
-#                       anonymous_id, context_ip for visitor analysis)
-#   2. 'conversion'  — attributed free trials and reacquisitions, with
-#                       ALL touches in the journey emitted (middles included)
-#                       and credit assigned by the selected attribution model
+# === CACHING / REBUILD BEHAVIOR ===
+# This is a Persistent Derived Table (PDT) controlled by `datagroup_trigger`.
+# The PDT rebuilds ONLY when the datagroup invalidates (daily, at 9 AM ET).
+# Filter changes (date range, attribution model, attribution window) DO NOT
+# trigger a rebuild — they apply at query time on the cached PDT.
 #
-# Four attribution models supported via parameter:
-#   - first_touch    : 100% credit to earliest preceding page view
-#   - last_touch     : 100% credit to most recent preceding page view (default)
-#   - first_last     : 50/50 first & last (collapsed to 100% if same campaign)
-#   - position_based : 40% first, 40% last, 20% / (n-2) per middle (U-shape)
+# To achieve this, the derived_table SQL:
+#   - Builds the full historical window (180 days back) regardless of filter
+#   - Computes attribution for ALL supported windows in a single pass
+#   - Computes attribution for ALL four models in a single pass
+#   - Filters/parameter selections happen in dimensions/measures, not SQL
 #
-# Quality Score (0–100):
-#   Volume × conversion-rate (0.5x–1.5x) × retention multipliers.
+# This trades some warehouse compute (precomputing all variants) for vastly
+# faster dashboard interactions. Filter changes return in seconds.
 #
-# AOV (Average Order Value):
-#   Pulled from chargebee subscription_activated.unit_price.
-#   599 cents = $5.99 monthly | 5999 cents = $59.99 yearly.
+# === ROW TYPES (event_type) ===
+#   1. 'page_visit'  — every marketing-site page view
+#   2. 'conversion'  — attributed free trials and reacquisitions (web pipeline)
+#
+# === ATTRIBUTION MODELS ===
+#   - first_touch    : 100% to earliest touch
+#   - last_touch     : 100% to most recent touch (default)
+#   - first_last     : 50/50 first & last (collapsed if same campaign)
+#   - position_based : 40% first, 40% last, 20%/(n-2) per middle (U-shape)
+#
+# All four models pre-computed; selection picks the column at query time.
 ################################################################################
 
 view: marketing_attribution_test {
@@ -30,8 +37,11 @@ view: marketing_attribution_test {
     sql:
       WITH params AS (
           SELECT
-               '{% parameter attribution_model %}'::VARCHAR        AS attribution_model
-              ,{% parameter attribution_window_days %}::INTEGER     AS attribution_window_days
+               -- Build the PDT for the last 180 days. The dashboard's
+               -- date filter then narrows this at query time.
+               (CURRENT_DATE - INTERVAL '90 days')::DATE AS start_date
+              ,CURRENT_DATE                               AS end_date
+              ,90                  AS max_attribution_window_days
               ,0.40                AS w_activations
               ,0.25                AS w_reacquisitions
               ,0.20                AS w_bundle_trials
@@ -42,9 +52,8 @@ view: marketing_attribution_test {
       ),
 
       -- ============================================================
-      -- USER ACTIVATION VALUE from Chargebee activation events
+      -- USER ACTIVATION VALUE from Chargebee
       -- 599 cents = $5.99 monthly | 5999 cents = $59.99 yearly
-      -- Deduped to first activation per user.
       -- ============================================================
       user_activation_value AS (
       SELECT
@@ -60,12 +69,10 @@ view: marketing_attribution_test {
       SELECT
       user_id
       ,content_subscription_subscription_items_0_unit_price AS activation_value_cents
-      ,ROW_NUMBER() OVER (
-      PARTITION BY user_id
-      ORDER BY received_at ASC
-      ) AS rn
+      ,ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY received_at ASC) AS rn
       FROM chargebee_webhook_events.subscription_activated
-      WHERE {% condition report_date_filter %} DATE(received_at) {% endcondition %}
+      WHERE DATE(received_at) BETWEEN (SELECT start_date FROM params)
+      AND (SELECT end_date   FROM params)
       AND content_subscription_subscription_items LIKE '%UP%'
       AND content_subscription_subscription_items_0_unit_price IS NOT NULL
       AND content_subscription_subscription_items_0_unit_price > 0
@@ -75,13 +82,11 @@ view: marketing_attribution_test {
       ),
 
       -- ============================================================
-      -- LIFECYCLE EVENTS — long-form fact table
+      -- LIFECYCLE EVENTS (web pipeline)
       -- ============================================================
       lifecycle_events AS (
       SELECT
-      user_id
-      ,context_ip
-      ,anonymous_id
+      user_id, context_ip, anonymous_id
       ,received_at                AS event_received_at
       ,DATE(received_at)          AS event_date
       ,'page_visit'               AS source_event_type
@@ -95,7 +100,8 @@ view: marketing_attribution_test {
       ,CAST(NULL AS VARCHAR(255)) AS bundle_plan
       ,CAST(NULL AS VARCHAR(20))  AS trial_type
       FROM javascript_upff_home.pages
-      WHERE {% condition report_date_filter %} DATE(received_at) {% endcondition %}
+      WHERE received_at >= (SELECT start_date FROM params)
+      AND received_at <  (SELECT end_date   FROM params) + INTERVAL '1 day'
 
       UNION ALL
 
@@ -108,7 +114,8 @@ view: marketing_attribution_test {
       ,CAST(NULL AS VARCHAR(255))
       ,order_id, CAST(NULL AS VARCHAR(255)), CAST('standard' AS VARCHAR(20))
       FROM javaScript_upentertainment_checkout.order_completed
-      WHERE {% condition report_date_filter %} DATE(received_at) {% endcondition %}
+      WHERE received_at >= (SELECT start_date FROM params)
+      AND received_at <  (SELECT end_date   FROM params) + INTERVAL '1 day'
       AND user_id IS NOT NULL
       AND brand = 'upfaithandfamily'
 
@@ -123,7 +130,8 @@ view: marketing_attribution_test {
       ,CAST(NULL AS VARCHAR(255))
       ,order_id, bundle_plan, CAST('bundle' AS VARCHAR(20))
       FROM javaScript_upentertainment_checkout.order_updated
-      WHERE {% condition report_date_filter %} DATE(received_at) {% endcondition %}
+      WHERE received_at >= (SELECT start_date FROM params)
+      AND received_at <  (SELECT end_date   FROM params) + INTERVAL '1 day'
       AND user_id IS NOT NULL
       AND brand = 'upfaithandfamily'
       AND bundle_plan IS NOT NULL
@@ -140,7 +148,8 @@ view: marketing_attribution_test {
       ,CAST(NULL AS VARCHAR(255))
       ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(20))
       FROM chargebee_webhook_events.subscription_activated
-      WHERE {% condition report_date_filter %} DATE(received_at) {% endcondition %}
+      WHERE DATE(received_at) BETWEEN (SELECT start_date FROM params)
+      AND (SELECT end_date   FROM params)
       AND content_subscription_subscription_items LIKE '%UP%'
 
       UNION ALL
@@ -154,41 +163,33 @@ view: marketing_attribution_test {
       ,CAST(NULL AS VARCHAR(255))
       ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(20))
       FROM javascript_upentertainment_checkout.order_resubscribed
-      WHERE {% condition report_date_filter %} DATE(received_at) {% endcondition %}
+      WHERE received_at >= (SELECT start_date FROM params)
+      AND received_at <  (SELECT end_date   FROM params) + INTERVAL '1 day'
       AND user_id IS NOT NULL
       AND brand = 'upfaithandfamily'
 
       UNION ALL
 
-      -- Cancellations near trial end ("not retained"), deduped to 1 row per user
       SELECT
       user_id
       ,CAST(NULL AS VARCHAR(255))     AS context_ip
       ,CAST(NULL AS VARCHAR(255))     AS anonymous_id
-      ,event_received_at
-      ,event_date
-      ,'not_retained'                 AS source_event_type
-      ,event_id
-      ,CAST(NULL AS VARCHAR(255))     AS campaign_source
-      ,CAST(NULL AS VARCHAR(255))     AS campaign_name
-      ,CAST(NULL AS VARCHAR(255))     AS campaign_id
-      ,CAST(NULL AS VARCHAR(255))     AS campaign_medium
-      ,CAST(NULL AS VARCHAR(255))     AS campaign_content
-      ,CAST(NULL AS VARCHAR(255))     AS order_id
-      ,CAST(NULL AS VARCHAR(255))     AS bundle_plan
-      ,CAST(NULL AS VARCHAR(20))      AS trial_type
+      ,event_received_at, event_date
+      ,'not_retained', event_id
+      ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255))
+      ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255))
+      ,CAST(NULL AS VARCHAR(255))
+      ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(20))
       FROM (
       SELECT
       user_id
       ,received_at        AS event_received_at
       ,DATE(received_at)  AS event_date
       ,id                 AS event_id
-      ,ROW_NUMBER() OVER (
-      PARTITION BY user_id
-      ORDER BY received_at ASC
-      ) AS rn
+      ,ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY received_at ASC) AS rn
       FROM chargebee_webhook_events.subscription_cancelled
-      WHERE {% condition report_date_filter %} DATE(received_at) {% endcondition %}
+      WHERE DATE(received_at) BETWEEN (SELECT start_date FROM params)
+      AND (SELECT end_date   FROM params)
       AND content_subscription_subscription_items LIKE '%UP%'
       AND content_subscription_cancelled_at IS NOT NULL
       AND content_subscription_trial_end    IS NOT NULL
@@ -201,8 +202,7 @@ view: marketing_attribution_test {
 
       marketing_touches AS (
       SELECT
-      context_ip
-      ,anonymous_id
+      context_ip, anonymous_id
       ,event_received_at  AS received_at
       ,event_date
       ,COALESCE(campaign_source,  'organic')  AS campaign_source
@@ -231,17 +231,12 @@ view: marketing_attribution_test {
 
       free_trials AS (
       SELECT
-      r.user_id
-      ,r.context_ip
-      ,r.anonymous_id
-      ,r.order_id
+      r.user_id, r.context_ip, r.anonymous_id, r.order_id
       ,r.event_received_at  AS conversion_event_at
       ,'free_trial'         AS conversion_event_type
-      ,r.trial_type
-      ,r.bundle_plan
+      ,r.trial_type, r.bundle_plan
       ,CASE WHEN r.bundle_plan IS NOT NULL THEN TRUE ELSE FALSE END AS is_bundle_user
-      ,ulf.activation_date
-      ,ulf.reacquisition_date
+      ,ulf.activation_date, ulf.reacquisition_date
       ,COALESCE(ulf.is_not_retained, FALSE) AS is_not_retained
       ,ulf.not_retained_date
       ,CASE
@@ -276,18 +271,14 @@ view: marketing_attribution_test {
       FROM lifecycle_events
       WHERE source_event_type = 'free_trial'
       ) r
-      LEFT JOIN user_lifecycle_flags ulf
-      ON r.user_id = ulf.user_id
-      LEFT JOIN user_activation_value uav
-      ON r.user_id = uav.user_id
+      LEFT JOIN user_lifecycle_flags ulf ON r.user_id = ulf.user_id
+      LEFT JOIN user_activation_value uav ON r.user_id = uav.user_id
       WHERE r.dedup_rank = 1
       ),
 
       reacquisitions AS (
       SELECT
-      le.user_id
-      ,le.context_ip
-      ,le.anonymous_id
+      le.user_id, le.context_ip, le.anonymous_id
       ,le.event_id              AS order_id
       ,le.event_received_at     AS conversion_event_at
       ,'reacquisition'          AS conversion_event_type
@@ -305,8 +296,7 @@ view: marketing_attribution_test {
       ,COALESCE(uav.is_yearly_plan, FALSE)              AS is_yearly_plan
       ,COALESCE(uav.plan_type, 'unknown')               AS plan_type
       FROM lifecycle_events le
-      LEFT JOIN user_activation_value uav
-      ON le.user_id = uav.user_id
+      LEFT JOIN user_activation_value uav ON le.user_id = uav.user_id
       WHERE le.source_event_type = 'reacquisition'
       ),
 
@@ -315,28 +305,22 @@ view: marketing_attribution_test {
       UNION ALL SELECT * FROM reacquisitions
       ),
 
+      -- ============================================================
+      -- TOUCH MATCHING — uses MAX window (90 days). Days_before_conversion
+      -- column lets the dashboard filter to a tighter window at query time.
+      -- ============================================================
       attributed_touches AS (
       SELECT
-      c.order_id
-      ,c.user_id
-      ,c.conversion_event_at
-      ,c.conversion_event_type
-      ,c.trial_type
-      ,c.bundle_plan
-      ,c.is_bundle_user
-      ,c.lifecycle_event_date
-      ,c.lifecycle_event_type
-      ,c.is_activated_or_reacquired
-      ,c.is_not_retained
-      ,c.activation_value
-      ,c.is_yearly_plan
-      ,c.plan_type
+      c.order_id, c.user_id
+      ,c.conversion_event_at, c.conversion_event_type
+      ,c.trial_type, c.bundle_plan, c.is_bundle_user
+      ,c.lifecycle_event_date, c.lifecycle_event_type
+      ,c.is_activated_or_reacquired, c.is_not_retained
+      ,c.activation_value, c.is_yearly_plan, c.plan_type
       ,mt.received_at        AS touch_received_at
-      ,mt.campaign_source
-      ,mt.campaign_name
-      ,mt.campaign_id
-      ,mt.campaign_medium
-      ,mt.campaign_content
+      ,mt.campaign_source, mt.campaign_name, mt.campaign_id
+      ,mt.campaign_medium, mt.campaign_content
+      ,DATEDIFF(day, mt.received_at, c.conversion_event_at) AS days_before_conversion
       ,ROW_NUMBER() OVER (
       PARTITION BY c.conversion_event_type, c.order_id
       ORDER BY mt.received_at ASC
@@ -348,31 +332,20 @@ view: marketing_attribution_test {
       ,COUNT(*) OVER (PARTITION BY c.conversion_event_type, c.order_id) AS total_touches
       FROM conversion_events c
       JOIN marketing_touches mt
-      ON (
-      mt.anonymous_id = c.anonymous_id
-      OR mt.context_ip = c.context_ip
-      )
+      ON (mt.anonymous_id = c.anonymous_id OR mt.context_ip = c.context_ip)
       AND mt.received_at <= c.conversion_event_at
       AND mt.received_at >= c.conversion_event_at
-      - ((SELECT attribution_window_days FROM params) || ' days')::INTERVAL
+      - ((SELECT max_attribution_window_days FROM params) || ' days')::INTERVAL
       ),
 
       direct_conversions AS (
       SELECT
-      c.order_id
-      ,c.user_id
-      ,c.conversion_event_at
-      ,c.conversion_event_type
-      ,c.trial_type
-      ,c.bundle_plan
-      ,c.is_bundle_user
-      ,c.lifecycle_event_date
-      ,c.lifecycle_event_type
-      ,c.is_activated_or_reacquired
-      ,c.is_not_retained
-      ,c.activation_value
-      ,c.is_yearly_plan
-      ,c.plan_type
+      c.order_id, c.user_id
+      ,c.conversion_event_at, c.conversion_event_type
+      ,c.trial_type, c.bundle_plan, c.is_bundle_user
+      ,c.lifecycle_event_date, c.lifecycle_event_type
+      ,c.is_activated_or_reacquired, c.is_not_retained
+      ,c.activation_value, c.is_yearly_plan, c.plan_type
       ,0                              AS total_touches
       ,CAST(NULL AS TIMESTAMP)        AS attributed_touch_at
       ,CAST('direct' AS VARCHAR(20))  AS attributed_campaign_source
@@ -389,8 +362,7 @@ view: marketing_attribution_test {
 
       first_last_match AS (
       SELECT
-      f.order_id
-      ,f.conversion_event_type
+      f.order_id, f.conversion_event_type
       ,CASE
       WHEN COALESCE(f.campaign_source, '') = COALESCE(l.campaign_source, '')
       AND COALESCE(f.campaign_medium, '') = COALESCE(l.campaign_medium, '')
@@ -401,77 +373,57 @@ view: marketing_attribution_test {
       JOIN attributed_touches l
       ON f.order_id = l.order_id
       AND f.conversion_event_type = l.conversion_event_type
-      WHERE f.first_touch_rank = 1
-      AND l.last_touch_rank  = 1
+      WHERE f.first_touch_rank = 1 AND l.last_touch_rank  = 1
       ),
 
+      -- ============================================================
+      -- ALL TOUCHES — pre-compute credit weights for ALL FOUR models
+      -- so dashboard can switch model at query time without rebuild
+      -- ============================================================
       all_touches_raw AS (
       SELECT
-      at.order_id
-      ,at.user_id
-      ,at.conversion_event_at
-      ,at.conversion_event_type
-      ,at.trial_type
-      ,at.bundle_plan
-      ,at.is_bundle_user
-      ,at.lifecycle_event_date
-      ,at.lifecycle_event_type
-      ,at.is_activated_or_reacquired
-      ,at.is_not_retained
-      ,at.activation_value
-      ,at.is_yearly_plan
-      ,at.plan_type
+      at.order_id, at.user_id
+      ,at.conversion_event_at, at.conversion_event_type
+      ,at.trial_type, at.bundle_plan, at.is_bundle_user
+      ,at.lifecycle_event_date, at.lifecycle_event_type
+      ,at.is_activated_or_reacquired, at.is_not_retained
+      ,at.activation_value, at.is_yearly_plan, at.plan_type
       ,at.total_touches
       ,at.touch_received_at  AS attributed_touch_at
+      ,at.days_before_conversion
       ,CAST(at.campaign_source  AS VARCHAR(255)) AS attributed_campaign_source
       ,CAST(at.campaign_name    AS VARCHAR(255)) AS attributed_campaign_name
       ,CAST(at.campaign_id      AS VARCHAR(255)) AS attributed_campaign_id
       ,CAST(at.campaign_medium  AS VARCHAR(255)) AS attributed_campaign_medium
       ,CAST(at.campaign_content AS VARCHAR(255)) AS attributed_campaign_content
-      ,at.first_touch_rank
-      ,at.last_touch_rank
-      ,CAST(
-      CASE (SELECT attribution_model FROM params)
-      WHEN 'first_touch' THEN
-      CASE WHEN at.first_touch_rank = 1 THEN 1.0 ELSE 0.0 END
-      WHEN 'last_touch' THEN
-      CASE WHEN at.last_touch_rank = 1 THEN 1.0 ELSE 0.0 END
-      WHEN 'first_last' THEN
-      CASE
+      ,at.first_touch_rank, at.last_touch_rank
+      ,CAST(CASE WHEN at.first_touch_rank = 1 THEN 1.0 ELSE 0.0 END
+      AS NUMERIC(7,6)) AS credit_first_touch
+      ,CAST(CASE WHEN at.last_touch_rank = 1 THEN 1.0 ELSE 0.0 END
+      AS NUMERIC(7,6)) AS credit_last_touch
+      ,CAST(CASE
       WHEN flm.is_first_and_last
       AND at.first_touch_rank = 1            THEN 1.0
       WHEN flm.is_first_and_last                  THEN 0.0
       WHEN at.first_touch_rank = 1                THEN 0.5
       WHEN at.last_touch_rank  = 1                THEN 0.5
       ELSE                                              0.0
-      END
-      WHEN 'position_based' THEN
-      CASE
+      END AS NUMERIC(7,6)) AS credit_first_last
+      ,CAST(CASE
       WHEN at.total_touches = 1                                  THEN 1.0
       WHEN at.total_touches = 2 AND at.first_touch_rank = 1      THEN 0.5
       WHEN at.total_touches = 2 AND at.last_touch_rank  = 1      THEN 0.5
       WHEN at.first_touch_rank = 1                               THEN 0.4
       WHEN at.last_touch_rank  = 1                               THEN 0.4
       ELSE COALESCE(0.2 / NULLIF(at.total_touches - 2, 0), 0)
-      END
-      ELSE 0.0
-      END
-      AS NUMERIC(7,6)
-      ) AS credit_weight
-      ,CAST(
-      CASE
+      END AS NUMERIC(7,6)) AS credit_position_based
+      ,CAST(CASE
       WHEN at.total_touches = 1                       THEN 'only'
-      WHEN flm.is_first_and_last
-      AND at.first_touch_rank = 1
-      AND (SELECT attribution_model FROM params) = 'first_last'
-      THEN 'first_and_last'
       WHEN at.first_touch_rank = 1                    THEN 'first'
       WHEN at.last_touch_rank  = 1                    THEN 'last'
       ELSE                                                 'middle'
-      END
-      AS VARCHAR(20)
-      ) AS touch_position
-      ,(at.first_touch_rank = 1) AS is_primary_attribution
+      END AS VARCHAR(20)) AS touch_position
+      ,COALESCE(flm.is_first_and_last, FALSE) AS is_first_and_last
       FROM attributed_touches at
       LEFT JOIN first_last_match flm
       ON at.order_id              = flm.order_id
@@ -480,30 +432,28 @@ view: marketing_attribution_test {
 
       selected_attributed_touches AS (
       SELECT
-      order_id
-      ,user_id
-      ,conversion_event_at
-      ,conversion_event_type
-      ,trial_type
-      ,bundle_plan
-      ,is_bundle_user
-      ,lifecycle_event_date
-      ,lifecycle_event_type
-      ,is_activated_or_reacquired
-      ,is_not_retained
-      ,activation_value
-      ,is_yearly_plan
-      ,plan_type
+      order_id, user_id
+      ,conversion_event_at, conversion_event_type
+      ,trial_type, bundle_plan, is_bundle_user
+      ,lifecycle_event_date, lifecycle_event_type
+      ,is_activated_or_reacquired, is_not_retained
+      ,activation_value, is_yearly_plan, plan_type
       ,total_touches
+      ,MIN(days_before_conversion)         AS min_days_before_conversion
       ,MIN(attributed_touch_at)            AS attributed_touch_at
       ,attributed_campaign_source
       ,attributed_campaign_name
       ,MAX(attributed_campaign_id)         AS attributed_campaign_id
       ,attributed_campaign_medium
       ,MAX(attributed_campaign_content)    AS attributed_campaign_content
-      ,CAST(SUM(credit_weight) AS NUMERIC(7,6)) AS credit_weight
+      ,CAST(SUM(credit_first_touch)    AS NUMERIC(7,6)) AS credit_first_touch
+      ,CAST(SUM(credit_last_touch)     AS NUMERIC(7,6)) AS credit_last_touch
+      ,CAST(SUM(credit_first_last)     AS NUMERIC(7,6)) AS credit_first_last
+      ,CAST(SUM(credit_position_based) AS NUMERIC(7,6)) AS credit_position_based
       ,MAX(touch_position)                 AS touch_position
-      ,BOOL_OR(is_primary_attribution)     AS is_primary_attribution
+      ,BOOL_OR(first_touch_rank = 1)       AS is_first_touch
+      ,BOOL_OR(last_touch_rank = 1)        AS is_last_touch
+      ,BOOL_OR(is_first_and_last)          AS is_first_and_last
       FROM all_touches_raw
       GROUP BY
       order_id, user_id, conversion_event_at, conversion_event_type
@@ -524,22 +474,21 @@ view: marketing_attribution_test {
       ,is_not_retained
       ,activation_value, is_yearly_plan, plan_type
       ,total_touches
+      ,CAST(NULL AS INTEGER)        AS min_days_before_conversion
       ,attributed_touch_at
       ,CAST(attributed_campaign_source  AS VARCHAR(255)) AS attributed_campaign_source
       ,CAST(attributed_campaign_name    AS VARCHAR(255)) AS attributed_campaign_name
       ,CAST(attributed_campaign_id      AS VARCHAR(255)) AS attributed_campaign_id
       ,CAST(attributed_campaign_medium  AS VARCHAR(255)) AS attributed_campaign_medium
       ,CAST(attributed_campaign_content AS VARCHAR(255)) AS attributed_campaign_content
-      ,CAST(1.0 AS NUMERIC(7,6))    AS credit_weight
-      ,CAST(
-      CASE (SELECT attribution_model FROM params)
-      WHEN 'first_touch'    THEN 'first'
-      WHEN 'first_last'     THEN 'first_and_last'
-      WHEN 'position_based' THEN 'only'
-      ELSE                       'last'
-      END AS VARCHAR(20)
-      ) AS touch_position
-      ,TRUE  AS is_primary_attribution
+      ,CAST(1.0 AS NUMERIC(7,6))    AS credit_first_touch
+      ,CAST(1.0 AS NUMERIC(7,6))    AS credit_last_touch
+      ,CAST(1.0 AS NUMERIC(7,6))    AS credit_first_last
+      ,CAST(1.0 AS NUMERIC(7,6))    AS credit_position_based
+      ,CAST('only' AS VARCHAR(20))  AS touch_position
+      ,TRUE                         AS is_first_touch
+      ,TRUE                         AS is_last_touch
+      ,TRUE                         AS is_first_and_last
       FROM direct_conversions
       ),
 
@@ -548,6 +497,9 @@ view: marketing_attribution_test {
       UNION ALL SELECT * FROM selected_attributed_direct
       ),
 
+      -- ============================================================
+      -- DAILY CAMPAIGN METRICS (uses last-touch as scoring baseline)
+      -- ============================================================
       daily_campaign_metrics AS (
       SELECT
       DATE(sa.conversion_event_at)   AS report_date
@@ -556,38 +508,38 @@ view: marketing_attribution_test {
       ,sa.attributed_campaign_content AS campaign_content
       ,SUM(CASE WHEN sa.conversion_event_type = 'free_trial'
       AND sa.trial_type = 'standard'
-      AND sa.is_primary_attribution
+      AND sa.is_last_touch
       THEN 1 ELSE 0 END)        AS standard_trials
       ,SUM(CASE WHEN sa.conversion_event_type = 'free_trial'
       AND sa.trial_type = 'bundle'
-      AND sa.is_primary_attribution
+      AND sa.is_last_touch
       THEN 1 ELSE 0 END)        AS bundle_trials
       ,SUM(CASE WHEN sa.conversion_event_type = 'reacquisition'
-      AND sa.is_primary_attribution
+      AND sa.is_last_touch
       THEN 1 ELSE 0 END)        AS reacquisitions
       ,COUNT(DISTINCT CASE WHEN sa.conversion_event_type = 'free_trial'
       AND sa.lifecycle_event_type = 'activation'
-      AND sa.is_primary_attribution
+      AND sa.is_last_touch
       THEN sa.user_id END) AS activations
       ,COUNT(DISTINCT CASE WHEN sa.conversion_event_type = 'free_trial'
-      AND sa.is_primary_attribution
+      AND sa.is_last_touch
       THEN sa.user_id END) AS unique_trial_users
       ,COUNT(DISTINCT CASE WHEN sa.conversion_event_type = 'free_trial'
       AND sa.is_not_retained
-      AND sa.is_primary_attribution
+      AND sa.is_last_touch
       THEN sa.user_id END)
       * 1.0
       / NULLIF(COUNT(DISTINCT CASE WHEN sa.conversion_event_type = 'free_trial'
-      AND sa.is_primary_attribution
+      AND sa.is_last_touch
       THEN sa.user_id END), 0)
       AS churn_rate_raw
-      ,SUM(CASE WHEN sa.is_primary_attribution AND sa.activation_value > 0
+      ,SUM(CASE WHEN sa.is_last_touch AND sa.activation_value > 0
       THEN sa.activation_value ELSE 0 END)              AS total_order_value
-      ,AVG(CASE WHEN sa.is_primary_attribution AND sa.activation_value > 0
+      ,AVG(CASE WHEN sa.is_last_touch AND sa.activation_value > 0
       THEN sa.activation_value END)                     AS avg_order_value
-      ,COUNT(DISTINCT CASE WHEN sa.is_primary_attribution AND sa.is_yearly_plan
+      ,COUNT(DISTINCT CASE WHEN sa.is_last_touch AND sa.is_yearly_plan
       THEN sa.user_id END)                   AS yearly_plan_users
-      ,COUNT(DISTINCT CASE WHEN sa.is_primary_attribution
+      ,COUNT(DISTINCT CASE WHEN sa.is_last_touch
       AND sa.activation_value > 0
       AND NOT sa.is_yearly_plan
       THEN sa.user_id END)                   AS monthly_plan_users
@@ -608,14 +560,8 @@ view: marketing_attribution_test {
 
       daily_campaign_quality AS (
       SELECT
-      m.report_date
-      ,m.campaign_name
-      ,m.campaign_medium
-      ,m.campaign_content
-      ,m.standard_trials
-      ,m.bundle_trials
-      ,m.reacquisitions
-      ,m.activations
+      m.report_date, m.campaign_name, m.campaign_medium, m.campaign_content
+      ,m.standard_trials, m.bundle_trials, m.reacquisitions, m.activations
       ,m.unique_trial_users
       ,CAST(COALESCE(m.total_order_value, 0)  AS NUMERIC(12,2)) AS total_order_value
       ,CAST(COALESCE(m.avg_order_value, 0)    AS NUMERIC(10,2)) AS avg_order_value
@@ -653,17 +599,14 @@ view: marketing_attribution_test {
       (CASE WHEN m.unique_trial_users > 0
       THEN 1.0 * m.activations / m.unique_trial_users
       ELSE 0 END)
-      / (SELECT conv_rate_max FROM params),
-      1.0
-      )
-      AS NUMERIC(5,4)
+      / (SELECT conv_rate_max FROM params), 1.0
+      ) AS NUMERIC(5,4)
       )
       * CAST(
       GREATEST(
       1.0 - COALESCE(m.churn_rate_raw, 0),
       1.0 - (SELECT retention_floor FROM params)
-      )
-      AS NUMERIC(5,4)
+      ) AS NUMERIC(5,4)
       )
       AS NUMERIC(10,4)
       ) AS quality_score
@@ -675,9 +618,7 @@ view: marketing_attribution_test {
       SELECT
       CAST('page_visit' AS VARCHAR(20))      AS event_type
       ,touch_event_id                         AS event_id
-      ,user_id
-      ,context_ip
-      ,anonymous_id
+      ,user_id, context_ip, anonymous_id
       ,received_at                            AS event_at
       ,event_date                             AS report_date
       ,CAST(campaign_source AS VARCHAR(255))  AS campaign_source
@@ -698,10 +639,16 @@ view: marketing_attribution_test {
       ,FALSE                      AS is_yearly_plan
       ,CAST(NULL AS VARCHAR(20))  AS plan_type
       ,0                          AS total_touches
+      ,CAST(NULL AS INTEGER)      AS min_days_before_conversion
       ,CAST(NULL AS TIMESTAMP)    AS attributed_touch_at
-      ,CAST(0.0 AS NUMERIC(7,6))  AS credit_weight
+      ,CAST(0.0 AS NUMERIC(7,6))  AS credit_first_touch
+      ,CAST(0.0 AS NUMERIC(7,6))  AS credit_last_touch
+      ,CAST(0.0 AS NUMERIC(7,6))  AS credit_first_last
+      ,CAST(0.0 AS NUMERIC(7,6))  AS credit_position_based
       ,CAST(NULL AS VARCHAR(20))  AS touch_position
-      ,FALSE                      AS is_primary_attribution
+      ,FALSE                      AS is_first_touch
+      ,FALSE                      AS is_last_touch
+      ,FALSE                      AS is_first_and_last
       ,CAST(NULL AS NUMERIC(10,2))  AS quality_score
       ,CAST(NULL AS NUMERIC(10,2))  AS volume_score
       ,CAST(NULL AS NUMERIC(5,4))   AS trial_to_paid_rate
@@ -730,23 +677,19 @@ view: marketing_attribution_test {
       ,sa.attributed_campaign_id                   AS campaign_id
       ,sa.attributed_campaign_medium               AS campaign_medium
       ,sa.attributed_campaign_content              AS campaign_content
-      ,sa.order_id
-      ,sa.conversion_event_type
-      ,sa.trial_type
-      ,sa.bundle_plan
-      ,sa.is_bundle_user
-      ,sa.lifecycle_event_type
-      ,sa.lifecycle_event_date
-      ,sa.is_activated_or_reacquired
-      ,sa.is_not_retained
+      ,sa.order_id, sa.conversion_event_type
+      ,sa.trial_type, sa.bundle_plan, sa.is_bundle_user
+      ,sa.lifecycle_event_type, sa.lifecycle_event_date
+      ,sa.is_activated_or_reacquired, sa.is_not_retained
       ,CAST(sa.activation_value    AS NUMERIC(10,2)) AS activation_value
-      ,sa.is_yearly_plan
-      ,sa.plan_type
+      ,sa.is_yearly_plan, sa.plan_type
       ,sa.total_touches
+      ,sa.min_days_before_conversion
       ,sa.attributed_touch_at
-      ,sa.credit_weight
+      ,sa.credit_first_touch, sa.credit_last_touch
+      ,sa.credit_first_last, sa.credit_position_based
       ,sa.touch_position
-      ,sa.is_primary_attribution
+      ,sa.is_first_touch, sa.is_last_touch, sa.is_first_and_last
       ,CAST(dq.quality_score      AS NUMERIC(10,2)) AS quality_score
       ,CAST(dq.volume_score       AS NUMERIC(10,2)) AS volume_score
       ,CAST(dq.trial_to_paid_rate AS NUMERIC(5,4))  AS trial_to_paid_rate
@@ -771,23 +714,21 @@ view: marketing_attribution_test {
       SELECT * FROM conversion_rows
       ;;
 
-    #datagroup_trigger: marketing_attribution_daily
-    sql_trigger_value:
-    SELECT TO_CHAR(
-    CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE()) - INTERVAL '3 hour',
-    'YYYY-MM-DD'
-    ) ;;
+    # PDT only rebuilds when datagroup invalidates (daily at 9 AM ET).
+    # Filter changes never trigger a rebuild — they apply at query time.
+    datagroup_trigger: marketing_attribution_daily
     distribution_style: even
+    #sortkeys: ["report_date", "event_type"]
     indexes: ["report_date", "event_type", "campaign_source", "user_id"]
   }
 
   ##############################################################
-  # PARAMETERS
+  # PARAMETERS — applied at query time, no PDT rebuild
   ##############################################################
   parameter: attribution_model {
     type: unquoted
     label: "Attribution Model"
-    description: "How conversion credit is assigned across page-view touches"
+    description: "Switches credit_weight at query time. PDT precomputes all four."
     default_value: "last_touch"
     allowed_value: { label: "First Touch"               value: "first_touch" }
     allowed_value: { label: "Last Touch"                value: "last_touch" }
@@ -798,7 +739,7 @@ view: marketing_attribution_test {
   parameter: attribution_window_days {
     type: unquoted
     label: "Attribution Window"
-    description: "How far back from the conversion to look for a credited page view"
+    description: "Filters touches by days_before_conversion at query time. PDT looks back 90."
     default_value: "30"
     allowed_value: { label: "1 day"   value: "1" }
     allowed_value: { label: "3 days"  value: "3" }
@@ -807,13 +748,6 @@ view: marketing_attribution_test {
     allowed_value: { label: "30 days" value: "30" }
     allowed_value: { label: "60 days" value: "60" }
     allowed_value: { label: "90 days" value: "90" }
-  }
-
-  filter: report_date_filter {
-    type: date
-    label: "Date Range"
-    description: "Required date range; applies to all events"
-    default_value: "30 days"
   }
 
   ##############################################################
@@ -831,22 +765,9 @@ view: marketing_attribution_test {
     sql: ${TABLE}.event_type ;;
   }
 
-  dimension: user_id {
-    type: string
-    sql: ${TABLE}.user_id ;;
-  }
-
-  dimension: anonymous_id {
-    type: string
-    description: "Segment anonymous_id (page visits only; NULL on conversion rows)"
-    sql: ${TABLE}.anonymous_id ;;
-  }
-
-  dimension: context_ip {
-    type: string
-    description: "IP captured at the page view (page visits only; NULL on conversion rows)"
-    sql: ${TABLE}.context_ip ;;
-  }
+  dimension: user_id        { type: string  sql: ${TABLE}.user_id ;; }
+  dimension: anonymous_id   { type: string  sql: ${TABLE}.anonymous_id ;; }
+  dimension: context_ip     { type: string  sql: ${TABLE}.context_ip ;; }
 
   ##############################################################
   # TIME DIMENSIONS
@@ -882,35 +803,11 @@ view: marketing_attribution_test {
   ##############################################################
   # CAMPAIGN DIMENSIONS
   ##############################################################
-  dimension: campaign_source {
-    type: string
-    label: "Campaign Source"
-    sql: ${TABLE}.campaign_source ;;
-  }
-
-  dimension: campaign_name {
-    type: string
-    label: "Campaign Name"
-    sql: ${TABLE}.campaign_name ;;
-  }
-
-  dimension: campaign_id {
-    type: string
-    label: "Campaign ID"
-    sql: ${TABLE}.campaign_id ;;
-  }
-
-  dimension: campaign_medium {
-    type: string
-    label: "Campaign Medium"
-    sql: ${TABLE}.campaign_medium ;;
-  }
-
-  dimension: campaign_content {
-    type: string
-    label: "Campaign Content"
-    sql: ${TABLE}.campaign_content ;;
-  }
+  dimension: campaign_source   { type: string  label: "Campaign Source"   sql: ${TABLE}.campaign_source ;; }
+  dimension: campaign_name     { type: string  label: "Campaign Name"     sql: ${TABLE}.campaign_name ;; }
+  dimension: campaign_id       { type: string  label: "Campaign ID"       sql: ${TABLE}.campaign_id ;; }
+  dimension: campaign_medium   { type: string  label: "Campaign Medium"   sql: ${TABLE}.campaign_medium ;; }
+  dimension: campaign_content  { type: string  label: "Campaign Content"  sql: ${TABLE}.campaign_content ;; }
 
   dimension: marketing_platform {
     type: string
@@ -918,63 +815,43 @@ view: marketing_attribution_test {
     description: "Normalized platform bucket"
     sql:
       CASE
-        WHEN LOWER(${TABLE}.campaign_source) IN ('google','google_ads','adwords')
+        WHEN LOWER(${TABLE}.campaign_source) IN ('google','google ads','adwords')
              AND LOWER(${TABLE}.campaign_medium) IN ('cpc','ppc','paid','g')
-             AND LOWER(${TABLE}.campaign_name) LIKE '%display%' THEN 'Google Display'
-        WHEN LOWER(${TABLE}.campaign_source) IN ('google','google_ads','adwords')
+             AND LOWER(${TABLE}.campaign_name) LIKE '%display%'                 THEN 'Google Display'
+        WHEN LOWER(${TABLE}.campaign_source) IN ('google','google ads','adwords')
              AND LOWER(${TABLE}.campaign_medium) IN ('cpc','ppc','paid','g')
              AND (LOWER(${TABLE}.campaign_name) LIKE '%pmax%'
-                  OR LOWER(${TABLE}.campaign_name) LIKE '%performance max%') THEN 'Google PMax'
-        WHEN LOWER(${TABLE}.campaign_source) IN ('google','google_ads','adwords')
-             AND LOWER(${TABLE}.campaign_medium) IN ('cpc','ppc','paid','g')          THEN 'Google Search'
-        WHEN LOWER(${TABLE}.campaign_source) IN ('meta','instagram','ig','fb', 'an')
-             OR LOWER(${TABLE}.campaign_source) LIKE 'meta%'                            THEN 'Meta Ads'
-        WHEN LOWER(${TABLE}.campaign_source) IN ('bing','microsoft','msn')              THEN 'Bing Ads'
-        WHEN LOWER(${TABLE}.campaign_source) IN ('hubspot', 'hubspot_upff', 'hubspot_uptv')
-             OR LOWER(${TABLE}.campaign_medium) LIKE 'email%'                           THEN 'HubSpot'
-        WHEN LOWER(${TABLE}.campaign_source) LIKE '%uptv%'                              THEN 'UPtv Digital'
+                  OR LOWER(${TABLE}.campaign_name) LIKE '%performance max%')    THEN 'Google PMax'
+        WHEN LOWER(${TABLE}.campaign_source) IN ('google','google ads','adwords')
+             AND LOWER(${TABLE}.campaign_medium) IN ('cpc','ppc','paid','g')    THEN 'Google Search'
+        WHEN LOWER(${TABLE}.campaign_source) IN ('facebook','meta','instagram','ig','fb')
+             OR LOWER(${TABLE}.campaign_source) LIKE 'meta%'                    THEN 'Meta Ads'
+        WHEN LOWER(${TABLE}.campaign_source) IN ('bing','microsoft','msn')      THEN 'Bing Ads'
+        WHEN LOWER(${TABLE}.campaign_source) = 'hubspot'
+             OR LOWER(${TABLE}.campaign_medium) LIKE 'email%'                   THEN 'HubSpot'
+        WHEN LOWER(${TABLE}.campaign_source) LIKE '%uptv%'                      THEN 'UPtv Digital'
         WHEN LOWER(${TABLE}.campaign_medium) = 'organic'
              AND LOWER(${TABLE}.campaign_source) IN ('google','bing','duckduckgo','yahoo') THEN 'Organic Search'
         WHEN LOWER(${TABLE}.campaign_medium) IN ('social','organic_social')
              OR (LOWER(${TABLE}.campaign_medium) = 'organic'
                  AND LOWER(${TABLE}.campaign_source) IN ('facebook','instagram','tiktok','x','twitter','linkedin'))
-                                                                                        THEN 'Organic Social'
-        WHEN ${TABLE}.campaign_source = 'organic'                                       THEN 'Others'
-        WHEN ${TABLE}.campaign_source = 'direct'                                        THEN 'Others'
-        WHEN ${TABLE}.campaign_source IS NULL                                           THEN 'Unknown'
+                                                                                THEN 'Organic Social'
+        WHEN ${TABLE}.campaign_source = 'organic'                               THEN 'Others'
+        WHEN ${TABLE}.campaign_source = 'direct'                                THEN 'Others'
+        WHEN ${TABLE}.campaign_source IS NULL                                   THEN 'Unknown'
         ELSE 'Others'
       END
     ;;
-
   }
 
   ##############################################################
   # TRIAL / LIFECYCLE DIMENSIONS
   ##############################################################
-  dimension: order_id {
-    type: string
-    sql: ${TABLE}.order_id ;;
-  }
-
-  dimension: conversion_event_type {
-    type: string
-    sql: ${TABLE}.conversion_event_type ;;
-  }
-
-  dimension: trial_type {
-    type: string
-    sql: ${TABLE}.trial_type ;;
-  }
-
-  dimension: bundle_plan {
-    type: string
-    sql: ${TABLE}.bundle_plan ;;
-  }
-
-  dimension: is_bundle_user {
-    type: yesno
-    sql: ${TABLE}.is_bundle_user ;;
-  }
+  dimension: order_id              { type: string sql: ${TABLE}.order_id ;; }
+  dimension: conversion_event_type { type: string sql: ${TABLE}.conversion_event_type ;; }
+  dimension: trial_type            { type: string sql: ${TABLE}.trial_type ;; }
+  dimension: bundle_plan           { type: string sql: ${TABLE}.bundle_plan ;; }
+  dimension: is_bundle_user        { type: yesno  sql: ${TABLE}.is_bundle_user ;; }
 
   dimension: lifecycle_event_type {
     type: string
@@ -984,35 +861,49 @@ view: marketing_attribution_test {
 
   dimension: is_activated_or_reacquired {
     type: yesno
-    description: "TRUE if the trial converted to paid (activation) or the user reacquired"
     sql: ${TABLE}.is_activated_or_reacquired ;;
   }
 
   dimension: is_activated {
     type: yesno
-    description: "TRUE only for activations (free trial → paid subscription)"
     sql: ${TABLE}.lifecycle_event_type = 'activation' ;;
   }
 
   dimension: is_not_retained {
     type: yesno
-    description: "TRUE if the user cancelled close to trial end (within configured window)"
     sql: ${TABLE}.is_not_retained ;;
   }
 
   dimension: total_touches {
     type: number
-    description: "Number of preceding page-view touches found within the attribution window"
     sql: ${TABLE}.total_touches ;;
   }
 
+  dimension: days_before_conversion {
+    type: number
+    label: "Days Before Conversion"
+    description: "Used internally to apply the attribution window filter"
+    sql: ${TABLE}.min_days_before_conversion ;;
+    hidden: yes
+  }
+
+  dimension: within_attribution_window {
+    type: yesno
+    description: "TRUE if this conversion's earliest in-window touch is within the selected window"
+    sql:
+      ${TABLE}.event_type = 'page_visit'
+      OR ${TABLE}.min_days_before_conversion IS NULL
+      OR ${TABLE}.min_days_before_conversion <= {% parameter attribution_window_days %}
+    ;;
+    hidden: yes
+  }
+
   ##############################################################
-  # AOV DIMENSIONS (per-user)
+  # AOV DIMENSIONS
   ##############################################################
   dimension: activation_value {
     type: number
     label: "Activation Value"
-    description: "Unit price the user activated at, in USD ($5.99 monthly, $59.99 yearly). 0 if user has no activation."
     sql: ${TABLE}.activation_value ;;
     value_format_name: usd
   }
@@ -1020,14 +911,12 @@ view: marketing_attribution_test {
   dimension: is_yearly_plan {
     type: yesno
     label: "Is Yearly Plan"
-    description: "TRUE if user activated at the yearly plan price (~$59.99); FALSE for monthly or no activation"
     sql: ${TABLE}.is_yearly_plan ;;
   }
 
   dimension: plan_type {
     type: string
     label: "Plan Type"
-    description: "'yearly' / 'monthly' / 'unknown' based on activation unit price"
     sql: ${TABLE}.plan_type ;;
   }
 
@@ -1036,21 +925,34 @@ view: marketing_attribution_test {
   ##############################################################
   dimension: credit_weight {
     type: number
-    description: "Credit assigned to this row by the selected attribution model"
-    sql: ${TABLE}.credit_weight ;;
+    description: "Selected model's credit weight (switches at query time, no rebuild)"
+    sql:
+      CASE '{% parameter attribution_model %}'
+           WHEN 'first_touch'    THEN ${TABLE}.credit_first_touch
+           WHEN 'first_last'     THEN ${TABLE}.credit_first_last
+           WHEN 'position_based' THEN ${TABLE}.credit_position_based
+           ELSE                       ${TABLE}.credit_last_touch
+      END
+    ;;
     value_format_name: decimal_4
   }
 
   dimension: touch_position {
     type: string
-    description: "'first', 'middle', 'last', 'first_and_last', or 'only'"
     sql: ${TABLE}.touch_position ;;
   }
 
   dimension: is_primary_attribution {
     type: yesno
-    description: "TRUE on exactly 1 row per conversion. KPIs use this filter to keep integer counts."
-    sql: ${TABLE}.is_primary_attribution ;;
+    description: "TRUE on exactly 1 row per conversion under the SELECTED model"
+    sql:
+      CASE '{% parameter attribution_model %}'
+           WHEN 'first_touch'    THEN ${TABLE}.is_first_touch
+           WHEN 'first_last'     THEN ${TABLE}.is_first_touch
+           WHEN 'position_based' THEN ${TABLE}.is_first_touch
+           ELSE                       ${TABLE}.is_last_touch
+      END
+    ;;
   }
 
   dimension: selected_attribution_model {
@@ -1078,14 +980,12 @@ view: marketing_attribution_test {
   dimension: quality_score {
     type: number
     label: "Quality Score"
-    description: "Daily composite (0–100). Volume × conversion-rate × retention multipliers."
     sql: ${TABLE}.quality_score ;;
     value_format_name: decimal_2
   }
 
   dimension: volume_score {
     type: number
-    label: "Volume Score"
     sql: ${TABLE}.volume_score ;;
     value_format_name: decimal_2
   }
@@ -1093,7 +993,6 @@ view: marketing_attribution_test {
   dimension: quality_grade {
     type: string
     label: "Quality Grade"
-    description: "A (≥75), B (60–75), C (40–60), D (20–40), F (<20)"
     sql:
       CASE
         WHEN ${TABLE}.quality_score >= 75 THEN 'A'
@@ -1108,7 +1007,6 @@ view: marketing_attribution_test {
 
   dimension: quality_tier {
     type: string
-    label: "Quality Tier"
     sql:
       CASE
         WHEN ${TABLE}.quality_score >= 60 THEN '1 — Top'
@@ -1119,31 +1017,13 @@ view: marketing_attribution_test {
     ;;
   }
 
-  dimension: trial_to_paid_rate {
-    type: number
-    label: "Trial → Paid Rate (Daily)"
-    sql: ${TABLE}.trial_to_paid_rate ;;
-    value_format_name: percent_2
-  }
-
-  dimension: churn_rate {
-    type: number
-    label: "Churn Rate (Daily)"
-    sql: ${TABLE}.churn_rate ;;
-    value_format_name: percent_2
-  }
-
-  dimension: retention_rate {
-    type: number
-    label: "Retention Rate (Daily)"
-    sql: ${TABLE}.retention_rate ;;
-    value_format_name: percent_2
-  }
+  dimension: trial_to_paid_rate { type: number  label: "Trial → Paid Rate (Daily)"  sql: ${TABLE}.trial_to_paid_rate ;;  value_format_name: percent_2 }
+  dimension: churn_rate         { type: number  label: "Churn Rate (Daily)"         sql: ${TABLE}.churn_rate ;;          value_format_name: percent_2 }
+  dimension: retention_rate     { type: number  label: "Retention Rate (Daily)"     sql: ${TABLE}.retention_rate ;;      value_format_name: percent_2 }
 
   dimension: campaign_total_aov {
     type: number
     label: "Campaign Total Order Value (Daily)"
-    description: "Total activation order value from users credited to this campaign on this day"
     sql: ${TABLE}.campaign_total_aov ;;
     value_format_name: usd_0
   }
@@ -1151,7 +1031,6 @@ view: marketing_attribution_test {
   dimension: campaign_avg_aov {
     type: number
     label: "Campaign Avg Order Value (Daily)"
-    description: "Avg activation order value per user for this campaign on this day"
     sql: ${TABLE}.campaign_avg_aov ;;
     value_format_name: usd
   }
@@ -1167,8 +1046,7 @@ view: marketing_attribution_test {
   measure: distinct_web_visits {
     type: count_distinct
     label: "Distinct Web Visits"
-    description: "Distinct (context_ip, anonymous_id) combinations with at least one page view"
-    sql: COALESCE(${TABLE}.context_ip, ${TABLE}.anonymous_id) ;;
+    sql: COALESCE(${TABLE}.user_id, ${TABLE}.anonymous_id) ;;
     filters: [event_type: "page_visit"]
     drill_fields: [drill_visits*]
   }
@@ -1182,11 +1060,12 @@ view: marketing_attribution_test {
   measure: free_trials_started {
     type: count
     label: "Free Trials Started"
-    description: "Attributed free trial events (one per conversion via primary attribution flag)"
+    description: "Attributed free trials. Filtered by selected attribution model + window."
     filters: [
       event_type: "conversion",
       conversion_event_type: "free_trial",
-      is_primary_attribution: "yes"
+      is_primary_attribution: "yes",
+      within_attribution_window: "yes"
     ]
     drill_fields: [drill_conversions*]
   }
@@ -1194,13 +1073,13 @@ view: marketing_attribution_test {
   measure: free_trials_converted {
     type: count_distinct
     label: "Free Trials Converted"
-    description: "Distinct users who started a trial AND activated within the period"
     sql: ${TABLE}.user_id ;;
     filters: [
       event_type: "conversion",
       conversion_event_type: "free_trial",
       is_activated: "yes",
-      is_primary_attribution: "yes"
+      is_primary_attribution: "yes",
+      within_attribution_window: "yes"
     ]
     drill_fields: [drill_conversions*]
   }
@@ -1211,7 +1090,8 @@ view: marketing_attribution_test {
     filters: [
       event_type: "conversion",
       conversion_event_type: "reacquisition",
-      is_primary_attribution: "yes"
+      is_primary_attribution: "yes",
+      within_attribution_window: "yes"
     ]
     drill_fields: [drill_conversions*]
   }
@@ -1236,11 +1116,11 @@ view: marketing_attribution_test {
   measure: avg_touches_per_conversion {
     type: average
     label: "Avg Touches per Conversion"
-    description: "Average number of page-view touches per attributed conversion"
     sql: ${TABLE}.total_touches ;;
     filters: [
       event_type: "conversion",
-      is_primary_attribution: "yes"
+      is_primary_attribution: "yes",
+      within_attribution_window: "yes"
     ]
     value_format_name: decimal_2
   }
@@ -1252,7 +1132,8 @@ view: marketing_attribution_test {
     filters: [
       event_type: "conversion",
       conversion_event_type: "free_trial",
-      is_primary_attribution: "yes"
+      is_primary_attribution: "yes",
+      within_attribution_window: "yes"
     ]
     value_format_name: decimal_2
   }
@@ -1264,7 +1145,8 @@ view: marketing_attribution_test {
     filters: [
       event_type: "conversion",
       conversion_event_type: "reacquisition",
-      is_primary_attribution: "yes"
+      is_primary_attribution: "yes",
+      within_attribution_window: "yes"
     ]
     value_format_name: decimal_2
   }
@@ -1273,20 +1155,14 @@ view: marketing_attribution_test {
     type: max
     label: "Max Touches in a Journey"
     sql: ${TABLE}.total_touches ;;
-    filters: [
-      event_type: "conversion",
-      is_primary_attribution: "yes"
-    ]
+    filters: [event_type: "conversion", is_primary_attribution: "yes", within_attribution_window: "yes"]
   }
 
   measure: median_touches_per_conversion {
     type: median
     label: "Median Touches per Conversion"
     sql: ${TABLE}.total_touches ;;
-    filters: [
-      event_type: "conversion",
-      is_primary_attribution: "yes"
-    ]
+    filters: [event_type: "conversion", is_primary_attribution: "yes", within_attribution_window: "yes"]
     value_format_name: decimal_1
   }
 
@@ -1301,7 +1177,8 @@ view: marketing_attribution_test {
       event_type: "conversion",
       conversion_event_type: "free_trial",
       is_not_retained: "yes",
-      is_primary_attribution: "yes"
+      is_primary_attribution: "yes",
+      within_attribution_window: "yes"
     ]
   }
 
@@ -1322,17 +1199,17 @@ view: marketing_attribution_test {
   }
 
   ##############################################################
-  # MEASURES — AOV (Average Order Value)
+  # MEASURES — AOV
   ##############################################################
   measure: avg_order_value {
     type: average
     label: "Avg Order Value"
-    description: "Average activation unit price across users in this grouping. Excludes users without activation."
     sql: ${TABLE}.activation_value ;;
     filters: [
       event_type: "conversion",
       is_primary_attribution: "yes",
-      activation_value: ">0"
+      activation_value: ">0",
+      within_attribution_window: "yes"
     ]
     value_format_name: usd
   }
@@ -1340,16 +1217,14 @@ view: marketing_attribution_test {
   measure: total_order_value {
     type: sum
     label: "Total Order Value"
-    description: "Sum of activation unit prices across users in this grouping"
     sql: ${TABLE}.activation_value ;;
-    filters: [event_type: "conversion", is_primary_attribution: "yes"]
+    filters: [event_type: "conversion", is_primary_attribution: "yes", within_attribution_window: "yes"]
     value_format_name: usd_0
   }
 
   measure: order_value_per_trial {
     type: number
     label: "Order Value per Trial"
-    description: "Total Order Value ÷ Free Trials Started — efficiency metric"
     sql: 1.0 * ${total_order_value} / NULLIF(${free_trials_started}, 0) ;;
     value_format_name: usd
   }
@@ -1357,32 +1232,31 @@ view: marketing_attribution_test {
   measure: yearly_plan_users {
     type: count_distinct
     label: "Yearly Plan Users"
-    description: "Distinct users who activated at the yearly plan price"
     sql: ${TABLE}.user_id ;;
     filters: [
       event_type: "conversion",
       is_primary_attribution: "yes",
-      is_yearly_plan: "yes"
+      is_yearly_plan: "yes",
+      within_attribution_window: "yes"
     ]
   }
 
   measure: monthly_plan_users {
     type: count_distinct
     label: "Monthly Plan Users"
-    description: "Distinct users who activated at the monthly plan price"
     sql: ${TABLE}.user_id ;;
     filters: [
       event_type: "conversion",
       is_primary_attribution: "yes",
       is_yearly_plan: "no",
-      activation_value: ">0"
+      activation_value: ">0",
+      within_attribution_window: "yes"
     ]
   }
 
   measure: pct_yearly_plan {
     type: number
     label: "% Yearly Plan Subs"
-    description: "Share of activated users in this grouping who chose the yearly plan ($59.99). Calculated as yearly users ÷ (yearly + monthly users)."
     sql: 1.0 * ${yearly_plan_users}
       / NULLIF(${yearly_plan_users} + ${monthly_plan_users}, 0) ;;
     value_format_name: percent_2
@@ -1391,7 +1265,6 @@ view: marketing_attribution_test {
   measure: pct_monthly_plan {
     type: number
     label: "% Monthly Plan Subs"
-    description: "Share of activated users in this grouping who chose the monthly plan ($5.99). Calculated as monthly users ÷ (yearly + monthly users)."
     sql: 1.0 * ${monthly_plan_users}
       / NULLIF(${yearly_plan_users} + ${monthly_plan_users}, 0) ;;
     value_format_name: percent_2
@@ -1439,7 +1312,8 @@ view: marketing_attribution_test {
       event_type: "conversion",
       conversion_event_type: "free_trial",
       is_activated: "yes",
-      is_primary_attribution: "yes"
+      is_primary_attribution: "yes",
+      within_attribution_window: "yes"
     ]
   }
 
@@ -1449,7 +1323,8 @@ view: marketing_attribution_test {
     filters: [
       event_type: "conversion",
       conversion_event_type: "reacquisition",
-      is_primary_attribution: "yes"
+      is_primary_attribution: "yes",
+      within_attribution_window: "yes"
     ]
   }
 
@@ -1460,7 +1335,8 @@ view: marketing_attribution_test {
       event_type: "conversion",
       conversion_event_type: "free_trial",
       trial_type: "standard",
-      is_primary_attribution: "yes"
+      is_primary_attribution: "yes",
+      within_attribution_window: "yes"
     ]
   }
 
@@ -1471,14 +1347,15 @@ view: marketing_attribution_test {
       event_type: "conversion",
       conversion_event_type: "free_trial",
       trial_type: "bundle",
-      is_primary_attribution: "yes"
+      is_primary_attribution: "yes",
+      within_attribution_window: "yes"
     ]
   }
 
   measure: total_conversions {
     type: count
     label: "Total Conversions"
-    filters: [event_type: "conversion", is_primary_attribution: "yes"]
+    filters: [event_type: "conversion", is_primary_attribution: "yes", within_attribution_window: "yes"]
   }
 
   ##############################################################
@@ -1487,17 +1364,17 @@ view: marketing_attribution_test {
   measure: free_trials_started_weighted {
     type: sum
     label: "Free Trials Started (Credit-Weighted)"
-    description: "SUM(credit_weight) for trials. Use this when grouping by campaign under first_last or position_based."
-    sql: ${TABLE}.credit_weight ;;
-    filters: [event_type: "conversion", conversion_event_type: "free_trial"]
+    description: "SUM(credit_weight) for trials. Use under first_last/position_based for fractional credit."
+    sql: ${credit_weight} ;;
+    filters: [event_type: "conversion", conversion_event_type: "free_trial", within_attribution_window: "yes"]
     value_format_name: decimal_4
   }
 
   measure: reacquisitions_weighted {
     type: sum
     label: "Reacquisitions (Credit-Weighted)"
-    sql: ${TABLE}.credit_weight ;;
-    filters: [event_type: "conversion", conversion_event_type: "reacquisition"]
+    sql: ${credit_weight} ;;
+    filters: [event_type: "conversion", conversion_event_type: "reacquisition", within_attribution_window: "yes"]
     value_format_name: decimal_4
   }
 
@@ -1507,25 +1384,24 @@ view: marketing_attribution_test {
   measure: first_touch_credit {
     type: sum
     label: "First Touch Credit"
-    sql: ${TABLE}.credit_weight ;;
-    filters: [event_type: "conversion", touch_position: "first"]
+    sql: ${credit_weight} ;;
+    filters: [event_type: "conversion", touch_position: "first", within_attribution_window: "yes"]
     value_format_name: decimal_4
   }
 
   measure: middle_touch_credit {
     type: sum
     label: "Middle Touch Credit"
-    description: "Total credit assigned to middle-touch positions (relevant for position_based)"
-    sql: ${TABLE}.credit_weight ;;
-    filters: [event_type: "conversion", touch_position: "middle"]
+    sql: ${credit_weight} ;;
+    filters: [event_type: "conversion", touch_position: "middle", within_attribution_window: "yes"]
     value_format_name: decimal_4
   }
 
   measure: last_touch_credit {
     type: sum
     label: "Last Touch Credit"
-    sql: ${TABLE}.credit_weight ;;
-    filters: [event_type: "conversion", touch_position: "last"]
+    sql: ${credit_weight} ;;
+    filters: [event_type: "conversion", touch_position: "last", within_attribution_window: "yes"]
     value_format_name: decimal_4
   }
 
@@ -1610,4 +1486,20 @@ view: marketing_attribution_test {
       quality_grade
     ]
   }
+}
+
+################################################################################
+# Datagroup — controls when the PDT rebuilds (daily at 9 AM ET)
+################################################################################
+datagroup: marketing_attribution_daily {
+  # Trigger value changes once per day at 9 AM Eastern Time. The PDT rebuilds
+  # the next time anyone queries it after the value changes. Subtracting 9 hours
+  # from local time means "today" doesn't start until 9 AM ET, giving overnight
+  # ETL pipelines time to settle before the rebuild reads them.
+  sql_trigger: SELECT TO_CHAR(
+                   CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE())
+                   - INTERVAL '3 hour',
+                   'YYYY-MM-DD'
+               ) ;;
+  max_cache_age: "24 hours"
 }
