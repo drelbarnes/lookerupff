@@ -10,7 +10,7 @@ view: churn_gain {
     v2_table AS (
   SELECT *
   FROM ${UPFF_analytics_Vw_v2.SQL_TABLE_NAME}
-  WHERE report_date >= '2025-06-30'
+  WHERE report_date >= '2026-01-01'
 ),
 
 
@@ -361,11 +361,15 @@ view: churn_gain {
       FROM rolling_churn
       ;;
 
-        sql_trigger_value:
-    SELECT TO_CHAR(
-    CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE()) - INTERVAL '10 hour',
-    'YYYY-MM-DD'
-    ) ;;#sql_trigger_value: SELECT TO_CHAR( DATEADD(minute, -690, GETDATE()), 'YYYY-MM-DD');;
+
+    sql_trigger_value:
+      SELECT
+        CASE
+        WHEN CAST(CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE()) AS TIME) >= '11:05:00'
+        THEN TO_CHAR(CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE()), 'YYYY-MM-DD')
+        ELSE TO_CHAR(CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE()) - INTERVAL '1 day', 'YYYY-MM-DD')
+      END ;;
+    #sql_trigger_value: SELECT TO_CHAR( DATEADD(minute, -690, GETDATE()), 'YYYY-MM-DD');;
     #sql_trigger_value:  SELECT TO_CHAR(DATE_TRUNC('day', CURRENT_TIMESTAMP) + INTERVAL '9 hours 45 minutes', 'YYYY-MM-DD');;
     distribution: "report_date"
     sortkeys: ["report_date"]
