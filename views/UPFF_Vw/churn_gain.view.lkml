@@ -365,7 +365,7 @@ view: churn_gain {
     sql_trigger_value:
       SELECT
         CASE
-        WHEN CAST(CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE()) AS TIME) >= '11:05:00'
+        WHEN CAST(CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE()) AS TIME) >= '11:00:00'
         THEN TO_CHAR(CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE()), 'YYYY-MM-DD')
         ELSE TO_CHAR(CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE()) - INTERVAL '1 day', 'YYYY-MM-DD')
       END ;;
