@@ -5,25 +5,21 @@
 # All SQL is centralized in the derived_table below.
 #
 # === CACHING / REBUILD BEHAVIOR ===
-# This is a Persistent Derived Table (PDT) controlled by `datagroup_trigger`.
-# The PDT rebuilds ONLY when the datagroup invalidates (daily, at 9 AM ET).
+# Persistent Derived Table (PDT) controlled by `datagroup_trigger`.
+# The PDT rebuilds ONLY when the datagroup invalidates (daily at 3 AM ET).
 # Filter changes (date range, attribution model, attribution window) DO NOT
 # trigger a rebuild — they apply at query time on the cached PDT.
 #
-# To achieve this, the derived_table SQL:
-#   - Builds the full historical window (180 days back) regardless of filter
-#   - Computes attribution for ALL supported windows in a single pass
-#   - Computes attribution for ALL four models in a single pass
-#   - Filters/parameter selections happen in dimensions/measures, not SQL
-#
-# This trades some warehouse compute (precomputing all variants) for vastly
-# faster dashboard interactions. Filter changes return in seconds.
-#
 # === ROW TYPES (event_type) ===
-#   1. 'page_visit'  — every marketing-site page view
-#   2. 'conversion'  — attributed free trials and reacquisitions (web pipeline)
+#   1. 'page_visit'   — every marketing-site page view (web)
+#   2. 'conversion'   — attributed free trials and reacquisitions (web)
+#   3. 'app_trial'    — app free trials from Branch.io (php.branch_purchase)
+#   4. 'app_install'  — app installs from Branch.io (php.branch_install)
 #
-# === ATTRIBUTION MODELS ===
+# Branch rows are AGGREGATE — anonymous_id is a per-row unique key,
+# not an individual user identifier.
+#
+# === ATTRIBUTION MODELS (web only) ===
 #   - first_touch    : 100% to earliest touch
 #   - last_touch     : 100% to most recent touch (default)
 #   - first_last     : 50/50 first & last (collapsed if same campaign)
@@ -37,9 +33,7 @@ view: marketing_attribution_test {
     sql:
       WITH params AS (
           SELECT
-               -- Build the PDT for the last 180 days. The dashboard's
-               -- date filter then narrows this at query time.
-               (CURRENT_DATE - INTERVAL '90 days')::DATE AS start_date
+               (CURRENT_DATE - INTERVAL '180 days')::DATE AS start_date
               ,CURRENT_DATE                               AS end_date
               ,90                  AS max_attribution_window_days
               ,0.40                AS w_activations
@@ -79,6 +73,68 @@ view: marketing_attribution_test {
       AND user_id IS NOT NULL
       ) ranked
       WHERE rn = 1
+      ),
+
+      -- ============================================================
+      -- BRANCH.IO APP FREE TRIALS — from php.branch_purchase
+      -- ============================================================
+      branch_app_trials AS (
+      SELECT
+      DATE(report_date)                AS report_date
+      ,anonymous_id
+      ,os                               AS device_os
+      ,CASE
+      WHEN LOWER(ad_partner) = 'facebook'                                   THEN 'meta'
+      WHEN LOWER(ad_partner) IN ('google adwords','google ads','google')    THEN 'google'
+      WHEN LOWER(ad_partner) LIKE '%tiktok%'                                THEN 'tiktok'
+      WHEN LOWER(ad_partner) LIKE '%apple%search%'                          THEN 'apple_search'
+      WHEN LOWER(ad_partner) LIKE '%snapchat%'                              THEN 'snapchat'
+      WHEN LOWER(ad_partner) LIKE '%roku%'                                  THEN 'roku'
+      WHEN LOWER(ad_partner) = 'unattributed'                               THEN 'unattributed'
+      ELSE LOWER(ad_partner)
+      END                              AS campaign_source
+      ,channel                          AS branch_channel
+      ,campaign                         AS campaign_name
+      ,campaign_id
+      ,feature                          AS branch_feature
+      ,creative_name
+      ,count                            AS app_trial_count
+      ,CASE WHEN LOWER(feature) = 'paid advertising' THEN TRUE ELSE FALSE END AS is_paid_branch
+      FROM php.branch_purchase
+      WHERE report_date >= (SELECT start_date FROM params)
+      AND report_date <  (SELECT end_date   FROM params) + INTERVAL '1 day'
+      AND count > 0
+      ),
+
+      -- ============================================================
+      -- BRANCH.IO APP INSTALLS — from php.branch_install
+      -- ============================================================
+      branch_app_installs AS (
+      SELECT
+      DATE(report_date)                AS report_date
+      ,anonymous_id
+      ,os                               AS device_os
+      ,CASE
+      WHEN LOWER(ad_partner) = 'facebook'                                   THEN 'meta'
+      WHEN LOWER(ad_partner) IN ('google adwords','google ads','google')    THEN 'google'
+      WHEN LOWER(ad_partner) LIKE '%tiktok%'                                THEN 'tiktok'
+      WHEN LOWER(ad_partner) LIKE '%apple%search%'                          THEN 'apple_search'
+      WHEN LOWER(ad_partner) LIKE '%snapchat%'                              THEN 'snapchat'
+      WHEN LOWER(ad_partner) LIKE '%roku%'                                  THEN 'roku'
+      WHEN LOWER(ad_partner) = 'unattributed'                               THEN 'unattributed'
+      ELSE LOWER(ad_partner)
+      END                              AS campaign_source
+      ,channel                          AS branch_channel
+      ,campaign                         AS campaign_name
+      ,campaign_id
+      ,feature                          AS branch_feature
+      ,creative_name
+      ,count                            AS app_install_count
+      ,CASE WHEN LOWER(feature) = 'paid advertising' THEN TRUE ELSE FALSE END AS is_paid_branch
+      FROM php.branch_install
+      WHERE report_date >= (SELECT start_date FROM params)
+      AND report_date <  (SELECT end_date   FROM params) + INTERVAL '1 day'
+      AND count > 0
       ),
 
       -- ============================================================
@@ -305,10 +361,6 @@ view: marketing_attribution_test {
       UNION ALL SELECT * FROM reacquisitions
       ),
 
-      -- ============================================================
-      -- TOUCH MATCHING — uses MAX window (90 days). Days_before_conversion
-      -- column lets the dashboard filter to a tighter window at query time.
-      -- ============================================================
       attributed_touches AS (
       SELECT
       c.order_id, c.user_id
@@ -376,10 +428,6 @@ view: marketing_attribution_test {
       WHERE f.first_touch_rank = 1 AND l.last_touch_rank  = 1
       ),
 
-      -- ============================================================
-      -- ALL TOUCHES — pre-compute credit weights for ALL FOUR models
-      -- so dashboard can switch model at query time without rebuild
-      -- ============================================================
       all_touches_raw AS (
       SELECT
       at.order_id, at.user_id
@@ -497,9 +545,6 @@ view: marketing_attribution_test {
       UNION ALL SELECT * FROM selected_attributed_direct
       ),
 
-      -- ============================================================
-      -- DAILY CAMPAIGN METRICS (uses last-touch as scoring baseline)
-      -- ============================================================
       daily_campaign_metrics AS (
       SELECT
       DATE(sa.conversion_event_at)   AS report_date
@@ -649,6 +694,13 @@ view: marketing_attribution_test {
       ,FALSE                      AS is_first_touch
       ,FALSE                      AS is_last_touch
       ,FALSE                      AS is_first_and_last
+      ,CAST(0 AS INTEGER)         AS app_trial_count
+      ,CAST(0 AS INTEGER)         AS app_install_count
+      ,CAST(NULL AS VARCHAR(50))  AS device_os
+      ,CAST(NULL AS VARCHAR(255)) AS branch_channel
+      ,CAST(NULL AS VARCHAR(100)) AS branch_feature
+      ,CAST(NULL AS VARCHAR(500)) AS creative_name
+      ,FALSE                      AS is_paid_branch
       ,CAST(NULL AS NUMERIC(10,2))  AS quality_score
       ,CAST(NULL AS NUMERIC(10,2))  AS volume_score
       ,CAST(NULL AS NUMERIC(5,4))   AS trial_to_paid_rate
@@ -690,6 +742,13 @@ view: marketing_attribution_test {
       ,sa.credit_first_last, sa.credit_position_based
       ,sa.touch_position
       ,sa.is_first_touch, sa.is_last_touch, sa.is_first_and_last
+      ,CAST(0 AS INTEGER)         AS app_trial_count
+      ,CAST(0 AS INTEGER)         AS app_install_count
+      ,CAST(NULL AS VARCHAR(50))  AS device_os
+      ,CAST(NULL AS VARCHAR(255)) AS branch_channel
+      ,CAST(NULL AS VARCHAR(100)) AS branch_feature
+      ,CAST(NULL AS VARCHAR(500)) AS creative_name
+      ,FALSE                      AS is_paid_branch
       ,CAST(dq.quality_score      AS NUMERIC(10,2)) AS quality_score
       ,CAST(dq.volume_score       AS NUMERIC(10,2)) AS volume_score
       ,CAST(dq.trial_to_paid_rate AS NUMERIC(5,4))  AS trial_to_paid_rate
@@ -707,15 +766,133 @@ view: marketing_attribution_test {
       AND COALESCE(sa.attributed_campaign_name, '')    = COALESCE(dq.campaign_name, '')
       AND COALESCE(sa.attributed_campaign_medium, '')  = COALESCE(dq.campaign_medium, '')
       AND COALESCE(sa.attributed_campaign_content, '') = COALESCE(dq.campaign_content, '')
+      ),
+
+      app_trial_rows AS (
+      SELECT
+      CAST('app_trial' AS VARCHAR(20))                AS event_type
+      ,CAST(anonymous_id AS VARCHAR(255))              AS event_id
+      ,CAST(NULL AS VARCHAR(255))                      AS user_id
+      ,CAST(NULL AS VARCHAR(255))                      AS context_ip
+      ,CAST(NULL AS VARCHAR(255))                      AS anonymous_id
+      ,report_date::TIMESTAMP                          AS event_at
+      ,report_date
+      ,CAST(campaign_source  AS VARCHAR(255))          AS campaign_source
+      ,CAST(campaign_name    AS VARCHAR(255))          AS campaign_name
+      ,CAST(campaign_id      AS VARCHAR(255))          AS campaign_id
+      ,CAST('paid' AS VARCHAR(255))                    AS campaign_medium
+      ,CAST(NULL AS VARCHAR(255))                      AS campaign_content
+      ,CAST(NULL AS VARCHAR(255))                      AS order_id
+      ,'free_trial'                                    AS conversion_event_type
+      ,CAST('app' AS VARCHAR(20))                      AS trial_type
+      ,CAST(NULL AS VARCHAR(255))                      AS bundle_plan
+      ,FALSE                                           AS is_bundle_user
+      ,CAST(NULL AS VARCHAR(20))                       AS lifecycle_event_type
+      ,CAST(NULL AS DATE)                              AS lifecycle_event_date
+      ,FALSE                                           AS is_activated_or_reacquired
+      ,FALSE                                           AS is_not_retained
+      ,CAST(0 AS NUMERIC(10,2))                        AS activation_value
+      ,FALSE                                           AS is_yearly_plan
+      ,CAST(NULL AS VARCHAR(20))                       AS plan_type
+      ,0                                               AS total_touches
+      ,CAST(NULL AS INTEGER)                           AS min_days_before_conversion
+      ,CAST(NULL AS TIMESTAMP)                         AS attributed_touch_at
+      ,CAST(0.0 AS NUMERIC(7,6))                       AS credit_first_touch
+      ,CAST(0.0 AS NUMERIC(7,6))                       AS credit_last_touch
+      ,CAST(0.0 AS NUMERIC(7,6))                       AS credit_first_last
+      ,CAST(0.0 AS NUMERIC(7,6))                       AS credit_position_based
+      ,CAST(NULL AS VARCHAR(20))                       AS touch_position
+      ,FALSE                                           AS is_first_touch
+      ,FALSE                                           AS is_last_touch
+      ,FALSE                                           AS is_first_and_last
+      ,app_trial_count                                 AS app_trial_count
+      ,0                                               AS app_install_count
+      ,device_os
+      ,CAST(branch_channel AS VARCHAR(255))            AS branch_channel
+      ,CAST(branch_feature AS VARCHAR(100))            AS branch_feature
+      ,CAST(creative_name AS VARCHAR(500))             AS creative_name
+      ,is_paid_branch
+      ,CAST(NULL AS NUMERIC(10,2))                     AS quality_score
+      ,CAST(NULL AS NUMERIC(10,2))                     AS volume_score
+      ,CAST(NULL AS NUMERIC(5,4))                      AS trial_to_paid_rate
+      ,CAST(NULL AS NUMERIC(5,4))                      AS churn_rate
+      ,CAST(NULL AS NUMERIC(5,4))                      AS retention_rate
+      ,CAST(NULL AS NUMERIC(12,2))                     AS campaign_total_aov
+      ,CAST(NULL AS NUMERIC(10,2))                     AS campaign_avg_aov
+      ,CAST(NULL AS NUMERIC(10,2))                     AS std_trial_score
+      ,CAST(NULL AS NUMERIC(10,2))                     AS bundle_trial_score
+      ,CAST(NULL AS NUMERIC(10,2))                     AS reacq_score
+      ,CAST(NULL AS NUMERIC(10,2))                     AS activation_score
+      FROM branch_app_trials
+      ),
+
+      app_install_rows AS (
+      SELECT
+      CAST('app_install' AS VARCHAR(20))              AS event_type
+      ,CAST(anonymous_id AS VARCHAR(255))              AS event_id
+      ,CAST(NULL AS VARCHAR(255))                      AS user_id
+      ,CAST(NULL AS VARCHAR(255))                      AS context_ip
+      ,CAST(NULL AS VARCHAR(255))                      AS anonymous_id
+      ,report_date::TIMESTAMP                          AS event_at
+      ,report_date
+      ,CAST(campaign_source  AS VARCHAR(255))          AS campaign_source
+      ,CAST(campaign_name    AS VARCHAR(255))          AS campaign_name
+      ,CAST(campaign_id      AS VARCHAR(255))          AS campaign_id
+      ,CAST('paid' AS VARCHAR(255))                    AS campaign_medium
+      ,CAST(NULL AS VARCHAR(255))                      AS campaign_content
+      ,CAST(NULL AS VARCHAR(255))                      AS order_id
+      ,CAST(NULL AS VARCHAR(20))                       AS conversion_event_type
+      ,CAST('app_install' AS VARCHAR(20))              AS trial_type
+      ,CAST(NULL AS VARCHAR(255))                      AS bundle_plan
+      ,FALSE                                           AS is_bundle_user
+      ,CAST(NULL AS VARCHAR(20))                       AS lifecycle_event_type
+      ,CAST(NULL AS DATE)                              AS lifecycle_event_date
+      ,FALSE                                           AS is_activated_or_reacquired
+      ,FALSE                                           AS is_not_retained
+      ,CAST(0 AS NUMERIC(10,2))                        AS activation_value
+      ,FALSE                                           AS is_yearly_plan
+      ,CAST(NULL AS VARCHAR(20))                       AS plan_type
+      ,0                                               AS total_touches
+      ,CAST(NULL AS INTEGER)                           AS min_days_before_conversion
+      ,CAST(NULL AS TIMESTAMP)                         AS attributed_touch_at
+      ,CAST(0.0 AS NUMERIC(7,6))                       AS credit_first_touch
+      ,CAST(0.0 AS NUMERIC(7,6))                       AS credit_last_touch
+      ,CAST(0.0 AS NUMERIC(7,6))                       AS credit_first_last
+      ,CAST(0.0 AS NUMERIC(7,6))                       AS credit_position_based
+      ,CAST(NULL AS VARCHAR(20))                       AS touch_position
+      ,FALSE                                           AS is_first_touch
+      ,FALSE                                           AS is_last_touch
+      ,FALSE                                           AS is_first_and_last
+      ,0                                               AS app_trial_count
+      ,app_install_count                               AS app_install_count
+      ,device_os
+      ,CAST(branch_channel AS VARCHAR(255))            AS branch_channel
+      ,CAST(branch_feature AS VARCHAR(100))            AS branch_feature
+      ,CAST(creative_name AS VARCHAR(500))             AS creative_name
+      ,is_paid_branch
+      ,CAST(NULL AS NUMERIC(10,2))                     AS quality_score
+      ,CAST(NULL AS NUMERIC(10,2))                     AS volume_score
+      ,CAST(NULL AS NUMERIC(5,4))                      AS trial_to_paid_rate
+      ,CAST(NULL AS NUMERIC(5,4))                      AS churn_rate
+      ,CAST(NULL AS NUMERIC(5,4))                      AS retention_rate
+      ,CAST(NULL AS NUMERIC(12,2))                     AS campaign_total_aov
+      ,CAST(NULL AS NUMERIC(10,2))                     AS campaign_avg_aov
+      ,CAST(NULL AS NUMERIC(10,2))                     AS std_trial_score
+      ,CAST(NULL AS NUMERIC(10,2))                     AS bundle_trial_score
+      ,CAST(NULL AS NUMERIC(10,2))                     AS reacq_score
+      ,CAST(NULL AS NUMERIC(10,2))                     AS activation_score
+      FROM branch_app_installs
       )
 
       SELECT * FROM page_visit_rows
       UNION ALL
       SELECT * FROM conversion_rows
+      UNION ALL
+      SELECT * FROM app_trial_rows
+      UNION ALL
+      SELECT * FROM app_install_rows
       ;;
 
-    # PDT only rebuilds when datagroup invalidates (daily at 9 AM ET).
-    # Filter changes never trigger a rebuild — they apply at query time.
     datagroup_trigger: marketing_attribution_daily
     distribution_style: even
     #sortkeys: ["report_date", "event_type"]
@@ -723,7 +900,7 @@ view: marketing_attribution_test {
   }
 
   ##############################################################
-  # PARAMETERS — applied at query time, no PDT rebuild
+  # PARAMETERS
   ##############################################################
   parameter: attribution_model {
     type: unquoted
@@ -739,7 +916,6 @@ view: marketing_attribution_test {
   parameter: attribution_window_days {
     type: unquoted
     label: "Attribution Window"
-    description: "Filters touches by days_before_conversion at query time. PDT looks back 90."
     default_value: "30"
     allowed_value: { label: "1 day"   value: "1" }
     allowed_value: { label: "3 days"  value: "3" }
@@ -761,7 +937,7 @@ view: marketing_attribution_test {
 
   dimension: event_type {
     type: string
-    description: "'page_visit' or 'conversion'"
+    description: "'page_visit' | 'conversion' | 'app_trial' | 'app_install'"
     sql: ${TABLE}.event_type ;;
   }
 
@@ -845,6 +1021,56 @@ view: marketing_attribution_test {
   }
 
   ##############################################################
+  # APP / SURFACE DIMENSIONS (Branch.io)
+  ##############################################################
+  dimension: device_os {
+    type: string
+    label: "Device OS"
+    description: "Platform from Branch (ANDROID, IOS, ANDROID_TV, AMAZON_FIRE_TV, ROKU, etc.). NULL for web rows."
+    sql: ${TABLE}.device_os ;;
+  }
+
+  dimension: branch_channel {
+    type: string
+    label: "Branch Channel"
+    description: "Branch's `channel` field — granular source (Facebook, Google, Display, Search, Roku, Social)"
+    sql: ${TABLE}.branch_channel ;;
+  }
+
+  dimension: branch_feature {
+    type: string
+    label: "Branch Feature"
+    description: "Branch's `feature` field — paid advertising / organic / organic search / unattributed"
+    sql: ${TABLE}.branch_feature ;;
+  }
+
+  dimension: creative_name {
+    type: string
+    label: "Creative Name"
+    description: "Ad creative copy/text (Branch only)"
+    sql: ${TABLE}.creative_name ;;
+  }
+
+  dimension: is_paid_branch {
+    type: yesno
+    label: "Is Paid (Branch)"
+    description: "TRUE if Branch tagged this row as paid advertising"
+    sql: ${TABLE}.is_paid_branch ;;
+  }
+
+  dimension: surface {
+    type: string
+    label: "Surface"
+    description: "'web' for web events, 'app' for Branch events"
+    sql:
+      CASE
+        WHEN ${TABLE}.event_type IN ('app_trial', 'app_install') THEN 'app'
+        ELSE                                                          'web'
+      END
+    ;;
+  }
+
+  ##############################################################
   # TRIAL / LIFECYCLE DIMENSIONS
   ##############################################################
   dimension: order_id              { type: string sql: ${TABLE}.order_id ;; }
@@ -859,20 +1085,9 @@ view: marketing_attribution_test {
     sql: ${TABLE}.lifecycle_event_type ;;
   }
 
-  dimension: is_activated_or_reacquired {
-    type: yesno
-    sql: ${TABLE}.is_activated_or_reacquired ;;
-  }
-
-  dimension: is_activated {
-    type: yesno
-    sql: ${TABLE}.lifecycle_event_type = 'activation' ;;
-  }
-
-  dimension: is_not_retained {
-    type: yesno
-    sql: ${TABLE}.is_not_retained ;;
-  }
+  dimension: is_activated_or_reacquired { type: yesno  sql: ${TABLE}.is_activated_or_reacquired ;; }
+  dimension: is_activated               { type: yesno  sql: ${TABLE}.lifecycle_event_type = 'activation' ;; }
+  dimension: is_not_retained            { type: yesno  sql: ${TABLE}.is_not_retained ;; }
 
   dimension: total_touches {
     type: number
@@ -881,17 +1096,14 @@ view: marketing_attribution_test {
 
   dimension: days_before_conversion {
     type: number
-    label: "Days Before Conversion"
-    description: "Used internally to apply the attribution window filter"
     sql: ${TABLE}.min_days_before_conversion ;;
     hidden: yes
   }
 
   dimension: within_attribution_window {
     type: yesno
-    description: "TRUE if this conversion's earliest in-window touch is within the selected window"
     sql:
-      ${TABLE}.event_type = 'page_visit'
+      ${TABLE}.event_type IN ('page_visit', 'app_trial', 'app_install')
       OR ${TABLE}.min_days_before_conversion IS NULL
       OR ${TABLE}.min_days_before_conversion <= {% parameter attribution_window_days %}
     ;;
@@ -910,13 +1122,11 @@ view: marketing_attribution_test {
 
   dimension: is_yearly_plan {
     type: yesno
-    label: "Is Yearly Plan"
     sql: ${TABLE}.is_yearly_plan ;;
   }
 
   dimension: plan_type {
     type: string
-    label: "Plan Type"
     sql: ${TABLE}.plan_type ;;
   }
 
@@ -1041,7 +1251,7 @@ view: marketing_attribution_test {
   dimension: activation_score   { type: number  hidden: yes  sql: ${TABLE}.activation_score ;; }
 
   ##############################################################
-  # MEASURES — KPI tiles
+  # MEASURES — Web KPIs
   ##############################################################
   measure: distinct_web_visits {
     type: count_distinct
@@ -1057,10 +1267,23 @@ view: marketing_attribution_test {
     filters: [event_type: "page_visit"]
   }
 
+  measure: web_trials_started {
+    type: count
+    label: "Free Trials Started (Web)"
+    description: "Web-attributed free trials"
+    filters: [
+      event_type: "conversion",
+      conversion_event_type: "free_trial",
+      is_primary_attribution: "yes",
+      within_attribution_window: "yes"
+    ]
+    drill_fields: [drill_conversions*]
+  }
+
   measure: free_trials_started {
     type: count
     label: "Free Trials Started"
-    description: "Attributed free trials. Filtered by selected attribution model + window."
+    description: "Alias for web trials. Use Total Trials Started for combined web+app."
     filters: [
       event_type: "conversion",
       conversion_event_type: "free_trial",
@@ -1099,14 +1322,72 @@ view: marketing_attribution_test {
   measure: trial_to_paid_conversion_rate {
     type: number
     label: "Trial to Paid Conversion Rate"
-    sql: 1.0 * ${free_trials_converted} / NULLIF(${free_trials_started}, 0) ;;
+    sql: 1.0 * ${free_trials_converted} / NULLIF(${web_trials_started}, 0) ;;
     value_format_name: percent_2
   }
 
   measure: visit_to_trial_rate {
     type: number
     label: "Visit → Trial Rate"
-    sql: 1.0 * ${free_trials_started} / NULLIF(${distinct_web_visits}, 0) ;;
+    sql: 1.0 * ${web_trials_started} / NULLIF(${distinct_web_visits}, 0) ;;
+    value_format_name: percent_2
+  }
+
+  ##############################################################
+  # MEASURES — Branch.io App Trials & Installs
+  ##############################################################
+  measure: app_trials_started {
+    type: sum
+    label: "Free Trials Started (App)"
+    description: "Aggregate app trial volume from Branch.io (php.branch_purchase)"
+    sql: ${TABLE}.app_trial_count ;;
+    filters: [event_type: "app_trial"]
+  }
+
+  measure: app_trials_started_paid {
+    type: sum
+    label: "Free Trials Started (App, Paid Only)"
+    description: "Branch app trials filtered to paid advertising"
+    sql: ${TABLE}.app_trial_count ;;
+    filters: [event_type: "app_trial", is_paid_branch: "yes"]
+  }
+
+  measure: app_installs {
+    type: sum
+    label: "App Installs"
+    description: "Aggregate app installs from Branch.io (php.branch_install)"
+    sql: ${TABLE}.app_install_count ;;
+    filters: [event_type: "app_install"]
+  }
+
+  measure: app_installs_paid {
+    type: sum
+    label: "App Installs (Paid Only)"
+    sql: ${TABLE}.app_install_count ;;
+    filters: [event_type: "app_install", is_paid_branch: "yes"]
+  }
+
+  measure: total_trials_started {
+    type: number
+    label: "Free Trials Started (Web + App)"
+    description: "Combined trial volume across web and app."
+    sql: ${web_trials_started} + ${app_trials_started} ;;
+  }
+
+  measure: app_share_of_trials {
+    type: number
+    label: "% App Trials"
+    description: "App trials as % of total (web + app) trials"
+    sql: 1.0 * ${app_trials_started}
+      / NULLIF(${web_trials_started} + ${app_trials_started}, 0) ;;
+    value_format_name: percent_2
+  }
+
+  measure: app_install_to_trial_rate {
+    type: number
+    label: "App Install → Trial Rate"
+    description: "App trials ÷ App installs. Funnel conversion within the app surface."
+    sql: 1.0 * ${app_trials_started} / NULLIF(${app_installs}, 0) ;;
     value_format_name: percent_2
   }
 
@@ -1225,7 +1506,7 @@ view: marketing_attribution_test {
   measure: order_value_per_trial {
     type: number
     label: "Order Value per Trial"
-    sql: 1.0 * ${total_order_value} / NULLIF(${free_trials_started}, 0) ;;
+    sql: 1.0 * ${total_order_value} / NULLIF(${web_trials_started}, 0) ;;
     value_format_name: usd
   }
 
@@ -1429,6 +1710,8 @@ view: marketing_attribution_test {
       trial_type,
       plan_type,
       activation_value,
+      surface,
+      device_os,
       marketing_platform,
       campaign_source,
       campaign_medium,
@@ -1452,6 +1735,7 @@ view: marketing_attribution_test {
       campaign_medium,
       campaign_content,
       marketing_platform,
+      surface,
       standard_trials,
       bundle_trials,
       reacquisitions,
@@ -1473,8 +1757,15 @@ view: marketing_attribution_test {
       campaign_name,
       campaign_content,
       marketing_platform,
+      surface,
+      device_os,
       campaign_medium,
-      free_trials_started,
+      web_trials_started,
+      app_trials_started,
+      app_installs,
+      total_trials_started,
+      app_share_of_trials,
+      app_install_to_trial_rate,
       free_trials_started_weighted,
       total_converted,
       total_reacquisition,
@@ -1489,12 +1780,12 @@ view: marketing_attribution_test {
 }
 
 ################################################################################
-# Datagroup — controls when the PDT rebuilds (daily at 9 AM ET)
+# Datagroup — controls when the PDT rebuilds (daily at 3 AM ET)
 ################################################################################
 datagroup: marketing_attribution_daily {
-  # Trigger value changes once per day at 9 AM Eastern Time. The PDT rebuilds
-  # the next time anyone queries it after the value changes. Subtracting 9 hours
-  # from local time means "today" doesn't start until 9 AM ET, giving overnight
+  # Trigger value changes once per day at 3 AM Eastern Time. The PDT rebuilds
+  # the next time anyone queries it after the value changes. Subtracting 3 hours
+  # from local time means "today" doesn't start until 3 AM ET, giving overnight
   # ETL pipelines time to settle before the rebuild reads them.
   sql_trigger: SELECT TO_CHAR(
                    CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE())
