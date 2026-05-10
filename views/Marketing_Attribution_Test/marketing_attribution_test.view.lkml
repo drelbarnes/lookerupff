@@ -33,7 +33,7 @@ view: marketing_attribution_test {
     sql:
       WITH params AS (
           SELECT
-               (CURRENT_DATE - INTERVAL '180 days')::DATE AS start_date
+               (CURRENT_DATE - INTERVAL '90 days')::DATE AS start_date
               ,CURRENT_DATE                               AS end_date
               ,90                  AS max_attribution_window_days
               ,0.40                AS w_activations
@@ -1789,7 +1789,7 @@ datagroup: marketing_attribution_daily {
   # ETL pipelines time to settle before the rebuild reads them.
   sql_trigger: SELECT TO_CHAR(
                    CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE())
-                   - INTERVAL '3 hour',
+                   - INTERVAL '2 hour',
                    'YYYY-MM-DD'
                ) ;;
   max_cache_age: "24 hours"
