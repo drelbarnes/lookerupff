@@ -1379,6 +1379,14 @@ view: marketing_attribution_test {
     value_format_name: percent_2
   }
 
+  measure: app_install_to_trial_rate_paid {
+    type: number
+    label: "App Install → Trial Rate (Paid Only)"
+    sql: 1.0 * ${app_trials_started_paid} / NULLIF(${app_installs_paid}, 0) ;;
+    value_format_name: percent_2
+  }
+
+
   ##############################################################
   # MEASURES — Average Touches
   ##############################################################
