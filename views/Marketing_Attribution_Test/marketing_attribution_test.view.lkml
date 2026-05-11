@@ -1328,7 +1328,7 @@ view: marketing_attribution_test {
   # MEASURES — Branch.io App Trials & Installs
   ##############################################################
   measure: app_trials_started {
-    type: count_distinct
+    type: sum
     label: "Free Trials Started (App)"
     description: "Aggregate app trial volume from Branch.io (php.branch_purchase)"
     sql: ${TABLE}.app_trial_count ;;
@@ -1336,7 +1336,7 @@ view: marketing_attribution_test {
   }
 
   measure: app_trials_started_paid {
-    type: count_distinct
+    type: sum
     label: "Free Trials Started (App, Paid Only)"
     description: "Branch app trials filtered to paid advertising"
     sql: ${TABLE}.app_trial_count ;;
@@ -1344,7 +1344,7 @@ view: marketing_attribution_test {
   }
 
   measure: app_installs {
-    type: count_distinct
+    type: sum
     label: "App Installs"
     description: "Aggregate app installs from Branch.io (php.branch_install)"
     sql: ${TABLE}.app_install_count ;;
@@ -1352,7 +1352,7 @@ view: marketing_attribution_test {
   }
 
   measure: app_installs_paid {
-    type: count_distinct
+    type: sum
     label: "App Installs (Paid Only)"
     sql: ${TABLE}.app_install_count ;;
     filters: [event_type: "app_install", is_paid_branch: "yes"]
