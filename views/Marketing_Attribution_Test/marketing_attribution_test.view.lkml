@@ -1,19 +1,29 @@
 ################################################################################
-# View: marketing_attribution
+# View: marketing_attribution_test
 #
-# Single consolidated view powering the Marketing Attribution V2 dashboard.
-# All SQL is centralized in the derived_table below.
+# === INCREMENTAL PDT ===
+# This view is built as an incremental PDT. On each run, Looker appends new
+# rows for any report_date >= (max_report_date_in_table - 7 days).
 #
-# === FIX: BRANCH ROW UNIQUENESS ===
-# Branch rows now have a ROW_NUMBER() inside their CTE that gets concatenated
-# into event_id, plus the LookML primary key has been expanded to include
-# report_date, device_os, and creative_name. This prevents Looker's symmetric
-# aggregate logic from fanning out SUM measures (which was causing
-# Free Trials Started (App, Paid Only) to over-count by ~3x).
+# How it works:
+#   - increment_key:    report_date
+#   - increment_offset: 7  (re-pulls the last 7 days each run, in addition to anything new)
+#   - The 7-day look-back handles late-arriving data:
+#       * Branch.io can re-emit aggregate rows for past dates as attribution refines
+#       * Web page visits can arrive after their associated conversion
+#       * Retroactive attribution changes within ~1 week are captured
 #
-# === CACHING / REBUILD BEHAVIOR ===
-# PDT controlled by `datagroup_trigger` — rebuilds daily at 2 AM ET.
-# Filter changes apply at query time on the cached PDT.
+# When to rebuild from scratch:
+#   - If late-arriving data extends past 7 days on a particular event
+#   - If you change a derived column (credit_weight formula, quality_score weights)
+#   - If you change a CTE structure
+#   Use Looker's "Rebuild Derived Tables & Run" or persist_with: rebuilds
+#
+# Trade-offs vs. the prior full-rebuild PDT:
+#   + Builds are much faster (minutes vs hours on a 180-day window)
+#   + Lower warehouse cost
+#   - Data older than 7 days will NOT reflect new touches/attribution
+#   - One-time rebuild needed when scoring weights or attribution logic changes
 #
 # === ROW TYPES (event_type) ===
 #   1. 'page_visit'   — every marketing-site page view (web)
@@ -24,10 +34,23 @@
 
 view: marketing_attribution_test {
   derived_table: {
+
+    # ============================================================
+    # INCREMENTAL PDT CONFIG
+    # ============================================================
+    increment_key: "report_date"
+    increment_offset: 7
+    datagroup_trigger: marketing_attribution_daily
+    distribution_style: even
+    #sortkeys: ["report_date", "event_type"]
+    indexes: ["report_date", "event_type", "campaign_source", "user_id"]
+
     sql:
       WITH params AS (
           SELECT
-               (CURRENT_DATE - INTERVAL '90 days')::DATE AS start_date
+               -- Initial build covers 180 days; incremental runs are filtered
+               -- by Looker's injection of incrementcondition (below).
+               (CURRENT_DATE - INTERVAL '180 days')::DATE AS start_date
               ,CURRENT_DATE                               AS end_date
               ,90                  AS max_attribution_window_days
               ,0.40                AS w_activations
@@ -70,7 +93,9 @@ view: marketing_attribution_test {
 
       -- ============================================================
       -- BRANCH.IO APP FREE TRIALS — from php.branch_purchase
-      -- ROW_NUMBER added to guarantee unique row identifier downstream
+      -- incrementcondition report_date endincrementcondition
+      -- becomes a WHERE clause that Looker injects on incremental runs.
+      -- On a full rebuild, it expands to "1=1".
       -- ============================================================
       branch_app_trials AS (
       SELECT
@@ -101,6 +126,9 @@ view: marketing_attribution_test {
       WHERE report_date >= (SELECT start_date FROM params)
       AND report_date <  (SELECT end_date   FROM params) + INTERVAL '1 day'
       AND count > 0
+      AND (
+      {% incrementcondition %} report_date {% endincrementcondition %}
+      )
       ),
 
       -- ============================================================
@@ -135,10 +163,14 @@ view: marketing_attribution_test {
       WHERE report_date >= (SELECT start_date FROM params)
       AND report_date <  (SELECT end_date   FROM params) + INTERVAL '1 day'
       AND count > 0
+      AND (
+      {% incrementcondition %} report_date {% endincrementcondition %}
+      )
       ),
 
       -- ============================================================
       -- LIFECYCLE EVENTS (web pipeline)
+      -- Each UNION branch gets its own incrementcondition filter.
       -- ============================================================
       lifecycle_events AS (
       SELECT
@@ -158,6 +190,9 @@ view: marketing_attribution_test {
       FROM javascript_upff_home.pages
       WHERE received_at >= (SELECT start_date FROM params)
       AND received_at <  (SELECT end_date   FROM params) + INTERVAL '1 day'
+      AND (
+      {% incrementcondition %} received_at {% endincrementcondition %}
+      )
 
       UNION ALL
 
@@ -174,6 +209,9 @@ view: marketing_attribution_test {
       AND received_at <  (SELECT end_date   FROM params) + INTERVAL '1 day'
       AND user_id IS NOT NULL
       AND brand = 'upfaithandfamily'
+      AND (
+      {% incrementcondition %} received_at {% endincrementcondition %}
+      )
 
       UNION ALL
 
@@ -191,6 +229,9 @@ view: marketing_attribution_test {
       AND user_id IS NOT NULL
       AND brand = 'upfaithandfamily'
       AND bundle_plan IS NOT NULL
+      AND (
+      {% incrementcondition %} received_at {% endincrementcondition %}
+      )
 
       UNION ALL
 
@@ -207,6 +248,9 @@ view: marketing_attribution_test {
       WHERE DATE(received_at) BETWEEN (SELECT start_date FROM params)
       AND (SELECT end_date   FROM params)
       AND content_subscription_subscription_items LIKE '%UP%'
+      AND (
+      {% incrementcondition %} received_at {% endincrementcondition %}
+      )
 
       UNION ALL
 
@@ -223,6 +267,9 @@ view: marketing_attribution_test {
       AND received_at <  (SELECT end_date   FROM params) + INTERVAL '1 day'
       AND user_id IS NOT NULL
       AND brand = 'upfaithandfamily'
+      AND (
+      {% incrementcondition %} received_at {% endincrementcondition %}
+      )
 
       UNION ALL
 
@@ -252,6 +299,9 @@ view: marketing_attribution_test {
       AND (content_subscription_cancelled_at - content_subscription_trial_end
       < (SELECT cancel_window_seconds FROM params))
       AND user_id IS NOT NULL
+      AND (
+      {% incrementcondition %} received_at {% endincrementcondition %}
+      )
       ) cancels_deduped
       WHERE rn = 1
       ),
@@ -768,9 +818,6 @@ view: marketing_attribution_test {
       AND COALESCE(sa.attributed_campaign_content, '') = COALESCE(dq.campaign_content, '')
       ),
 
-      -- ============================================================
-      -- APP TRIAL ROWS — event_id = anonymous_id || row_num for guaranteed uniqueness
-      -- ============================================================
       app_trial_rows AS (
       SELECT
       CAST('app_trial' AS VARCHAR(20))                                     AS event_type
@@ -897,10 +944,6 @@ view: marketing_attribution_test {
       UNION ALL
       SELECT * FROM app_install_rows
       ;;
-
-    datagroup_trigger: marketing_attribution_daily
-    distribution_style: even
-    indexes: ["report_date", "event_type", "campaign_source", "user_id"]
   }
 
   ##############################################################
@@ -932,9 +975,6 @@ view: marketing_attribution_test {
   ##############################################################
   # IDENTITY DIMENSIONS
   ##############################################################
-  # FIX: Primary key now includes report_date, device_os, creative_name to
-  # ensure every row in the unified output is uniquely identifiable.
-  # Prevents Looker symmetric aggregates from fanning out SUM measures.
   dimension: event_id {
     type: string
     primary_key: yes
@@ -1040,33 +1080,13 @@ view: marketing_attribution_test {
   dimension: device_os {
     type: string
     label: "Device OS"
-    description: "Platform from Branch (ANDROID, IOS, ANDROID_TV, AMAZON_FIRE_TV, ROKU, etc.). NULL for web rows."
     sql: ${TABLE}.device_os ;;
   }
 
-  dimension: branch_channel {
-    type: string
-    label: "Branch Channel"
-    sql: ${TABLE}.branch_channel ;;
-  }
-
-  dimension: branch_feature {
-    type: string
-    label: "Branch Feature"
-    sql: ${TABLE}.branch_feature ;;
-  }
-
-  dimension: creative_name {
-    type: string
-    label: "Creative Name"
-    sql: ${TABLE}.creative_name ;;
-  }
-
-  dimension: is_paid_branch {
-    type: yesno
-    label: "Is Paid (Branch)"
-    sql: ${TABLE}.is_paid_branch ;;
-  }
+  dimension: branch_channel { type: string label: "Branch Channel" sql: ${TABLE}.branch_channel ;; }
+  dimension: branch_feature { type: string label: "Branch Feature" sql: ${TABLE}.branch_feature ;; }
+  dimension: creative_name  { type: string label: "Creative Name"  sql: ${TABLE}.creative_name ;; }
+  dimension: is_paid_branch { type: yesno  label: "Is Paid (Branch)" sql: ${TABLE}.is_paid_branch ;; }
 
   dimension: surface {
     type: string
@@ -1088,19 +1108,12 @@ view: marketing_attribution_test {
   dimension: bundle_plan           { type: string sql: ${TABLE}.bundle_plan ;; }
   dimension: is_bundle_user        { type: yesno  sql: ${TABLE}.is_bundle_user ;; }
 
-  dimension: lifecycle_event_type {
-    type: string
-    sql: ${TABLE}.lifecycle_event_type ;;
-  }
-
+  dimension: lifecycle_event_type       { type: string sql: ${TABLE}.lifecycle_event_type ;; }
   dimension: is_activated_or_reacquired { type: yesno  sql: ${TABLE}.is_activated_or_reacquired ;; }
   dimension: is_activated               { type: yesno  sql: ${TABLE}.lifecycle_event_type = 'activation' ;; }
   dimension: is_not_retained            { type: yesno  sql: ${TABLE}.is_not_retained ;; }
 
-  dimension: total_touches {
-    type: number
-    sql: ${TABLE}.total_touches ;;
-  }
+  dimension: total_touches { type: number sql: ${TABLE}.total_touches ;; }
 
   dimension: days_before_conversion {
     type: number
@@ -1219,9 +1232,9 @@ view: marketing_attribution_test {
     ;;
   }
 
-  dimension: trial_to_paid_rate { type: number  label: "Trial → Paid Rate (Daily)"  sql: ${TABLE}.trial_to_paid_rate ;;  value_format_name: percent_2 }
-  dimension: churn_rate         { type: number  label: "Churn Rate (Daily)"         sql: ${TABLE}.churn_rate ;;          value_format_name: percent_2 }
-  dimension: retention_rate     { type: number  label: "Retention Rate (Daily)"     sql: ${TABLE}.retention_rate ;;      value_format_name: percent_2 }
+  dimension: trial_to_paid_rate { type: number label: "Trial → Paid Rate (Daily)" sql: ${TABLE}.trial_to_paid_rate ;; value_format_name: percent_2 }
+  dimension: churn_rate         { type: number label: "Churn Rate (Daily)"        sql: ${TABLE}.churn_rate ;;        value_format_name: percent_2 }
+  dimension: retention_rate     { type: number label: "Retention Rate (Daily)"    sql: ${TABLE}.retention_rate ;;    value_format_name: percent_2 }
 
   dimension: campaign_total_aov {
     type: number
@@ -1237,10 +1250,10 @@ view: marketing_attribution_test {
     value_format_name: usd
   }
 
-  dimension: std_trial_score    { type: number  hidden: yes  sql: ${TABLE}.std_trial_score ;; }
-  dimension: bundle_trial_score { type: number  hidden: yes  sql: ${TABLE}.bundle_trial_score ;; }
-  dimension: reacq_score        { type: number  hidden: yes  sql: ${TABLE}.reacq_score ;; }
-  dimension: activation_score   { type: number  hidden: yes  sql: ${TABLE}.activation_score ;; }
+  dimension: std_trial_score    { type: number hidden: yes sql: ${TABLE}.std_trial_score ;; }
+  dimension: bundle_trial_score { type: number hidden: yes sql: ${TABLE}.bundle_trial_score ;; }
+  dimension: reacq_score        { type: number hidden: yes sql: ${TABLE}.reacq_score ;; }
+  dimension: activation_score   { type: number hidden: yes sql: ${TABLE}.activation_score ;; }
 
   ##############################################################
   # MEASURES — Web KPIs
@@ -1262,12 +1275,7 @@ view: marketing_attribution_test {
   measure: web_trials_started {
     type: count
     label: "Free Trials Started (Web)"
-    filters: [
-      event_type: "conversion",
-      conversion_event_type: "free_trial",
-      is_primary_attribution: "yes",
-      within_attribution_window: "yes"
-    ]
+    filters: [event_type: "conversion", conversion_event_type: "free_trial", is_primary_attribution: "yes", within_attribution_window: "yes"]
     drill_fields: [drill_conversions*]
   }
 
@@ -1275,12 +1283,7 @@ view: marketing_attribution_test {
     type: count
     label: "Free Trials Started"
     description: "Alias for web trials. Use Total Trials Started for combined web+app."
-    filters: [
-      event_type: "conversion",
-      conversion_event_type: "free_trial",
-      is_primary_attribution: "yes",
-      within_attribution_window: "yes"
-    ]
+    filters: [event_type: "conversion", conversion_event_type: "free_trial", is_primary_attribution: "yes", within_attribution_window: "yes"]
     drill_fields: [drill_conversions*]
   }
 
@@ -1288,25 +1291,14 @@ view: marketing_attribution_test {
     type: count_distinct
     label: "Free Trials Converted"
     sql: ${TABLE}.user_id ;;
-    filters: [
-      event_type: "conversion",
-      conversion_event_type: "free_trial",
-      is_activated: "yes",
-      is_primary_attribution: "yes",
-      within_attribution_window: "yes"
-    ]
+    filters: [event_type: "conversion", conversion_event_type: "free_trial", is_activated: "yes", is_primary_attribution: "yes", within_attribution_window: "yes"]
     drill_fields: [drill_conversions*]
   }
 
   measure: reacquisitions {
     type: count
     label: "Reacquisitions"
-    filters: [
-      event_type: "conversion",
-      conversion_event_type: "reacquisition",
-      is_primary_attribution: "yes",
-      within_attribution_window: "yes"
-    ]
+    filters: [event_type: "conversion", conversion_event_type: "reacquisition", is_primary_attribution: "yes", within_attribution_window: "yes"]
     drill_fields: [drill_conversions*]
   }
 
@@ -1330,7 +1322,6 @@ view: marketing_attribution_test {
   measure: app_trials_started {
     type: sum
     label: "Free Trials Started (App)"
-    description: "Aggregate app trial volume from Branch.io (php.branch_purchase)"
     sql: ${TABLE}.app_trial_count ;;
     filters: [event_type: "app_trial"]
   }
@@ -1338,7 +1329,6 @@ view: marketing_attribution_test {
   measure: app_trials_started_paid {
     type: sum
     label: "Free Trials Started (App, Paid Only)"
-    description: "Branch app trials filtered to paid advertising"
     sql: ${TABLE}.app_trial_count ;;
     filters: [event_type: "app_trial", is_paid_branch: "yes"]
   }
@@ -1346,7 +1336,6 @@ view: marketing_attribution_test {
   measure: app_installs {
     type: sum
     label: "App Installs"
-    description: "Aggregate app installs from Branch.io (php.branch_install)"
     sql: ${TABLE}.app_install_count ;;
     filters: [event_type: "app_install"]
   }
@@ -1360,15 +1349,14 @@ view: marketing_attribution_test {
 
   measure: total_trials_started {
     type: number
-    label: "Free Trials Started (Web + App(Paid Only) )"
-    sql: ${web_trials_started} + ${app_trials_started_paid} ;;
+    label: "Free Trials Started (Web + App)"
+    sql: ${web_trials_started} + ${app_trials_started} ;;
   }
 
   measure: app_share_of_trials {
     type: number
     label: "% App Trials"
-    sql: 1.0 * ${app_trials_started}
-      / NULLIF(${web_trials_started} + ${app_trials_started}, 0) ;;
+    sql: 1.0 * ${app_trials_started} / NULLIF(${web_trials_started} + ${app_trials_started}, 0) ;;
     value_format_name: percent_2
   }
 
@@ -1385,7 +1373,6 @@ view: marketing_attribution_test {
     sql: 1.0 * ${app_trials_started_paid} / NULLIF(${app_installs_paid}, 0) ;;
     value_format_name: percent_2
   }
-
 
   ##############################################################
   # MEASURES — Average Touches
@@ -1659,7 +1646,7 @@ view: marketing_attribution_test {
 }
 
 ################################################################################
-# Datagroup — controls when the PDT rebuilds (daily at 3 AM ET)
+# Datagroup — triggers the daily incremental run at 2 AM ET
 ################################################################################
 datagroup: marketing_attribution_daily {
   sql_trigger: SELECT TO_CHAR(
