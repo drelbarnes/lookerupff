@@ -1,17 +1,15 @@
 # Datagroup definition - place at the model level in your .model.lkml file.
 # This should not live inside the view file if your project separates model and view files.
-datagroup: ltv_cpa_datagroup {
-  sql_trigger: SELECT
-    CASE
-      WHEN CAST(CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE()) AS TIME) >= '11:30:00'
-      THEN TO_CHAR(CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE()), 'YYYY-MM-DD')
-      ELSE TO_CHAR(CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE()) - INTERVAL '1 day', 'YYYY-MM-DD')
-    END ;;
-  max_cache_age: "24 hours"
-}
 
 view: ltv_cpa {
   derived_table: {
+
+    datagroup_trigger: ltv_cpa_datagroup
+    increment_key: "report_date"
+    increment_offset: 7
+    distribution: "report_date"
+    sortkeys: ["report_date"]
+
     sql:
       , v2_table AS (
         SELECT *
@@ -143,11 +141,6 @@ view: ltv_cpa {
       ON a.report_date = b.report_date
       ;;
 
-    datagroup_trigger: ltv_cpa_datagroup
-    increment_key: "report_date"
-    increment_offset: 31
-    distribution: "report_date"
-    sortkeys: ["report_date"]
   }
 
   dimension_group: report_date {
@@ -187,4 +180,18 @@ view: ltv_cpa {
     type: sum
     sql: ${TABLE}.rolling_churn_30_days ;;
   }
+}
+
+################################################################################
+# Datagroup — triggers the daily incremental run at 10 AM ET
+# NOTE: This must be defined at the MODEL level (in your .model.lkml file),
+# not inside the view file.
+################################################################################
+datagroup: ltv_cpa_datagroup {
+  sql_trigger: SELECT TO_CHAR(
+                   CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE())
+                   - INTERVAL '10 hour',
+                   'YYYY-MM-DD'
+               ) ;;
+  max_cache_age: "24 hours"
 }
