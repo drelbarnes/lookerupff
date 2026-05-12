@@ -1,63 +1,94 @@
+# Datagroup definition - place at the model level in your .model.lkml file.
+# This should not live inside the view file if your project separates model and view files.
+datagroup: free_trials_datagroup {
+  sql_trigger: SELECT
+    CASE
+      WHEN CAST(CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE()) AS TIME) >= '12:00:00'
+      THEN TO_CHAR(CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE()), 'YYYY-MM-DD')
+      ELSE TO_CHAR(CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE()) - INTERVAL '1 day', 'YYYY-MM-DD')
+    END ;;
+  max_cache_age: "24 hours"
+}
+
 view: free_trials {
   derived_table: {
     sql:
-    ,cfg AS (
-    SELECT report_date
-    FROM ${configg.SQL_TABLE_NAME}
-),
-
-    chargebee as (
-      SELECT
-        content_subscription_id as user_id
-        ,CASE
-          WHEN content_subscription_billing_period_unit ='month' THEN 'monthly'
-          ELSE 'yearly'
-        END AS billing_period
-        ,'web' as platform
-        ,date(DATEADD(HOUR, -4, received_at)) as report_date
-      FROM chargebee_webhook_events.subscription_created
-      WHERE report_date >= (SELECT MAX(report_date) FROM cfg)
-      AND content_subscription_subscription_items like '%UP%'
-    ),
-
-    vimeo as (
-      SELECT distinct
-        email
-        ,date(event_occurred_at) as report_date
-        ,subscription_frequency as billing_period
-        FROM customers.new_customers
-        WHERE event_type = 'New Free Trial' and report_date >= (SELECT MAX(report_date) FROM cfg)
+      ,cfg AS (
+        SELECT report_date
+        FROM ${configg.SQL_TABLE_NAME}
       ),
-    vimeo2 as (
+
+      chargebee AS (
       SELECT
-        a.email as user_id
-        ,a.billing_period
-        ,b.platform
-        ,a.report_date
+      content_subscription_id AS user_id,
+      CASE
+      WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'
+      ELSE 'yearly'
+      END AS billing_period,
+      'web' AS platform,
+      DATE(DATEADD(HOUR, -4, received_at)) AS report_date
+      FROM chargebee_webhook_events.subscription_created
+      WHERE DATE(DATEADD(HOUR, -4, received_at)) >= (SELECT MAX(report_date) FROM cfg)
+      AND content_subscription_subscription_items LIKE '%UP%'
+      AND {% incrementcondition %} DATE(DATEADD(HOUR, -4, received_at)) {% endincrementcondition %}
+      ),
+
+      vimeo AS (
+      SELECT DISTINCT
+      email,
+      DATE(event_occurred_at) AS report_date,
+      subscription_frequency AS billing_period
+      FROM customers.new_customers
+      WHERE event_type = 'New Free Trial'
+      AND DATE(event_occurred_at) >= (SELECT MAX(report_date) FROM cfg)
+      AND {% incrementcondition %} DATE(event_occurred_at) {% endincrementcondition %}
+      ),
+
+      vimeo_platform AS (
+      SELECT
+      email,
+      platform,
+      DATE(timestamp) AS report_date
+      FROM vimeo_ott_webhook.customer_product_free_trial_created
+      WHERE DATE(timestamp) >= '2025-06-01'
+      AND {% incrementcondition %} DATE(timestamp) {% endincrementcondition %}
+      ),
+
+      vimeo2 AS (
+      SELECT
+      a.email AS user_id,
+      a.billing_period,
+      b.platform,
+      a.report_date
       FROM vimeo a
-      LEFT JOIN (SELECT email, platform, date(timestamp) as report_date FROM vimeo_ott_webhook.customer_product_free_trial_created where report_date >= '2025-06-01') b
-      ON a.email = b.email and a.report_date = b.report_date
+      LEFT JOIN vimeo_platform b
+      ON a.email = b.email
+      AND a.report_date = b.report_date
       )
-    SELECT * from vimeo2
-    UNION ALL
-    SELECT * from chargebee;;
-    sql_trigger_value: SELECT TO_CHAR(DATEADD(minute, -500, GETDATE()), 'YYYY-MM-DD');;
-    #sql_trigger_value:  SELECT TO_CHAR(DATE_TRUNC('day', CURRENT_TIMESTAMP) + INTERVAL '9 hours 45 minutes', 'YYYY-MM-DD');;
+
+      SELECT * FROM vimeo2
+      UNION ALL
+      SELECT * FROM chargebee
+      ;;
+
+    datagroup_trigger: free_trials_datagroup
+    increment_key: "date"
+    increment_offset: 7
     distribution: "report_date"
     sortkeys: ["report_date"]
-
   }
+
   dimension: date {
     type: date
     primary_key: yes
-    sql:  ${TABLE}.report_date ;;
+    sql: ${TABLE}.report_date ;;
   }
+
   dimension_group: report_date {
     type: time
-
     timeframes: [date, week]
     sql: ${TABLE}.report_date ;;
-    convert_tz: yes  # Adjust for timezone conversion if needed
+    convert_tz: yes
   }
 
   dimension: user_id {
@@ -65,12 +96,12 @@ view: free_trials {
     sql: ${TABLE}.user_id ;;
   }
 
-  dimension: platform{
+  dimension: platform {
     type: string
     sql: ${TABLE}.platform ;;
   }
 
-  dimension: billing_period{
+  dimension: billing_period {
     type: string
     sql: ${TABLE}.billing_period ;;
   }
@@ -85,31 +116,37 @@ view: free_trials {
     sql: ${TABLE}.user_id ;;
     filters: [platform: "ios"]
   }
+
   measure: free_trials_tvos {
     type: count_distinct
     sql: ${TABLE}.user_id ;;
     filters: [platform: "tvos"]
   }
+
   measure: free_trials_web {
     type: count_distinct
     sql: ${TABLE}.user_id ;;
     filters: [platform: "web"]
   }
+
   measure: free_trials_android {
     type: count_distinct
     sql: ${TABLE}.user_id ;;
     filters: [platform: "android"]
   }
+
   measure: free_trials_android_tv {
     type: count_distinct
     sql: ${TABLE}.user_id ;;
     filters: [platform: "android_tv"]
   }
+
   measure: free_trials_fire_tv {
     type: count_distinct
     sql: ${TABLE}.user_id ;;
     filters: [platform: "amazon_fire_tv"]
   }
+
   measure: free_trials_fire_tablet {
     type: count_distinct
     sql: ${TABLE}.user_id ;;
@@ -127,5 +164,4 @@ view: free_trials {
     sql: ${TABLE}.user_id ;;
     filters: [platform: "vizio_tv"]
   }
-
 }

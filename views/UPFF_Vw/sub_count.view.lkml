@@ -1,191 +1,161 @@
+# Datagroup definition - place at the model level (in your model file)
+# Move this block to your .model.lkml file if it isn't there already.
+datagroup: sub_count_datagroup {
+  sql_trigger: SELECT
+    CASE
+      WHEN CAST(CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE()) AS TIME) >= '11:00:00'
+      THEN TO_CHAR(CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE()), 'YYYY-MM-DD')
+      ELSE TO_CHAR(CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE()) - INTERVAL '1 day', 'YYYY-MM-DD')
+    END ;;
+  max_cache_age: "24 hours"
+}
+
 view: sub_count {
   derived_table: {
+    datagroup_trigger: sub_count_datagroup
+    increment_key: "report_date"
+    increment_offset: 13
+    distribution_style: even
+    sortkeys: ["report_date"]
+
     sql:
-    --https://uptv.looker.com/looks/860
+      , active AS (
+        SELECT
+          report_date
+          ,user_id
+          ,CASE
+            WHEN platform = 'Chargebee' THEN 'web'
+            ELSE platform
+          END AS platform
+          ,billing_period
+        FROM ${UPFF_analytics_Vw_v2.SQL_TABLE_NAME}
+        WHERE status IN ('active','non_renewing','enabled')
+          AND {% incrementcondition %} report_date {% endincrementcondition %}
+      ),
 
-    ,active as(
-      SELECT
-        report_date
-        ,user_id
-        ,CASE
-          WHEN platform = 'Chargebee' THEN 'web'
-          ELSE platform
-        END AS platform
-        ,billing_period
-      FROM ${UPFF_analytics_Vw_v2.SQL_TABLE_NAME}
-      WHERE status in ( 'active','non_renewing','enabled')
-        ),
-
-      trial as (
+      trial AS (
       SELECT
       report_date
       ,user_id
       ,platform
       ,billing_period
       FROM ${free_trials.SQL_TABLE_NAME}
+      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
       ),
 
-      active_ios as (
-      SELECT * FROM ${ios.SQL_TABLE_NAME}
+      active_ios AS (
+      SELECT *
+      FROM ${ios.SQL_TABLE_NAME}
+      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
       ),
 
-      active_count_pre as (
+      active_count_pre AS (
       SELECT
-      count(distinct user_id) as user_count
+      COUNT(DISTINCT user_id) AS user_count
       ,report_date
       ,platform
       ,billing_period
       FROM active
-      WHERE platform not in ('ios')
+      WHERE platform NOT IN ('ios')
       GROUP BY 2,3,4
 
       UNION ALL
 
       SELECT
-      paid_subscribers as user_count
+      paid_subscribers AS user_count
       ,report_date
-      ,'ios' as platform
-      , billing_period
+      ,'ios' AS platform
+      ,billing_period
       FROM active_ios
-
-
       ),
 
-      /*
-      active_count as (
+      active_count AS (
       SELECT
-        user_count
-        ,report_date
-        ,platform
-        ,billing_period
-      from active_count_pre
-      where platform != 'roku'
+      user_count
+      ,report_date
+      ,platform
+      ,billing_period
+      FROM active_count_pre
+      WHERE platform != 'roku'
 
       UNION ALL
 
       SELECT
-  CASE
-    WHEN report_date = '2026-01-22' THEN user_count + 846 + 6600 - 66
-    WHEN report_date = '2026-01-23' THEN user_count + 846 + 1150 + 6600 - 81
-    WHEN report_date = '2026-01-24' THEN user_count + 846  + 630 + 6600 - 87
-    WHEN report_date = '2026-01-25' THEN user_count + 846 + 961 + 380 + 6600 - 88
-    WHEN report_date = '2026-01-26' THEN user_count + 9400
-    WHEN report_date = '2026-01-27' THEN user_count + 9400 - 188
-    WHEN report_date = '2026-01-28' THEN user_count + 9400 - 236
-    WHEN report_date = '2026-01-29' THEN user_count + 9400 - 544
-    WHEN report_date = '2026-01-30' THEN user_count + 9400 - 589
-    WHEN report_date = '2026-01-31' THEN user_count + 9400 - 632
-    WHEN report_date = '2026-02-01' THEN user_count + 9400 - 665
-    WHEN report_date = '2026-02-02' THEN user_count + 9400 - 665
-    WHEN report_date = '2026-02-03' THEN user_count + 9400 - 665
-    WHEN report_date >= '2026-02-04' THEN user_count + 7000 - 665
-    ELSE user_count --+ 6600
-  END AS user_count
-        ,report_date
-        ,platform
-        ,billing_period
-      from active_count_pre
-      where platform = 'roku' and billing_period = 'monthly'
+      user_count + 6700 AS user_count
+      ,report_date
+      ,platform
+      ,billing_period
+      FROM active_count_pre
+      WHERE platform = 'roku'
+      AND billing_period = 'monthly'
 
       UNION ALL
 
       SELECT
-        CASE
-          WHEN report_date = '2026-01-22' THEN user_count + 290 + 400
-          WHEN report_date = '2026-01-23' THEN user_count + 290+ 418 + 400
-          WHEN report_date = '2026-01-24' THEN user_count + 290+ 418+ 330 + 400
-          WHEN report_date = '2026-01-25' THEN user_count + 290+ 418+ 330 + 130 + 400
-          ELSE user_count --+ 400
-        END as user_count
-        ,report_date
-        ,platform
-        ,billing_period
-      from active_count_pre
-      where platform = 'roku' and billing_period = 'yearly'
-      ), */
-      active_count as (
-      SELECT
-        user_count
-        ,report_date
-        ,platform
-        ,billing_period
-      from active_count_pre
-      where platform != 'roku'
-
-      UNION ALL
-
-      SELECT
-        user_count + 6700 as user_count
-        ,report_date
-        ,platform
-        ,billing_period
-      from active_count_pre
-      where platform = 'roku' and billing_period = 'monthly'
-
-      UNION ALL
-
-      SELECT
-        user_count + 2300 as user_count
-        ,report_date
-        ,platform
-        ,billing_period
-      from active_count_pre
-      where platform = 'roku' and billing_period = 'yearly'
+      user_count + 2300 AS user_count
+      ,report_date
+      ,platform
+      ,billing_period
+      FROM active_count_pre
+      WHERE platform = 'roku'
+      AND billing_period = 'yearly'
       ),
 
-      trial_count as (
+      trial_count AS (
       SELECT
-      count(distinct user_id) as user_count
+      COUNT(DISTINCT user_id) AS user_count
       ,report_date
       ,platform
       ,billing_period
       FROM trial
       GROUP BY 2,3,4
       ),
-      total_trial_count as (
+
+      total_trial_count AS (
       SELECT
       SUM(user_count) OVER (
       PARTITION BY platform, billing_period
       ORDER BY report_date
       ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
-      ) AS user_count_7d,
-      report_date,
-      platform,
-      billing_period
-
+      ) AS user_count
+      ,report_date
+      ,platform
+      ,billing_period
       FROM trial_count
       ),
 
-      convert_dunning_count as (
+      convert_dunning_count AS (
       SELECT
-      COUNT(DISTINCT user_id) as user_count
-      ,DATE(received_at) as report_date
+      COUNT(DISTINCT user_id) AS user_count
+      ,DATE(received_at) AS report_date
       ,'web' AS platform
       ,CASE
       WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'::VARCHAR
       ELSE 'yearly'::VARCHAR
       END AS billing_period
       FROM chargebee_webhook_events.subscription_activated
-      WHERE content_invoice_dunning_status is not NULL
+      WHERE content_invoice_dunning_status IS NOT NULL
       AND content_subscription_subscription_items LIKE '%UP%'
+      AND {% incrementcondition %} received_at {% endincrementcondition %}
       GROUP BY 2,3,4
       ),
-      total_dunning as (
-      SELECT
 
-        SUM(user_count) OVER (
-        PARTITION BY platform, billing_period
-        ORDER BY report_date
-          ROWS BETWEEN 13 PRECEDING AND CURRENT ROW
-        ) AS user_count
-        ,report_date
-        ,platform
-        ,billing_period
+      total_dunning AS (
+      SELECT
+      SUM(user_count) OVER (
+      PARTITION BY platform, billing_period
+      ORDER BY report_date
+      ROWS BETWEEN 13 PRECEDING AND CURRENT ROW
+      ) AS user_count
+      ,report_date
+      ,platform
+      ,billing_period
       FROM convert_dunning_count
       ),
-      dunning_paid_count as (
+
+      dunning_paid_count AS (
       SELECT
-      COUNT(DISTINCT content_subscription_id) as user_count
+      COUNT(DISTINCT content_subscription_id) AS user_count
       ,DATE(received_at) AS report_date
       ,'web' AS platform
       ,CASE
@@ -195,96 +165,98 @@ view: sub_count {
       FROM chargebee_webhook_events.payment_succeeded
       WHERE content_subscription_subscription_items LIKE '%UP%'
       AND DATE(received_at) >= '2025-07-01'
-      AND (report_date::date - DATE(TIMESTAMP 'epoch' + content_customer_created_at * INTERVAL '1 second')) <= 14
+      AND (DATE(received_at) - DATE(TIMESTAMP 'epoch' + content_customer_created_at * INTERVAL '1 second')) <= 14
       AND content_invoice_dunning_attempts != '[]'
+      AND {% incrementcondition %} received_at {% endincrementcondition %}
       GROUP BY 2,3,4
       ),
-      total_dunning_paid as (
-      SELECT
 
-        SUM(user_count) OVER (
-        PARTITION BY platform, billing_period
-        ORDER BY report_date
-          ROWS BETWEEN 13 PRECEDING AND CURRENT ROW
-        ) AS user_count
-        ,report_date
-        ,platform
-        ,billing_period
+      total_dunning_paid AS (
+      SELECT
+      SUM(user_count) OVER (
+      PARTITION BY platform, billing_period
+      ORDER BY report_date
+      ROWS BETWEEN 13 PRECEDING AND CURRENT ROW
+      ) AS user_count
+      ,report_date
+      ,platform
+      ,billing_period
       FROM dunning_paid_count
       ),
 
-      dunning_cancelled_count as (
+      dunning_cancelled_count AS (
       SELECT
-      COUNT(DISTINCT content_customer_id) as user_count
-      ,DATE(timestamp) as report_date
+      COUNT(DISTINCT content_customer_id) AS user_count
+      ,DATE(timestamp) AS report_date
       ,'web' AS platform
       ,CASE
       WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'::VARCHAR
       ELSE 'yearly'::VARCHAR
       END AS billing_period
       FROM chargebee_webhook_events.subscription_cancelled
-      WHERE content_subscription_cancel_reason is not NULL
-      AND content_subscription_cancelled_at -content_customer_created_at < 1900000
+      WHERE content_subscription_cancel_reason IS NOT NULL
+      AND content_subscription_cancelled_at - content_customer_created_at < 1900000
       AND content_subscription_subscription_items LIKE '%UP%'
+      AND {% incrementcondition %} timestamp {% endincrementcondition %}
       GROUP BY 2,3,4
       ),
 
-      result as (
+      result AS (
       SELECT
       *
-      ,'dunning_gained' as status
+      ,'dunning_gained' AS status
       FROM total_dunning
 
       UNION ALL
 
       SELECT
       *
-      ,'dunning_paid' as status
+      ,'dunning_paid' AS status
       FROM total_dunning_paid
 
       UNION ALL
 
       SELECT
       *
-      ,'dunning_cancelled' as status
+      ,'dunning_cancelled' AS status
       FROM dunning_cancelled_count
 
       UNION ALL
 
       SELECT
       *
-      ,'active' as status
+      ,'active' AS status
       FROM active_count
 
       UNION ALL
 
       SELECT
       *
-      ,'in_trial' as status
-      FROM total_trial_count)
+      ,'in_trial' AS status
+      FROM total_trial_count
+      )
 
-      SELECT *,
-      'AzZmVjUuQo25N2MFb'::VARCHAR as user_id
+      SELECT
+      user_count
+      ,report_date
+      ,platform
+      ,billing_period
+      ,status
+      ,'AzZmVjUuQo25N2MFb'::VARCHAR AS user_id
       FROM result
-
-
       ;;
-
-    sql_trigger_value: SELECT TO_CHAR(DATEADD(hour, -12, GETDATE()), 'YYYY-MM-DD') ;;
-    #sql_trigger_value: SELECT TO_CHAR( DATEADD(minute, -510, GETDATE()), 'YYYY-MM-DD');;
-    #sql_trigger_value:  SELECT TO_CHAR(DATE_TRUNC('day', CURRENT_TIMESTAMP) + INTERVAL '9 hours 45 minutes', 'YYYY-MM-DD');;
-    distribution: "report_date"
-    sortkeys: ["report_date"]
   }
+
   dimension: date {
     type: date
-    sql:  ${TABLE}.report_date ;;
+    sql: ${TABLE}.report_date ;;
   }
+
   dimension_group: report_date {
     type: time
-    timeframes: [date, week,month]
+    timeframes: [date, week, month]
     sql: ${TABLE}.report_date ;;
-    convert_tz: yes  # Adjust for timezone conversion if needed
+    convert_tz: yes
   }
 
   dimension: billing_period {
@@ -298,13 +270,13 @@ view: sub_count {
   }
 
   dimension: user_id {
-    type: number
+    type: string
     tags: ["user_id"]
-    sql: 1 ;;
+    sql: ${TABLE}.user_id ;;
   }
 
   dimension: status {
-    type:  string
+    type: string
     sql: ${TABLE}.status ;;
   }
 
@@ -313,11 +285,10 @@ view: sub_count {
     sql: ${TABLE}.platform ;;
   }
 
-
   measure: total_paying {
     type: sum
     filters: [status: "active"]
-    sql:${TABLE}.user_count   ;;
+    sql: ${TABLE}.user_count ;;
   }
 
   measure: total_free_trials {
@@ -326,23 +297,21 @@ view: sub_count {
     sql: ${TABLE}.user_count ;;
   }
 
-  measure: dunning_sum{
+  measure: dunning_sum {
     type: sum
     filters: [status: "dunning_gained"]
     sql: ${TABLE}.user_count ;;
   }
 
-  measure: total_dunning_paid{
+  measure: total_dunning_paid {
     type: sum
     filters: [status: "dunning_paid"]
     sql: ${TABLE}.user_count ;;
   }
 
-  measure: total_dunning_cancelled{
+  measure: total_dunning_cancelled {
     type: sum
     filters: [status: "dunning_cancelled"]
     sql: ${TABLE}.user_count ;;
   }
-
-
 }
