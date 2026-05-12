@@ -89,8 +89,9 @@ view: free_trials {
       LEFT JOIN vimeo_platform b
       ON a.email = b.email
       AND a.report_date = b.report_date
-      )
+      ),
 
+      combined AS (
       SELECT user_id, billing_period, platform, report_date
       FROM vimeo2
 
@@ -98,6 +99,14 @@ view: free_trials {
 
       SELECT user_id, billing_period, platform, report_date
       FROM chargebee
+      )
+
+      SELECT
+      CAST(user_id AS VARCHAR) AS user_id,
+      CAST(billing_period AS VARCHAR) AS billing_period,
+      CAST(platform AS VARCHAR) AS platform,
+      CAST(report_date AS DATE) AS report_date
+      FROM combined
       ;;
   }
 
