@@ -34,8 +34,7 @@ view: vimeo_ott_customer_record_analytics {
       )
       select * from expanded_analytics
       ;;
-    datagroup_trigger: upff_event_processing
-    distribution_style: all
+
   }
 
   dimension_group: timestamp {

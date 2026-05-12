@@ -70,8 +70,7 @@ view: vimeo_ott_customer_record {
       )
       select * from state_changes
       ;;
-    datagroup_trigger: upff_event_processing
-    distribution_style: all
+
   }
 
   dimension: user_id {
