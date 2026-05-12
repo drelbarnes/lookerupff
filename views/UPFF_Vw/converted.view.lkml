@@ -1,74 +1,100 @@
+################################################################################
+# converted.view.lkml
+#
+# Incremental PDT that tracks free trial conversion outcomes and related
+# dunning/cancellation events across web (Chargebee) and Vimeo OTT platforms.
+#
+# Event categories tracked (via `types` column):
+#   - converted          → free trial → paid conversions (no dunning)
+#   - dunning_converted  → conversions with outstanding invoices at activation
+#   - dunning_paid       → payment succeeded within 14 days, had dunning attempts
+#   - dunning_cancelled  → cancellations due to payment failures
+#   - not_converted      → cancellations before subscription was ever activated
+#   - gained             → historical free trial signups (from free_trials_historical)
+#
+# Sources:
+#   - customers.new_customers → Vimeo OTT trial conversions
+#   - chargebee_webhook_events.subscription_activated → web conversions
+#   - chargebee_webhook_events.payment_succeeded → dunning recoveries
+#   - chargebee_webhook_events.subscription_cancelled → dunning/non-conversion cancels
+#   - free_trials_historical → backfilled trial gain events
+#
+# Output columns: email, billing_period, platform, report_date, types
+#
+# Incremental config:
+#   - Increment key: report_date
+#   - Increment offset: 14 days (rebuilds the last 14 days on each run, to capture
+#     the full dunning window)
+#   - Trigger: converted_datagroup (daily at 11 AM ET)
+################################################################################
+
 view: converted {
   derived_table: {
+
+    datagroup_trigger: converted_datagroup
+    increment_key: "report_date"
+    increment_offset: 14
+    distribution_style: even
+    sortkeys: ["report_date"]
+
     sql:
-    with cfg AS (
-    SELECT report_date
-    FROM ${configg.SQL_TABLE_NAME}
-),
+      WITH converted_vimeo_pre AS (
+        SELECT
+          email,
+          subscription_frequency AS billing_period,
+          'vimeo' AS platform,
+          DATE(event_occurred_at) AS report_date
+        FROM customers.new_customers
+        WHERE event_type = 'Free Trial to Paid'
+      ),
 
-    converted as (
+      converted_web_pre AS (
       SELECT
-        email
-        ,subscription_frequency as billing_period
-        ,'vimeo' as platform
-        ,date(event_occurred_at) as report_date
+      content_customer_email AS email,
+      CASE
+      WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'
+      ELSE 'yearly'
+      END AS billing_period,
+      'web' AS platform,
+      DATE(DATEADD(HOUR, 0, received_at)) AS report_date
+      FROM chargebee_webhook_events.subscription_activated
+      WHERE content_subscription_subscription_items LIKE '%UP%'
+      AND content_subscription_due_invoices_count = 0
+      ),
 
-      FROM customers.new_customers
-      WHERE event_type = 'Free Trial to Paid'
-      AND DATE(event_occurred_at) >= (SELECT MAX(report_date) FROM cfg)
+      converted AS (
+      SELECT email, billing_period, platform, report_date
+      FROM converted_vimeo_pre
+      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
 
       UNION ALL
 
+      SELECT email, billing_period, platform, report_date
+      FROM converted_web_pre
+      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
+      ),
+
+      dunning_converted_pre AS (
       SELECT
-        content_customer_email as email
-        ,CASE
-          WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'
-          ELSE 'yearly'
-        END AS billing_period
-        ,'web' as platform
-        ,date(DATEADD(HOUR, 0, received_at)) as report_date
+      content_customer_email AS email,
+      CASE
+      WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'
+      ELSE 'yearly'
+      END AS billing_period,
+      'web' AS platform,
+      DATE(DATEADD(HOUR, 0, received_at)) AS report_date
+      FROM chargebee_webhook_events.subscription_activated
+      WHERE content_subscription_subscription_items LIKE '%UP%'
+      AND content_subscription_due_invoices_count != 0
+      ),
 
-        FROM chargebee_webhook_events.subscription_activated
-        WHERE content_subscription_subscription_items like '%UP%'
-        and date(received_at) >= (SELECT MAX(report_date) FROM cfg)
-         AND content_subscription_due_invoices_count = 0
+      dunning_converted AS (
+      SELECT email, billing_period, platform, report_date
+      FROM dunning_converted_pre
+      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
+      ),
 
-),
-
-dunning_converted  as (
- SELECT
-        content_customer_email as email
-        ,CASE
-          WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'
-          ELSE 'yearly'
-        END AS billing_period
-        ,'web' as platform
-        ,date(DATEADD(HOUR, 0, received_at)) as report_date
-
-        FROM chargebee_webhook_events.subscription_activated
-        WHERE content_subscription_subscription_items like '%UP%'
-        and date(received_at) >= (SELECT MAX(report_date) FROM cfg)
-         AND content_subscription_due_invoices_count != 0
-),
-
-dunning_paid as (
-
-  SELECT
-    content_customer_email::VARCHAR AS email,
-    CASE
-      WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'::VARCHAR
-      ELSE 'yearly'::VARCHAR
-    END AS billing_period
-    ,'web' as platform
-    ,DATE(TIMESTAMP 'epoch' + content_customer_created_at * INTERVAL '1 second'- INTERVAL '5 hour') +8 AS report_date
-  FROM chargebee_webhook_events.payment_succeeded
-  WHERE content_subscription_subscription_items LIKE '%UP%'
-    AND DATE(received_at) >= (SELECT MAX(report_date) FROM cfg)
-    AND (report_date::date - DATE(TIMESTAMP 'epoch' + content_customer_created_at * INTERVAL '1 second')) <= 14
-    AND content_invoice_dunning_attempts != '[]'),
-
-dunning_cancelled as
-(
+      dunning_paid_pre AS (
       SELECT
       content_customer_email::VARCHAR AS email,
       CASE
@@ -76,121 +102,175 @@ dunning_cancelled as
       ELSE 'yearly'::VARCHAR
       END AS billing_period,
       'web'::VARCHAR AS platform,
-      DATE(TIMESTAMP 'epoch' + content_customer_created_at * INTERVAL '1 second'- INTERVAL '5 hour') +8 AS report_date
+      DATE(TIMESTAMP 'epoch' + content_customer_created_at * INTERVAL '1 second' - INTERVAL '5 hour') + 8 AS report_date
+      FROM chargebee_webhook_events.payment_succeeded
+      WHERE content_subscription_subscription_items LIKE '%UP%'
+      AND (DATE(received_at) - DATE(TIMESTAMP 'epoch' + content_customer_created_at * INTERVAL '1 second')) <= 14
+      AND content_invoice_dunning_attempts != '[]'
+      ),
 
+      dunning_paid AS (
+      SELECT email, billing_period, platform, report_date
+      FROM dunning_paid_pre
+      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
+      ),
+
+      dunning_cancelled_pre AS (
+      SELECT
+      content_customer_email::VARCHAR AS email,
+      CASE
+      WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'::VARCHAR
+      ELSE 'yearly'::VARCHAR
+      END AS billing_period,
+      'web'::VARCHAR AS platform,
+      DATE(TIMESTAMP 'epoch' + content_customer_created_at * INTERVAL '1 second' - INTERVAL '5 hour') + 8 AS report_date
       FROM chargebee_webhook_events.subscription_cancelled
-      WHERE (content_subscription_cancel_reason_code in ('Not Paid', 'No Card', 'Fraud Review Failed', 'Non Compliant EU Customer', 'Tax Calculation Failed', 'Currency incompatible with Gateway', 'Non Compliant Customer') AND content_subscription_subscription_items LIKE '%UP%'
-        AND date(timestamp) >= (SELECT MAX(report_date) FROM cfg)
-      )),
+      WHERE content_subscription_cancel_reason_code IN (
+      'Not Paid',
+      'No Card',
+      'Fraud Review Failed',
+      'Non Compliant EU Customer',
+      'Tax Calculation Failed',
+      'Currency incompatible with Gateway',
+      'Non Compliant Customer'
+      )
+      AND content_subscription_subscription_items LIKE '%UP%'
+      ),
 
-      sub_cancelled as (
-SELECT
-        content_customer_email as email,
-        CASE
-            WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'
-            ELSE 'yearly'
-        END AS billing_period,
-        'web' AS platform,
-        DATE(TIMESTAMP 'epoch' + content_customer_created_at * INTERVAL '1 second'- INTERVAL '5 hour') +8 AS report_date
-        --
+      dunning_cancelled AS (
+      SELECT email, billing_period, platform, report_date
+      FROM dunning_cancelled_pre
+      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
+      ),
 
-    FROM chargebee_webhook_events.subscription_cancelled
-    WHERE
-        content_subscription_activated_at is NULL
-        AND content_subscription_subscription_items LIKE '%UP%'
-        and DATE(received_at) >= (SELECT MAX(report_date) FROM cfg)),
+      sub_cancelled_pre AS (
+      SELECT
+      content_customer_email AS email,
+      CASE
+      WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'
+      ELSE 'yearly'
+      END AS billing_period,
+      'web' AS platform,
+      DATE(TIMESTAMP 'epoch' + content_customer_created_at * INTERVAL '1 second' - INTERVAL '5 hour') + 8 AS report_date
+      FROM chargebee_webhook_events.subscription_cancelled
+      WHERE content_subscription_activated_at IS NULL
+      AND content_subscription_subscription_items LIKE '%UP%'
+      ),
 
+      sub_cancelled AS (
+      SELECT email, billing_period, platform, report_date
+      FROM sub_cancelled_pre
+      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
+      ),
 
+      gained_pre AS (
+      SELECT email, billing_period, platform, report_date
+      FROM ${free_trials_historical.SQL_TABLE_NAME}
+      ),
 
+      gained AS (
+      SELECT email, billing_period, platform, report_date
+      FROM gained_pre
+      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
+      ),
 
-result2 as (
-      select
-        *, 'converted' as types
+      combined AS (
+      SELECT email, billing_period, platform, report_date, 'converted' AS types
       FROM converted
 
       UNION ALL
 
-      select
-        *, 'dunning_converted' as types
+      SELECT email, billing_period, platform, report_date, 'dunning_converted' AS types
       FROM dunning_converted
 
       UNION ALL
-      select
-        *, 'dunning_paid' as types
+
+      SELECT email, billing_period, platform, report_date, 'dunning_paid' AS types
       FROM dunning_paid
 
       UNION ALL
-      select
-        *, 'dunning_cancelled' as types
+
+      SELECT email, billing_period, platform, report_date, 'dunning_cancelled' AS types
       FROM dunning_cancelled
 
       UNION ALL
-      SELECT
-        *, 'gained' as types
-      FROM ${free_trials_historical.SQL_TABLE_NAME}
+
+      SELECT email, billing_period, platform, report_date, 'gained' AS types
+      FROM gained
 
       UNION ALL
-      SELECT
-      *,'not_converted' as types
-      FROM sub_cancelled
-)
-select * from result2
-      ;;
 
+      SELECT email, billing_period, platform, report_date, 'not_converted' AS types
+      FROM sub_cancelled
+      )
+
+      SELECT
+      CAST(email AS VARCHAR) AS email,
+      CAST(billing_period AS VARCHAR) AS billing_period,
+      CAST(platform AS VARCHAR) AS platform,
+      CAST(report_date AS DATE) AS report_date,
+      CAST(types AS VARCHAR) AS types
+      FROM combined
+      ;;
   }
+
   dimension: date {
     type: date
-    primary_key: yes
-    sql:  ${TABLE}.report_date ;;
+    sql: ${TABLE}.report_date ;;
   }
+
   dimension_group: report_date {
     type: time
-
     timeframes: [date, week]
     sql: ${TABLE}.report_date ;;
-    convert_tz: yes  # Adjust for timezone conversion if needed
+    convert_tz: yes
   }
 
-  dimension: billing_period{
+  dimension: email {
+    type: string
+    sql: ${TABLE}.email ;;
+  }
+
+  dimension: billing_period {
     type: string
     sql: ${TABLE}.billing_period ;;
   }
 
-  dimension: types{
+  dimension: types {
     type: string
     sql: ${TABLE}.types ;;
   }
 
-  dimension: platform{
+  dimension: platform {
     type: string
     sql: ${TABLE}.platform ;;
   }
 
-  measure: converted_count{
+  measure: converted_count {
     type: count_distinct
     sql: ${TABLE}.email ;;
     filters: [types: "converted"]
   }
 
-  measure: dunninig_converted_count{
+  measure: dunninig_converted_count {
     type: count_distinct
     sql: ${TABLE}.email ;;
     filters: [types: "dunning_converted"]
   }
 
-  measure: dunning_paid_count{
+  measure: dunning_paid_count {
     type: count_distinct
     sql: ${TABLE}.email ;;
     filters: [types: "dunning_paid"]
   }
 
-  measure: dunning_cancelled_count{
+  measure: dunning_cancelled_count {
     type: count_distinct
     sql: ${TABLE}.email ;;
     filters: [types: "dunning_cancelled"]
   }
 
-  measure: not_converted_count{
+  measure: not_converted_count {
     type: count_distinct
     sql: ${TABLE}.email ;;
     filters: [types: "not_converted"]
@@ -198,8 +278,21 @@ select * from result2
 
   measure: trial_7_days_ago {
     type: count_distinct
-    sql: ${TABLE}.email;;
+    sql: ${TABLE}.email ;;
     filters: [types: "gained"]
   }
+}
 
+################################################################################
+# Datagroup — triggers the daily incremental run at 11 AM ET
+# NOTE: This must be defined at the MODEL level (in your .model.lkml file),
+# not inside the view file.
+################################################################################
+datagroup: converted_datagroup {
+  sql_trigger: SELECT TO_CHAR(
+                   CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE())
+                   - INTERVAL '11 hour',
+                   'YYYY-MM-DD'
+               ) ;;
+  max_cache_age: "24 hours"
 }
