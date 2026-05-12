@@ -19,7 +19,7 @@ view: sub_count {
     sortkeys: ["report_date"]
 
     sql:
-      , active AS (
+      WITH active AS (
         SELECT
           report_date
           ,user_id
