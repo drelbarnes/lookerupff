@@ -1,6 +1,3 @@
-# Datagroup definition - place at the model level (in your model file)
-# Move this block to your .model.lkml file if it isn't there already.
-
 view: sub_count {
   derived_table: {
 
@@ -15,19 +12,27 @@ view: sub_count {
     indexes: ["report_date"]
 
     sql:
-      WITH active AS (
-        SELECT
-          report_date
-          ,user_id
-          ,CASE
-            WHEN platform = 'Chargebee' THEN 'web'
-            ELSE platform
-          END AS platform
-          ,billing_period
-        FROM ${UPFF_analytics_Vw_v2.SQL_TABLE_NAME}
-        WHERE status IN ('active', 'non_renewing', 'enabled')
-          AND {% incrementcondition %} report_date {% endincrementcondition %}
-      ),
+      SELECT
+        user_count
+        ,report_date
+        ,platform
+        ,billing_period
+        ,status
+        ,'AzZmVjUuQo25N2MFb'::VARCHAR AS user_id
+      FROM (
+        WITH active AS (
+          SELECT
+            report_date
+            ,user_id
+            ,CASE
+              WHEN platform = 'Chargebee' THEN 'web'
+              ELSE platform
+            END AS platform
+            ,billing_period
+          FROM ${UPFF_analytics_Vw_v2.SQL_TABLE_NAME}
+          WHERE status IN ('active', 'non_renewing', 'enabled')
+            AND {% incrementcondition %} report_date {% endincrementcondition %}
+        ),
 
       trial AS (
       SELECT
@@ -40,8 +45,7 @@ view: sub_count {
       ),
 
       active_ios AS (
-      SELECT
-      *
+      SELECT *
       FROM ${ios.SQL_TABLE_NAME}
       WHERE {% incrementcondition %} report_date {% endincrementcondition %}
       ),
@@ -121,7 +125,7 @@ view: sub_count {
       FROM trial_count
       ),
 
-      convert_dunning_count AS (
+      convert_dunning_count_pre AS (
       SELECT
       COUNT(DISTINCT user_id) AS user_count
       ,DATE(received_at) AS report_date
@@ -133,8 +137,17 @@ view: sub_count {
       FROM chargebee_webhook_events.subscription_activated
       WHERE content_invoice_dunning_status IS NOT NULL
       AND content_subscription_subscription_items LIKE '%UP%'
-      AND {% incrementcondition %} received_at {% endincrementcondition %}
       GROUP BY 2, 3, 4
+      ),
+
+      convert_dunning_count AS (
+      SELECT
+      user_count
+      ,report_date
+      ,platform
+      ,billing_period
+      FROM convert_dunning_count_pre
+      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
       ),
 
       total_dunning AS (
@@ -150,7 +163,7 @@ view: sub_count {
       FROM convert_dunning_count
       ),
 
-      dunning_paid_count AS (
+      dunning_paid_count_pre AS (
       SELECT
       COUNT(DISTINCT content_subscription_id) AS user_count
       ,DATE(received_at) AS report_date
@@ -164,8 +177,17 @@ view: sub_count {
       AND DATE(received_at) >= '2025-07-01'
       AND (DATE(received_at) - DATE(TIMESTAMP 'epoch' + content_customer_created_at * INTERVAL '1 second')) <= 14
       AND content_invoice_dunning_attempts != '[]'
-      AND {% incrementcondition %} received_at {% endincrementcondition %}
       GROUP BY 2, 3, 4
+      ),
+
+      dunning_paid_count AS (
+      SELECT
+      user_count
+      ,report_date
+      ,platform
+      ,billing_period
+      FROM dunning_paid_count_pre
+      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
       ),
 
       total_dunning_paid AS (
@@ -181,7 +203,7 @@ view: sub_count {
       FROM dunning_paid_count
       ),
 
-      dunning_cancelled_count AS (
+      dunning_cancelled_count_pre AS (
       SELECT
       COUNT(DISTINCT content_customer_id) AS user_count
       ,DATE(timestamp) AS report_date
@@ -194,11 +216,19 @@ view: sub_count {
       WHERE content_subscription_cancel_reason IS NOT NULL
       AND content_subscription_cancelled_at - content_customer_created_at < 1900000
       AND content_subscription_subscription_items LIKE '%UP%'
-      AND {% incrementcondition %} timestamp {% endincrementcondition %}
       GROUP BY 2, 3, 4
       ),
 
-      result AS (
+      dunning_cancelled_count AS (
+      SELECT
+      user_count
+      ,report_date
+      ,platform
+      ,billing_period
+      FROM dunning_cancelled_count_pre
+      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
+      )
+
       SELECT
       user_count
       ,report_date
@@ -246,16 +276,7 @@ view: sub_count {
       ,billing_period
       ,'in_trial' AS status
       FROM total_trial_count
-      )
-
-      SELECT
-      user_count
-      ,report_date
-      ,platform
-      ,billing_period
-      ,status
-      ,'AzZmVjUuQo25N2MFb'::VARCHAR AS user_id
-      FROM result
+      ) result
       ;;
   }
 
@@ -333,6 +354,8 @@ view: sub_count {
 
 ################################################################################
 # Datagroup — triggers the daily incremental run at 10 AM ET
+# NOTE: This must be defined at the MODEL level (in your .model.lkml file),
+# not inside the view file.
 ################################################################################
 datagroup: sub_count_datagroup {
   sql_trigger: SELECT TO_CHAR(
