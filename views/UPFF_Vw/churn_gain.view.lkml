@@ -1,31 +1,52 @@
-# Datagroup definition - place at the model level in your .model.lkml file.
-# This should not live inside the view file if your project separates model and view files.
-datagroup: churn_gain_datagroup {
-  sql_trigger: SELECT
-    CASE
-      WHEN CAST(CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE()) AS TIME) >= '10:30:00'
-      THEN TO_CHAR(CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE()), 'YYYY-MM-DD')
-      ELSE TO_CHAR(CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE()) - INTERVAL '1 day', 'YYYY-MM-DD')
-    END ;;
-  max_cache_age: "24 hours"
-}
+################################################################################
+# churn_gain.view.lkml
+#
+# Incremental PDT that consolidates daily subscription churn and gain events
+# across web (Chargebee) and Vimeo OTT platforms (iOS, tvOS, Android, etc.).
+#
+# Event categories tracked (via `status` column):
+#   - churn         → cancellations (excluding payment-failure dunning)
+#   - paused        → web subscriptions paused
+#   - converted     → free trial → paid conversions
+#   - reacquisition → previously cancelled subscriptions reactivated/resumed
+#   - dunning       → cancellations caused by payment failures
+#   - rolling_churn → 30-day rolling churn user counts (from rolling_platform)
+#   - rolling_total → 30-day rolling total user counts (from rolling_platform)
+#
+# Sources:
+#   - chargebee_webhook_events.subscription_cancelled / activated / reactivated /
+#     resumed / paused → web events
+#   - customers.new_customers → Vimeo OTT conversion + reacquisition events
+#   - vimeo_ott_webhook.customer_product_expired → Vimeo OTT churn
+#   - UPFF_analytics_Vw_v2 → platform/billing_period attribution for Vimeo users
+#   - rolling_platform → precomputed 30-day rolling counts
+#
+# Output columns: user_count, report_date, billing_period, status, platform
+#
+# Incremental config:
+#   - Increment key: report_date
+#   - Increment offset: 30 days (rebuilds the last 30 days on each run)
+#   - Trigger: churn_gain_datagroup (daily at 10:30 AM ET)
+################################################################################
 
 view: churn_gain {
   derived_table: {
+
+    datagroup_trigger: churn_gain_datagroup
+    increment_key: "report_date"
+    increment_offset: 8
+    distribution_style: even
+    sortkeys: ["report_date"]
+
     sql:
-      ,cfg AS (
-        SELECT report_date
-        FROM ${configg.SQL_TABLE_NAME}
+      WITH v2_table AS (
+        SELECT *
+        FROM ${UPFF_analytics_Vw_v2.SQL_TABLE_NAME}
+        WHERE report_date >= '2026-01-01'
+          AND {% incrementcondition %} report_date {% endincrementcondition %}
       ),
 
-      v2_table AS (
-      SELECT *
-      FROM ${UPFF_analytics_Vw_v2.SQL_TABLE_NAME}
-      WHERE report_date >= '2026-01-01'
-      AND {% incrementcondition %} report_date {% endincrementcondition %}
-      ),
-
-      chargebee_cancelled AS (
+      chargebee_cancelled_pre AS (
       SELECT
       content_subscription_id::VARCHAR AS user_id,
       CASE
@@ -49,8 +70,12 @@ view: churn_gain {
       )
       AND content_subscription_activated_at IS NOT NULL
       AND content_subscription_subscription_items LIKE '%UP%'
-      AND DATE(timestamp) >= (SELECT MAX(report_date) FROM cfg)
-      AND {% incrementcondition %} DATE(timestamp) {% endincrementcondition %}
+      ),
+
+      chargebee_cancelled AS (
+      SELECT user_id, billing_period, report_date, platform
+      FROM chargebee_cancelled_pre
+      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
       ),
 
       vm_user AS (
@@ -63,7 +88,7 @@ view: churn_gain {
       WHERE platform != 'Chargebee'
       ),
 
-      vimeo0 AS (
+      vimeo0_pre AS (
       SELECT DISTINCT
       CAST(customer_id AS VARCHAR) AS user_id,
       subscription_frequency::VARCHAR AS billing_period,
@@ -71,8 +96,12 @@ view: churn_gain {
       DATE(event_occurred_at) AS report_date
       FROM customers.new_customers
       WHERE subscription_frequency != 'custom'
-      AND DATE(event_occurred_at) >= (SELECT MAX(report_date) FROM cfg)
-      AND {% incrementcondition %} DATE(event_occurred_at) {% endincrementcondition %}
+      ),
+
+      vimeo0 AS (
+      SELECT user_id, billing_period, event_type, report_date
+      FROM vimeo0_pre
+      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
       ),
 
       vimeo AS (
@@ -88,13 +117,17 @@ view: churn_gain {
       AND a.user_id = b.user_id
       ),
 
-      vm AS (
+      vm_pre AS (
       SELECT
       DATE("timestamp") AS report_date,
       CAST(user_id AS VARCHAR) AS user_id
       FROM vimeo_ott_webhook.customer_product_expired
-      WHERE DATE("timestamp") >= (SELECT MAX(report_date) FROM cfg)
-      AND {% incrementcondition %} DATE("timestamp") {% endincrementcondition %}
+      ),
+
+      vm AS (
+      SELECT report_date, user_id
+      FROM vm_pre
+      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
       ),
 
       vm2 AS (
@@ -129,7 +162,7 @@ view: churn_gain {
       GROUP BY 2, 3, 4
       ),
 
-      re_acquisitions AS (
+      re_acquisitions_pre AS (
       SELECT
       DATE(DATEADD(HOUR, +18, timestamp)) AS report_date,
       content_subscription_id::VARCHAR AS user_id,
@@ -140,8 +173,6 @@ view: churn_gain {
       'web'::VARCHAR AS platform
       FROM chargebee_webhook_events.subscription_reactivated
       WHERE content_subscription_subscription_items LIKE '%UP%'
-      AND DATE(received_at) >= (SELECT MAX(report_date) FROM cfg)
-      AND {% incrementcondition %} DATE(received_at) {% endincrementcondition %}
 
       UNION ALL
 
@@ -155,8 +186,12 @@ view: churn_gain {
       'web'::VARCHAR AS platform
       FROM chargebee_webhook_events.subscription_resumed
       WHERE content_subscription_subscription_items LIKE '%UP%'
-      AND DATE(received_at) >= (SELECT MAX(report_date) FROM cfg)
-      AND {% incrementcondition %} DATE(received_at) {% endincrementcondition %}
+      ),
+
+      re_acquisitions AS (
+      SELECT report_date, user_id, billing_period, platform
+      FROM re_acquisitions_pre
+      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
 
       UNION ALL
 
@@ -179,7 +214,7 @@ view: churn_gain {
       GROUP BY 2, 3, 4
       ),
 
-      trial_conversion AS (
+      trial_conversion_pre AS (
       SELECT
       DATE(received_at) AS report_date,
       content_subscription_id::VARCHAR AS user_id,
@@ -190,8 +225,12 @@ view: churn_gain {
       'web'::VARCHAR AS platform
       FROM chargebee_webhook_events.subscription_activated
       WHERE content_subscription_subscription_items LIKE '%UP%'
-      AND DATE(received_at) >= (SELECT MAX(report_date) FROM cfg)
-      AND {% incrementcondition %} DATE(received_at) {% endincrementcondition %}
+      ),
+
+      trial_conversion AS (
+      SELECT report_date, user_id, billing_period, platform
+      FROM trial_conversion_pre
+      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
 
       UNION ALL
 
@@ -214,7 +253,7 @@ view: churn_gain {
       GROUP BY 2, 3, 4
       ),
 
-      dunning AS (
+      dunning_pre AS (
       SELECT
       content_subscription_id::VARCHAR AS user_id,
       'charge_failed'::VARCHAR AS status,
@@ -236,8 +275,12 @@ view: churn_gain {
       )
       AND (content_subscription_cancelled_at - content_subscription_activated_at) > 10000
       AND content_subscription_subscription_items LIKE '%UP%'
-      AND DATE(timestamp) >= (SELECT MAX(report_date) FROM cfg)
-      AND {% incrementcondition %} DATE(timestamp) {% endincrementcondition %}
+      ),
+
+      dunning AS (
+      SELECT user_id, status, billing_period, report_date, platform
+      FROM dunning_pre
+      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
       ),
 
       dunning_count AS (
@@ -250,7 +293,7 @@ view: churn_gain {
       GROUP BY 2, 3, 4
       ),
 
-      paused AS (
+      paused_pre AS (
       SELECT
       DATE(DATEADD(HOUR, +18, timestamp)) AS report_date,
       content_subscription_id::VARCHAR AS user_id,
@@ -261,8 +304,12 @@ view: churn_gain {
       'web'::VARCHAR AS platform
       FROM chargebee_webhook_events.subscription_paused
       WHERE content_subscription_subscription_items LIKE '%UP%'
-      AND DATE(received_at) >= (SELECT MAX(report_date) FROM cfg)
-      AND {% incrementcondition %} DATE(received_at) {% endincrementcondition %}
+      ),
+
+      paused AS (
+      SELECT report_date, user_id, billing_period, platform
+      FROM paused_pre
+      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
       ),
 
       paused_count AS (
@@ -277,35 +324,50 @@ view: churn_gain {
 
       result AS (
       SELECT
-      *,
+      user_count,
+      report_date,
+      billing_period,
+      platform,
       'churn'::VARCHAR AS status
       FROM cancelled_user_count
 
       UNION ALL
 
       SELECT
-      *,
+      user_count,
+      report_date,
+      billing_period,
+      platform,
       'paused'::VARCHAR AS status
       FROM paused_count
 
       UNION ALL
 
       SELECT
-      *,
+      user_count,
+      report_date,
+      billing_period,
+      platform,
       'converted'::VARCHAR AS status
       FROM conversion_count
 
       UNION ALL
 
       SELECT
-      *,
+      user_count,
+      report_date,
+      billing_period,
+      platform,
       'reacquisition'::VARCHAR AS status
       FROM re_acquisition_count
 
       UNION ALL
 
       SELECT
-      *,
+      user_count,
+      report_date,
+      billing_period,
+      platform,
       'dunning'::VARCHAR AS status
       FROM dunning_count
       ),
@@ -371,26 +433,26 @@ view: churn_gain {
       'yearly'::VARCHAR AS billing_period,
       'rolling_total'::VARCHAR AS status
       FROM churn_rate
-      )
+      ),
 
-      SELECT * FROM result2
+      combined AS (
+      SELECT user_count, report_date, billing_period, status, platform
+      FROM result2
 
       UNION ALL
 
-      SELECT
-      user_count,
-      report_date,
-      billing_period,
-      status,
-      platform
+      SELECT user_count, report_date, billing_period, status, platform
       FROM rolling_churn
-      ;;
+      )
 
-    datagroup_trigger: churn_gain_datagroup
-    increment_key: "date"
-    increment_offset: 30
-    distribution: "report_date"
-    sortkeys: ["report_date"]
+      SELECT
+      CAST(user_count AS BIGINT) AS user_count,
+      CAST(report_date AS DATE) AS report_date,
+      CAST(billing_period AS VARCHAR) AS billing_period,
+      CAST(status AS VARCHAR) AS status,
+      CAST(platform AS VARCHAR) AS platform
+      FROM combined
+      ;;
   }
 
   dimension: user_id {
@@ -401,7 +463,6 @@ view: churn_gain {
 
   dimension: date {
     type: date
-    primary_key: yes
     sql: ${TABLE}.report_date ;;
   }
 
@@ -473,4 +534,18 @@ view: churn_gain {
     sql: ${user_count} ;;
     filters: [status: "rolling_total"]
   }
+}
+
+################################################################################
+# Datagroup — triggers the daily incremental run at 10:30 AM ET
+# NOTE: This must be defined at the MODEL level (in your .model.lkml file),
+# not inside the view file.
+################################################################################
+datagroup: churn_gain_datagroup {
+  sql_trigger: SELECT TO_CHAR(
+                   CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE())
+                   - INTERVAL '10 hour 30 minute',
+                   'YYYY-MM-DD'
+               ) ;;
+  max_cache_age: "24 hours"
 }
