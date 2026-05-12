@@ -112,6 +112,7 @@ view: sub_count {
       ),
 
       total_trial_count AS (
+      SELECT * FROM (
       SELECT
       SUM(user_count) OVER (
       PARTITION BY platform, billing_period
@@ -122,9 +123,10 @@ view: sub_count {
       ,platform
       ,billing_period
       FROM trial_count
+      )
       ),
 
-      convert_dunning_count AS (
+      convert_dunning_count_pre AS (
       SELECT
       COUNT(DISTINCT user_id) AS user_count
       ,DATE(received_at) AS report_date
@@ -136,11 +138,21 @@ view: sub_count {
       FROM chargebee_webhook_events.subscription_activated
       WHERE content_invoice_dunning_status IS NOT NULL
       AND content_subscription_subscription_items LIKE '%UP%'
-      AND {% incrementcondition %} received_at {% endincrementcondition %}
       GROUP BY 2,3,4
       ),
 
+      convert_dunning_count AS (
+      SELECT
+      user_count
+      ,report_date
+      ,platform
+      ,billing_period
+      FROM convert_dunning_count_pre
+      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
+      ),
+
       total_dunning AS (
+      SELECT * FROM (
       SELECT
       SUM(user_count) OVER (
       PARTITION BY platform, billing_period
@@ -151,9 +163,10 @@ view: sub_count {
       ,platform
       ,billing_period
       FROM convert_dunning_count
+      )
       ),
 
-      dunning_paid_count AS (
+      dunning_paid_count_pre AS (
       SELECT
       COUNT(DISTINCT content_subscription_id) AS user_count
       ,DATE(received_at) AS report_date
@@ -167,11 +180,21 @@ view: sub_count {
       AND DATE(received_at) >= '2025-07-01'
       AND (DATE(received_at) - DATE(TIMESTAMP 'epoch' + content_customer_created_at * INTERVAL '1 second')) <= 14
       AND content_invoice_dunning_attempts != '[]'
-      AND {% incrementcondition %} received_at {% endincrementcondition %}
       GROUP BY 2,3,4
       ),
 
+      dunning_paid_count AS (
+      SELECT
+      user_count
+      ,report_date
+      ,platform
+      ,billing_period
+      FROM dunning_paid_count_pre
+      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
+      ),
+
       total_dunning_paid AS (
+      SELECT * FROM (
       SELECT
       SUM(user_count) OVER (
       PARTITION BY platform, billing_period
@@ -182,9 +205,10 @@ view: sub_count {
       ,platform
       ,billing_period
       FROM dunning_paid_count
+      )
       ),
 
-      dunning_cancelled_count AS (
+      dunning_cancelled_count_pre AS (
       SELECT
       COUNT(DISTINCT content_customer_id) AS user_count
       ,DATE(timestamp) AS report_date
@@ -197,41 +221,65 @@ view: sub_count {
       WHERE content_subscription_cancel_reason IS NOT NULL
       AND content_subscription_cancelled_at - content_customer_created_at < 1900000
       AND content_subscription_subscription_items LIKE '%UP%'
-      AND {% incrementcondition %} timestamp {% endincrementcondition %}
       GROUP BY 2,3,4
+      ),
+
+      dunning_cancelled_count AS (
+      SELECT
+      user_count
+      ,report_date
+      ,platform
+      ,billing_period
+      FROM dunning_cancelled_count_pre
+      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
       ),
 
       result AS (
       SELECT
-      *
+      user_count
+      ,report_date
+      ,platform
+      ,billing_period
       ,'dunning_gained' AS status
       FROM total_dunning
 
       UNION ALL
 
       SELECT
-      *
+      user_count
+      ,report_date
+      ,platform
+      ,billing_period
       ,'dunning_paid' AS status
       FROM total_dunning_paid
 
       UNION ALL
 
       SELECT
-      *
+      user_count
+      ,report_date
+      ,platform
+      ,billing_period
       ,'dunning_cancelled' AS status
       FROM dunning_cancelled_count
 
       UNION ALL
 
       SELECT
-      *
+      user_count
+      ,report_date
+      ,platform
+      ,billing_period
       ,'active' AS status
       FROM active_count
 
       UNION ALL
 
       SELECT
-      *
+      user_count
+      ,report_date
+      ,platform
+      ,billing_period
       ,'in_trial' AS status
       FROM total_trial_count
       )
@@ -245,11 +293,6 @@ view: sub_count {
       ,'AzZmVjUuQo25N2MFb'::VARCHAR AS user_id
       FROM result
       ;;
-  }
-
-  dimension: date {
-    type: date
-    sql: ${TABLE}.report_date ;;
   }
 
   dimension_group: report_date {
