@@ -127,8 +127,6 @@ view: vimeo_ott_subscriber_events {
       )
       select *, MD5(user_id || platform || "date"::text) AS unique_id from customer_record where "date" is not null
        ;;
-      datagroup_trigger: upff_event_processing
-      distribution_style: all
   }
 
   measure: count {
