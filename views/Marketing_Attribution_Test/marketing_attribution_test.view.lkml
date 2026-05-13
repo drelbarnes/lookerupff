@@ -1783,9 +1783,9 @@ view: marketing_attribution_test {
 # Datagroup — triggers the daily incremental run at 1 AM ET
 ################################################################################
 datagroup: marketing_attribution_daily {
- sql_trigger:SELECT TO_CHAR(
+  sql_trigger: SELECT TO_CHAR(
                    CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE())
-                   - INTERVAL '7 hour',
+                   - INTERVAL '2 hour',
                    'YYYY-MM-DD'
                ) ;;
   max_cache_age: "24 hours"
