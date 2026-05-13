@@ -206,7 +206,7 @@ view: vimeo {
 datagroup: vimeo_datagroup {
   sql_trigger: SELECT TO_CHAR(
                    CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE())
-                   - INTERVAL '11 hour',
+                   - INTERVAL '7 hour',
                    'YYYY-MM-DD'
                ) ;;
   max_cache_age: "24 hours"

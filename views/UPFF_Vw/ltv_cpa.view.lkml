@@ -190,7 +190,7 @@ view: ltv_cpa {
 datagroup: ltv_cpa_datagroup {
   sql_trigger: SELECT TO_CHAR(
                    CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE())
-                   - INTERVAL '10 hour',
+                   - INTERVAL '6 hour',
                    'YYYY-MM-DD'
                ) ;;
   max_cache_age: "24 hours"
