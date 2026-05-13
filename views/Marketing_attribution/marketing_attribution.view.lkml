@@ -4,8 +4,31 @@ view: marketing_attribution {
     ,marketing_page_orig as(
       SELECT
         *
+      FROM ${visits.SQL_TABLE_NAME}
+      WHERE 1=1
+        --AND campaign_name LIKE '%Blue Skies%'
+and DATE(report_date) >='2026-01-01'),
 
-      ,ROW_NUMBER() OVER (
+
+last_touch AS (
+  SELECT *
+    , ROW_NUMBER() OVER (
+        PARTITION BY anonymous_id
+        ORDER BY
+          CASE WHEN campaign_name IS NULL THEN 1 ELSE 0 END,
+          {% if attribution_model._parameter_value == "first" %}
+            report_date ASC   -- first touch: earliest wins
+          {% else %}
+            report_date DESC  -- last touch: most recent wins
+          {% endif %}
+      ) AS touch_rank
+  FROM marketing_page_orig
+  --WHERE campaign_name IS NOT NULL
+),
+
+has_campaign as(
+    select *
+    ,ROW_NUMBER() OVER (
       PARTITION BY anonymous_id
       ORDER BY report_date DESC
 
@@ -17,18 +40,37 @@ view: marketing_attribution {
       report_date DESC   -- last touch: most recent click within window wins
       {% endif %} */
       )                                 AS touch_rank
-      FROM ${visits.SQL_TABLE_NAME}
-      WHERE 1=1
-        --AND campaign_name LIKE '%Blue Skies%'
-and DATE(report_date) >='2026-01-01'),
+      from marketing_page_orig where campaign_name is not null
+  ),
 
-   marketing_page as(
-  SELECT*
+organic_only as (
+    select *
+    ,ROW_NUMBER() OVER (
+      PARTITION BY anonymous_id
+      ORDER BY report_date DESC
 
-    FROM marketing_page_orig
-   ),
+      /*
+      CASE WHEN campaign_name IS NULL THEN 1 ELSE 0 END,
+      {% if attribution_model._parameter_value == "first" %}
+      report_date ASC    -- first touch: earliest click within window wins
+      {% else %}
+      report_date DESC   -- last touch: most recent click within window wins
+      {% endif %} */
+      )                                 AS touch_rank
+      from marketing_page_orig where anonymous_id not in (select anonymous_id from has_campaign)
+    ),
 
-  trial_created as (
+marketing_page_union as (
+select * from last_touch
+/*
+select * from has_campaign
+union all
+select * from organic_only*/
+)
+,
+
+
+  trial_created_oc as (
   SELECT
   distinct
     user_id
@@ -38,9 +80,24 @@ and DATE(report_date) >='2026-01-01'),
   FROM javaScript_upentertainment_checkout.order_completed
   WHERE brand = 'upfaithandfamily'
     AND  DATE(report_date) >='2026-01-01'
-
   ),
 
+trial_created_ou as (
+
+  SELECT
+  distinct
+    user_id
+    ,context_ip
+    ,anonymous_id
+    ,date(timestamp) as report_date
+  FROM javascript_upentertainment_checkout.order_updated
+  WHERE DATE(report_date) >='2026-01-01' and context_page_path like '%upfaith%'),
+
+trial_created as (
+select * from trial_created_oc
+UNION ALL
+select * from trial_created_ou where user_id not in (select user_id from trial_created_oc)
+),
   reacquisition as (
   select
   distinct
@@ -121,9 +178,10 @@ result_ip as (
     ,mp.campaign_medium
     ,mp.campaign_content
     ,mp.marketing_platform
+    ,mp.marketing_channel
     ,mp.touch_rank
       FROM join_data jd
-      right JOIN marketing_page mp
+      right JOIN marketing_page_union mp
       ON  mp.context_ip  = jd.context_ip
       -- Upper bound: click must be on or before trial start
       AND mp.report_date <= jd.report_date
@@ -145,9 +203,10 @@ result_anon as (
     ,mp.campaign_medium
     ,mp.campaign_content
     ,mp.marketing_platform
+    ,mp.marketing_channel
     ,mp.touch_rank
       FROM join_data jd
-      right JOIN marketing_page mp
+      right JOIN marketing_page_union mp
       ON  mp.anonymous_id  = jd.anonymous_id
       -- Upper bound: click must be on or before trial start
       AND mp.report_date <= jd.report_date
@@ -174,6 +233,7 @@ result_anon as (
     ,campaign_medium
     ,campaign_content
     ,marketing_platform
+    ,marketing_channel
     ,report_date
   FROM result2
    where touch_rank = 1;;
@@ -186,7 +246,7 @@ result_anon as (
   }
   parameter: attribution_model {
     label: "Attribution Model"
-    description: "Switch between first-touch and last-touch attribution"
+    description: "Switch between first-touch and last-known attribution"
     type: unquoted
     allowed_value: { label: "Last Touch (default)" value: "last" }
     allowed_value: { label: "First Touch"          value: "first" }
@@ -212,7 +272,7 @@ result_anon as (
     type: time
     datatype: date
 
-    timeframes: [date, week, month, quarter, year]
+    timeframes: [date]
     sql: ${TABLE}.report_date ;;
   }
 
@@ -247,6 +307,12 @@ result_anon as (
     label: "Event"
     type: string
     sql: ${TABLE}.event ;;
+  }
+
+  dimension: marketing_channel {
+    label: "Marketing Channel"
+    type: string
+    sql: ${TABLE}.marketing_channel ;;
   }
 
   dimension: has_converted {

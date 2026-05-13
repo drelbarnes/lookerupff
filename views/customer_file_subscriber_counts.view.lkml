@@ -100,8 +100,7 @@ view: customer_file_subscriber_counts {
     ) sub
     ORDER BY report_date
     ;;
-    datagroup_trigger: upff_customer_file_reporting
-    distribution_style: all
+
   }
 
   dimension: report_date {
