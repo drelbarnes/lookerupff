@@ -544,7 +544,7 @@ view: churn_gain {
 datagroup: churn_gain_datagroup {
   sql_trigger: SELECT TO_CHAR(
                    CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE())
-                   - INTERVAL '10 hour 30 minute',
+                   - INTERVAL '6 hour 30 minute',
                    'YYYY-MM-DD'
                ) ;;
   max_cache_age: "24 hours"
