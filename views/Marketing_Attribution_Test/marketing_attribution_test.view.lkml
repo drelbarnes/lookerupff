@@ -51,7 +51,7 @@ view: marketing_attribution_test {
           SELECT
                -- Initial build covers 180 days; incremental runs are filtered
                -- by Looker's injection of incrementcondition (below).
-               (CURRENT_DATE - INTERVAL '180 days')::DATE AS start_date
+               (CURRENT_DATE - INTERVAL '365 days')::DATE AS start_date
               ,CURRENT_DATE                               AS end_date
               ,90                  AS max_attribution_window_days
               ,0.40                AS w_activations
@@ -1780,12 +1780,12 @@ view: marketing_attribution_test {
 }
 
 ################################################################################
-# Datagroup — triggers the daily incremental run at 2 AM ET
+# Datagroup — triggers the daily incremental run at 1 AM ET
 ################################################################################
 datagroup: marketing_attribution_daily {
   sql_trigger: SELECT TO_CHAR(
                    CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE())
-                   - INTERVAL '2 hour',
+                   - INTERVAL '1 hour',
                    'YYYY-MM-DD'
                ) ;;
   max_cache_age: "24 hours"
