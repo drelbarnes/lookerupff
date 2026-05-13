@@ -13,7 +13,7 @@ view: subs {
 
       ,ROW_NUMBER() OVER (PARTITION BY subscription_id, uploaded_at ORDER BY uploaded_at DESC) AS rn
       FROM http_api.chargebee_subscriptions
-      WHERE subscription_subscription_items_0_item_price_id LIKE '%Minno%'),
+      WHERE subscription_subscription_items_0_item_price_id LIKE '%Minno%' and report_date >='2026-01-01'),
       chargebee_subs as(
       select
       *

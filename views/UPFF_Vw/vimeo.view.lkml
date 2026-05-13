@@ -1,39 +1,30 @@
-# Datagroup definition - place at the model level in your .model.lkml file.
-# This should not live inside the view file if your project separates model and view files.
-datagroup: vimeo_datagroup {
-  sql_trigger: SELECT
-    CASE
-      WHEN CAST(CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE()) AS TIME) >= '10:00:00'
-      THEN TO_CHAR(CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE()), 'YYYY-MM-DD')
-      ELSE TO_CHAR(CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE()) - INTERVAL '1 day', 'YYYY-MM-DD')
-    END ;;
-  max_cache_age: "24 hours"
-}
-
 view: vimeo {
   derived_table: {
+
+    datagroup_trigger: vimeo_datagroup
+    increment_key: "report_date"
+    increment_offset: 7
+    distribution_style: even
+    sortkeys: ["report_date"]
+
     sql:
-      ,cfg AS (
-        SELECT MAX(report_date) AS report_date
-        FROM ${configg.SQL_TABLE_NAME}
+      WITH platform_pre AS (
+        SELECT
+          CAST(user_id AS VARCHAR) AS user_id,
+          platform,
+          TO_DATE(report_date, 'YYYY-MM-DD') AS report_date
+        FROM customers.all_customers
+        WHERE action = 'subscription'
+          AND platform NOT IN ('api', 'web')
       ),
 
       platform AS (
-      SELECT
-      CAST(user_id AS VARCHAR) AS user_id,
-      platform,
-      TO_DATE(report_date, 'YYYY-MM-DD') AS report_date
-      FROM customers.all_customers
-      WHERE TO_DATE(report_date, 'YYYY-MM-DD') >= (
-      SELECT MAX(report_date)
-      FROM cfg
-      )
-      AND action = 'subscription'
-      AND platform NOT IN ('api', 'web')
-      AND {% incrementcondition %} TO_DATE(report_date, 'YYYY-MM-DD') {% endincrementcondition %}
+      SELECT user_id, platform, report_date
+      FROM platform_pre
+      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
       ),
 
-      customers AS (
+      customers_pre AS (
       SELECT DISTINCT
       CAST(customer_id AS VARCHAR) AS user_id,
       subscription_frequency AS billing_period,
@@ -41,15 +32,16 @@ view: vimeo {
       DATE(DATEADD(HOUR, -5, event_occurred_at)) AS report_date
       FROM customers.new_customers
       WHERE subscription_frequency != 'custom'
-      AND DATE(event_occurred_at) >= (
-      SELECT MAX(report_date)
-      FROM cfg
-      )
       AND current_customer_status = 'enabled'
-      AND {% incrementcondition %} DATE(DATEADD(HOUR, -5, event_occurred_at)) {% endincrementcondition %}
       ),
 
-      chargebee_re_acquisition AS (
+      customers AS (
+      SELECT user_id, billing_period, event_type, report_date
+      FROM customers_pre
+      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
+      ),
+
+      chargebee_re_acquisition_pre AS (
       SELECT
       content_subscription_id AS user_id,
       'web' AS platform,
@@ -61,11 +53,6 @@ view: vimeo {
       DATE(DATEADD(HOUR, -5, timestamp)) AS report_date
       FROM chargebee_webhook_events.subscription_reactivated
       WHERE content_subscription_subscription_items LIKE '%UP%'
-      AND DATE(DATEADD(HOUR, -5, timestamp)) >= (
-      SELECT MAX(report_date)
-      FROM cfg
-      )
-      AND {% incrementcondition %} DATE(DATEADD(HOUR, -5, timestamp)) {% endincrementcondition %}
 
       UNION ALL
 
@@ -80,11 +67,12 @@ view: vimeo {
       DATE(DATEADD(HOUR, -5, timestamp)) AS report_date
       FROM chargebee_webhook_events.subscription_resumed
       WHERE content_subscription_subscription_items LIKE '%UP%'
-      AND DATE(DATEADD(HOUR, -5, timestamp)) >= (
-      SELECT MAX(report_date)
-      FROM cfg
-      )
-      AND {% incrementcondition %} DATE(DATEADD(HOUR, -5, timestamp)) {% endincrementcondition %}
+      ),
+
+      chargebee_re_acquisition AS (
+      SELECT user_id, platform, billing_period, event_type, report_date
+      FROM chargebee_re_acquisition_pre
+      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
       ),
 
       vimeo AS (
@@ -100,18 +88,14 @@ view: vimeo {
       AND b.user_id = a.user_id
       )
 
-      SELECT * FROM vimeo
+      SELECT user_id, platform, billing_period, event_type, report_date
+      FROM vimeo
 
       UNION ALL
 
-      SELECT * FROM chargebee_re_acquisition
+      SELECT user_id, platform, billing_period, event_type, report_date
+      FROM chargebee_re_acquisition
       ;;
-
-    datagroup_trigger: vimeo_datagroup
-    increment_key: "report_date"
-    increment_offset: 7
-    distribution: "report_date"
-    sortkeys: ["report_date"]
   }
 
   dimension_group: report_date {
@@ -212,4 +196,18 @@ view: vimeo {
     filters: [event_type: "Direct to Paid"]
     sql: ${TABLE}.user_id ;;
   }
+}
+
+################################################################################
+# Datagroup — triggers the daily incremental run at 11 AM ET
+# NOTE: This must be defined at the MODEL level (in your .model.lkml file),
+# not inside the view file.
+################################################################################
+datagroup: vimeo_datagroup {
+  sql_trigger: SELECT TO_CHAR(
+                   CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE())
+                   - INTERVAL '11 hour',
+                   'YYYY-MM-DD'
+               ) ;;
+  max_cache_age: "24 hours"
 }
