@@ -157,7 +157,7 @@ explore: redshift_allfirst_play_r0_upff_webhook_events {
 datagroup: redshift_upff_datagroup {
   description: "Datagroup for Allfirstplay and Timeupdate. Triggers twice per day"
   sql_trigger: SELECT FLOOR(EXTRACT(EPOCH FROM CURRENT_TIMESTAMP at time zone 'America/New_York') / 86400) ;;
-  max_cache_age: "12 hours"
+  max_cache_age: "24 hours"
 }
 
 #end redshift allfirstplay

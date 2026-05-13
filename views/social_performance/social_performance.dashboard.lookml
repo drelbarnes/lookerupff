@@ -123,7 +123,7 @@
       measures: [social_daily_snapshot.total_impressions]
       sorts: [social_daily_snapshot.snapshot_date_date asc]
       x_axis_scale: auto
-      width: 16
+      width: 24
       height: 10
       stacking: ""
       listen:
