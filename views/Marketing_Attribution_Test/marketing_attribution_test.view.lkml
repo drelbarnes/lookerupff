@@ -26,11 +26,12 @@
 #   - One-time rebuild needed when scoring weights or attribution logic changes
 #
 # === ROW TYPES (event_type) ===
-#   1. 'page_visit'   — every marketing-site page view (web)
-#   2. 'conversion'   — attributed free trials and reacquisitions (web)
-#   3. 'app_trial'    — app free trials from Branch.io (php.branch_purchase)
-#   4. 'app_install'  — app installs from Branch.io (php.branch_install)
-################################################################################
+#   1. 'page_visit'    — every marketing-site page view (web)
+#   2. 'conversion'    — attributed free trials and reacquisitions (web)
+#   3. 'app_trial'     — app free trials from Branch.io (php.branch_purchase)
+#   4. 'app_install'   — app installs from Branch.io (php.branch_install)
+#   5. 'app_reinstall' — app reinstalls from Branch.io (php.branch_reinstall)
+#################################################################################
 
 view: marketing_attribution_test {
   derived_table: {
@@ -160,6 +161,44 @@ view: marketing_attribution_test {
       ORDER BY report_date, anonymous_id, campaign, os, creative_name
       )                                AS branch_row_num
       FROM php.branch_install
+      WHERE report_date >= (SELECT start_date FROM params)
+      AND report_date <  (SELECT end_date   FROM params) + INTERVAL '1 day'
+      AND count > 0
+      AND (
+      {% incrementcondition %} report_date {% endincrementcondition %}
+      )
+      ),
+
+      -- ============================================================
+      -- BRANCH.IO APP REINSTALLS — from php.branch_reinstall
+      -- Mirrors branch_app_installs; tracks users who reinstalled the app.
+      -- ============================================================
+      branch_app_reinstalls AS (
+      SELECT
+      DATE(report_date)                AS report_date
+      ,anonymous_id
+      ,os                               AS device_os
+      ,CASE
+      WHEN LOWER(ad_partner) = 'facebook'                                   THEN 'meta'
+      WHEN LOWER(ad_partner) IN ('google adwords','google ads','google')    THEN 'google'
+      WHEN LOWER(ad_partner) LIKE '%tiktok%'                                THEN 'tiktok'
+      WHEN LOWER(ad_partner) LIKE '%apple%search%'                          THEN 'apple_search'
+      WHEN LOWER(ad_partner) LIKE '%snapchat%'                              THEN 'snapchat'
+      WHEN LOWER(ad_partner) LIKE '%roku%'                                  THEN 'roku'
+      WHEN LOWER(ad_partner) = 'unattributed'                               THEN 'unattributed'
+      ELSE LOWER(ad_partner)
+      END                              AS campaign_source
+      ,channel                          AS branch_channel
+      ,campaign                         AS campaign_name
+      ,campaign_id
+      ,feature                          AS branch_feature
+      ,creative_name
+      ,count                            AS app_reinstall_count
+      ,CASE WHEN LOWER(feature) = 'paid advertising' THEN TRUE ELSE FALSE END AS is_paid_branch
+      ,ROW_NUMBER() OVER (
+      ORDER BY report_date, anonymous_id, campaign, os, creative_name
+      )                                AS branch_row_num
+      FROM php.branch_reinstall
       WHERE report_date >= (SELECT start_date FROM params)
       AND report_date <  (SELECT end_date   FROM params) + INTERVAL '1 day'
       AND count > 0
@@ -746,6 +785,7 @@ view: marketing_attribution_test {
       ,FALSE                      AS is_first_and_last
       ,CAST(0 AS INTEGER)         AS app_trial_count
       ,CAST(0 AS INTEGER)         AS app_install_count
+      ,CAST(0 AS INTEGER)         AS app_reinstall_count
       ,CAST(NULL AS VARCHAR(50))  AS device_os
       ,CAST(NULL AS VARCHAR(255)) AS branch_channel
       ,CAST(NULL AS VARCHAR(100)) AS branch_feature
@@ -794,6 +834,7 @@ view: marketing_attribution_test {
       ,sa.is_first_touch, sa.is_last_touch, sa.is_first_and_last
       ,CAST(0 AS INTEGER)         AS app_trial_count
       ,CAST(0 AS INTEGER)         AS app_install_count
+      ,CAST(0 AS INTEGER)         AS app_reinstall_count
       ,CAST(NULL AS VARCHAR(50))  AS device_os
       ,CAST(NULL AS VARCHAR(255)) AS branch_channel
       ,CAST(NULL AS VARCHAR(100)) AS branch_feature
@@ -858,6 +899,7 @@ view: marketing_attribution_test {
       ,FALSE                                                                AS is_first_and_last
       ,app_trial_count
       ,0                                                                    AS app_install_count
+      ,0                                                                    AS app_reinstall_count
       ,device_os
       ,CAST(branch_channel AS VARCHAR(255))                                 AS branch_channel
       ,CAST(branch_feature AS VARCHAR(100))                                 AS branch_feature
@@ -917,6 +959,7 @@ view: marketing_attribution_test {
       ,FALSE                                                                AS is_first_and_last
       ,0                                                                    AS app_trial_count
       ,app_install_count
+      ,0                                                                    AS app_reinstall_count
       ,device_os
       ,CAST(branch_channel AS VARCHAR(255))                                 AS branch_channel
       ,CAST(branch_feature AS VARCHAR(100))                                 AS branch_feature
@@ -934,6 +977,66 @@ view: marketing_attribution_test {
       ,CAST(NULL AS NUMERIC(10,2))                                          AS reacq_score
       ,CAST(NULL AS NUMERIC(10,2))                                          AS activation_score
       FROM branch_app_installs
+      ),
+
+      app_reinstall_rows AS (
+      SELECT
+      CAST('app_reinstall' AS VARCHAR(20))                                 AS event_type
+      ,CAST(COALESCE(anonymous_id, 'no_aid') || '|' || branch_row_num::TEXT
+      AS VARCHAR(255))                                                AS event_id
+      ,CAST(NULL AS VARCHAR(255))                                           AS user_id
+      ,CAST(NULL AS VARCHAR(255))                                           AS context_ip
+      ,CAST(NULL AS VARCHAR(255))                                           AS anonymous_id
+      ,report_date::TIMESTAMP                                               AS event_at
+      ,report_date
+      ,CAST(campaign_source  AS VARCHAR(255))                               AS campaign_source
+      ,CAST(campaign_name    AS VARCHAR(255))                               AS campaign_name
+      ,CAST(campaign_id      AS VARCHAR(255))                               AS campaign_id
+      ,CAST('paid' AS VARCHAR(255))                                         AS campaign_medium
+      ,CAST(NULL AS VARCHAR(255))                                           AS campaign_content
+      ,CAST(NULL AS VARCHAR(255))                                           AS order_id
+      ,CAST(NULL AS VARCHAR(20))                                            AS conversion_event_type
+      ,CAST('app_reinstall' AS VARCHAR(20))                                 AS trial_type
+      ,CAST(NULL AS VARCHAR(255))                                           AS bundle_plan
+      ,FALSE                                                                AS is_bundle_user
+      ,CAST(NULL AS VARCHAR(20))                                            AS lifecycle_event_type
+      ,CAST(NULL AS DATE)                                                   AS lifecycle_event_date
+      ,FALSE                                                                AS is_activated_or_reacquired
+      ,FALSE                                                                AS is_not_retained
+      ,CAST(0 AS NUMERIC(10,2))                                             AS activation_value
+      ,FALSE                                                                AS is_yearly_plan
+      ,CAST(NULL AS VARCHAR(20))                                            AS plan_type
+      ,0                                                                    AS total_touches
+      ,CAST(NULL AS INTEGER)                                                AS min_days_before_conversion
+      ,CAST(NULL AS TIMESTAMP)                                              AS attributed_touch_at
+      ,CAST(0.0 AS NUMERIC(7,6))                                            AS credit_first_touch
+      ,CAST(0.0 AS NUMERIC(7,6))                                            AS credit_last_touch
+      ,CAST(0.0 AS NUMERIC(7,6))                                            AS credit_first_last
+      ,CAST(0.0 AS NUMERIC(7,6))                                            AS credit_position_based
+      ,CAST(NULL AS VARCHAR(20))                                            AS touch_position
+      ,FALSE                                                                AS is_first_touch
+      ,FALSE                                                                AS is_last_touch
+      ,FALSE                                                                AS is_first_and_last
+      ,0                                                                    AS app_trial_count
+      ,0                                                                    AS app_install_count
+      ,app_reinstall_count
+      ,device_os
+      ,CAST(branch_channel AS VARCHAR(255))                                 AS branch_channel
+      ,CAST(branch_feature AS VARCHAR(100))                                 AS branch_feature
+      ,CAST(creative_name AS VARCHAR(500))                                  AS creative_name
+      ,is_paid_branch
+      ,CAST(NULL AS NUMERIC(10,2))                                          AS quality_score
+      ,CAST(NULL AS NUMERIC(10,2))                                          AS volume_score
+      ,CAST(NULL AS NUMERIC(5,4))                                           AS trial_to_paid_rate
+      ,CAST(NULL AS NUMERIC(5,4))                                           AS churn_rate
+      ,CAST(NULL AS NUMERIC(5,4))                                           AS retention_rate
+      ,CAST(NULL AS NUMERIC(12,2))                                          AS campaign_total_aov
+      ,CAST(NULL AS NUMERIC(10,2))                                          AS campaign_avg_aov
+      ,CAST(NULL AS NUMERIC(10,2))                                          AS std_trial_score
+      ,CAST(NULL AS NUMERIC(10,2))                                          AS bundle_trial_score
+      ,CAST(NULL AS NUMERIC(10,2))                                          AS reacq_score
+      ,CAST(NULL AS NUMERIC(10,2))                                          AS activation_score
+      FROM branch_app_reinstalls
       )
 
       SELECT * FROM page_visit_rows
@@ -943,6 +1046,8 @@ view: marketing_attribution_test {
       SELECT * FROM app_trial_rows
       UNION ALL
       SELECT * FROM app_install_rows
+      UNION ALL
+      SELECT * FROM app_reinstall_rows
       ;;
   }
 
@@ -991,7 +1096,7 @@ view: marketing_attribution_test {
 
   dimension: event_type {
     type: string
-    description: "'page_visit' | 'conversion' | 'app_trial' | 'app_install'"
+    description: "'page_visit' | 'conversion' | 'app_trial' | 'app_install' | 'app_reinstall'"
     sql: ${TABLE}.event_type ;;
   }
 
@@ -1093,8 +1198,8 @@ view: marketing_attribution_test {
     label: "Surface"
     sql:
       CASE
-        WHEN ${TABLE}.event_type IN ('app_trial', 'app_install') THEN 'app'
-        ELSE                                                          'web'
+        WHEN ${TABLE}.event_type IN ('app_trial', 'app_install', 'app_reinstall') THEN 'app'
+        ELSE                                                                           'web'
       END
     ;;
   }
@@ -1124,7 +1229,7 @@ view: marketing_attribution_test {
   dimension: within_attribution_window {
     type: yesno
     sql:
-      ${TABLE}.event_type IN ('page_visit', 'app_trial', 'app_install')
+      ${TABLE}.event_type IN ('page_visit', 'app_trial', 'app_install', 'app_reinstall')
       OR ${TABLE}.min_days_before_conversion IS NULL
       OR ${TABLE}.min_days_before_conversion <= {% parameter attribution_window_days %}
     ;;
@@ -1317,7 +1422,7 @@ view: marketing_attribution_test {
   }
 
   ##############################################################
-  # MEASURES — Branch.io App Trials & Installs
+  # MEASURES — Branch.io App Trials, Installs & Reinstalls
   ##############################################################
   measure: app_trials_started {
     type: sum
@@ -1345,6 +1450,33 @@ view: marketing_attribution_test {
     label: "App Installs (Paid Only)"
     sql: ${TABLE}.app_install_count ;;
     filters: [event_type: "app_install", is_paid_branch: "yes"]
+  }
+
+  measure: app_reinstalls {
+    type: sum
+    label: "App Reinstalls"
+    sql: ${TABLE}.app_reinstall_count ;;
+    filters: [event_type: "app_reinstall"]
+  }
+
+  measure: app_reinstalls_paid {
+    type: sum
+    label: "App Reinstalls (Paid Only)"
+    sql: ${TABLE}.app_reinstall_count ;;
+    filters: [event_type: "app_reinstall", is_paid_branch: "yes"]
+  }
+
+  measure: app_installs_and_reinstalls {
+    type: number
+    label: "App Installs + Reinstalls"
+    sql: ${app_installs} + ${app_reinstalls} ;;
+  }
+
+  measure: app_reinstall_to_trial_rate {
+    type: number
+    label: "App Reinstall → Trial Rate"
+    sql: 1.0 * ${app_trials_started} / NULLIF(${app_reinstalls}, 0) ;;
+    value_format_name: percent_2
   }
 
   measure: total_trials_started {
@@ -1637,7 +1769,9 @@ view: marketing_attribution_test {
     fields: [
       campaign_name, campaign_content, marketing_platform, surface, device_os,
       campaign_medium, web_trials_started, app_trials_started, app_installs,
+      app_reinstalls, app_installs_and_reinstalls,
       total_trials_started, app_share_of_trials, app_install_to_trial_rate,
+      app_reinstall_to_trial_rate,
       free_trials_started_weighted, total_converted, total_reacquisition,
       avg_touches_per_trial, avg_order_value, pct_yearly_plan, pct_monthly_plan,
       avg_quality_score, quality_grade
