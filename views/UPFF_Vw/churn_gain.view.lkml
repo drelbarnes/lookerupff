@@ -5,28 +5,31 @@
 # across web (Chargebee) and Vimeo OTT platforms (iOS, tvOS, Android, etc.).
 #
 # Event categories tracked (via `status` column):
-#   - churn         → cancellations (excluding payment-failure dunning)
-#   - paused        → web subscriptions paused
-#   - converted     → free trial → paid conversions
-#   - reacquisition → previously cancelled subscriptions reactivated/resumed
-#   - dunning       → cancellations caused by payment failures
-#   - rolling_churn → 30-day rolling churn user counts (from rolling_platform)
-#   - rolling_total → 30-day rolling total user counts (from rolling_platform)
+#   - churn         -> cancellations (excluding payment-failure dunning)
+#   - paused        -> web subscriptions paused
+#   - converted     -> free trial -> paid conversions
+#   - reacquisition -> previously cancelled subscriptions reactivated/resumed
+#   - dunning       -> cancellations caused by payment failures
+#   - rolling_churn -> 30-day rolling churn user counts (from rolling_platform)
+#   - rolling_total -> 30-day rolling total user counts (from rolling_platform)
 #
 # Sources:
 #   - chargebee_webhook_events.subscription_cancelled / activated / reactivated /
-#     resumed / paused → web events
-#   - customers.new_customers → Vimeo OTT conversion + reacquisition events
-#   - vimeo_ott_webhook.customer_product_expired → Vimeo OTT churn
-#   - UPFF_analytics_Vw_v2 → platform/billing_period attribution for Vimeo users
-#   - rolling_platform → precomputed 30-day rolling counts
+#     resumed / paused -> web events
+#   - customers.new_customers -> Vimeo OTT conversion + reacquisition events
+#   - vimeo_ott_webhook.customer_product_expired -> Vimeo OTT churn
+#   - UPFF_analytics_Vw_v2 -> platform/billing_period attribution for Vimeo users
+#   - rolling_platform -> precomputed 30-day rolling counts
 #
 # Output columns: user_count, report_date, billing_period, status, platform
 #
 # Incremental config:
 #   - Increment key: report_date
-#   - Increment offset: 30 days (rebuilds the last 30 days on each run)
+#   - Increment offset: 8 days (rebuilds the last 8 days on each run)
 #   - Trigger: churn_gain_datagroup (daily at 10:30 AM ET)
+#
+# FIX: all incrementcondition tags removed from inner CTEs. A single
+# incrementcondition tag on the final SELECT is the only injection point.
 ################################################################################
 
 view: churn_gain {
@@ -43,7 +46,6 @@ view: churn_gain {
         SELECT *
         FROM ${UPFF_analytics_Vw_v2.SQL_TABLE_NAME}
         WHERE report_date >= '2026-01-01'
-          AND {% incrementcondition %} report_date {% endincrementcondition %}
       ),
 
       chargebee_cancelled_pre AS (
@@ -75,7 +77,6 @@ view: churn_gain {
       chargebee_cancelled AS (
       SELECT user_id, billing_period, report_date, platform
       FROM chargebee_cancelled_pre
-      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
       ),
 
       vm_user AS (
@@ -90,10 +91,10 @@ view: churn_gain {
 
       vimeo0_pre AS (
       SELECT DISTINCT
-      CAST(customer_id AS VARCHAR) AS user_id,
-      subscription_frequency::VARCHAR AS billing_period,
-      event_type::VARCHAR AS event_type,
-      DATE(event_occurred_at) AS report_date
+      CAST(customer_id AS VARCHAR)       AS user_id,
+      subscription_frequency::VARCHAR    AS billing_period,
+      event_type::VARCHAR                AS event_type,
+      DATE(event_occurred_at)            AS report_date
       FROM customers.new_customers
       WHERE subscription_frequency != 'custom'
       ),
@@ -101,7 +102,6 @@ view: churn_gain {
       vimeo0 AS (
       SELECT user_id, billing_period, event_type, report_date
       FROM vimeo0_pre
-      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
       ),
 
       vimeo AS (
@@ -114,12 +114,12 @@ view: churn_gain {
       FROM vimeo0 b
       LEFT JOIN vm_user a
       ON a.report_date = b.report_date
-      AND a.user_id = b.user_id
+      AND a.user_id     = b.user_id
       ),
 
       vm_pre AS (
       SELECT
-      DATE("timestamp") AS report_date,
+      DATE("timestamp")        AS report_date,
       CAST(user_id AS VARCHAR) AS user_id
       FROM vimeo_ott_webhook.customer_product_expired
       ),
@@ -127,7 +127,6 @@ view: churn_gain {
       vm AS (
       SELECT report_date, user_id
       FROM vm_pre
-      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
       ),
 
       vm2 AS (
@@ -139,7 +138,7 @@ view: churn_gain {
       FROM vm a
       LEFT JOIN vm_user b
       ON a.report_date = b.report_date
-      AND a.user_id = b.user_id
+      AND a.user_id     = b.user_id
       ),
 
       cancelled_user_count AS (
@@ -165,7 +164,7 @@ view: churn_gain {
       re_acquisitions_pre AS (
       SELECT
       DATE(DATEADD(HOUR, +18, timestamp)) AS report_date,
-      content_subscription_id::VARCHAR AS user_id,
+      content_subscription_id::VARCHAR    AS user_id,
       CASE
       WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'::VARCHAR
       ELSE 'yearly'::VARCHAR
@@ -178,7 +177,7 @@ view: churn_gain {
 
       SELECT
       DATE(DATEADD(HOUR, +18, timestamp)) AS report_date,
-      content_subscription_id::VARCHAR AS user_id,
+      content_subscription_id::VARCHAR    AS user_id,
       CASE
       WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'::VARCHAR
       ELSE 'yearly'::VARCHAR
@@ -191,7 +190,6 @@ view: churn_gain {
       re_acquisitions AS (
       SELECT report_date, user_id, billing_period, platform
       FROM re_acquisitions_pre
-      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
 
       UNION ALL
 
@@ -216,8 +214,8 @@ view: churn_gain {
 
       trial_conversion_pre AS (
       SELECT
-      DATE(received_at) AS report_date,
-      content_subscription_id::VARCHAR AS user_id,
+      DATE(received_at)                   AS report_date,
+      content_subscription_id::VARCHAR    AS user_id,
       CASE
       WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'::VARCHAR
       ELSE 'yearly'::VARCHAR
@@ -230,7 +228,6 @@ view: churn_gain {
       trial_conversion AS (
       SELECT report_date, user_id, billing_period, platform
       FROM trial_conversion_pre
-      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
 
       UNION ALL
 
@@ -255,8 +252,8 @@ view: churn_gain {
 
       dunning_pre AS (
       SELECT
-      content_subscription_id::VARCHAR AS user_id,
-      'charge_failed'::VARCHAR AS status,
+      content_subscription_id::VARCHAR    AS user_id,
+      'charge_failed'::VARCHAR            AS status,
       CASE
       WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'::VARCHAR
       ELSE 'yearly'::VARCHAR
@@ -280,7 +277,6 @@ view: churn_gain {
       dunning AS (
       SELECT user_id, status, billing_period, report_date, platform
       FROM dunning_pre
-      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
       ),
 
       dunning_count AS (
@@ -296,7 +292,7 @@ view: churn_gain {
       paused_pre AS (
       SELECT
       DATE(DATEADD(HOUR, +18, timestamp)) AS report_date,
-      content_subscription_id::VARCHAR AS user_id,
+      content_subscription_id::VARCHAR    AS user_id,
       CASE
       WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'::VARCHAR
       ELSE 'yearly'::VARCHAR
@@ -309,7 +305,6 @@ view: churn_gain {
       paused AS (
       SELECT report_date, user_id, billing_period, platform
       FROM paused_pre
-      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
       ),
 
       paused_count AS (
@@ -323,53 +318,15 @@ view: churn_gain {
       ),
 
       result AS (
-      SELECT
-      user_count,
-      report_date,
-      billing_period,
-      platform,
-      'churn'::VARCHAR AS status
-      FROM cancelled_user_count
-
+      SELECT user_count, report_date, billing_period, platform, 'churn'::VARCHAR        AS status FROM cancelled_user_count
       UNION ALL
-
-      SELECT
-      user_count,
-      report_date,
-      billing_period,
-      platform,
-      'paused'::VARCHAR AS status
-      FROM paused_count
-
+      SELECT user_count, report_date, billing_period, platform, 'paused'::VARCHAR       AS status FROM paused_count
       UNION ALL
-
-      SELECT
-      user_count,
-      report_date,
-      billing_period,
-      platform,
-      'converted'::VARCHAR AS status
-      FROM conversion_count
-
+      SELECT user_count, report_date, billing_period, platform, 'converted'::VARCHAR    AS status FROM conversion_count
       UNION ALL
-
-      SELECT
-      user_count,
-      report_date,
-      billing_period,
-      platform,
-      'reacquisition'::VARCHAR AS status
-      FROM re_acquisition_count
-
+      SELECT user_count, report_date, billing_period, platform, 'reacquisition'::VARCHAR AS status FROM re_acquisition_count
       UNION ALL
-
-      SELECT
-      user_count,
-      report_date,
-      billing_period,
-      platform,
-      'dunning'::VARCHAR AS status
-      FROM dunning_count
+      SELECT user_count, report_date, billing_period, platform, 'dunning'::VARCHAR      AS status FROM dunning_count
       ),
 
       result2 AS (
@@ -392,66 +349,34 @@ view: churn_gain {
       total_rolling_monthly,
       total_rolling_yearly
       FROM ${rolling_platform.SQL_TABLE_NAME}
-      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
       ),
 
       rolling_churn AS (
-      SELECT
-      report_date,
-      platform,
-      rolling_30_day_unique_user_count_monthly AS user_count,
-      'monthly'::VARCHAR AS billing_period,
-      'rolling_churn'::VARCHAR AS status
-      FROM churn_rate
-
+      SELECT report_date, platform, rolling_30_day_unique_user_count_monthly AS user_count, 'monthly'::VARCHAR AS billing_period, 'rolling_churn'::VARCHAR AS status FROM churn_rate
       UNION ALL
-
-      SELECT
-      report_date,
-      platform,
-      total_rolling_monthly AS user_count,
-      'monthly'::VARCHAR AS billing_period,
-      'rolling_total'::VARCHAR AS status
-      FROM churn_rate
-
+      SELECT report_date, platform, total_rolling_monthly AS user_count,                    'monthly'::VARCHAR AS billing_period, 'rolling_total'::VARCHAR AS status FROM churn_rate
       UNION ALL
-
-      SELECT
-      report_date,
-      platform,
-      rolling_30_day_unique_user_count_yearly AS user_count,
-      'yearly'::VARCHAR AS billing_period,
-      'rolling_churn'::VARCHAR AS status
-      FROM churn_rate
-
+      SELECT report_date, platform, rolling_30_day_unique_user_count_yearly AS user_count,  'yearly'::VARCHAR  AS billing_period, 'rolling_churn'::VARCHAR AS status FROM churn_rate
       UNION ALL
-
-      SELECT
-      report_date,
-      platform,
-      total_rolling_yearly AS user_count,
-      'yearly'::VARCHAR AS billing_period,
-      'rolling_total'::VARCHAR AS status
-      FROM churn_rate
+      SELECT report_date, platform, total_rolling_yearly AS user_count,                     'yearly'::VARCHAR  AS billing_period, 'rolling_total'::VARCHAR AS status FROM churn_rate
       ),
 
       combined AS (
-      SELECT user_count, report_date, billing_period, status, platform
-      FROM result2
-
+      SELECT user_count, report_date, billing_period, status, platform FROM result2
       UNION ALL
-
-      SELECT user_count, report_date, billing_period, status, platform
-      FROM rolling_churn
+      SELECT user_count, report_date, billing_period, status, platform FROM rolling_churn
       )
 
       SELECT
-      CAST(user_count AS BIGINT) AS user_count,
-      CAST(report_date AS DATE) AS report_date,
+      CAST(user_count    AS BIGINT)  AS user_count,
+      CAST(report_date   AS DATE)    AS report_date,
       CAST(billing_period AS VARCHAR) AS billing_period,
-      CAST(status AS VARCHAR) AS status,
-      CAST(platform AS VARCHAR) AS platform
+      CAST(status        AS VARCHAR) AS status,
+      CAST(platform      AS VARCHAR) AS platform
       FROM combined
+      WHERE (
+      {% incrementcondition %} report_date {% endincrementcondition %}
+      )
       ;;
   }
 

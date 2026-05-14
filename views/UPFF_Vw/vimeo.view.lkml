@@ -8,9 +8,12 @@ view: vimeo {
     sortkeys: ["report_date"]
 
     sql:
+      -- FIX: all incrementcondition tags removed from inner CTEs (platform,
+      -- customers, chargebee_re_acquisition). A single incrementcondition tag
+      -- on the final SELECT is the only injection point.
       WITH platform_pre AS (
         SELECT
-          CAST(user_id AS VARCHAR) AS user_id,
+          CAST(user_id AS VARCHAR)           AS user_id,
           platform,
           TO_DATE(report_date, 'YYYY-MM-DD') AS report_date
         FROM customers.all_customers
@@ -21,13 +24,12 @@ view: vimeo {
       platform AS (
       SELECT user_id, platform, report_date
       FROM platform_pre
-      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
       ),
 
       customers_pre AS (
       SELECT DISTINCT
-      CAST(customer_id AS VARCHAR) AS user_id,
-      subscription_frequency AS billing_period,
+      CAST(customer_id AS VARCHAR)              AS user_id,
+      subscription_frequency                    AS billing_period,
       event_type,
       DATE(DATEADD(HOUR, -5, event_occurred_at)) AS report_date
       FROM customers.new_customers
@@ -38,7 +40,6 @@ view: vimeo {
       customers AS (
       SELECT user_id, billing_period, event_type, report_date
       FROM customers_pre
-      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
       ),
 
       chargebee_re_acquisition_pre AS (
@@ -72,7 +73,6 @@ view: vimeo {
       chargebee_re_acquisition AS (
       SELECT user_id, platform, billing_period, event_type, report_date
       FROM chargebee_re_acquisition_pre
-      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
       ),
 
       vimeo AS (
@@ -85,9 +85,11 @@ view: vimeo {
       FROM customers b
       LEFT JOIN platform a
       ON a.report_date = b.report_date
-      AND b.user_id = a.user_id
+      AND b.user_id     = a.user_id
       )
 
+      SELECT user_id, platform, billing_period, event_type, report_date
+      FROM (
       SELECT user_id, platform, billing_period, event_type, report_date
       FROM vimeo
 
@@ -95,6 +97,10 @@ view: vimeo {
 
       SELECT user_id, platform, billing_period, event_type, report_date
       FROM chargebee_re_acquisition
+      ) combined
+      WHERE (
+      {% incrementcondition %} report_date {% endincrementcondition %}
+      )
       ;;
   }
 
