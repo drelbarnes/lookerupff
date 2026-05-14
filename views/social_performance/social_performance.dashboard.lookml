@@ -7,8 +7,8 @@
   layout: newspaper
 
   filters:
-    - name: snapshot_date
-      title: "Date range (snapshot / publish)"
+    - name: agorapulse_snapshot_date
+      title: "Agorapulse snapshot / publish date"
       type: field_filter
       model: social_performance
       explore: social_daily_snapshot
@@ -30,6 +30,27 @@
       explore: social_daily_snapshot
       field: social_daily_snapshot.platform
 
+    - name: marketing_attribution_attribution_model
+      title: "Marketing Attribution Test Attribution Model"
+      type: field_filter
+      model: social_performance
+      explore: marketing_attribution_test
+      field: marketing_attribution_test.attribution_model
+
+    - name: marketing_attribution_attribution_window
+      title: "Marketing Attribution Test Attribution Window"
+      type: field_filter
+      model: social_performance
+      explore: marketing_attribution_test
+      field: marketing_attribution_test.attribution_window_days
+
+    - name: marketing_attribution_campaign_name
+      title: "Marketing Attribution Test Campaign Name"
+      type: field_filter
+      model: social_performance
+      explore: marketing_attribution_test
+      field: marketing_attribution_test.campaign_name
+
   elements:
     - name: total_posts_kpi
       title: "Total posts"
@@ -46,7 +67,7 @@
         state: collapsed
         display: hover
       listen:
-        snapshot_date: agorapulse_post_performance.publishing_date
+        agorapulse_snapshot_date: agorapulse_post_performance.publishing_date
         brand: agorapulse_post_performance.brand_canonical
         platform: agorapulse_post_performance.platform
 
@@ -61,7 +82,7 @@
       height: 4
       measures: [social_daily_snapshot.total_impressions]
       listen:
-        snapshot_date: social_daily_snapshot.snapshot_date_date
+        agorapulse_snapshot_date: social_daily_snapshot.snapshot_date_date
         brand: social_daily_snapshot.brand_canonical
         platform: social_daily_snapshot.platform
 
@@ -76,7 +97,7 @@
       height: 4
       measures: [social_daily_snapshot.total_video_views]
       listen:
-        snapshot_date: social_daily_snapshot.snapshot_date_date
+        agorapulse_snapshot_date: social_daily_snapshot.snapshot_date_date
         brand: social_daily_snapshot.brand_canonical
         platform: social_daily_snapshot.platform
 
@@ -91,7 +112,7 @@
       height: 4
       measures: [social_daily_snapshot.avg_engagement_rate]
       listen:
-        snapshot_date: social_daily_snapshot.snapshot_date_date
+        agorapulse_snapshot_date: social_daily_snapshot.snapshot_date_date
         brand: social_daily_snapshot.brand_canonical
         platform: social_daily_snapshot.platform
 
@@ -113,7 +134,10 @@
         state: collapsed
         display: hover
       listen:
-        snapshot_date: marketing_attribution_test.report_date_date
+        agorapulse_snapshot_date: marketing_attribution_test.report_date_date
+        marketing_attribution_attribution_model: marketing_attribution_test.attribution_model
+        marketing_attribution_attribution_window: marketing_attribution_test.attribution_window_days
+        marketing_attribution_campaign_name: marketing_attribution_test.campaign_name
 
     - name: organic_social_free_trials_started_kpi
       title: "Free trials started (organic social, web)"
@@ -133,47 +157,10 @@
         state: collapsed
         display: hover
       listen:
-        snapshot_date: marketing_attribution_test.report_date_date
-
-    - name: organic_social_free_trials_converted_kpi
-      title: "Free trials converted (organic social, web)"
-      model: social_performance
-      explore: marketing_attribution_test
-      type: single_value
-      row: 4
-      col: 8
-      width: 4
-      height: 4
-      measures: [marketing_attribution_test.free_trials_converted]
-      filters:
-        marketing_attribution_test.marketing_platform: "Organic Social"
-        marketing_attribution_test.surface: "web"
-      note:
-        text: "Distinct users activated from free trial under same attribution filters; Organic Social + web only."
-        state: collapsed
-        display: hover
-      listen:
-        snapshot_date: marketing_attribution_test.report_date_date
-
-    - name: organic_social_reacquisitions_kpi
-      title: "Reacquisitions (organic social, web)"
-      model: social_performance
-      explore: marketing_attribution_test
-      type: single_value
-      row: 4
-      col: 12
-      width: 4
-      height: 4
-      measures: [marketing_attribution_test.reacquisitions]
-      filters:
-        marketing_attribution_test.marketing_platform: "Organic Social"
-        marketing_attribution_test.surface: "web"
-      note:
-        text: "Reacquisition conversion rows with primary attribution; Organic Social + web only."
-        state: collapsed
-        display: hover
-      listen:
-        snapshot_date: marketing_attribution_test.report_date_date
+        agorapulse_snapshot_date: marketing_attribution_test.report_date_date
+        marketing_attribution_attribution_model: marketing_attribution_test.attribution_model
+        marketing_attribution_attribution_window: marketing_attribution_test.attribution_window_days
+        marketing_attribution_campaign_name: marketing_attribution_test.campaign_name
 
     - name: organic_social_trial_to_paid_kpi
       title: "Trial to paid conversion rate (organic social, web)"
@@ -181,7 +168,7 @@
       explore: marketing_attribution_test
       type: single_value
       row: 4
-      col: 16
+      col: 8
       width: 4
       height: 4
       measures: [marketing_attribution_test.trial_to_paid_conversion_rate]
@@ -193,24 +180,56 @@
         state: collapsed
         display: hover
       listen:
-        snapshot_date: marketing_attribution_test.report_date_date
+        agorapulse_snapshot_date: marketing_attribution_test.report_date_date
+        marketing_attribution_attribution_model: marketing_attribution_test.attribution_model
+        marketing_attribution_attribution_window: marketing_attribution_test.attribution_window_days
+        marketing_attribution_campaign_name: marketing_attribution_test.campaign_name
 
-    - name: free_trials_organic_kpi
-      title: "Free trials from organic"
+    - name: organic_social_free_trials_converted_kpi
+      title: "Free trials converted (organic social, web)"
       model: social_performance
-      explore: free_trials_from_organic
+      explore: marketing_attribution_test
       type: single_value
       row: 4
-      col: 20
+      col: 12
       width: 4
       height: 4
-      measures: [free_trials_from_organic.organic_free_trial_ip_count]
+      measures: [marketing_attribution_test.free_trials_converted]
+      filters:
+        marketing_attribution_test.marketing_platform: "Organic Social"
+        marketing_attribution_test.surface: "web"
       note:
-        text: "Segment: distinct context_ip on order_completed with a same-window pages hit where UTM medium is organic social (docs/07). Date range filter maps to organic page timestamps. Brand/platform do not apply (not on this explore)."
+        text: "Distinct users activated from free trial under same attribution filters; Organic Social + web only."
         state: collapsed
         display: hover
       listen:
-        snapshot_date: free_trials_from_organic.free_trials_organic_date_range
+        agorapulse_snapshot_date: marketing_attribution_test.report_date_date
+        marketing_attribution_attribution_model: marketing_attribution_test.attribution_model
+        marketing_attribution_attribution_window: marketing_attribution_test.attribution_window_days
+        marketing_attribution_campaign_name: marketing_attribution_test.campaign_name
+
+    - name: organic_social_reacquisitions_kpi
+      title: "Reacquisitions (organic social, web)"
+      model: social_performance
+      explore: marketing_attribution_test
+      type: single_value
+      row: 4
+      col: 16
+      width: 4
+      height: 4
+      measures: [marketing_attribution_test.reacquisitions]
+      filters:
+        marketing_attribution_test.marketing_platform: "Organic Social"
+        marketing_attribution_test.surface: "web"
+      note:
+        text: "Reacquisition conversion rows with primary attribution; Organic Social + web only."
+        state: collapsed
+        display: hover
+      listen:
+        agorapulse_snapshot_date: marketing_attribution_test.report_date_date
+        marketing_attribution_attribution_model: marketing_attribution_test.attribution_model
+        marketing_attribution_attribution_window: marketing_attribution_test.attribution_window_days
+        marketing_attribution_campaign_name: marketing_attribution_test.campaign_name
 
     - name: impressions_over_time
       title: "Impressions over time by platform"
@@ -228,7 +247,7 @@
       height: 10
       stacking: ""
       listen:
-        snapshot_date: social_daily_snapshot.snapshot_date_date
+        agorapulse_snapshot_date: social_daily_snapshot.snapshot_date_date
         brand: social_daily_snapshot.brand_canonical
         platform: social_daily_snapshot.platform
 
@@ -248,7 +267,7 @@
       height: 10
       stacking: ""
       listen:
-        snapshot_date: social_daily_snapshot.snapshot_date_date
+        agorapulse_snapshot_date: social_daily_snapshot.snapshot_date_date
         brand: social_daily_snapshot.brand_canonical
         platform: social_daily_snapshot.platform
 
@@ -270,7 +289,7 @@
       x_axis_gridlines: false
       y_axis_gridlines: false
       listen:
-        snapshot_date: social_daily_snapshot.snapshot_date_date
+        agorapulse_snapshot_date: social_daily_snapshot.snapshot_date_date
         brand: social_daily_snapshot.brand_canonical
         platform: social_daily_snapshot.platform
 
@@ -297,7 +316,7 @@
         state: collapsed
         display: hover
       listen:
-        snapshot_date: agorapulse_post_performance.publishing_date
+        agorapulse_snapshot_date: agorapulse_post_performance.publishing_date
         brand: agorapulse_post_performance.brand_canonical
         platform: agorapulse_post_performance.platform
 
@@ -323,6 +342,6 @@
         state: collapsed
         display: hover
       listen:
-        snapshot_date: social_daily_snapshot.snapshot_date_date
+        agorapulse_snapshot_date: social_daily_snapshot.snapshot_date_date
         brand: social_daily_snapshot.brand_canonical
         platform: social_daily_snapshot.platform
