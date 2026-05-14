@@ -8,7 +8,7 @@
 
   filters:
     - name: agorapulse_snapshot_date
-      title: "Date Range"
+      title: "Social Posts Publish Date Range"
       type: field_filter
       model: social_performance
       explore: social_daily_snapshot
@@ -233,12 +233,46 @@
         marketing_attribution_attribution_window: marketing_attribution_test.attribution_window_days
         marketing_attribution_campaign_name: marketing_attribution_test.campaign_name
 
+    - name: campaign_subscription_events_organic_social
+      title: "Campaign Subscription Events (Organic Social)"
+      model: social_performance
+      explore: marketing_attribution_test
+      type: looker_grid
+      row: 8
+      col: 0
+      width: 24
+      height: 14
+      dimensions:
+        - marketing_attribution_test.campaign_name
+        - marketing_attribution_test.campaign_content
+        - marketing_attribution_test.marketing_platform
+        - marketing_attribution_test.campaign_medium
+      measures:
+        - marketing_attribution_test.free_trials_started
+        - marketing_attribution_test.free_trials_converted
+        - marketing_attribution_test.reacquisitions
+      filters:
+        marketing_attribution_test.marketing_platform: "Organic Social"
+        marketing_attribution_test.surface: "web"
+      sorts:
+        - marketing_attribution_test.free_trials_started desc
+      limit: 200
+      note:
+        text: "Primary-attributed conversion rows in the marketing attribution PDT, Organic Social + web. Measures match KPI definitions: Free trials started (count), Free trials converted (distinct users activated), Reacquisitions (count). Date filter → report_date; attribution model and window from dashboard."
+        state: collapsed
+        display: hover
+      listen:
+        agorapulse_snapshot_date: marketing_attribution_test.report_date_date
+        marketing_attribution_attribution_model: marketing_attribution_test.attribution_model
+        marketing_attribution_attribution_window: marketing_attribution_test.attribution_window_days
+        marketing_attribution_campaign_name: marketing_attribution_test.campaign_name
+
     - name: impressions_over_time
       title: "Impressions over time by platform"
       model: social_performance
       explore: social_daily_snapshot
       type: looker_area
-      row: 8
+      row: 22
       col: 0
       dimensions: [social_daily_snapshot.snapshot_date_date]
       pivots: [social_daily_snapshot.platform]
@@ -258,7 +292,7 @@
       model: social_performance
       explore: social_daily_snapshot
       type: looker_area
-      row: 18
+      row: 32
       col: 0
       dimensions: [social_daily_snapshot.snapshot_date_date]
       pivots: [social_daily_snapshot.platform]
@@ -278,7 +312,7 @@
       model: social_performance
       explore: social_daily_snapshot
       type: looker_bar
-      row: 28
+      row: 42
       col: 0
       width: 12
       height: 10
@@ -301,7 +335,7 @@
       model: social_performance
       explore: agorapulse_post_performance
       type: looker_bar
-      row: 38
+      row: 52
       col: 0
       width: 24
       height: 10
@@ -327,7 +361,7 @@
       model: social_performance
       explore: social_daily_snapshot
       type: looker_bar
-      row: 28
+      row: 42
       col: 12
       width: 12
       height: 10
