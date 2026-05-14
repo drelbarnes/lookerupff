@@ -1,6 +1,6 @@
 # model: must match the .model.lkml where explore social_daily_snapshot is defined.
-# UPTV production: explore lives in upff.model.lkml → use model: upff.
-# If you use only views/social_performance/social_performance.model.lkml (standalone), change every "upff" below to social_performance.
+# This mirror uses views/social_performance/social_performance.model.lkml → model: social_performance on all filters and tiles.
+# UPTV production: if explores live in upff.model.lkml instead, change every "social_performance" below to upff.
 
 - dashboard: social_performance
   title: "Social Performance Dashboard"
@@ -10,7 +10,7 @@
     - name: snapshot_date
       title: "Date range (snapshot / publish)"
       type: field_filter
-      model: upff
+      model: social_performance
       explore: social_daily_snapshot
       field: social_daily_snapshot.snapshot_date_date
       default_value: "last 30 days"
@@ -19,21 +19,21 @@
     - name: brand
       title: "Brand"
       type: field_filter
-      model: upff
+      model: social_performance
       explore: social_daily_snapshot
       field: social_daily_snapshot.brand_canonical
 
     - name: platform
       title: "Platform"
       type: field_filter
-      model: upff
+      model: social_performance
       explore: social_daily_snapshot
       field: social_daily_snapshot.platform
 
   elements:
     - name: total_posts_kpi
       title: "Total posts"
-      model: upff
+      model: social_performance
       explore: agorapulse_post_performance
       type: single_value
       row: 0
@@ -52,7 +52,7 @@
 
     - name: total_impressions_kpi
       title: "Total impressions"
-      model: upff
+      model: social_performance
       explore: social_daily_snapshot
       type: single_value
       row: 0
@@ -67,7 +67,7 @@
 
     - name: total_video_views_kpi
       title: "Total video views"
-      model: upff
+      model: social_performance
       explore: social_daily_snapshot
       type: single_value
       row: 0
@@ -82,7 +82,7 @@
 
     - name: engagement_rate_kpi
       title: "Engagement rate"
-      model: upff
+      model: social_performance
       explore: social_daily_snapshot
       type: single_value
       row: 0
@@ -97,7 +97,7 @@
 
     - name: free_trials_organic_kpi
       title: "Free trials from organic"
-      model: upff
+      model: social_performance
       explore: free_trials_from_organic
       type: single_value
       row: 0
@@ -114,7 +114,7 @@
 
     - name: impressions_over_time
       title: "Impressions over time by platform"
-      model: upff
+      model: social_performance
       explore: social_daily_snapshot
       type: looker_area
       row: 4
@@ -134,7 +134,7 @@
 
     - name: video_views_over_time
       title: "Video views over time by platform"
-      model: upff
+      model: social_performance
       explore: social_daily_snapshot
       type: looker_area
       row: 14
@@ -154,7 +154,7 @@
 
     - name: brand_performance_summary
       title: "Brand performance summary"
-      model: upff
+      model: social_performance
       explore: social_daily_snapshot
       type: looker_bar
       row: 24
@@ -177,7 +177,7 @@
     # Horizontal bar: distinct posts by brand (publish date + filters). Matches KPI “Total posts” logic.
     - name: posts_by_brand
       title: "Posts by brand"
-      model: upff
+      model: social_performance
       explore: agorapulse_post_performance
       type: looker_bar
       row: 34
@@ -203,7 +203,7 @@
 
     - name: platform_top_channels_impressions
       title: "Top channels by impressions"
-      model: upff
+      model: social_performance
       explore: social_daily_snapshot
       type: looker_bar
       row: 24
