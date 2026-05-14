@@ -31,33 +31,13 @@
       field: social_daily_snapshot.platform
 
   elements:
-    - name: organic_social_site_visits_kpi
-      title: "Organic social site visits"
-      model: social_performance
-      explore: marketing_attribution_test
-      type: single_value
-      row: 0
-      col: 0
-      width: 4
-      height: 4
-      measures: [marketing_attribution_test.total_visits]
-      filters:
-        marketing_attribution_test.marketing_platform: "Organic Social"
-        marketing_attribution_test.surface: "web"
-      note:
-        text: "Marketing attribution PDT: count of page_visit rows where marketing_platform = Organic Social and surface = web. Date range filter maps to report_date on attribution explore (not Agorapulse snapshot date)."
-        state: collapsed
-        display: hover
-      listen:
-        snapshot_date: marketing_attribution_test.report_date_date
-
     - name: total_posts_kpi
       title: "Total posts"
       model: social_performance
       explore: agorapulse_post_performance
       type: single_value
       row: 0
-      col: 4
+      col: 0
       width: 4
       height: 4
       measures: [agorapulse_post_performance.total_posts]
@@ -76,7 +56,7 @@
       explore: social_daily_snapshot
       type: single_value
       row: 0
-      col: 8
+      col: 4
       width: 4
       height: 4
       measures: [social_daily_snapshot.total_impressions]
@@ -91,7 +71,7 @@
       explore: social_daily_snapshot
       type: single_value
       row: 0
-      col: 12
+      col: 8
       width: 4
       height: 4
       measures: [social_daily_snapshot.total_video_views]
@@ -106,7 +86,7 @@
       explore: social_daily_snapshot
       type: single_value
       row: 0
-      col: 16
+      col: 12
       width: 4
       height: 4
       measures: [social_daily_snapshot.avg_engagement_rate]
@@ -115,12 +95,112 @@
         brand: social_daily_snapshot.brand_canonical
         platform: social_daily_snapshot.platform
 
+    - name: organic_social_site_visits_kpi
+      title: "Organic social site visits"
+      model: social_performance
+      explore: marketing_attribution_test
+      type: single_value
+      row: 4
+      col: 0
+      width: 4
+      height: 4
+      measures: [marketing_attribution_test.total_visits]
+      filters:
+        marketing_attribution_test.marketing_platform: "Organic Social"
+        marketing_attribution_test.surface: "web"
+      note:
+        text: "Marketing attribution PDT: page_visit rows, marketing_platform = Organic Social, surface = web. Date filter → report_date (not Agorapulse snapshot)."
+        state: collapsed
+        display: hover
+      listen:
+        snapshot_date: marketing_attribution_test.report_date_date
+
+    - name: organic_social_free_trials_started_kpi
+      title: "Free trials started (organic social, web)"
+      model: social_performance
+      explore: marketing_attribution_test
+      type: single_value
+      row: 4
+      col: 4
+      width: 4
+      height: 4
+      measures: [marketing_attribution_test.web_trials_started]
+      filters:
+        marketing_attribution_test.marketing_platform: "Organic Social"
+        marketing_attribution_test.surface: "web"
+      note:
+        text: "Web free trials with primary attribution (default last-touch) within attribution window; filtered to Organic Social in attribution PDT."
+        state: collapsed
+        display: hover
+      listen:
+        snapshot_date: marketing_attribution_test.report_date_date
+
+    - name: organic_social_free_trials_converted_kpi
+      title: "Free trials converted (organic social, web)"
+      model: social_performance
+      explore: marketing_attribution_test
+      type: single_value
+      row: 4
+      col: 8
+      width: 4
+      height: 4
+      measures: [marketing_attribution_test.free_trials_converted]
+      filters:
+        marketing_attribution_test.marketing_platform: "Organic Social"
+        marketing_attribution_test.surface: "web"
+      note:
+        text: "Distinct users activated from free trial under same attribution filters; Organic Social + web only."
+        state: collapsed
+        display: hover
+      listen:
+        snapshot_date: marketing_attribution_test.report_date_date
+
+    - name: organic_social_reacquisitions_kpi
+      title: "Reacquisitions (organic social, web)"
+      model: social_performance
+      explore: marketing_attribution_test
+      type: single_value
+      row: 4
+      col: 12
+      width: 4
+      height: 4
+      measures: [marketing_attribution_test.reacquisitions]
+      filters:
+        marketing_attribution_test.marketing_platform: "Organic Social"
+        marketing_attribution_test.surface: "web"
+      note:
+        text: "Reacquisition conversion rows with primary attribution; Organic Social + web only."
+        state: collapsed
+        display: hover
+      listen:
+        snapshot_date: marketing_attribution_test.report_date_date
+
+    - name: organic_social_trial_to_paid_kpi
+      title: "Trial to paid conversion rate (organic social, web)"
+      model: social_performance
+      explore: marketing_attribution_test
+      type: single_value
+      row: 4
+      col: 16
+      width: 4
+      height: 4
+      measures: [marketing_attribution_test.trial_to_paid_conversion_rate]
+      filters:
+        marketing_attribution_test.marketing_platform: "Organic Social"
+        marketing_attribution_test.surface: "web"
+      note:
+        text: "free_trials_converted ÷ web_trials_started for filtered rows; Explore default attribution model (parameters) applies."
+        state: collapsed
+        display: hover
+      listen:
+        snapshot_date: marketing_attribution_test.report_date_date
+
     - name: free_trials_organic_kpi
       title: "Free trials from organic"
       model: social_performance
       explore: free_trials_from_organic
       type: single_value
-      row: 0
+      row: 4
       col: 20
       width: 4
       height: 4
@@ -137,7 +217,7 @@
       model: social_performance
       explore: social_daily_snapshot
       type: looker_area
-      row: 4
+      row: 8
       col: 0
       dimensions: [social_daily_snapshot.snapshot_date_date]
       pivots: [social_daily_snapshot.platform]
@@ -157,7 +237,7 @@
       model: social_performance
       explore: social_daily_snapshot
       type: looker_area
-      row: 14
+      row: 18
       col: 0
       dimensions: [social_daily_snapshot.snapshot_date_date]
       pivots: [social_daily_snapshot.platform]
@@ -177,7 +257,7 @@
       model: social_performance
       explore: social_daily_snapshot
       type: looker_bar
-      row: 24
+      row: 28
       col: 0
       width: 12
       height: 10
@@ -200,7 +280,7 @@
       model: social_performance
       explore: agorapulse_post_performance
       type: looker_bar
-      row: 34
+      row: 38
       col: 0
       width: 24
       height: 10
@@ -226,7 +306,7 @@
       model: social_performance
       explore: social_daily_snapshot
       type: looker_bar
-      row: 24
+      row: 28
       col: 12
       width: 12
       height: 10
