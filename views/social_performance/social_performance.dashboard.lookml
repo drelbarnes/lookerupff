@@ -31,13 +31,33 @@
       field: social_daily_snapshot.platform
 
   elements:
+    - name: organic_social_site_visits_kpi
+      title: "Organic social site visits"
+      model: social_performance
+      explore: marketing_attribution_test
+      type: single_value
+      row: 0
+      col: 0
+      width: 4
+      height: 4
+      measures: [marketing_attribution_test.total_visits]
+      filters:
+        marketing_attribution_test.marketing_platform: "Organic Social"
+        marketing_attribution_test.surface: "web"
+      note:
+        text: "Marketing attribution PDT: count of page_visit rows where marketing_platform = Organic Social and surface = web. Date range filter maps to report_date on attribution explore (not Agorapulse snapshot date)."
+        state: collapsed
+        display: hover
+      listen:
+        snapshot_date: marketing_attribution_test.report_date_date
+
     - name: total_posts_kpi
       title: "Total posts"
       model: social_performance
       explore: agorapulse_post_performance
       type: single_value
       row: 0
-      col: 0
+      col: 4
       width: 4
       height: 4
       measures: [agorapulse_post_performance.total_posts]
@@ -56,7 +76,7 @@
       explore: social_daily_snapshot
       type: single_value
       row: 0
-      col: 4
+      col: 8
       width: 4
       height: 4
       measures: [social_daily_snapshot.total_impressions]
@@ -71,7 +91,7 @@
       explore: social_daily_snapshot
       type: single_value
       row: 0
-      col: 8
+      col: 12
       width: 4
       height: 4
       measures: [social_daily_snapshot.total_video_views]
@@ -86,7 +106,7 @@
       explore: social_daily_snapshot
       type: single_value
       row: 0
-      col: 12
+      col: 16
       width: 4
       height: 4
       measures: [social_daily_snapshot.avg_engagement_rate]
@@ -101,7 +121,7 @@
       explore: free_trials_from_organic
       type: single_value
       row: 0
-      col: 16
+      col: 20
       width: 4
       height: 4
       measures: [free_trials_from_organic.organic_free_trial_ip_count]
