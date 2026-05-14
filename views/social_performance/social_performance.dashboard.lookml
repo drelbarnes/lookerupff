@@ -8,14 +8,37 @@
 
   filters:
     - name: agorapulse_snapshot_date
-      title: "Agorapulse snapshot / publish date"
+      title: "Date Range"
       type: field_filter
       model: social_performance
       explore: social_daily_snapshot
       field: social_daily_snapshot.snapshot_date_date
       default_value: "last 30 days"
 
-    # Use brand_canonical (not raw brand) so UPFF + UP Faith & Family roll up to one filter value.
+    - name: marketing_attribution_attribution_window
+      title: "Attribution Window"
+      type: field_filter
+      model: social_performance
+      explore: marketing_attribution_test
+      field: marketing_attribution_test.attribution_window_days
+
+    - name: marketing_attribution_attribution_model
+      title: "Attribution Model"
+      type: field_filter
+      model: social_performance
+      explore: marketing_attribution_test
+      field: marketing_attribution_test.attribution_model
+
+
+
+    - name: marketing_attribution_campaign_name
+      title: "Campaign Name"
+      type: field_filter
+      model: social_performance
+      explore: marketing_attribution_test
+      field: marketing_attribution_test.campaign_name
+
+       # Use brand_canonical (not raw brand) so UPFF + UP Faith & Family roll up to one filter value.
     - name: brand
       title: "Brand"
       type: field_filter
@@ -30,27 +53,6 @@
       explore: social_daily_snapshot
       field: social_daily_snapshot.platform
 
-    - name: marketing_attribution_attribution_model
-      title: "Marketing Attribution Test Attribution Model"
-      type: field_filter
-      model: social_performance
-      explore: marketing_attribution_test
-      field: marketing_attribution_test.attribution_model
-
-    - name: marketing_attribution_attribution_window
-      title: "Marketing Attribution Test Attribution Window"
-      type: field_filter
-      model: social_performance
-      explore: marketing_attribution_test
-      field: marketing_attribution_test.attribution_window_days
-
-    - name: marketing_attribution_campaign_name
-      title: "Marketing Attribution Test Campaign Name"
-      type: field_filter
-      model: social_performance
-      explore: marketing_attribution_test
-      field: marketing_attribution_test.campaign_name
-
   elements:
     - name: total_posts_kpi
       title: "Total posts"
@@ -59,7 +61,7 @@
       type: single_value
       row: 0
       col: 0
-      width: 4
+      width: 6
       height: 4
       measures: [agorapulse_post_performance.total_posts]
       note:
@@ -77,8 +79,8 @@
       explore: social_daily_snapshot
       type: single_value
       row: 0
-      col: 4
-      width: 4
+      col: 6
+      width: 6
       height: 4
       measures: [social_daily_snapshot.total_impressions]
       listen:
@@ -92,8 +94,8 @@
       explore: social_daily_snapshot
       type: single_value
       row: 0
-      col: 8
-      width: 4
+      col: 12
+      width: 6
       height: 4
       measures: [social_daily_snapshot.total_video_views]
       listen:
@@ -107,8 +109,8 @@
       explore: social_daily_snapshot
       type: single_value
       row: 0
-      col: 12
-      width: 4
+      col: 18
+      width: 6
       height: 4
       measures: [social_daily_snapshot.avg_engagement_rate]
       listen:
@@ -123,7 +125,7 @@
       type: single_value
       row: 4
       col: 0
-      width: 4
+      width: 5
       height: 4
       measures: [marketing_attribution_test.total_visits]
       filters:
@@ -145,8 +147,8 @@
       explore: marketing_attribution_test
       type: single_value
       row: 4
-      col: 4
-      width: 4
+      col: 5
+      width: 5
       height: 4
       measures: [marketing_attribution_test.web_trials_started]
       filters:
@@ -168,8 +170,8 @@
       explore: marketing_attribution_test
       type: single_value
       row: 4
-      col: 8
-      width: 4
+      col: 10
+      width: 5
       height: 4
       measures: [marketing_attribution_test.trial_to_paid_conversion_rate]
       filters:
@@ -191,8 +193,8 @@
       explore: marketing_attribution_test
       type: single_value
       row: 4
-      col: 12
-      width: 4
+      col: 15
+      width: 5
       height: 4
       measures: [marketing_attribution_test.free_trials_converted]
       filters:
@@ -214,7 +216,7 @@
       explore: marketing_attribution_test
       type: single_value
       row: 4
-      col: 16
+      col: 20
       width: 4
       height: 4
       measures: [marketing_attribution_test.reacquisitions]
