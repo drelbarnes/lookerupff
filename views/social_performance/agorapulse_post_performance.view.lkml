@@ -45,6 +45,12 @@ view: agorapulse_post_performance {
     sql: ${TABLE}.post_id ;;
   }
 
+  dimension: post_url {
+    label: "Post URL"
+    type: string
+    sql: ${TABLE}.post_url ;;
+  }
+
   dimension: event {
     label: "Event"
     type: string
@@ -58,5 +64,29 @@ view: agorapulse_post_performance {
     sql: COUNT(DISTINCT CASE WHEN ${TABLE}.post_id IS NOT NULL AND ${TABLE}.post_id <> '' THEN ${TABLE}.post_id END) ;;
     value_format_name: decimal_0
     description: "Distinct posts for current filters. Multiple Segment rows per post (backfill + rolling windows) count once."
+  }
+
+  measure: post_impressions {
+    label: "Post impressions (sum)"
+    type: sum
+    sql: COALESCE(${TABLE}.impressions_count, 0) ;;
+    value_format_name: decimal_0
+    description: "Sum of impressions_count for rows in the query; group by post_id for top-post ranking (see doc 07 §8)."
+  }
+
+  measure: post_engagements {
+    label: "Post engagements (sum)"
+    type: sum
+    sql: COALESCE(${TABLE}.engagement_count, 0) ;;
+    value_format_name: decimal_0
+    description: "Sum of engagement_count for rows in the query; context alongside impressions."
+  }
+
+  measure: post_video_views {
+    label: "Post video views (sum)"
+    type: sum
+    sql: COALESCE(${TABLE}.video_views_count, 0) ;;
+    value_format_name: decimal_0
+    description: "Sum of video_views_count for rows in the query; context alongside impressions."
   }
 }

@@ -267,12 +267,43 @@
         marketing_attribution_attribution_window: marketing_attribution_test.attribution_window_days
         marketing_attribution_campaign_name: marketing_attribution_test.campaign_name
 
+    - name: top_posts_by_impressions
+      title: "Top 20 posts by impressions (publish window)"
+      model: social_performance
+      explore: agorapulse_post_performance
+      type: looker_grid
+      row: 22
+      col: 0
+      width: 24
+      height: 10
+      dimensions:
+        - agorapulse_post_performance.post_id
+        - agorapulse_post_performance.publishing_date
+        - agorapulse_post_performance.brand_canonical
+        - agorapulse_post_performance.platform
+        - agorapulse_post_performance.post_url
+      measures:
+        - agorapulse_post_performance.post_impressions
+        - agorapulse_post_performance.post_engagements
+        - agorapulse_post_performance.post_video_views
+      sorts:
+        - agorapulse_post_performance.post_impressions desc
+      limit: 20
+      note:
+        text: "Rows grouped by post_id; ranked by SUM(impressions_count) in the selected publish-date range and brand/platform filters. Engagements and video views are summed for the same rows (context). Multiple Segment snapshots per post add into the sums—see doc 07 Social Post Snapshot if you need latest-row-only logic."
+        state: collapsed
+        display: hover
+      listen:
+        agorapulse_snapshot_date: agorapulse_post_performance.publishing_date
+        brand: agorapulse_post_performance.brand_canonical
+        platform: agorapulse_post_performance.platform
+
     - name: impressions_over_time
       title: "Impressions over time by platform"
       model: social_performance
       explore: social_daily_snapshot
       type: looker_area
-      row: 22
+      row: 32
       col: 0
       dimensions: [social_daily_snapshot.snapshot_date_date]
       pivots: [social_daily_snapshot.platform]
@@ -292,7 +323,7 @@
       model: social_performance
       explore: social_daily_snapshot
       type: looker_area
-      row: 32
+      row: 42
       col: 0
       dimensions: [social_daily_snapshot.snapshot_date_date]
       pivots: [social_daily_snapshot.platform]
@@ -312,7 +343,7 @@
       model: social_performance
       explore: social_daily_snapshot
       type: looker_bar
-      row: 42
+      row: 52
       col: 0
       width: 12
       height: 10
@@ -335,7 +366,7 @@
       model: social_performance
       explore: agorapulse_post_performance
       type: looker_bar
-      row: 52
+      row: 62
       col: 0
       width: 24
       height: 10
@@ -361,7 +392,7 @@
       model: social_performance
       explore: social_daily_snapshot
       type: looker_bar
-      row: 42
+      row: 52
       col: 12
       width: 12
       height: 10
