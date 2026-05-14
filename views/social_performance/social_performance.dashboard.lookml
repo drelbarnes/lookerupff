@@ -1,6 +1,6 @@
 # model: must match the .model.lkml where explore social_daily_snapshot is defined.
 # UPTV production: explore lives in upff.model.lkml → use model: upff.
-# If you use only lookml/models/social_snapshot.model.lkml, change every "upff" below to social_snapshot.
+# If you use only views/social_performance/social_performance.model.lkml (standalone), change every "upff" below to social_performance.
 
 - dashboard: social_performance
   title: "Social Performance Dashboard"
@@ -15,6 +15,7 @@
       field: social_daily_snapshot.snapshot_date_date
       default_value: "last 30 days"
 
+    # Use brand_canonical (not raw brand) so UPFF + UP Faith & Family roll up to one filter value.
     - name: brand
       title: "Brand"
       type: field_filter

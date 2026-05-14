@@ -27,9 +27,10 @@ view: agorapulse_post_performance {
       CASE
         WHEN LOWER(TRIM(${TABLE}.brand)) IN ('ovation', 'ovation tv', 'ovationtv') THEN 'Ovation TV'
         WHEN LOWER(TRIM(${TABLE}.brand)) IN ('aspire', 'aspire tv', 'aspiretv') THEN 'Aspire TV'
+        WHEN LOWER(TRIM(${TABLE}.brand)) IN ('upff', 'up faith & family', 'up faith and family') THEN 'UPFF'
         ELSE ${TABLE}.brand
       END ;;
-    description: "Same normalization as social_daily_snapshot.brand_canonical so dashboard Brand filter matches both explores."
+    description: "Same normalization as social_daily_snapshot.brand_canonical (including UPFF + UP Faith & Family as one) so dashboard Brand filter matches both explores."
   }
 
   dimension: platform {
