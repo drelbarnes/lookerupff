@@ -26,7 +26,7 @@ view: redshift_title_histogram {
               histogram AS
               (
               SELECT
-                count(user_id), max_view
+                count(user_id) AS viewers, max_view
               FROM qualified_views
               GROUP BY 2
               ORDER BY 2 ASC
@@ -53,6 +53,11 @@ view: redshift_title_histogram {
     measure: view_count {
       type: sum
       sql: ${TABLE}.view_count ;;
+    }
+
+    measure: viewers {
+      type: sum
+      sql: ${TABLE}.viewers ;;
     }
 
     dimension: count_ {
