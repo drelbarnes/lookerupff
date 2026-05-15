@@ -1498,8 +1498,8 @@ view: marketing_attribution_test {
 
   measure: total_trials_started {
     type: number
-    label: "Free Trials Started (Web + App)"
-    sql: ${web_trials_started} + ${app_trials_started} ;;
+    label: "Free Trials Started ( Web + App(Paid) )"
+    sql: ${web_trials_started} + ${app_trials_started_paid} ;;
   }
 
   measure: app_share_of_trials {
