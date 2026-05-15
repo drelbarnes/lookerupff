@@ -12,6 +12,11 @@ view: sub_count {
     indexes: ["report_date"]
 
     sql:
+      -- FIX: all incrementcondition tags removed from inner CTEs.
+      -- A single incrementcondition tag on the outermost SELECT (below)
+      -- is the only injection point. The params-style date guards in each
+      -- CTE still bound the full-rebuild window; the outer filter handles
+      -- the narrow incremental window on subsequent runs.
       SELECT
         user_count
         ,report_date
@@ -31,7 +36,6 @@ view: sub_count {
             ,billing_period
           FROM ${UPFF_analytics_Vw_v2.SQL_TABLE_NAME}
           WHERE status IN ('active', 'non_renewing', 'enabled')
-            AND {% incrementcondition %} report_date {% endincrementcondition %}
         ),
 
       trial AS (
@@ -41,13 +45,11 @@ view: sub_count {
       ,platform
       ,billing_period
       FROM ${free_trials.SQL_TABLE_NAME}
-      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
       ),
 
       active_ios AS (
       SELECT *
       FROM ${ios.SQL_TABLE_NAME}
-      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
       ),
 
       active_count_pre AS (
@@ -147,7 +149,6 @@ view: sub_count {
       ,platform
       ,billing_period
       FROM convert_dunning_count_pre
-      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
       ),
 
       total_dunning AS (
@@ -187,7 +188,6 @@ view: sub_count {
       ,platform
       ,billing_period
       FROM dunning_paid_count_pre
-      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
       ),
 
       total_dunning_paid AS (
@@ -226,7 +226,6 @@ view: sub_count {
       ,platform
       ,billing_period
       FROM dunning_cancelled_count_pre
-      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
       )
 
       SELECT
@@ -277,6 +276,9 @@ view: sub_count {
       ,'in_trial' AS status
       FROM total_trial_count
       ) result
+      WHERE (
+      {% incrementcondition %} report_date {% endincrementcondition %}
+      )
       ;;
   }
 
@@ -360,7 +362,7 @@ view: sub_count {
 datagroup: sub_count_datagroup {
   sql_trigger: SELECT TO_CHAR(
                    CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE())
-                   - INTERVAL '10 hour',
+                   - INTERVAL '6 hour',
                    'YYYY-MM-DD'
                ) ;;
   max_cache_age: "24 hours"

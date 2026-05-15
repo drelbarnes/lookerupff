@@ -13,6 +13,19 @@
 #       * Web page visits can arrive after their associated conversion
 #       * Retroactive attribution changes within ~1 week are captured
 #
+# FIX (FATAL_INCREMENTAL_ERROR):
+#   The prior version placed {% incrementcondition %} inside multiple inner CTEs
+#   (branch_app_trials, branch_app_installs, branch_app_reinstalls, and six
+#   branches of lifecycle_events). Looker's incremental PDT engine supports
+#   exactly ONE injection point. Multiple tags — or tags inside UNION ALL branches
+#   — cause Looker to emit the literal string FATAL_INCREMENTAL_ERROR in the SQL.
+#
+#   Fix: all {% incrementcondition %} tags removed from inner CTEs. A single
+#   {% incrementcondition %} is placed on the outermost SELECT, which wraps the
+#   five row-type UNION ALLs and filters on the shared `report_date` column.
+#   The `params` CTE start_date / end_date guards still bound every inner CTE on
+#   full rebuilds; the outer filter handles the narrow incremental window.
+#
 # When to rebuild from scratch:
 #   - If late-arriving data extends past 7 days on a particular event
 #   - If you change a derived column (credit_weight formula, quality_score weights)
@@ -31,7 +44,7 @@
 #   3. 'app_trial'     — app free trials from Branch.io (php.branch_purchase)
 #   4. 'app_install'   — app installs from Branch.io (php.branch_install)
 #   5. 'app_reinstall' — app reinstalls from Branch.io (php.branch_reinstall)
-#################################################################################
+################################################################################
 
 view: marketing_attribution_test {
   derived_table: {
@@ -49,8 +62,8 @@ view: marketing_attribution_test {
     sql:
       WITH params AS (
           SELECT
-               -- Initial build covers 180 days; incremental runs are filtered
-               -- by Looker's injection of incrementcondition (below).
+               -- Initial build covers 90 days; incremental runs are filtered
+               -- by the single incrementcondition tag on the outer SELECT.
                (CURRENT_DATE - INTERVAL '90 days')::DATE AS start_date
               ,CURRENT_DATE                               AS end_date
               ,90                  AS max_attribution_window_days
@@ -94,9 +107,8 @@ view: marketing_attribution_test {
 
       -- ============================================================
       -- BRANCH.IO APP FREE TRIALS — from php.branch_purchase
-      -- incrementcondition report_date endincrementcondition
-      -- becomes a WHERE clause that Looker injects on incremental runs.
-      -- On a full rebuild, it expands to "1=1".
+      -- NOTE: incrementcondition removed from this CTE.
+      --       The outer SELECT wrapper carries the single injection point.
       -- ============================================================
       branch_app_trials AS (
       SELECT
@@ -127,13 +139,11 @@ view: marketing_attribution_test {
       WHERE report_date >= (SELECT start_date FROM params)
       AND report_date <  (SELECT end_date   FROM params) + INTERVAL '1 day'
       AND count > 0
-      AND (
-      {% incrementcondition %} report_date {% endincrementcondition %}
-      )
       ),
 
       -- ============================================================
       -- BRANCH.IO APP INSTALLS — from php.branch_install
+      -- NOTE: incrementcondition removed from this CTE.
       -- ============================================================
       branch_app_installs AS (
       SELECT
@@ -164,14 +174,11 @@ view: marketing_attribution_test {
       WHERE report_date >= (SELECT start_date FROM params)
       AND report_date <  (SELECT end_date   FROM params) + INTERVAL '1 day'
       AND count > 0
-      AND (
-      {% incrementcondition %} report_date {% endincrementcondition %}
-      )
       ),
 
       -- ============================================================
       -- BRANCH.IO APP REINSTALLS — from php.branch_reinstall
-      -- Mirrors branch_app_installs; tracks users who reinstalled the app.
+      -- NOTE: incrementcondition removed from this CTE.
       -- ============================================================
       branch_app_reinstalls AS (
       SELECT
@@ -202,14 +209,13 @@ view: marketing_attribution_test {
       WHERE report_date >= (SELECT start_date FROM params)
       AND report_date <  (SELECT end_date   FROM params) + INTERVAL '1 day'
       AND count > 0
-      AND (
-      {% incrementcondition %} report_date {% endincrementcondition %}
-      )
       ),
 
       -- ============================================================
       -- LIFECYCLE EVENTS (web pipeline)
-      -- Each UNION branch gets its own incrementcondition filter.
+      -- NOTE: all incrementcondition tags removed from every
+      --       UNION ALL branch. The outer SELECT carries the single
+      --       injection point on report_date.
       -- ============================================================
       lifecycle_events AS (
       SELECT
@@ -229,9 +235,6 @@ view: marketing_attribution_test {
       FROM javascript_upff_home.pages
       WHERE received_at >= (SELECT start_date FROM params)
       AND received_at <  (SELECT end_date   FROM params) + INTERVAL '1 day'
-      AND (
-      {% incrementcondition %} received_at {% endincrementcondition %}
-      )
 
       UNION ALL
 
@@ -248,9 +251,6 @@ view: marketing_attribution_test {
       AND received_at <  (SELECT end_date   FROM params) + INTERVAL '1 day'
       AND user_id IS NOT NULL
       AND brand = 'upfaithandfamily'
-      AND (
-      {% incrementcondition %} received_at {% endincrementcondition %}
-      )
 
       UNION ALL
 
@@ -268,9 +268,6 @@ view: marketing_attribution_test {
       AND user_id IS NOT NULL
       AND brand = 'upfaithandfamily'
       AND bundle_plan IS NOT NULL
-      AND (
-      {% incrementcondition %} received_at {% endincrementcondition %}
-      )
 
       UNION ALL
 
@@ -287,9 +284,6 @@ view: marketing_attribution_test {
       WHERE DATE(received_at) BETWEEN (SELECT start_date FROM params)
       AND (SELECT end_date   FROM params)
       AND content_subscription_subscription_items LIKE '%UP%'
-      AND (
-      {% incrementcondition %} received_at {% endincrementcondition %}
-      )
 
       UNION ALL
 
@@ -306,9 +300,6 @@ view: marketing_attribution_test {
       AND received_at <  (SELECT end_date   FROM params) + INTERVAL '1 day'
       AND user_id IS NOT NULL
       AND brand = 'upfaithandfamily'
-      AND (
-      {% incrementcondition %} received_at {% endincrementcondition %}
-      )
 
       UNION ALL
 
@@ -338,9 +329,6 @@ view: marketing_attribution_test {
       AND (content_subscription_cancelled_at - content_subscription_trial_end
       < (SELECT cancel_window_seconds FROM params))
       AND user_id IS NOT NULL
-      AND (
-      {% incrementcondition %} received_at {% endincrementcondition %}
-      )
       ) cancels_deduped
       WHERE rn = 1
       ),
@@ -514,7 +502,7 @@ view: marketing_attribution_test {
       JOIN attributed_touches l
       ON f.order_id = l.order_id
       AND f.conversion_event_type = l.conversion_event_type
-      WHERE f.first_touch_rank = 1 AND l.last_touch_rank  = 1
+      WHERE f.first_touch_rank = 1 AND l.last_touch_rank = 1
       ),
 
       all_touches_raw AS (
@@ -555,10 +543,10 @@ view: marketing_attribution_test {
       ELSE COALESCE(0.2 / NULLIF(at.total_touches - 2, 0), 0)
       END AS NUMERIC(7,6)) AS credit_position_based
       ,CAST(CASE
-      WHEN at.total_touches = 1                       THEN 'only'
-      WHEN at.first_touch_rank = 1                    THEN 'first'
-      WHEN at.last_touch_rank  = 1                    THEN 'last'
-      ELSE                                                 'middle'
+      WHEN at.total_touches = 1       THEN 'only'
+      WHEN at.first_touch_rank = 1    THEN 'first'
+      WHEN at.last_touch_rank  = 1    THEN 'last'
+      ELSE                                 'middle'
       END AS VARCHAR(20)) AS touch_position
       ,COALESCE(flm.is_first_and_last, FALSE) AS is_first_and_last
       FROM attributed_touches at
@@ -748,6 +736,9 @@ view: marketing_attribution_test {
       JOIN daily_norms n ON m.report_date = n.report_date
       ),
 
+      -- ============================================================
+      -- ROW-TYPE CTEs — assembled before the outer incremental filter
+      -- ============================================================
       page_visit_rows AS (
       SELECT
       CAST('page_visit' AS VARCHAR(20))      AS event_type
@@ -853,10 +844,10 @@ view: marketing_attribution_test {
       ,CAST(dq.activation_score   AS NUMERIC(10,2)) AS activation_score
       FROM selected_attributed sa
       LEFT JOIN daily_campaign_quality dq
-      ON DATE(sa.conversion_event_at) = dq.report_date
-      AND COALESCE(sa.attributed_campaign_name, '')    = COALESCE(dq.campaign_name, '')
-      AND COALESCE(sa.attributed_campaign_medium, '')  = COALESCE(dq.campaign_medium, '')
-      AND COALESCE(sa.attributed_campaign_content, '') = COALESCE(dq.campaign_content, '')
+      ON DATE(sa.conversion_event_at)                = dq.report_date
+      AND COALESCE(sa.attributed_campaign_name, '')   = COALESCE(dq.campaign_name, '')
+      AND COALESCE(sa.attributed_campaign_medium, '') = COALESCE(dq.campaign_medium, '')
+      AND COALESCE(sa.attributed_campaign_content,'') = COALESCE(dq.campaign_content, '')
       ),
 
       app_trial_rows AS (
@@ -1037,8 +1028,22 @@ view: marketing_attribution_test {
       ,CAST(NULL AS NUMERIC(10,2))                                          AS reacq_score
       ,CAST(NULL AS NUMERIC(10,2))                                          AS activation_score
       FROM branch_app_reinstalls
-      )
+      ),
 
+      -- ============================================================
+      -- all_rows CTE unions the five event-type CTEs. The terminal
+      -- SELECT then carries the single incrementcondition tag.
+      --
+      -- Why a final CTE instead of a subquery wrapper or trailing WHERE:
+      --   - Redshift forbids WITH clauses inside subqueries, so wrapping
+      --     the entire sql block in SELECT * FROM (...) causes Looker to
+      --     emit FATAL_INCREMENTAL_ERROR.
+      --   - A bare WHERE after UNION ALL only filters the last branch.
+      --   - A named CTE lets the terminal SELECT be a simple
+      --     SELECT * FROM all_rows WHERE incrementcondition, which is
+      --     the only pattern that satisfies all three constraints.
+      -- ============================================================
+      all_rows AS (
       SELECT * FROM page_visit_rows
       UNION ALL
       SELECT * FROM conversion_rows
@@ -1048,6 +1053,12 @@ view: marketing_attribution_test {
       SELECT * FROM app_install_rows
       UNION ALL
       SELECT * FROM app_reinstall_rows
+      )
+
+      SELECT * FROM all_rows
+      WHERE (
+      {% incrementcondition %} report_date {% endincrementcondition %}
+      )
       ;;
   }
 
@@ -1472,6 +1483,12 @@ view: marketing_attribution_test {
     sql: ${app_installs} + ${app_reinstalls} ;;
   }
 
+  measure: total_app_installs_paid {
+    type: number
+    label: "Total App Re/Installs (Paid Only)"
+    sql: ${app_installs_paid} + ${app_reinstalls_paid} ;;
+  }
+
   measure: app_reinstall_to_trial_rate {
     type: number
     label: "App Reinstall → Trial Rate"
@@ -1481,8 +1498,8 @@ view: marketing_attribution_test {
 
   measure: total_trials_started {
     type: number
-    label: "Free Trials Started (Web + App)"
-    sql: ${web_trials_started} + ${app_trials_started} ;;
+    label: "Free Trials Started ( Web + App(Paid) )"
+    sql: ${web_trials_started} + ${app_trials_started_paid} ;;
   }
 
   measure: app_share_of_trials {
@@ -1505,6 +1522,14 @@ view: marketing_attribution_test {
     sql: 1.0 * ${app_trials_started_paid} / NULLIF(${app_installs_paid}, 0) ;;
     value_format_name: percent_2
   }
+
+  measure: total_app_re_installs_to_trial_rate_paid {
+    type: number
+    label: "Total App Re/Installs → Trial Rate (Paid Only)"
+    sql: 1.0 * ${app_trials_started_paid} / NULLIF((${app_installs_paid} + ${app_reinstalls_paid}), 0) ;;
+    value_format_name: percent_2
+  }
+
 
   ##############################################################
   # MEASURES — Average Touches
@@ -1783,9 +1808,9 @@ view: marketing_attribution_test {
 # Datagroup — triggers the daily incremental run at 1 AM ET
 ################################################################################
 datagroup: marketing_attribution_daily {
- sql_trigger:SELECT TO_CHAR(
+  sql_trigger: SELECT TO_CHAR(
                    CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE())
-                   - INTERVAL '7 hour',
+                   - INTERVAL '2 hour',
                    'YYYY-MM-DD'
                ) ;;
   max_cache_age: "24 hours"

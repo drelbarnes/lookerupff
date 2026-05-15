@@ -27,9 +27,10 @@ view: social_daily_snapshot {
       CASE
         WHEN LOWER(TRIM(${TABLE}.brand)) IN ('ovation', 'ovation tv', 'ovationtv') THEN 'Ovation TV'
         WHEN LOWER(TRIM(${TABLE}.brand)) IN ('aspire', 'aspire tv', 'aspiretv') THEN 'Aspire TV'
+        WHEN LOWER(TRIM(${TABLE}.brand)) IN ('upff', 'up faith & family', 'up faith and family') THEN 'UPFF'
         ELSE ${TABLE}.brand
       END ;;
-    description: "Normalized brand for rollup (Ovation / Aspire aliases). Matches PROFILE_MAP codes and legacy spellings."
+    description: "Normalized brand for rollup. UPFF and UP Faith & Family warehouse spellings both map to UPFF. Ovation / Aspire aliases match doc 02 / PROFILE_MAP."
   }
 
   dimension: platform {
@@ -79,7 +80,7 @@ view: social_daily_snapshot {
     type: sum
     sql: ${impressions} ;;
     value_format_name: decimal_0
-    description: "Sum of impressions at profile-day grain (Agorapulse viewsCount). See docs/05 and docs/06."
+    description: "Sum of impressions at profile-day grain (Agorapulse viewsCount). See docs/06 and docs/07."
   }
 
   measure: total_video_views {
@@ -87,7 +88,7 @@ view: social_daily_snapshot {
     type: sum
     sql: ${video_views} ;;
     value_format_name: decimal_0
-    description: "Sum of video_views at profile-day grain (Agorapulse videoViewsCount). Audience snapshot, not per-post video metrics. See docs/05 and docs/06 §5."
+    description: "Sum of video_views at profile-day grain (Agorapulse videoViewsCount). Audience snapshot, not per-post video metrics. See docs/06 and docs/07 §5."
   }
 
   measure: total_engagements {
@@ -95,7 +96,7 @@ view: social_daily_snapshot {
     type: sum
     sql: ${engagements} ;;
     value_format_name: decimal_0
-    description: "Sum of engagements at profile-day grain (Agorapulse engagementCount). See docs/05 and docs/06."
+    description: "Sum of engagements at profile-day grain (Agorapulse engagementCount). See docs/06 and docs/07."
   }
 
   measure: avg_engagement_rate {
@@ -103,7 +104,7 @@ view: social_daily_snapshot {
     type: average
     sql: ${engagement_rate} ;;
     value_format_name: percent_2
-    description: "Average of warehouse engagement_rate at profile-day grain (Agorapulse engagementRatePerView; see index.ts). Dashboard KPI uses this measure—simple mean across rows, not weighted by impressions. Compare weighted_engagement_rate for sum(engagements)/sum(impressions) (doc 06 §6)."
+    description: "Average of warehouse engagement_rate at profile-day grain (Agorapulse engagementRatePerView; see index.ts). Dashboard KPI uses this measure—simple mean across rows, not weighted by impressions. Compare weighted_engagement_rate for sum(engagements)/sum(impressions) (doc 07 §6)."
   }
 
   measure: weighted_engagement_rate {
@@ -111,6 +112,6 @@ view: social_daily_snapshot {
     type: number
     sql: 1.0 * SUM(${engagements}) / NULLIF(SUM(${impressions}), 0) ;;
     value_format_name: percent_2
-    description: "Weighted ratio: total engagements ÷ total impressions (doc 06 §6 Option B). Differs from avg_engagement_rate (mean of Agorapulse engagement_rate per row). Use in Explore when you need impression-weighted engagement."
+    description: "Weighted ratio: total engagements ÷ total impressions (doc 07 §6 Option B). Differs from avg_engagement_rate (mean of Agorapulse engagement_rate per row). Use in Explore when you need impression-weighted engagement."
   }
 }

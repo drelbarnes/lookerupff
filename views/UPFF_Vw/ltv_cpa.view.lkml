@@ -11,17 +11,24 @@ view: ltv_cpa {
     sortkeys: ["report_date"]
 
     sql:
+      -- FIX: all incrementcondition tags removed from inner CTEs.
+      -- A single incrementcondition tag on the final SELECT is the only
+      -- injection point. The date guards in each CTE still bound the
+      -- full-rebuild window; the outer filter handles incremental runs.
+      --
+      -- NOTE: this sql block begins with a leading comma because it is
+      -- appended to a WITH clause defined upstream in the model. The final
+      -- SELECT therefore IS the outermost query and is the correct place
+      -- for the single incrementcondition filter.
       , v2_table AS (
         SELECT *
         FROM ${UPFF_analytics_Vw_v2.SQL_TABLE_NAME}
         WHERE report_date >= '2025-12-30'
-          AND {% incrementcondition %} report_date {% endincrementcondition %}
       ),
 
       cancelled_user AS (
       SELECT *
       FROM ${churn.SQL_TABLE_NAME}
-      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
       ),
 
       spend AS (
@@ -30,7 +37,6 @@ view: ltv_cpa {
       SUM(spend) AS spend
       FROM ${daily_spend.SQL_TABLE_NAME}
       WHERE date_start >= '2025-12-30'
-      AND {% incrementcondition %} date_start {% endincrementcondition %}
       GROUP BY 1
       ),
 
@@ -47,7 +53,6 @@ view: ltv_cpa {
       trials_converted AS (
       SELECT *
       FROM ${trial_converted.SQL_TABLE_NAME}
-      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
       ),
 
       daily_converted_counts AS (
@@ -89,7 +94,6 @@ view: ltv_cpa {
       user_count
       FROM ${sub_count.SQL_TABLE_NAME}
       WHERE status = 'active'
-      AND {% incrementcondition %} report_date {% endincrementcondition %}
       ),
 
       prior_subs AS (
@@ -114,7 +118,7 @@ view: ltv_cpa {
       FROM prior_subs b
       LEFT JOIN rolling_churn a
       ON a.report_date = b.report_date
-      AND a.platform = b.platform
+      AND a.platform    = b.platform
       AND a.billing_period = b.billing_period
       ),
 
@@ -139,6 +143,9 @@ view: ltv_cpa {
       FROM result a
       LEFT JOIN cpa b
       ON a.report_date = b.report_date
+      WHERE (
+      {% incrementcondition %} a.report_date {% endincrementcondition %}
+      )
       ;;
 
   }
@@ -190,7 +197,7 @@ view: ltv_cpa {
 datagroup: ltv_cpa_datagroup {
   sql_trigger: SELECT TO_CHAR(
                    CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE())
-                   - INTERVAL '10 hour',
+                   - INTERVAL '6 hour',
                    'YYYY-MM-DD'
                ) ;;
   max_cache_age: "24 hours"
