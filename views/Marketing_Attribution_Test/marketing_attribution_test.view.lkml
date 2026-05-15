@@ -14,13 +14,13 @@
 #       * Retroactive attribution changes within ~1 week are captured
 #
 # FIX (FATAL_INCREMENTAL_ERROR):
-#   The prior version placed  inside multiple inner CTEs
+#   The prior version placed {% incrementcondition %} inside multiple inner CTEs
 #   (branch_app_trials, branch_app_installs, branch_app_reinstalls, and six
 #   branches of lifecycle_events). Looker's incremental PDT engine supports
 #   exactly ONE injection point. Multiple tags — or tags inside UNION ALL branches
 #   — cause Looker to emit the literal string FATAL_INCREMENTAL_ERROR in the SQL.
 #
-#   Fix: all  tags removed from inner CTEs. A single
+#   Fix: all {% incrementcondition %} tags removed from inner CTEs. A single
 #   {% incrementcondition %} is placed on the outermost SELECT, which wraps the
 #   five row-type UNION ALLs and filters on the shared `report_date` column.
 #   The `params` CTE start_date / end_date guards still bound every inner CTE on
@@ -63,7 +63,7 @@ view: marketing_attribution_test {
       WITH params AS (
           SELECT
                -- Initial build covers 90 days; incremental runs are filtered
-               -- by the single on the outer SELECT.
+               -- by the single incrementcondition tag on the outer SELECT.
                (CURRENT_DATE - INTERVAL '90 days')::DATE AS start_date
               ,CURRENT_DATE                               AS end_date
               ,90                  AS max_attribution_window_days
@@ -107,7 +107,7 @@ view: marketing_attribution_test {
 
       -- ============================================================
       -- BRANCH.IO APP FREE TRIALS — from php.branch_purchase
-      -- NOTE:  removed from this CTE.
+      -- NOTE: incrementcondition removed from this CTE.
       --       The outer SELECT wrapper carries the single injection point.
       -- ============================================================
       branch_app_trials AS (
@@ -143,7 +143,7 @@ view: marketing_attribution_test {
 
       -- ============================================================
       -- BRANCH.IO APP INSTALLS — from php.branch_install
-      -- NOTE:  removed from this CTE.
+      -- NOTE: incrementcondition removed from this CTE.
       -- ============================================================
       branch_app_installs AS (
       SELECT
@@ -178,7 +178,7 @@ view: marketing_attribution_test {
 
       -- ============================================================
       -- BRANCH.IO APP REINSTALLS — from php.branch_reinstall
-      -- NOTE: removed from this CTE.
+      -- NOTE: incrementcondition removed from this CTE.
       -- ============================================================
       branch_app_reinstalls AS (
       SELECT
@@ -213,7 +213,7 @@ view: marketing_attribution_test {
 
       -- ============================================================
       -- LIFECYCLE EVENTS (web pipeline)
-      -- NOTE: all tags removed from every
+      -- NOTE: all incrementcondition tags removed from every
       --       UNION ALL branch. The outer SELECT carries the single
       --       injection point on report_date.
       -- ============================================================
@@ -1028,16 +1028,22 @@ view: marketing_attribution_test {
       ,CAST(NULL AS NUMERIC(10,2))                                          AS reacq_score
       ,CAST(NULL AS NUMERIC(10,2))                                          AS activation_score
       FROM branch_app_reinstalls
-      )
+      ),
 
       -- ============================================================
-      -- OUTER SELECT — single  lives here.
-      -- Looker injects a WHERE clause on report_date for incremental
-      -- runs; on a full rebuild it expands to 1=1.
-      -- All five row-type CTEs share the report_date column so the
-      -- single filter correctly gates every event type.
+      -- all_rows CTE unions the five event-type CTEs. The terminal
+      -- SELECT then carries the single incrementcondition tag.
+      --
+      -- Why a final CTE instead of a subquery wrapper or trailing WHERE:
+      --   - Redshift forbids WITH clauses inside subqueries, so wrapping
+      --     the entire sql block in SELECT * FROM (...) causes Looker to
+      --     emit FATAL_INCREMENTAL_ERROR.
+      --   - A bare WHERE after UNION ALL only filters the last branch.
+      --   - A named CTE lets the terminal SELECT be a simple
+      --     SELECT * FROM all_rows WHERE incrementcondition, which is
+      --     the only pattern that satisfies all three constraints.
       -- ============================================================
-      SELECT * FROM (
+      all_rows AS (
       SELECT * FROM page_visit_rows
       UNION ALL
       SELECT * FROM conversion_rows
@@ -1047,7 +1053,9 @@ view: marketing_attribution_test {
       SELECT * FROM app_install_rows
       UNION ALL
       SELECT * FROM app_reinstall_rows
-      ) all_rows
+      )
+
+      SELECT * FROM all_rows
       WHERE (
       {% incrementcondition %} report_date {% endincrementcondition %}
       )
@@ -1491,7 +1499,7 @@ view: marketing_attribution_test {
   measure: total_trials_started {
     type: number
     label: "Free Trials Started (Web + App)"
-    sql: ${free_trials_started} + ${app_trials_started_paid} ;;
+    sql: ${web_trials_started} + ${app_trials_started} ;;
   }
 
   measure: app_share_of_trials {
@@ -1521,6 +1529,7 @@ view: marketing_attribution_test {
     sql: 1.0 * ${app_trials_started_paid} / NULLIF((${app_installs_paid} + ${app_reinstalls_paid}), 0) ;;
     value_format_name: percent_2
   }
+
 
   ##############################################################
   # MEASURES — Average Touches
