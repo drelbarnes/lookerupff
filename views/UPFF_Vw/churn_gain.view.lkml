@@ -1,34 +1,3 @@
-################################################################################
-# churn_gain.view.lkml
-#
-# Incremental PDT that consolidates daily subscription churn and gain events
-# across web (Chargebee) and Vimeo OTT platforms (iOS, tvOS, Android, etc.).
-#
-# Event categories tracked (via `status` column):
-#   - churn         → cancellations (excluding payment-failure dunning)
-#   - paused        → web subscriptions paused
-#   - converted     → free trial → paid conversions
-#   - reacquisition → previously cancelled subscriptions reactivated/resumed
-#   - dunning       → cancellations caused by payment failures
-#   - rolling_churn → 30-day rolling churn user counts (from rolling_platform)
-#   - rolling_total → 30-day rolling total user counts (from rolling_platform)
-#
-# Sources:
-#   - chargebee_webhook_events.subscription_cancelled / activated / reactivated /
-#     resumed / paused → web events
-#   - customers.new_customers → Vimeo OTT conversion + reacquisition events
-#   - vimeo_ott_webhook.customer_product_expired → Vimeo OTT churn
-#   - UPFF_analytics_Vw_v2 → platform/billing_period attribution for Vimeo users
-#   - rolling_platform → precomputed 30-day rolling counts
-#
-# Output columns: user_count, report_date, billing_period, status, platform
-#
-# Incremental config:
-#   - Increment key: report_date
-#   - Increment offset: 30 days (rebuilds the last 30 days on each run)
-#   - Trigger: churn_gain_datagroup (daily at 10:30 AM ET)
-################################################################################
-
 view: churn_gain {
   derived_table: {
 
@@ -39,419 +8,261 @@ view: churn_gain {
     sortkeys: ["report_date"]
 
     sql:
-      WITH v2_table AS (
-        SELECT *
-        FROM ${UPFF_analytics_Vw_v2.SQL_TABLE_NAME}
-        WHERE report_date >= '2026-01-01'
-          AND {% incrementcondition %} report_date {% endincrementcondition %}
-      ),
-
-      chargebee_cancelled_pre AS (
       SELECT
-      content_subscription_id::VARCHAR AS user_id,
-      CASE
-      WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'::VARCHAR
-      ELSE 'yearly'::VARCHAR
-      END AS billing_period,
-      DATE(DATEADD(HOUR, +18, timestamp)) AS report_date,
-      'web'::VARCHAR AS platform
-      FROM chargebee_webhook_events.subscription_cancelled
-      WHERE (
-      content_subscription_cancel_reason_code NOT IN (
-      'Not Paid',
-      'No Card',
-      'Fraud Review Failed',
-      'Non Compliant EU Customer',
-      'Tax Calculation Failed',
-      'Currency incompatible with Gateway',
-      'Non Compliant Customer'
-      )
-      OR content_subscription_cancel_reason_code IS NULL
-      )
-      AND content_subscription_activated_at IS NOT NULL
-      AND content_subscription_subscription_items LIKE '%UP%'
-      ),
+        CAST(user_count     AS BIGINT)  AS user_count,
+        CAST(report_date    AS DATE)    AS report_date,
+        CAST(billing_period AS VARCHAR) AS billing_period,
+        CAST(status         AS VARCHAR) AS status,
+        CAST(platform       AS VARCHAR) AS platform
+      FROM (
 
-      chargebee_cancelled AS (
-      SELECT user_id, billing_period, report_date, platform
-      FROM chargebee_cancelled_pre
-      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
-      ),
-
-      vm_user AS (
-      SELECT
-      report_date,
-      user_id,
-      billing_period,
-      platform
-      FROM v2_table
-      WHERE platform != 'Chargebee'
-      ),
-
-      vimeo0_pre AS (
-      SELECT DISTINCT
-      CAST(customer_id AS VARCHAR) AS user_id,
-      subscription_frequency::VARCHAR AS billing_period,
-      event_type::VARCHAR AS event_type,
-      DATE(event_occurred_at) AS report_date
-      FROM customers.new_customers
-      WHERE subscription_frequency != 'custom'
-      ),
-
-      vimeo0 AS (
-      SELECT user_id, billing_period, event_type, report_date
-      FROM vimeo0_pre
-      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
-      ),
-
-      vimeo AS (
-      SELECT
-      b.user_id,
-      a.platform,
-      b.billing_period,
-      b.event_type,
-      b.report_date
-      FROM vimeo0 b
-      LEFT JOIN vm_user a
-      ON a.report_date = b.report_date
-      AND a.user_id = b.user_id
-      ),
-
-      vm_pre AS (
-      SELECT
-      DATE("timestamp") AS report_date,
-      CAST(user_id AS VARCHAR) AS user_id
-      FROM vimeo_ott_webhook.customer_product_expired
-      ),
-
-      vm AS (
-      SELECT report_date, user_id
-      FROM vm_pre
-      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
-      ),
-
-      vm2 AS (
-      SELECT
-      a.report_date,
-      a.user_id,
-      b.billing_period,
-      b.platform
-      FROM vm a
-      LEFT JOIN vm_user b
-      ON a.report_date = b.report_date
-      AND a.user_id = b.user_id
-      ),
-
-      cancelled_user_count AS (
-      SELECT
-      COUNT(DISTINCT user_id) AS user_count,
-      report_date,
-      billing_period,
-      platform
-      FROM chargebee_cancelled
-      GROUP BY 2, 3, 4
-
-      UNION ALL
-
-      SELECT
-      COUNT(DISTINCT user_id) AS user_count,
-      report_date,
-      billing_period,
-      platform
-      FROM vm2
-      GROUP BY 2, 3, 4
-      ),
-
-      re_acquisitions_pre AS (
-      SELECT
-      DATE(DATEADD(HOUR, +18, timestamp)) AS report_date,
-      content_subscription_id::VARCHAR AS user_id,
-      CASE
-      WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'::VARCHAR
-      ELSE 'yearly'::VARCHAR
-      END AS billing_period,
-      'web'::VARCHAR AS platform
-      FROM chargebee_webhook_events.subscription_reactivated
-      WHERE content_subscription_subscription_items LIKE '%UP%'
-
-      UNION ALL
-
-      SELECT
-      DATE(DATEADD(HOUR, +18, timestamp)) AS report_date,
-      content_subscription_id::VARCHAR AS user_id,
-      CASE
-      WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'::VARCHAR
-      ELSE 'yearly'::VARCHAR
-      END AS billing_period,
-      'web'::VARCHAR AS platform
-      FROM chargebee_webhook_events.subscription_resumed
-      WHERE content_subscription_subscription_items LIKE '%UP%'
-      ),
-
-      re_acquisitions AS (
-      SELECT report_date, user_id, billing_period, platform
-      FROM re_acquisitions_pre
-      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
-
-      UNION ALL
-
-      SELECT
-      report_date,
-      user_id,
-      billing_period,
-      platform
-      FROM vimeo
-      WHERE event_type = 'Direct to Paid'
-      ),
-
-      re_acquisition_count AS (
-      SELECT
-      COUNT(DISTINCT user_id) AS user_count,
-      report_date,
-      billing_period,
-      platform
-      FROM re_acquisitions
-      GROUP BY 2, 3, 4
-      ),
-
-      trial_conversion_pre AS (
-      SELECT
-      DATE(received_at) AS report_date,
-      content_subscription_id::VARCHAR AS user_id,
-      CASE
-      WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'::VARCHAR
-      ELSE 'yearly'::VARCHAR
-      END AS billing_period,
-      'web'::VARCHAR AS platform
-      FROM chargebee_webhook_events.subscription_activated
-      WHERE content_subscription_subscription_items LIKE '%UP%'
-      ),
-
-      trial_conversion AS (
-      SELECT report_date, user_id, billing_period, platform
-      FROM trial_conversion_pre
-      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
-
-      UNION ALL
-
-      SELECT
-      report_date,
-      user_id,
-      billing_period,
-      platform
-      FROM vimeo
-      WHERE event_type = 'Free Trial to Paid'
-      ),
-
-      conversion_count AS (
-      SELECT
-      COUNT(DISTINCT user_id) AS user_count,
-      report_date,
-      billing_period,
-      platform
-      FROM trial_conversion
-      GROUP BY 2, 3, 4
-      ),
-
-      dunning_pre AS (
-      SELECT
-      content_subscription_id::VARCHAR AS user_id,
-      'charge_failed'::VARCHAR AS status,
-      CASE
-      WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'::VARCHAR
-      ELSE 'yearly'::VARCHAR
-      END AS billing_period,
-      DATE(DATEADD(HOUR, +18, timestamp)) AS report_date,
-      'web'::VARCHAR AS platform
-      FROM chargebee_webhook_events.subscription_cancelled
-      WHERE content_subscription_cancel_reason_code IN (
-      'Not Paid',
-      'No Card',
-      'Fraud Review Failed',
-      'Non Compliant EU Customer',
-      'Tax Calculation Failed',
-      'Currency incompatible with Gateway',
-      'Non Compliant Customer'
-      )
-      AND (content_subscription_cancelled_at - content_subscription_activated_at) > 10000
-      AND content_subscription_subscription_items LIKE '%UP%'
-      ),
-
-      dunning AS (
-      SELECT user_id, status, billing_period, report_date, platform
-      FROM dunning_pre
-      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
-      ),
-
-      dunning_count AS (
-      SELECT
-      COUNT(DISTINCT user_id) AS user_count,
-      report_date,
-      billing_period,
-      platform
-      FROM dunning
-      GROUP BY 2, 3, 4
-      ),
-
-      paused_pre AS (
-      SELECT
-      DATE(DATEADD(HOUR, +18, timestamp)) AS report_date,
-      content_subscription_id::VARCHAR AS user_id,
-      CASE
-      WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'::VARCHAR
-      ELSE 'yearly'::VARCHAR
-      END AS billing_period,
-      'web'::VARCHAR AS platform
-      FROM chargebee_webhook_events.subscription_paused
-      WHERE content_subscription_subscription_items LIKE '%UP%'
-      ),
-
-      paused AS (
-      SELECT report_date, user_id, billing_period, platform
-      FROM paused_pre
-      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
-      ),
-
-      paused_count AS (
-      SELECT
-      COUNT(DISTINCT user_id) AS user_count,
-      report_date,
-      billing_period,
-      platform
-      FROM paused
-      GROUP BY 2, 3, 4
-      ),
-
-      result AS (
-      SELECT
-      user_count,
-      report_date,
-      billing_period,
-      platform,
-      'churn'::VARCHAR AS status
-      FROM cancelled_user_count
-
-      UNION ALL
-
-      SELECT
-      user_count,
-      report_date,
-      billing_period,
-      platform,
-      'paused'::VARCHAR AS status
-      FROM paused_count
-
-      UNION ALL
-
-      SELECT
-      user_count,
-      report_date,
-      billing_period,
-      platform,
-      'converted'::VARCHAR AS status
-      FROM conversion_count
-
-      UNION ALL
-
-      SELECT
-      user_count,
-      report_date,
-      billing_period,
-      platform,
-      'reacquisition'::VARCHAR AS status
-      FROM re_acquisition_count
-
-      UNION ALL
-
-      SELECT
-      user_count,
-      report_date,
-      billing_period,
-      platform,
-      'dunning'::VARCHAR AS status
-      FROM dunning_count
-      ),
-
-      result2 AS (
       SELECT
       SUM(user_count) AS user_count,
       report_date,
       billing_period,
       status,
       platform
-      FROM result
-      GROUP BY 2, 3, 4, 5
-      ),
+      FROM (
 
-      churn_rate AS (
+      SELECT user_count, report_date, billing_period, platform, 'churn'::VARCHAR AS status
+      FROM (
+      SELECT COUNT(DISTINCT user_id) AS user_count, report_date, billing_period, platform
+      FROM (
       SELECT
-      report_date,
-      platform,
-      rolling_30_day_unique_user_count_yearly,
-      rolling_30_day_unique_user_count_monthly,
-      total_rolling_monthly,
-      total_rolling_yearly
-      FROM ${rolling_platform.SQL_TABLE_NAME}
-      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
-      ),
-
-      rolling_churn AS (
-      SELECT
-      report_date,
-      platform,
-      rolling_30_day_unique_user_count_monthly AS user_count,
-      'monthly'::VARCHAR AS billing_period,
-      'rolling_churn'::VARCHAR AS status
-      FROM churn_rate
-
-      UNION ALL
-
-      SELECT
-      report_date,
-      platform,
-      total_rolling_monthly AS user_count,
-      'monthly'::VARCHAR AS billing_period,
-      'rolling_total'::VARCHAR AS status
-      FROM churn_rate
-
-      UNION ALL
-
-      SELECT
-      report_date,
-      platform,
-      rolling_30_day_unique_user_count_yearly AS user_count,
-      'yearly'::VARCHAR AS billing_period,
-      'rolling_churn'::VARCHAR AS status
-      FROM churn_rate
-
-      UNION ALL
-
-      SELECT
-      report_date,
-      platform,
-      total_rolling_yearly AS user_count,
-      'yearly'::VARCHAR AS billing_period,
-      'rolling_total'::VARCHAR AS status
-      FROM churn_rate
-      ),
-
-      combined AS (
-      SELECT user_count, report_date, billing_period, status, platform
-      FROM result2
-
-      UNION ALL
-
-      SELECT user_count, report_date, billing_period, status, platform
-      FROM rolling_churn
+      content_subscription_id::VARCHAR         AS user_id,
+      CASE
+      WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'::VARCHAR
+      ELSE 'yearly'::VARCHAR
+      END                                      AS billing_period,
+      DATE(DATEADD(HOUR, +18, timestamp))      AS report_date,
+      'web'::VARCHAR                           AS platform
+      FROM chargebee_webhook_events.subscription_cancelled
+      WHERE (
+      content_subscription_cancel_reason_code NOT IN (
+      'Not Paid', 'No Card', 'Fraud Review Failed',
+      'Non Compliant EU Customer', 'Tax Calculation Failed',
+      'Currency incompatible with Gateway', 'Non Compliant Customer'
       )
+      OR content_subscription_cancel_reason_code IS NULL
+      )
+      AND content_subscription_activated_at IS NOT NULL
+      AND content_subscription_subscription_items LIKE '%UP%'
+
+      UNION ALL
 
       SELECT
-      CAST(user_count AS BIGINT) AS user_count,
-      CAST(report_date AS DATE) AS report_date,
-      CAST(billing_period AS VARCHAR) AS billing_period,
-      CAST(status AS VARCHAR) AS status,
-      CAST(platform AS VARCHAR) AS platform
-      FROM combined
+      a.user_id,
+      b.billing_period,
+      a.report_date,
+      b.platform
+      FROM (
+      SELECT DATE("timestamp") AS report_date, CAST(user_id AS VARCHAR) AS user_id
+      FROM vimeo_ott_webhook.customer_product_expired
+      ) a
+      LEFT JOIN (
+      SELECT report_date, user_id, billing_period, platform
+      FROM ${UPFF_analytics_Vw_v2.SQL_TABLE_NAME}
+      WHERE platform != 'Chargebee'
+      ) b
+      ON a.report_date = b.report_date AND a.user_id = b.user_id
+      ) churn_src
+      GROUP BY 2, 3, 4
+      ) cancelled_user_count
+
+      UNION ALL
+
+      SELECT user_count, report_date, billing_period, platform, 'paused'::VARCHAR AS status
+      FROM (
+      SELECT COUNT(DISTINCT user_id) AS user_count, report_date, billing_period, platform
+      FROM (
+      SELECT
+      DATE(DATEADD(HOUR, +18, timestamp))      AS report_date,
+      content_subscription_id::VARCHAR         AS user_id,
+      CASE
+      WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'::VARCHAR
+      ELSE 'yearly'::VARCHAR
+      END                                      AS billing_period,
+      'web'::VARCHAR                           AS platform
+      FROM chargebee_webhook_events.subscription_paused
+      WHERE content_subscription_subscription_items LIKE '%UP%'
+      ) paused_pre
+      GROUP BY 2, 3, 4
+      ) paused_count
+
+      UNION ALL
+
+      SELECT user_count, report_date, billing_period, platform, 'converted'::VARCHAR AS status
+      FROM (
+      SELECT COUNT(DISTINCT user_id) AS user_count, report_date, billing_period, platform
+      FROM (
+      SELECT
+      DATE(received_at)                        AS report_date,
+      content_subscription_id::VARCHAR         AS user_id,
+      CASE
+      WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'::VARCHAR
+      ELSE 'yearly'::VARCHAR
+      END                                      AS billing_period,
+      'web'::VARCHAR                           AS platform
+      FROM chargebee_webhook_events.subscription_activated
+      WHERE content_subscription_subscription_items LIKE '%UP%'
+
+      UNION ALL
+
+      SELECT
+      b.report_date,
+      b.user_id,
+      b.billing_period,
+      a.platform
+      FROM (
+      SELECT report_date, user_id, billing_period, platform
+      FROM ${UPFF_analytics_Vw_v2.SQL_TABLE_NAME}
+      WHERE platform != 'Chargebee'
+      ) a
+      RIGHT JOIN (
+      SELECT DISTINCT
+      CAST(customer_id AS VARCHAR)     AS user_id,
+      subscription_frequency::VARCHAR  AS billing_period,
+      event_type::VARCHAR              AS event_type,
+      DATE(event_occurred_at)          AS report_date
+      FROM customers.new_customers
+      WHERE subscription_frequency != 'custom'
+      ) b
+      ON a.report_date = b.report_date AND a.user_id = b.user_id
+      WHERE b.event_type = 'Free Trial to Paid'
+      ) conversion_src
+      GROUP BY 2, 3, 4
+      ) conversion_count
+
+      UNION ALL
+
+      SELECT user_count, report_date, billing_period, platform, 'reacquisition'::VARCHAR AS status
+      FROM (
+      SELECT COUNT(DISTINCT user_id) AS user_count, report_date, billing_period, platform
+      FROM (
+      SELECT
+      DATE(DATEADD(HOUR, +18, timestamp))      AS report_date,
+      content_subscription_id::VARCHAR         AS user_id,
+      CASE
+      WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'::VARCHAR
+      ELSE 'yearly'::VARCHAR
+      END                                      AS billing_period,
+      'web'::VARCHAR                           AS platform
+      FROM chargebee_webhook_events.subscription_reactivated
+      WHERE content_subscription_subscription_items LIKE '%UP%'
+
+      UNION ALL
+
+      SELECT
+      DATE(DATEADD(HOUR, +18, timestamp))      AS report_date,
+      content_subscription_id::VARCHAR         AS user_id,
+      CASE
+      WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'::VARCHAR
+      ELSE 'yearly'::VARCHAR
+      END                                      AS billing_period,
+      'web'::VARCHAR                           AS platform
+      FROM chargebee_webhook_events.subscription_resumed
+      WHERE content_subscription_subscription_items LIKE '%UP%'
+
+      UNION ALL
+
+      SELECT
+      b.report_date,
+      b.user_id,
+      b.billing_period,
+      a.platform
+      FROM (
+      SELECT report_date, user_id, billing_period, platform
+      FROM ${UPFF_analytics_Vw_v2.SQL_TABLE_NAME}
+      WHERE platform != 'Chargebee'
+      ) a
+      RIGHT JOIN (
+      SELECT DISTINCT
+      CAST(customer_id AS VARCHAR)     AS user_id,
+      subscription_frequency::VARCHAR  AS billing_period,
+      event_type::VARCHAR              AS event_type,
+      DATE(event_occurred_at)          AS report_date
+      FROM customers.new_customers
+      WHERE subscription_frequency != 'custom'
+      ) b
+      ON a.report_date = b.report_date AND a.user_id = b.user_id
+      WHERE b.event_type = 'Direct to Paid'
+      ) reacq_src
+      GROUP BY 2, 3, 4
+      ) re_acquisition_count
+
+      UNION ALL
+
+      SELECT user_count, report_date, billing_period, platform, 'dunning'::VARCHAR AS status
+      FROM (
+      SELECT COUNT(DISTINCT user_id) AS user_count, report_date, billing_period, platform
+      FROM (
+      SELECT
+      content_subscription_id::VARCHAR         AS user_id,
+      CASE
+      WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'::VARCHAR
+      ELSE 'yearly'::VARCHAR
+      END                                      AS billing_period,
+      DATE(DATEADD(HOUR, +18, timestamp))      AS report_date,
+      'web'::VARCHAR                           AS platform
+      FROM chargebee_webhook_events.subscription_cancelled
+      WHERE content_subscription_cancel_reason_code IN (
+      'Not Paid', 'No Card', 'Fraud Review Failed',
+      'Non Compliant EU Customer', 'Tax Calculation Failed',
+      'Currency incompatible with Gateway', 'Non Compliant Customer'
+      )
+      AND (content_subscription_cancelled_at - content_subscription_activated_at) > 10000
+      AND content_subscription_subscription_items LIKE '%UP%'
+      ) dunning_pre
+      GROUP BY 2, 3, 4
+      ) dunning_count
+
+      ) result
+      GROUP BY 2, 3, 4, 5
+
+      UNION ALL
+
+      SELECT
+      CAST(rolling_30_day_unique_user_count_monthly AS BIGINT) AS user_count,
+      CAST(report_date AS DATE)    AS report_date,
+      'monthly'::VARCHAR           AS billing_period,
+      'rolling_churn'::VARCHAR     AS status,
+      CAST(platform AS VARCHAR)    AS platform
+      FROM ${rolling_platform.SQL_TABLE_NAME}
+
+      UNION ALL
+
+      SELECT
+      CAST(total_rolling_monthly AS BIGINT) AS user_count,
+      CAST(report_date AS DATE)    AS report_date,
+      'monthly'::VARCHAR           AS billing_period,
+      'rolling_total'::VARCHAR     AS status,
+      CAST(platform AS VARCHAR)    AS platform
+      FROM ${rolling_platform.SQL_TABLE_NAME}
+
+      UNION ALL
+
+      SELECT
+      CAST(rolling_30_day_unique_user_count_yearly AS BIGINT) AS user_count,
+      CAST(report_date AS DATE)    AS report_date,
+      'yearly'::VARCHAR            AS billing_period,
+      'rolling_churn'::VARCHAR     AS status,
+      CAST(platform AS VARCHAR)    AS platform
+      FROM ${rolling_platform.SQL_TABLE_NAME}
+
+      UNION ALL
+
+      SELECT
+      CAST(total_rolling_yearly AS BIGINT) AS user_count,
+      CAST(report_date AS DATE)    AS report_date,
+      'yearly'::VARCHAR            AS billing_period,
+      'rolling_total'::VARCHAR     AS status,
+      CAST(platform AS VARCHAR)    AS platform
+      FROM ${rolling_platform.SQL_TABLE_NAME}
+
+      ) all_rows
+      WHERE (
+      {% incrementcondition %} report_date {% endincrementcondition %}
+      )
       ;;
   }
 
@@ -536,11 +347,6 @@ view: churn_gain {
   }
 }
 
-################################################################################
-# Datagroup — triggers the daily incremental run at 10:30 AM ET
-# NOTE: This must be defined at the MODEL level (in your .model.lkml file),
-# not inside the view file.
-################################################################################
 datagroup: churn_gain_datagroup {
   sql_trigger: SELECT TO_CHAR(
                    CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE())

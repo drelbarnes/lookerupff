@@ -194,7 +194,7 @@ view: churn_testing_input {
 ######################## MODEL #############################
 view: churn_model {
   derived_table: {
-    datagroup_trigger:upff_google_datagroup
+    datagroup_trigger:upff_google_datagroup_churn_model
     sql_create:
       CREATE OR REPLACE MODEL ${SQL_TABLE_NAME}
       OPTIONS(model_type='logistic_reg'

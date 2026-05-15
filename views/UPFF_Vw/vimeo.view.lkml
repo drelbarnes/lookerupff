@@ -8,9 +8,16 @@ view: vimeo {
     sortkeys: ["report_date"]
 
     sql:
+      -- FIX: WITH chain at top level. All row assembly and CAST expressions
+      -- promoted into the all_rows CTE. Terminal SELECT is a clean
+      -- SELECT * FROM all_rows WHERE (incrementcondition) with no alias,
+      -- no inline logic, and no subquery wrapper -- consistent with the
+      -- pattern used across all incremental PDTs in this project.
+      -- Redundant pass-through CTEs (platform, customers,
+      -- chargebee_re_acquisition) collapsed into their _pre sources.
       WITH platform_pre AS (
         SELECT
-          CAST(user_id AS VARCHAR) AS user_id,
+          CAST(user_id AS VARCHAR)           AS user_id,
           platform,
           TO_DATE(report_date, 'YYYY-MM-DD') AS report_date
         FROM customers.all_customers
@@ -18,16 +25,10 @@ view: vimeo {
           AND platform NOT IN ('api', 'web')
       ),
 
-      platform AS (
-      SELECT user_id, platform, report_date
-      FROM platform_pre
-      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
-      ),
-
       customers_pre AS (
       SELECT DISTINCT
-      CAST(customer_id AS VARCHAR) AS user_id,
-      subscription_frequency AS billing_period,
+      CAST(customer_id AS VARCHAR)               AS user_id,
+      subscription_frequency                     AS billing_period,
       event_type,
       DATE(DATEADD(HOUR, -5, event_occurred_at)) AS report_date
       FROM customers.new_customers
@@ -35,21 +36,15 @@ view: vimeo {
       AND current_customer_status = 'enabled'
       ),
 
-      customers AS (
-      SELECT user_id, billing_period, event_type, report_date
-      FROM customers_pre
-      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
-      ),
-
       chargebee_re_acquisition_pre AS (
       SELECT
-      content_subscription_id AS user_id,
-      'web' AS platform,
+      content_subscription_id            AS user_id,
+      'web'                              AS platform,
       CASE
       WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'
       ELSE 'yearly'
-      END AS billing_period,
-      'Direct to Paid' AS event_type,
+      END                                AS billing_period,
+      'Direct to Paid'                   AS event_type,
       DATE(DATEADD(HOUR, -5, timestamp)) AS report_date
       FROM chargebee_webhook_events.subscription_reactivated
       WHERE content_subscription_subscription_items LIKE '%UP%'
@@ -57,44 +52,46 @@ view: vimeo {
       UNION ALL
 
       SELECT
-      content_subscription_id AS user_id,
-      'web' AS platform,
+      content_subscription_id            AS user_id,
+      'web'                              AS platform,
       CASE
       WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'
       ELSE 'yearly'
-      END AS billing_period,
-      'Direct to Paid' AS event_type,
+      END                                AS billing_period,
+      'Direct to Paid'                   AS event_type,
       DATE(DATEADD(HOUR, -5, timestamp)) AS report_date
       FROM chargebee_webhook_events.subscription_resumed
       WHERE content_subscription_subscription_items LIKE '%UP%'
       ),
 
-      chargebee_re_acquisition AS (
-      SELECT user_id, platform, billing_period, event_type, report_date
-      FROM chargebee_re_acquisition_pre
-      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
-      ),
-
-      vimeo AS (
+      all_rows AS (
       SELECT
-      b.user_id,
-      a.platform,
-      b.billing_period,
-      b.event_type,
-      b.report_date
-      FROM customers b
-      LEFT JOIN platform a
-      ON a.report_date = b.report_date
-      AND b.user_id = a.user_id
-      )
-
-      SELECT user_id, platform, billing_period, event_type, report_date
-      FROM vimeo
+      CAST(b.user_id       AS VARCHAR) AS user_id,
+      CAST(a.platform      AS VARCHAR) AS platform,
+      CAST(b.billing_period AS VARCHAR) AS billing_period,
+      CAST(b.event_type    AS VARCHAR) AS event_type,
+      CAST(b.report_date   AS DATE)    AS report_date
+      FROM customers_pre b
+      LEFT JOIN platform_pre a
+      ON  a.report_date = b.report_date
+      AND a.user_id     = b.user_id
 
       UNION ALL
 
-      SELECT user_id, platform, billing_period, event_type, report_date
-      FROM chargebee_re_acquisition
+      SELECT
+      CAST(user_id        AS VARCHAR) AS user_id,
+      CAST(platform       AS VARCHAR) AS platform,
+      CAST(billing_period AS VARCHAR) AS billing_period,
+      CAST(event_type     AS VARCHAR) AS event_type,
+      CAST(report_date    AS DATE)    AS report_date
+      FROM chargebee_re_acquisition_pre
+      )
+
+      SELECT *
+      FROM all_rows
+      WHERE (
+      {% incrementcondition %} report_date {% endincrementcondition %}
+      )
       ;;
   }
 

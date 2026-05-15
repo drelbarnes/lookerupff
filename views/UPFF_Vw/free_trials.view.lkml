@@ -6,9 +6,9 @@
 # Roku, Vizio).
 #
 # Sources:
-#   - chargebee_webhook_events.subscription_created → web free trials
-#   - customers.new_customers (event_type = 'New Free Trial') → Vimeo OTT trials
-#   - vimeo_ott_webhook.customer_product_free_trial_created → platform attribution
+#   - chargebee_webhook_events.subscription_created -> web free trials
+#   - customers.new_customers (event_type = 'New Free Trial') -> Vimeo OTT trials
+#   - vimeo_ott_webhook.customer_product_free_trial_created -> platform attribution
 #
 # Output columns: user_id, billing_period, platform, report_date
 #
@@ -16,6 +16,11 @@
 #   - Increment key: report_date
 #   - Increment offset: 7 days (rebuilds the last 7 days on each run)
 #   - Trigger: free_trials_datagroup (daily at 10 AM ET)
+#
+# FIX: WITH chain at top level. All row assembly promoted into the all_rows CTE.
+# Terminal SELECT is a clean SELECT * FROM all_rows WHERE (incrementcondition)
+# with no alias, no inline logic, and no subquery wrapper — consistent with
+# the pattern used across all incremental PDTs in this project.
 #
 # Measures: distinct free trial counts, total and broken out by platform.
 ################################################################################
@@ -43,25 +48,13 @@ view: free_trials {
         WHERE content_subscription_subscription_items LIKE '%UP%'
       ),
 
-      chargebee AS (
-      SELECT user_id, billing_period, platform, report_date
-      FROM chargebee_pre
-      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
-      ),
-
       vimeo_pre AS (
       SELECT DISTINCT
       email,
       DATE(event_occurred_at) AS report_date,
-      subscription_frequency AS billing_period
+      subscription_frequency  AS billing_period
       FROM customers.new_customers
       WHERE event_type = 'New Free Trial'
-      ),
-
-      vimeo AS (
-      SELECT email, report_date, billing_period
-      FROM vimeo_pre
-      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
       ),
 
       vimeo_platform_pre AS (
@@ -73,40 +66,41 @@ view: free_trials {
       WHERE DATE(timestamp) >= '2025-06-01'
       ),
 
-      vimeo_platform AS (
-      SELECT email, platform, report_date
-      FROM vimeo_platform_pre
-      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
-      ),
-
       vimeo2 AS (
       SELECT
-      a.email AS user_id,
+      a.email          AS user_id,
       a.billing_period,
       b.platform,
       a.report_date
-      FROM vimeo a
-      LEFT JOIN vimeo_platform b
-      ON a.email = b.email
+      FROM vimeo_pre a
+      LEFT JOIN vimeo_platform_pre b
+      ON  a.email       = b.email
       AND a.report_date = b.report_date
       ),
 
-      combined AS (
-      SELECT user_id, billing_period, platform, report_date
+      all_rows AS (
+      SELECT
+      CAST(user_id        AS VARCHAR) AS user_id,
+      CAST(billing_period AS VARCHAR) AS billing_period,
+      CAST(platform       AS VARCHAR) AS platform,
+      CAST(report_date    AS DATE)    AS report_date
       FROM vimeo2
 
       UNION ALL
 
-      SELECT user_id, billing_period, platform, report_date
-      FROM chargebee
+      SELECT
+      CAST(user_id        AS VARCHAR) AS user_id,
+      CAST(billing_period AS VARCHAR) AS billing_period,
+      CAST(platform       AS VARCHAR) AS platform,
+      CAST(report_date    AS DATE)    AS report_date
+      FROM chargebee_pre
       )
 
-      SELECT
-      CAST(user_id AS VARCHAR) AS user_id,
-      CAST(billing_period AS VARCHAR) AS billing_period,
-      CAST(platform AS VARCHAR) AS platform,
-      CAST(report_date AS DATE) AS report_date
-      FROM combined
+      SELECT *
+      FROM all_rows
+      WHERE (
+      {% incrementcondition %} report_date {% endincrementcondition %}
+      )
       ;;
   }
 

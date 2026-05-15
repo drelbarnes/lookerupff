@@ -104,6 +104,11 @@ explore: redshift_timeupdate {
   label: "Redshift Timeupdate"
 }
 
+include: "redshift_title_histogram.view.lkml"
+explore: redshift_title_histogram {
+  label: "Movie Title Minutes Histogram"
+}
+
 include: "redshift_allfirstplay_javascript_video_content_playing.view.lkml"
 explore: redshift_allfirstplay_javascript_video_content_playing {
   label: "Redshift Javascript VCP"
