@@ -8,109 +8,27 @@ view: sub_count {
     indexes: ["report_date"]
 
     sql:
-      WITH active AS (
-        SELECT
-          report_date
-          ,user_id
-          ,CASE
-            WHEN platform = 'Chargebee' THEN 'web'
-            ELSE platform
-          END AS platform
-          ,billing_period
-        FROM ${UPFF_analytics_Vw_v2.SQL_TABLE_NAME}
-        WHERE status IN ('active', 'non_renewing', 'enabled')
-      ),
-
-      trial AS (
       SELECT
-      report_date
-      ,user_id
-      ,platform
-      ,billing_period
-      FROM ${free_trials.SQL_TABLE_NAME}
-      ),
+        CAST(user_count      AS BIGINT)  AS user_count
+        ,CAST(report_date    AS DATE)    AS report_date
+        ,CAST(platform       AS VARCHAR) AS platform
+        ,CAST(billing_period AS VARCHAR) AS billing_period
+        ,CAST(status         AS VARCHAR) AS status
+        ,'AzZmVjUuQo25N2MFb'::VARCHAR    AS user_id
+      FROM (
 
-      active_ios AS (
-      SELECT *
-      FROM ${ios.SQL_TABLE_NAME}
-      ),
-
-      active_count_pre AS (
-      SELECT
-      COUNT(DISTINCT user_id) AS user_count
-      ,report_date
-      ,platform
-      ,billing_period
-      FROM active
-      WHERE platform NOT IN ('ios')
-      GROUP BY 2, 3, 4
-
-      UNION ALL
-
-      SELECT
-      paid_subscribers AS user_count
-      ,report_date
-      ,'ios' AS platform
-      ,billing_period
-      FROM active_ios
-      ),
-
-      active_count AS (
-      SELECT
-      user_count
-      ,report_date
-      ,platform
-      ,billing_period
-      FROM active_count_pre
-      WHERE platform != 'roku'
-
-      UNION ALL
-
-      SELECT
-      user_count + 6700 AS user_count
-      ,report_date
-      ,platform
-      ,billing_period
-      FROM active_count_pre
-      WHERE platform = 'roku'
-      AND billing_period = 'monthly'
-
-      UNION ALL
-
-      SELECT
-      user_count + 2300 AS user_count
-      ,report_date
-      ,platform
-      ,billing_period
-      FROM active_count_pre
-      WHERE platform = 'roku'
-      AND billing_period = 'yearly'
-      ),
-
-      trial_count AS (
-      SELECT
-      COUNT(DISTINCT user_id) AS user_count
-      ,report_date
-      ,platform
-      ,billing_period
-      FROM trial
-      GROUP BY 2, 3, 4
-      ),
-
-      total_trial_count AS (
+      SELECT user_count, report_date, platform, billing_period, 'dunning_gained'::VARCHAR AS status
+      FROM (
       SELECT
       SUM(user_count) OVER (
       PARTITION BY platform, billing_period
       ORDER BY report_date
-      ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
-      ) AS user_count_7d
+      ROWS BETWEEN 13 PRECEDING AND CURRENT ROW
+      ) AS user_count
       ,report_date
       ,platform
       ,billing_period
-      FROM trial_count
-      ),
-
-      convert_dunning_count_pre AS (
+      FROM (
       SELECT
       COUNT(DISTINCT user_id) AS user_count
       ,DATE(received_at)      AS report_date
@@ -123,9 +41,13 @@ view: sub_count {
       WHERE content_invoice_dunning_status IS NOT NULL
       AND content_subscription_subscription_items LIKE '%UP%'
       GROUP BY 2, 3, 4
-      ),
+      ) convert_dunning_count_pre
+      ) total_dunning
 
-      total_dunning AS (
+      UNION ALL
+
+      SELECT user_count, report_date, platform, billing_period, 'dunning_paid'::VARCHAR AS status
+      FROM (
       SELECT
       SUM(user_count) OVER (
       PARTITION BY platform, billing_period
@@ -135,10 +57,7 @@ view: sub_count {
       ,report_date
       ,platform
       ,billing_period
-      FROM convert_dunning_count_pre
-      ),
-
-      dunning_paid_count_pre AS (
+      FROM (
       SELECT
       COUNT(DISTINCT content_subscription_id) AS user_count
       ,DATE(received_at)                      AS report_date
@@ -153,22 +72,13 @@ view: sub_count {
       AND (DATE(received_at) - DATE(TIMESTAMP 'epoch' + content_customer_created_at * INTERVAL '1 second')) <= 14
       AND content_invoice_dunning_attempts != '[]'
       GROUP BY 2, 3, 4
-      ),
+      ) dunning_paid_count_pre
+      ) total_dunning_paid
 
-      total_dunning_paid AS (
-      SELECT
-      SUM(user_count) OVER (
-      PARTITION BY platform, billing_period
-      ORDER BY report_date
-      ROWS BETWEEN 13 PRECEDING AND CURRENT ROW
-      ) AS user_count
-      ,report_date
-      ,platform
-      ,billing_period
-      FROM dunning_paid_count_pre
-      ),
+      UNION ALL
 
-      dunning_cancelled_count_pre AS (
+      SELECT user_count, report_date, platform, billing_period, 'dunning_cancelled'::VARCHAR AS status
+      FROM (
       SELECT
       COUNT(DISTINCT content_customer_id) AS user_count
       ,DATE(timestamp)                    AS report_date
@@ -182,66 +92,160 @@ view: sub_count {
       AND content_subscription_cancelled_at - content_customer_created_at < 1900000
       AND content_subscription_subscription_items LIKE '%UP%'
       GROUP BY 2, 3, 4
-      ),
+      ) dunning_cancelled_count_pre
 
-      all_rows AS (
+      UNION ALL
+
+      SELECT user_count, report_date, platform, billing_period, 'active'::VARCHAR AS status
+      FROM (
+      SELECT user_count, report_date, platform, billing_period
+      FROM (
+      SELECT user_count, report_date, platform, billing_period
+      FROM (
       SELECT
-      user_count
+      COUNT(DISTINCT user_id) AS user_count
       ,report_date
       ,platform
       ,billing_period
-      ,'dunning_gained'::VARCHAR AS status
-      FROM total_dunning
+      FROM (
+      SELECT
+      report_date
+      ,user_id
+      ,CASE
+      WHEN platform = 'Chargebee' THEN 'web'
+      ELSE platform
+      END AS platform
+      ,billing_period
+      FROM ${UPFF_analytics_Vw_v2.SQL_TABLE_NAME}
+      WHERE status IN ('active', 'non_renewing', 'enabled')
+      ) active
+      WHERE platform NOT IN ('ios')
+      GROUP BY 2, 3, 4
 
       UNION ALL
 
       SELECT
-      user_count
+      paid_subscribers AS user_count
       ,report_date
-      ,platform
+      ,'ios' AS platform
       ,billing_period
-      ,'dunning_paid'::VARCHAR AS status
-      FROM total_dunning_paid
+      FROM ${ios.SQL_TABLE_NAME}
+      ) active_count_pre
+      ) active_pre
+      WHERE platform != 'roku'
 
       UNION ALL
 
       SELECT
-      user_count
+      user_count + 6700 AS user_count
       ,report_date
       ,platform
       ,billing_period
-      ,'dunning_cancelled'::VARCHAR AS status
-      FROM dunning_cancelled_count_pre
+      FROM (
+      SELECT user_count, report_date, platform, billing_period
+      FROM (
+      SELECT
+      COUNT(DISTINCT user_id) AS user_count
+      ,report_date
+      ,platform
+      ,billing_period
+      FROM (
+      SELECT
+      report_date
+      ,user_id
+      ,CASE
+      WHEN platform = 'Chargebee' THEN 'web'
+      ELSE platform
+      END AS platform
+      ,billing_period
+      FROM ${UPFF_analytics_Vw_v2.SQL_TABLE_NAME}
+      WHERE status IN ('active', 'non_renewing', 'enabled')
+      ) active
+      WHERE platform NOT IN ('ios')
+      GROUP BY 2, 3, 4
 
       UNION ALL
 
       SELECT
-      user_count
+      paid_subscribers AS user_count
       ,report_date
-      ,platform
+      ,'ios' AS platform
       ,billing_period
-      ,'active'::VARCHAR AS status
-      FROM active_count
+      FROM ${ios.SQL_TABLE_NAME}
+      ) active_count_pre
+      ) roku_pre
+      WHERE platform = 'roku'
+      AND billing_period = 'monthly'
 
       UNION ALL
 
       SELECT
-      user_count_7d AS user_count
+      user_count + 2300 AS user_count
       ,report_date
       ,platform
       ,billing_period
-      ,'in_trial'::VARCHAR AS status
-      FROM total_trial_count
-      )
+      FROM (
+      SELECT user_count, report_date, platform, billing_period
+      FROM (
+      SELECT
+      COUNT(DISTINCT user_id) AS user_count
+      ,report_date
+      ,platform
+      ,billing_period
+      FROM (
+      SELECT
+      report_date
+      ,user_id
+      ,CASE
+      WHEN platform = 'Chargebee' THEN 'web'
+      ELSE platform
+      END AS platform
+      ,billing_period
+      FROM ${UPFF_analytics_Vw_v2.SQL_TABLE_NAME}
+      WHERE status IN ('active', 'non_renewing', 'enabled')
+      ) active
+      WHERE platform NOT IN ('ios')
+      GROUP BY 2, 3, 4
+
+      UNION ALL
 
       SELECT
-      CAST(user_count      AS BIGINT)  AS user_count
-      ,CAST(report_date    AS DATE)    AS report_date
-      ,CAST(platform       AS VARCHAR) AS platform
-      ,CAST(billing_period AS VARCHAR) AS billing_period
-      ,CAST(status         AS VARCHAR) AS status
-      ,'AzZmVjUuQo25N2MFb'::VARCHAR    AS user_id
-      FROM all_rows
+      paid_subscribers AS user_count
+      ,report_date
+      ,'ios' AS platform
+      ,billing_period
+      FROM ${ios.SQL_TABLE_NAME}
+      ) active_count_pre
+      ) roku_pre2
+      WHERE platform = 'roku'
+      AND billing_period = 'yearly'
+      ) active_count
+
+      UNION ALL
+
+      SELECT user_count_7d AS user_count, report_date, platform, billing_period, 'in_trial'::VARCHAR AS status
+      FROM (
+      SELECT
+      SUM(user_count) OVER (
+      PARTITION BY platform, billing_period
+      ORDER BY report_date
+      ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
+      ) AS user_count_7d
+      ,report_date
+      ,platform
+      ,billing_period
+      FROM (
+      SELECT
+      COUNT(DISTINCT user_id) AS user_count
+      ,report_date
+      ,platform
+      ,billing_period
+      FROM ${free_trials.SQL_TABLE_NAME}
+      GROUP BY 2, 3, 4
+      ) trial_count
+      ) total_trial_count
+
+      ) all_rows
       WHERE (
       {% incrementcondition %} report_date {% endincrementcondition %}
       )
