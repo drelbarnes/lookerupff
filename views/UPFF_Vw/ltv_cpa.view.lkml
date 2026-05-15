@@ -11,15 +11,13 @@ view: ltv_cpa {
     sortkeys: ["report_date"]
 
     sql:
-      -- FIX: all incrementcondition tags removed from inner CTEs.
-      -- A single incrementcondition tag on the final SELECT is the only
-      -- injection point. The date guards in each CTE still bound the
-      -- full-rebuild window; the outer filter handles incremental runs.
-      --
-      -- NOTE: this sql block begins with a leading comma because it is
-      -- appended to a WITH clause defined upstream in the model. The final
-      -- SELECT therefore IS the outermost query and is the correct place
-      -- for the single incrementcondition filter.
+      -- FIX: leading-comma CTE fragment pattern retained (this sql block is
+      -- appended to a WITH clause defined upstream in the model). The final
+      -- UNION of result and cpa is promoted into a named CTE (all_rows) so
+      -- the terminal SELECT is a clean SELECT * FROM all_rows WHERE (...),
+      -- with an unaliased report_date column for the incrementcondition tag.
+      -- This avoids any alias-resolution ambiguity and matches the pattern
+      -- used across all other incremental PDTs in this project.
       , v2_table AS (
         SELECT *
         FROM ${UPFF_analytics_Vw_v2.SQL_TABLE_NAME}
@@ -114,37 +112,42 @@ view: ltv_cpa {
       b.prior_31_days_subs,
       a.platform,
       a.billing_period,
-      a.report_date
+      a.report_date,
+      c.rolling_spend,
+      c.rolling_converted
       FROM prior_subs b
       LEFT JOIN rolling_churn a
-      ON a.report_date = b.report_date
-      AND a.platform    = b.platform
+      ON  a.report_date    = b.report_date
+      AND a.platform       = b.platform
       AND a.billing_period = b.billing_period
+      LEFT JOIN (
+      SELECT
+      rs.report_date,
+      rs.rolling_spend,
+      rc.rolling_converted
+      FROM rolling_spend rs
+      LEFT JOIN rolling_converted rc
+      ON rs.report_date = rc.report_date
+      ) c
+      ON a.report_date = c.report_date
       ),
 
-      cpa AS (
+      all_rows AS (
       SELECT
-      a.report_date,
-      a.rolling_spend,
-      b.rolling_converted
-      FROM rolling_spend a
-      LEFT JOIN rolling_converted b
-      ON a.report_date = b.report_date
+      CAST(rolling_churn_30_days AS BIGINT)  AS rolling_churn_30_days,
+      CAST(prior_31_days_subs    AS BIGINT)  AS prior_31_days_subs,
+      CAST(platform              AS VARCHAR) AS platform,
+      CAST(billing_period        AS VARCHAR) AS billing_period,
+      CAST(report_date           AS DATE)    AS report_date,
+      CAST(rolling_spend         AS NUMERIC(18,2)) AS rolling_spend,
+      CAST(rolling_converted     AS BIGINT)  AS rolling_converted
+      FROM result
       )
 
-      SELECT
-      a.rolling_churn_30_days,
-      a.prior_31_days_subs,
-      a.platform,
-      a.billing_period,
-      a.report_date,
-      b.rolling_spend,
-      b.rolling_converted
-      FROM result a
-      LEFT JOIN cpa b
-      ON a.report_date = b.report_date
+      SELECT *
+      FROM all_rows
       WHERE (
-      {% incrementcondition %} a.report_date {% endincrementcondition %}
+      {% incrementcondition %} report_date {% endincrementcondition %}
       )
       ;;
 
