@@ -1475,6 +1475,12 @@ view: marketing_attribution_test {
     sql: ${app_installs} + ${app_reinstalls} ;;
   }
 
+  measure: total_app_installs_paid {
+    type: number
+    label: "Total App Re/Installs (Paid Only)"
+    sql: ${app_installs_paid} + ${app_reinstalls_paid} ;;
+  }
+
   measure: app_reinstall_to_trial_rate {
     type: number
     label: "App Reinstall → Trial Rate"
@@ -1506,6 +1512,13 @@ view: marketing_attribution_test {
     type: number
     label: "App Install → Trial Rate (Paid Only)"
     sql: 1.0 * ${app_trials_started_paid} / NULLIF(${app_installs_paid}, 0) ;;
+    value_format_name: percent_2
+  }
+
+  measure: total_app_re_installs_to_trial_rate_paid {
+    type: number
+    label: "Total App Re/Installs → Trial Rate (Paid Only)"
+    sql: 1.0 * ${app_trials_started_paid} / NULLIF((${app_installs_paid} + ${app_reinstalls_paid}), 0) ;;
     value_format_name: percent_2
   }
 
