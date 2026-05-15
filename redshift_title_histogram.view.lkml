@@ -1,6 +1,6 @@
 view: redshift_title_histogram {
     derived_table: {
-      sql: {% raw %}
+      sql:
 
               with
 
@@ -34,7 +34,7 @@ view: redshift_title_histogram {
 
               select * from histogram
 
-            {% endraw %} ;;
+             ;;
     }
 
     filter: title_filter {
