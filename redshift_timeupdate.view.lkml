@@ -490,9 +490,20 @@ view: redshift_timeupdate {
       sql: ${duration} ;;
     }
 
-    dimension: minutes_watched {
+    dimension: minutes_watched_dim {
       type: number
       sql: case when ${duration} < ${timecode} then round(${duration} / 60) else round(${timecode} / 60) end ;;
+      value_format: "#,##0"
+    }
+
+    measure: minutes_watched {
+      type: sum
+      sql:
+      case
+        when ${duration} < ${timecode}
+        then round(${duration} / 60)
+        else round(${timecode} / 60)
+      end ;;
       value_format: "#,##0"
     }
 
