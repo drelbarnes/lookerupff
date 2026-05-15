@@ -1,15 +1,17 @@
 view: redshift_title_histogram {
     derived_table: {
-      sql: {% raw %} with
+      sql: {% raw %}
+
+              with
 
               target_views AS
               (
               SELECT
                 user_id, title, timecode, duration, DATE(timestamp) AS ds
-              FROM looker_scratch.lr$rmc5u1778819459658_redshift_timeupdate
-              WHERE title = 'Instant Nanny'
-              AND DATE(timestamp) >= '2026-05-01'
-              AND DATE(timestamp) <= '2026-05-15'
+              FROM ${redshift_timeupdate.SQL_TABLE_NAME}
+              WHERE 1=1
+              AND {% condition title_filter %} title {% endcondition %}
+              AND {% condition date_filter %} DATE(timestamp) {% endcondition %}
               ),
 
               qualified_views AS
@@ -30,12 +32,27 @@ view: redshift_title_histogram {
               ORDER BY 2 ASC
               )
 
-              select * from histogram {% endraw %} ;;
+              select * from histogram
+
+            {% endraw %} ;;
+    }
+
+    filter: title_filter {
+      type: string
+    }
+
+    filter: date_filter {
+      type: date
     }
 
     measure: count {
       type: count
       drill_fields: [detail*]
+    }
+
+    measure: view_count {
+      type: sum
+      sql: ${TABLE}.view_count ;;
     }
 
     dimension: count_ {
