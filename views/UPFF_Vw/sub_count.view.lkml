@@ -12,31 +12,23 @@ view: sub_count {
     indexes: ["report_date"]
 
     sql:
-      -- FIX: all incrementcondition tags removed from inner CTEs.
-      -- A single incrementcondition tag on the outermost SELECT (below)
-      -- is the only injection point. The params-style date guards in each
-      -- CTE still bound the full-rebuild window; the outer filter handles
-      -- the narrow incremental window on subsequent runs.
-      SELECT
-        user_count
-        ,report_date
-        ,platform
-        ,billing_period
-        ,status
-        ,'AzZmVjUuQo25N2MFb'::VARCHAR AS user_id
-      FROM (
-        WITH active AS (
-          SELECT
-            report_date
-            ,user_id
-            ,CASE
-              WHEN platform = 'Chargebee' THEN 'web'
-              ELSE platform
-            END AS platform
-            ,billing_period
-          FROM ${UPFF_analytics_Vw_v2.SQL_TABLE_NAME}
-          WHERE status IN ('active', 'non_renewing', 'enabled')
-        ),
+      -- FIX: The previous version placed WITH ... inside SELECT * FROM (WITH ...) result,
+      -- which is illegal in Redshift and caused FATAL_INCREMENTAL_ERROR.
+      -- The WITH chain now lives at the top level. The five-way UNION ALL is promoted
+      -- into a named CTE (all_rows), and the single incrementcondition tag sits on the
+      -- clean terminal SELECT * FROM all_rows WHERE (...).
+      WITH active AS (
+        SELECT
+          report_date
+          ,user_id
+          ,CASE
+            WHEN platform = 'Chargebee' THEN 'web'
+            ELSE platform
+          END AS platform
+          ,billing_period
+        FROM ${UPFF_analytics_Vw_v2.SQL_TABLE_NAME}
+        WHERE status IN ('active', 'non_renewing', 'enabled')
+      ),
 
       trial AS (
       SELECT
@@ -130,8 +122,8 @@ view: sub_count {
       convert_dunning_count_pre AS (
       SELECT
       COUNT(DISTINCT user_id) AS user_count
-      ,DATE(received_at) AS report_date
-      ,'web' AS platform
+      ,DATE(received_at)      AS report_date
+      ,'web'                  AS platform
       ,CASE
       WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'::VARCHAR
       ELSE 'yearly'::VARCHAR
@@ -140,15 +132,6 @@ view: sub_count {
       WHERE content_invoice_dunning_status IS NOT NULL
       AND content_subscription_subscription_items LIKE '%UP%'
       GROUP BY 2, 3, 4
-      ),
-
-      convert_dunning_count AS (
-      SELECT
-      user_count
-      ,report_date
-      ,platform
-      ,billing_period
-      FROM convert_dunning_count_pre
       ),
 
       total_dunning AS (
@@ -161,14 +144,14 @@ view: sub_count {
       ,report_date
       ,platform
       ,billing_period
-      FROM convert_dunning_count
+      FROM convert_dunning_count_pre
       ),
 
       dunning_paid_count_pre AS (
       SELECT
       COUNT(DISTINCT content_subscription_id) AS user_count
-      ,DATE(received_at) AS report_date
-      ,'web' AS platform
+      ,DATE(received_at)                      AS report_date
+      ,'web'                                  AS platform
       ,CASE
       WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'::VARCHAR
       ELSE 'yearly'::VARCHAR
@@ -181,15 +164,6 @@ view: sub_count {
       GROUP BY 2, 3, 4
       ),
 
-      dunning_paid_count AS (
-      SELECT
-      user_count
-      ,report_date
-      ,platform
-      ,billing_period
-      FROM dunning_paid_count_pre
-      ),
-
       total_dunning_paid AS (
       SELECT
       SUM(user_count) OVER (
@@ -200,14 +174,14 @@ view: sub_count {
       ,report_date
       ,platform
       ,billing_period
-      FROM dunning_paid_count
+      FROM dunning_paid_count_pre
       ),
 
       dunning_cancelled_count_pre AS (
       SELECT
       COUNT(DISTINCT content_customer_id) AS user_count
-      ,DATE(timestamp) AS report_date
-      ,'web' AS platform
+      ,DATE(timestamp)                    AS report_date
+      ,'web'                              AS platform
       ,CASE
       WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'::VARCHAR
       ELSE 'yearly'::VARCHAR
@@ -219,21 +193,13 @@ view: sub_count {
       GROUP BY 2, 3, 4
       ),
 
-      dunning_cancelled_count AS (
+      all_rows AS (
       SELECT
       user_count
       ,report_date
       ,platform
       ,billing_period
-      FROM dunning_cancelled_count_pre
-      )
-
-      SELECT
-      user_count
-      ,report_date
-      ,platform
-      ,billing_period
-      ,'dunning_gained' AS status
+      ,'dunning_gained'::VARCHAR AS status
       FROM total_dunning
 
       UNION ALL
@@ -243,7 +209,7 @@ view: sub_count {
       ,report_date
       ,platform
       ,billing_period
-      ,'dunning_paid' AS status
+      ,'dunning_paid'::VARCHAR AS status
       FROM total_dunning_paid
 
       UNION ALL
@@ -253,8 +219,8 @@ view: sub_count {
       ,report_date
       ,platform
       ,billing_period
-      ,'dunning_cancelled' AS status
-      FROM dunning_cancelled_count
+      ,'dunning_cancelled'::VARCHAR AS status
+      FROM dunning_cancelled_count_pre
 
       UNION ALL
 
@@ -263,7 +229,7 @@ view: sub_count {
       ,report_date
       ,platform
       ,billing_period
-      ,'active' AS status
+      ,'active'::VARCHAR AS status
       FROM active_count
 
       UNION ALL
@@ -273,9 +239,18 @@ view: sub_count {
       ,report_date
       ,platform
       ,billing_period
-      ,'in_trial' AS status
+      ,'in_trial'::VARCHAR AS status
       FROM total_trial_count
-      ) result
+      )
+
+      SELECT
+      CAST(user_count      AS BIGINT)  AS user_count
+      ,CAST(report_date    AS DATE)    AS report_date
+      ,CAST(platform       AS VARCHAR) AS platform
+      ,CAST(billing_period AS VARCHAR) AS billing_period
+      ,CAST(status         AS VARCHAR) AS status
+      ,'AzZmVjUuQo25N2MFb'::VARCHAR    AS user_id
+      FROM all_rows
       WHERE (
       {% incrementcondition %} report_date {% endincrementcondition %}
       )
