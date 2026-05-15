@@ -1,22 +1,13 @@
 view: sub_count {
   derived_table: {
 
-    # ============================================================
-    # INCREMENTAL PDT CONFIG
-    # ============================================================
     increment_key: "report_date"
     increment_offset: 13
     datagroup_trigger: sub_count_datagroup
     distribution_style: even
-    #sortkeys: ["report_date", "event_type"]
     indexes: ["report_date"]
 
     sql:
-      -- FIX: The previous version placed WITH ... inside SELECT * FROM (WITH ...) result,
-      -- which is illegal in Redshift and caused FATAL_INCREMENTAL_ERROR.
-      -- The WITH chain now lives at the top level. The five-way UNION ALL is promoted
-      -- into a named CTE (all_rows), and the single incrementcondition tag sits on the
-      -- clean terminal SELECT * FROM all_rows WHERE (...).
       WITH active AS (
         SELECT
           report_date
@@ -329,11 +320,6 @@ view: sub_count {
   }
 }
 
-################################################################################
-# Datagroup — triggers the daily incremental run at 10 AM ET
-# NOTE: This must be defined at the MODEL level (in your .model.lkml file),
-# not inside the view file.
-################################################################################
 datagroup: sub_count_datagroup {
   sql_trigger: SELECT TO_CHAR(
                    CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE())
