@@ -506,6 +506,23 @@ view: redshift_timeupdate {
       value_format: "#,##0"
     }
 
+    dimension: minutes_watched_dim {
+      type: number
+      sql:
+      case
+        when ${duration} < ${timecode}
+        then round(${duration} / 60)
+        else round(${timecode} / 60)
+      end ;;
+      value_format: "#,##0"
+    }
+
+  measure: minutes_count {
+    type: sum
+    value_format: "#,##0"
+    sql: ${minutes_watched_dim} ;;
+  }
+
     dimension: hours_watched_dim {
       type: number
       sql:
@@ -523,27 +540,10 @@ view: redshift_timeupdate {
       sql: ${hours_watched_dim} ;;
     }
 
-    dimension: minutes_watched_dim {
-      type: number
-      sql:
-      case
-        when ${duration} < ${timecode}
-        then round(${duration} / 60)
-        else round(${timecode} / 60)
-      end ;;
-      value_format: "#,##0"
-  }
-
-    measure: minutes_count {
-      type: sum
-      value_format: "#,##0"
-      sql: ${minutes_watched_dim} ;;
-    }
-
     measure: percent_completed {
       type: number
       value_format: "0\%"
-      sql: case when ${timecode_count} > ${duration_count} then 100.00 else 100.00 * ${timecode_count}/${duration_count} end ;;
+      sql: case when ${timecode_count} > ${duration_count} then 100.00 else 100.00 * ${timecode_count} / ${duration_count} end ;;
     }
 
     measure: play_count {
