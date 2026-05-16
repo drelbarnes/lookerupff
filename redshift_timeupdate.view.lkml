@@ -517,11 +517,11 @@ view: redshift_timeupdate {
       value_format: "#,##0"
     }
 
-  measure: minutes_count {
-    type: sum
-    value_format: "#,##0"
-    sql: ${minutes_watched_dim} ;;
-  }
+    measure: minutes_count {
+      type: sum
+      value_format: "#,##0"
+      sql: ${minutes_watched_dim} ;;
+    }
 
     dimension: hours_watched_dim {
       type: number
