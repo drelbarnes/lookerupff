@@ -14,13 +14,13 @@
 #       * Retroactive attribution changes within ~1 week are captured
 #
 # FIX (FATAL_INCREMENTAL_ERROR):
-#   The prior version placed {% incrementcondition %} inside multiple inner CTEs
+#   The prior version placed inside multiple inner CTEs
 #   (branch_app_trials, branch_app_installs, branch_app_reinstalls, and six
 #   branches of lifecycle_events). Looker's incremental PDT engine supports
 #   exactly ONE injection point. Multiple tags — or tags inside UNION ALL branches
 #   — cause Looker to emit the literal string FATAL_INCREMENTAL_ERROR in the SQL.
 #
-#   Fix: all {% incrementcondition %} tags removed from inner CTEs. A single
+#   Fix: all  tags removed from inner CTEs. A single
 #   {% incrementcondition %} is placed on the outermost SELECT, which wraps the
 #   five row-type UNION ALLs and filters on the shared `report_date` column.
 #   The `params` CTE start_date / end_date guards still bound every inner CTE on
