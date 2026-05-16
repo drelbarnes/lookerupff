@@ -99,7 +99,7 @@ view: free_trials {
       SELECT *
       FROM all_rows
       WHERE (
-      {% incrementcondition %} report_date = (SELECT CURRENT_DATE) {% endincrementcondition %}
+      {% incrementcondition %} report_date) {% endincrementcondition %}
       )
       ;;
   }
