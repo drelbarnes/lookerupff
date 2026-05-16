@@ -246,9 +246,8 @@ view: sub_count {
       ) total_trial_count
 
       ) all_rows
-      WHERE (
+      WHERE
       {% incrementcondition %} report_date {% endincrementcondition %}
-      )
       ;;
   }
 
