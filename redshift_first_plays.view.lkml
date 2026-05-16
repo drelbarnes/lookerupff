@@ -7,10 +7,7 @@ view: redshift_first_plays {
               SELECT
                 *
               FROM ${redshift_timeupdate.SQL_TABLE_NAME}
-              WHERE user_id <> '0'
-              AND user_id ~ '^[0-9]*$'
-              AND user_id is NOT NULL
-              AND title is NOT NULL
+              WHERE title is NOT NULL
               ),
 
               plays_most_granular AS
