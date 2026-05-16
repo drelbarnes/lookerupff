@@ -81,8 +81,8 @@ view: redshift_first_plays {
       sql: ${TABLE}.collection ;;
     }
 
-    dimension: play_count {
-      type: number
+    measure: play_count {
+      type: sum
       sql: ${TABLE}.play_count ;;
     }
 
