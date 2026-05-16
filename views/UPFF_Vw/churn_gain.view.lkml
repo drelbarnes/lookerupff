@@ -260,9 +260,8 @@ view: churn_gain {
       FROM ${rolling_platform.SQL_TABLE_NAME}
 
       ) all_rows
-      WHERE (
+      WHERE
       {% incrementcondition %} report_date {% endincrementcondition %}
-      )
       ;;
   }
 
