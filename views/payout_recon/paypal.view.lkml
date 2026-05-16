@@ -1,43 +1,69 @@
 view: paypal {
   derived_table: {
     sql: -- Declare variables for start and end dates
-DECLARE start_date DEFAULT DATE '2025-02-24';
-DECLARE end_date DEFAULT DATE '2025-11-30';
+ with cfg AS (  -- renamed from "cfg"
+  SELECT report_date
+  FROM ${config.SQL_TABLE_NAME}),
 
-with
-
-paypal_chargebee as (SELECT distinct
-'' as customer_id
-, To_Email_Address as email
+ paypal as (
+SELECT distinct
+To_Email_Address as email
 , date(_Date_) as charge_created
 , 'charge' as reporting_category
 , Reference_Txn_ID as source_id
 , Transaction_ID as transaction_id
 , Gross
+, fee
 , 'paypal' as payment_gateway
-FROM `up-faith-and-family-216419.customers.paypal_payout_recon_11_2025_v3`   WHERE date(_Date_) between '2025-02-24' AND end_date
-and Type in ('Payment Refund','PreApproved Payment Bill User Payment'),
+,type as payment_description
+FROM  `up-faith-and-family-216419.customers.paypal_payout_recon_3_2026`   WHERE date(_Date_) between (SELECT report_date FROM config) - INTERVAL 31 DAY
+  AND (SELECT report_date FROM config)),
 
-paypal_non_chargebee as (SELECT distinct
-'' as customer_id
-, To_Email_Address as email
-, date(_Date_) as charge_created
-, 'charge' as reporting_category
-, Reference_Txn_ID as source_id
-, Transaction_ID as transaction_id
-, Gross
-, 'paypal' as payment_gateway
-FROM `up-faith-and-family-216419.customers.paypal_payout_recon_11_2025_v3`   WHERE date(_Date_) between '2025-02-24' AND end_date
-and Type not in ('Payment Refund','PreApproved Payment Bill User Payment'),
+paypal_chargebee as (
+SELECT * FROM paypal
+WHERE payment_description in ('Payment Refund','PreApproved Payment Bill User Payment')),
+
+paypal_non_chargebee as (SELECT * FROM paypal
+WHERE payment_description not in ('Payment Refund','PreApproved Payment Bill User Payment')),
 
 charges as (SELECT distinct
   content_transaction_customer_id as customer_id,
   content_customer_email as email,
   content_transaction_id_at_gateway as transaction_id,
-  received_at,
-  content_invoice_line_items_0_entity_id as product_1,
-  content_invoice_line_items_1_entity_id as product_2,
-  content_invoice_line_items_2_entity_id as product_3,
+  date(received_at) as report_date,
+  CASE
+    WHEN content_invoice_line_items_0_entity_id LIKE '%UP%' THEN 'UP-Faith-Family'
+    WHEN content_invoice_line_items_0_entity_id LIKE '%Minno%' THEN 'Minno'
+    WHEN content_invoice_line_items_0_entity_id LIKE '%Gaither%' THEN 'GaitherTV'
+    ELSE NULL
+  END AS product_1,
+  CASE
+    WHEN content_invoice_line_items_1_entity_id LIKE '%UP%' THEN 'UP-Faith-Family'
+    WHEN content_invoice_line_items_1_entity_id LIKE '%Minno%' THEN 'Minno'
+    WHEN content_invoice_line_items_1_entity_id LIKE '%Gaither%' THEN 'GaitherTV'
+    ELSE NULL
+  END AS product_2,
+  CASE
+    WHEN content_invoice_line_items_2_entity_id LIKE '%UP%' THEN 'UP-Faith-Family'
+    WHEN content_invoice_line_items_2_entity_id LIKE '%Minno%' THEN 'Minno'
+    WHEN content_invoice_line_items_2_entity_id LIKE '%Gaither%' THEN 'GaitherTV'
+    ELSE NULL
+  END AS product_3,
+  CASE
+    WHEN content_invoice_line_items_0_entity_id LIKE '%Yearly%' THEN 'Yearly'
+    WHEN content_invoice_line_items_0_entity_id LIKE '%Monthly%' THEN 'Monthly'
+    ELSE NULL
+  END AS product_1_period,
+  CASE
+    WHEN content_invoice_line_items_1_entity_id LIKE '%Yearly%' THEN 'Yearly'
+    WHEN content_invoice_line_items_1_entity_id LIKE '%Monthly%' THEN 'Monthly'
+    ELSE NULL
+  END AS product_2_period,
+  CASE
+    WHEN content_invoice_line_items_2_entity_id LIKE '%Yearly%' THEN 'Yearly'
+    WHEN content_invoice_line_items_2_entity_id LIKE '%Monthly%' THEN 'Monthly'
+    ELSE NULL
+  END AS product_3_period,
   content_invoice_line_items_0_tax_amount as tax_1,
   content_invoice_line_items_1_tax_amount as tax_2,
   content_invoice_line_items_2_tax_amount as tax_3,
@@ -47,18 +73,49 @@ charges as (SELECT distinct
   content_invoice_line_items_0_discount_amount  AS discount_amount1,
   content_invoice_line_items_1_discount_amount  AS discount_amount2,
   content_invoice_line_items_2_discount_amount  AS discount_amount3,
-  content_invoice_amount_paid as total_amount,
-  'charge' AS reporting_category
- `up-faith-and-family-216419.chargebee_webhook_events.payment_succeeded` WHERE date(received_at) between start_date AND end_date),
+  content_invoice_amount_paid as total_amount
+  --'charge' AS reporting_category
+ from `up-faith-and-family-216419.chargebee_webhook_events.payment_succeeded` WHERE date(received_at) between (SELECT report_date FROM config) - INTERVAL 31 DAY
+  AND (SELECT report_date FROM config)),
 
  refunds as (SELECT distinct
   content_transaction_customer_id as customer_id,
   content_customer_email as email,
   content_transaction_id_at_gateway as transaction_id,
-  received_at,
-  content_invoice_line_items_0_entity_id as product_1,
-  content_invoice_line_items_1_entity_id as product_2,
-  content_invoice_line_items_2_entity_id as product_3,
+  date(received_at) as report_date,
+  CASE
+    WHEN content_invoice_line_items_0_entity_id LIKE '%UP%' THEN 'UP-Faith-Family'
+    WHEN content_invoice_line_items_0_entity_id LIKE '%Minno%' THEN 'Minno'
+    WHEN content_invoice_line_items_0_entity_id LIKE '%Gaither%' THEN 'GaitherTV'
+    ELSE NULL
+  END AS product_1,
+  CASE
+    WHEN content_invoice_line_items_1_entity_id LIKE '%UP%' THEN 'UP-Faith-Family'
+    WHEN content_invoice_line_items_1_entity_id LIKE '%Minno%' THEN 'Minno'
+    WHEN content_invoice_line_items_1_entity_id LIKE '%Gaither%' THEN 'GaitherTV'
+    ELSE NULL
+  END AS product_2,
+  CASE
+    WHEN content_invoice_line_items_2_entity_id LIKE '%UP%' THEN 'UP-Faith-Family'
+    WHEN content_invoice_line_items_2_entity_id LIKE '%Minno%' THEN 'Minno'
+    WHEN content_invoice_line_items_2_entity_id LIKE '%Gaither%' THEN 'GaitherTV'
+    ELSE NULL
+  END AS product_3,
+  CASE
+    WHEN content_invoice_line_items_0_entity_id LIKE '%Yearly%' THEN 'Yearly'
+    WHEN content_invoice_line_items_0_entity_id LIKE '%Monthly%' THEN 'Monthly'
+    ELSE NULL
+  END AS product_1_period,
+  CASE
+    WHEN content_invoice_line_items_1_entity_id LIKE '%Yearly%' THEN 'Yearly'
+    WHEN content_invoice_line_items_1_entity_id LIKE '%Monthly%' THEN 'Monthly'
+    ELSE NULL
+  END AS product_2_period,
+  CASE
+    WHEN content_invoice_line_items_2_entity_id LIKE '%Yearly%' THEN 'Yearly'
+    WHEN content_invoice_line_items_2_entity_id LIKE '%Monthly%' THEN 'Monthly'
+    ELSE NULL
+  END AS product_3_period,
   content_invoice_line_items_0_tax_amount as tax_1,
   content_invoice_line_items_1_tax_amount as tax_2,
   content_invoice_line_items_2_tax_amount as tax_3,
@@ -68,10 +125,11 @@ charges as (SELECT distinct
   content_invoice_line_items_0_discount_amount  AS discount_amount1,
   content_invoice_line_items_1_discount_amount  AS discount_amount2,
   content_invoice_line_items_2_discount_amount  AS discount_amount3,
-  content_invoice_amount_paid as total_amount,
-  'refund' AS reporting_category
+  content_invoice_amount_paid as total_amount
+  --'refund' AS reporting_category
 FROM
- `up-faith-and-family-216419.chargebee_webhook_events.payment_refunded` WHERE date(received_at) between start_date AND end_date
+ `up-faith-and-family-216419.chargebee_webhook_events.payment_refunded` WHERE date(received_at) between (SELECT report_date FROM config) - INTERVAL 31 DAY
+  AND (SELECT report_date FROM config)
  /*
  UNION ALL
 
@@ -99,17 +157,19 @@ SELECT * FROM refunds
 
 ),
 
- result as (
+ fill_chargebee as (
  select distinct
-   coalesce(c.customer_id, p.customer_id) as id
-  , c.email
-  , p.charge_created as timestamp_charge_created
-  , date(p.created) as date
-  , p.payment_gateway
-  , c.reporting_category as chargebee_type
-  , c.product_1
+  c.customer_id
+  ,c.email
+  ,p.charge_created as report_date
+  ,p.payment_gateway
+  ,p.payment_description
+  ,c.product_1
   ,c.product_2
   ,c.product_3
+  ,c.product_1_period
+  ,c.product_2_period
+  ,c.product_3_period
   ,c.original_amount1
   ,c.original_amount2
   ,c.original_amount3
@@ -120,20 +180,228 @@ SELECT * FROM refunds
   ,c.tax_2
   ,c.tax_3
   ,c.total_amount
-  , p.source_id as stripe_ref_id
-  , p.gross as stripe_remitted
+  ,p.transaction_id
+  ,p.source_id as ref_id
+  ,p.gross
+  ,p.fee
  from paypal_chargebee p
-right join chargebee_transactions c on p.transaction_id = c.transaction_id ),
+left join chargebee_transactions c on p.transaction_id = c.transaction_id ),
 
-last_month as (
-  select * from ${paypal_old.SQL_TABLE_NAME}
+charge_refund as (
+  select
+  customer_id
+  ,email
+  ,transaction_id
+  ,report_date
+  ,product_1
+  ,product_2
+  ,product_3
+  ,product_1_period
+  ,product_2_period
+  ,product_3_period
+  ,original_amount1
+  ,original_amount2
+  ,original_amount3
+  ,discount_amount1
+  ,discount_amount2
+  ,discount_amount3
+  ,tax_1
+  ,tax_2
+  ,tax_3
+  ,total_amount
+  from ${paypal_old.SQL_TABLE_NAME}
+
+  UNION ALL
+  SELECT * FROM
+  chargebee_transactions
 
 ),
 
+fill_non_chargebee as (
+SELECT
+  c.customer_id
+  ,c.email
+  ,p.charge_created as report_date
+  ,p.payment_gateway
+  ,p.payment_description
+  ,c.product_1
+  ,c.product_2
+  ,c.product_3
+  ,c.product_1_period
+  ,c.product_2_period
+  ,c.product_3_period
+  ,c.original_amount1
+  ,c.original_amount2
+  ,c.original_amount3
+  ,c.discount_amount1
+  ,c.discount_amount2
+  ,c.discount_amount3
+  ,c.tax_1
+  ,c.tax_2
+  ,c.tax_3
+  ,c.total_amount
+  ,p.transaction_id
+  ,p.source_id as ref_id
+  ,p.gross
+  ,p.fee
+  FROM paypal_non_chargebee p
+  LEFT JOIN charge_refund c
+  ON c.transaction_id = p.source_id
+),
 
+result as (
+SELECT * FROM fill_chargebee
+UNION ALL
+SELECT * FROM fill_non_chargebee
+)
 
 
 
    select distinct * from result ;;
   }
+
+    dimension: customer_id {
+      type: string
+      sql: ${TABLE}.customer_id ;;
+    }
+
+    dimension: email {
+      type: string
+      sql: ${TABLE}.email ;;
+    }
+
+    dimension_group: report_date {
+      type: time
+      timeframes: [raw, date, week, month, quarter, year]
+      sql: ${TABLE}.report_date ;;
+    }
+
+    dimension: payment_gateway {
+      type: string
+      sql: ${TABLE}.payment_gateway ;;
+    }
+
+    dimension: payment_description {
+      type: string
+      sql: ${TABLE}.payment_description ;;
+    }
+
+    dimension: product_1 {
+      type: string
+      sql: ${TABLE}.product_1 ;;
+    }
+
+    dimension: product_2 {
+      type: string
+      sql: ${TABLE}.product_2 ;;
+    }
+
+    dimension: product_3 {
+      type: string
+      sql: ${TABLE}.product_3 ;;
+    }
+
+    dimension: product_1_period {
+      type: string
+      sql: ${TABLE}.product_1_period ;;
+    }
+
+    dimension: product_2_period {
+      type: string
+      sql: ${TABLE}.product_2_period ;;
+    }
+
+    dimension: product_3_period {
+      type: string
+      sql: ${TABLE}.product_3_period ;;
+    }
+
+    dimension: transaction_id {
+      type: string
+      primary_key: yes
+      sql: ${TABLE}.transaction_id ;;
+    }
+
+    dimension: ref_id {
+      type: string
+      sql: ${TABLE}.ref_id ;;
+    }
+
+    dimension: original_amount1 {
+      type: number
+      value_format_name: usd
+      sql: ${TABLE}.original_amount1 /100.0;;
+    }
+
+    dimension: original_amount2 {
+      type: number
+      value_format_name: usd
+      sql: ${TABLE}.original_amount2 /100.0;;
+    }
+
+    dimension: original_amount3 {
+      type: number
+      value_format_name: usd
+      sql: ${TABLE}.original_amount3/100.0 ;;
+    }
+
+    dimension: discount_amount1 {
+      type: number
+      value_format_name: usd
+      sql: ${TABLE}.discount_amount1/100.0 ;;
+    }
+
+    dimension: discount_amount2 {
+      type: number
+      value_format_name: usd
+      sql: ${TABLE}.discount_amount2/100.0 ;;
+    }
+
+    dimension: discount_amount3 {
+      type: number
+      value_format_name: usd
+      sql: ${TABLE}.discount_amount3/100.0 ;;
+    }
+
+    dimension: tax_1 {
+      type: number
+      value_format_name: usd
+      sql: ${TABLE}.tax_1/100.0 ;;
+    }
+
+    dimension: tax_2 {
+      type: number
+      value_format_name: usd
+      sql: ${TABLE}.tax_2/100.0 ;;
+    }
+
+    dimension: tax_3 {
+      type: number
+      value_format_name: usd
+      sql: ${TABLE}.tax_3/100.0 ;;
+    }
+
+    dimension: total_amount {
+      type: number
+      value_format_name: usd
+      sql: ${TABLE}.total_amount/100.0 ;;
+    }
+
+    dimension: gross {
+      type: number
+      value_format_name: usd
+      sql: ${TABLE}.gross ;;
+    }
+
+    dimension: fee {
+      type: number
+      value_format_name: usd
+      sql: ${TABLE}.fee ;;
+    }
+  measure: total_charge {
+    type: sum
+    sql: ${TABLE}.stripe_remitted ;;
+  }
+
+
   }
