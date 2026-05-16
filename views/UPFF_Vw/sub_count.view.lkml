@@ -2,7 +2,7 @@ view: sub_count {
   derived_table: {
 
     increment_key: "report_date"
-    increment_offset: 13
+    increment_offset: 12
     datagroup_trigger: sub_count_datagroup
     distribution_style: even
     indexes: ["report_date"]
