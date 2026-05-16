@@ -7,7 +7,10 @@ view: redshift_first_plays {
               SELECT
                 *
               FROM ${redshift_timeupdate.SQL_TABLE_NAME}
-              WHERE title is NOT NULL
+              WHERE user_id <> '0'
+              AND user_id ~ '^[0-9]*$'
+              AND user_id is NOT NULL
+              AND title is NOT NULL
               ),
 
               plays_most_granular AS
@@ -78,8 +81,8 @@ view: redshift_first_plays {
       sql: ${TABLE}.collection ;;
     }
 
-    measure: play_count {
-      type: sum
+    dimension: play_count {
+      type: number
       sql: ${TABLE}.play_count ;;
     }
 
