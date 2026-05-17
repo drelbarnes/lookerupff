@@ -146,9 +146,9 @@ view: ltv_cpa {
 
       SELECT *
       FROM all_rows
-      WHERE (
+      WHERE
       {% incrementcondition %} report_date {% endincrementcondition %}
-      )
+
       ;;
 
   }

@@ -99,7 +99,7 @@ view: free_trials {
       SELECT *
       FROM all_rows
       WHERE
-      {% incrementcondition %} report_date) {% endincrementcondition %}
+      {% incrementcondition %} report_date {% endincrementcondition %}
       ;;
   }
 
