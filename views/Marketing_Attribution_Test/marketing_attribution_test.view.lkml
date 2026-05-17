@@ -44,6 +44,18 @@
 #   3. 'app_trial'     — app free trials from Branch.io (php.branch_purchase)
 #   4. 'app_install'   — app installs from Branch.io (php.branch_install)
 #   5. 'app_reinstall' — app reinstalls from Branch.io (php.branch_reinstall)
+#
+# === DUNNING STATUS (added) ===
+#   User-level dunning state is sourced from chargebee_webhook_events.invoice_updated.
+#   A user is "in dunning" when their latest invoice for a UP plan is in
+#   'not_paid' or 'payment_due'. A subsequent 'paid' invoice clears the flag.
+#   Effective activations = activations - activations_in_dunning. Two new daily
+#   campaign metrics ride along: effective_trial_to_paid_rate and dunning_rate.
+#
+# === QUALITY SCORE (formula change) ===
+#   The retention multiplier was removed from quality_score; it is now:
+#       volume_score * (0.5 + min(trial_to_paid / conv_rate_max, 1.0))
+#   Retention/churn still flow through as standalone daily metrics.
 ################################################################################
 
 view: marketing_attribution_test {
@@ -101,6 +113,42 @@ view: marketing_attribution_test {
       AND content_subscription_subscription_items_0_unit_price IS NOT NULL
       AND content_subscription_subscription_items_0_unit_price > 0
       AND user_id IS NOT NULL
+      ) ranked
+      WHERE rn = 1
+      ),
+
+      -- ============================================================
+      -- USER DUNNING STATUS from Chargebee invoice_updated
+      -- A user is "in dunning" when their most recent invoice for a UP
+      -- subscription is in 'not_paid' or 'payment_due' status. We take
+      -- the latest invoice per customer ordered by content_invoice_updated_at
+      -- so that a subsequent successful payment ('paid') correctly clears
+      -- the dunning flag.
+      -- ============================================================
+      user_dunning_status AS (
+      SELECT
+      content_invoice_customer_id            AS user_id
+      ,content_invoice_status                 AS latest_invoice_status
+      ,content_invoice_line_items_0_entity_id AS latest_invoice_plan
+      ,CASE
+      WHEN content_invoice_status IN ('not_paid', 'payment_due') THEN TRUE
+      ELSE FALSE
+      END                                    AS is_in_dunning
+      FROM (
+      SELECT
+      content_invoice_customer_id
+      ,content_invoice_status
+      ,content_invoice_line_items_0_entity_id
+      ,content_invoice_updated_at
+      ,ROW_NUMBER() OVER (
+      PARTITION BY content_invoice_customer_id
+      ORDER BY content_invoice_updated_at DESC, received_at DESC
+      ) AS rn
+      FROM chargebee_webhook_events.invoice_updated
+      WHERE content_invoice_line_items_0_entity_id LIKE '%UP%'
+      AND content_invoice_customer_id IS NOT NULL
+      AND DATE(received_at) BETWEEN (SELECT start_date FROM params)
+      AND (SELECT end_date   FROM params)
       ) ranked
       WHERE rn = 1
       ),
@@ -392,6 +440,8 @@ view: marketing_attribution_test {
       ,COALESCE(uav.activation_value_dollars, 0)        AS activation_value
       ,COALESCE(uav.is_yearly_plan, FALSE)              AS is_yearly_plan
       ,COALESCE(uav.plan_type, 'unknown')               AS plan_type
+      ,COALESCE(uds.is_in_dunning, FALSE)               AS is_in_dunning
+      ,COALESCE(uds.latest_invoice_status, 'unknown')   AS latest_invoice_status
       FROM (
       SELECT
       user_id, context_ip, anonymous_id, order_id, event_received_at,
@@ -406,6 +456,7 @@ view: marketing_attribution_test {
       ) r
       LEFT JOIN user_lifecycle_flags ulf ON r.user_id = ulf.user_id
       LEFT JOIN user_activation_value uav ON r.user_id = uav.user_id
+      LEFT JOIN user_dunning_status uds ON r.user_id = uds.user_id
       WHERE r.dedup_rank = 1
       ),
 
@@ -428,8 +479,11 @@ view: marketing_attribution_test {
       ,COALESCE(uav.activation_value_dollars, 0)        AS activation_value
       ,COALESCE(uav.is_yearly_plan, FALSE)              AS is_yearly_plan
       ,COALESCE(uav.plan_type, 'unknown')               AS plan_type
+      ,COALESCE(uds.is_in_dunning, FALSE)               AS is_in_dunning
+      ,COALESCE(uds.latest_invoice_status, 'unknown')   AS latest_invoice_status
       FROM lifecycle_events le
       LEFT JOIN user_activation_value uav ON le.user_id = uav.user_id
+      LEFT JOIN user_dunning_status uds ON le.user_id = uds.user_id
       WHERE le.source_event_type = 'reacquisition'
       ),
 
@@ -446,6 +500,7 @@ view: marketing_attribution_test {
       ,c.lifecycle_event_date, c.lifecycle_event_type
       ,c.is_activated_or_reacquired, c.is_not_retained
       ,c.activation_value, c.is_yearly_plan, c.plan_type
+      ,c.is_in_dunning, c.latest_invoice_status
       ,mt.received_at        AS touch_received_at
       ,mt.campaign_source, mt.campaign_name, mt.campaign_id
       ,mt.campaign_medium, mt.campaign_content
@@ -475,6 +530,7 @@ view: marketing_attribution_test {
       ,c.lifecycle_event_date, c.lifecycle_event_type
       ,c.is_activated_or_reacquired, c.is_not_retained
       ,c.activation_value, c.is_yearly_plan, c.plan_type
+      ,c.is_in_dunning, c.latest_invoice_status
       ,0                              AS total_touches
       ,CAST(NULL AS TIMESTAMP)        AS attributed_touch_at
       ,CAST('direct' AS VARCHAR(20))  AS attributed_campaign_source
@@ -513,6 +569,7 @@ view: marketing_attribution_test {
       ,at.lifecycle_event_date, at.lifecycle_event_type
       ,at.is_activated_or_reacquired, at.is_not_retained
       ,at.activation_value, at.is_yearly_plan, at.plan_type
+      ,at.is_in_dunning, at.latest_invoice_status
       ,at.total_touches
       ,at.touch_received_at  AS attributed_touch_at
       ,at.days_before_conversion
@@ -563,6 +620,7 @@ view: marketing_attribution_test {
       ,lifecycle_event_date, lifecycle_event_type
       ,is_activated_or_reacquired, is_not_retained
       ,activation_value, is_yearly_plan, plan_type
+      ,is_in_dunning, latest_invoice_status
       ,total_touches
       ,MIN(days_before_conversion)         AS min_days_before_conversion
       ,MIN(attributed_touch_at)            AS attributed_touch_at
@@ -585,6 +643,7 @@ view: marketing_attribution_test {
       ,trial_type, bundle_plan, is_bundle_user
       ,lifecycle_event_date, lifecycle_event_type, is_activated_or_reacquired
       ,is_not_retained, activation_value, is_yearly_plan, plan_type
+      ,is_in_dunning, latest_invoice_status
       ,total_touches
       ,attributed_campaign_source
       ,attributed_campaign_name
@@ -598,6 +657,7 @@ view: marketing_attribution_test {
       ,lifecycle_event_date, lifecycle_event_type, is_activated_or_reacquired
       ,is_not_retained
       ,activation_value, is_yearly_plan, plan_type
+      ,is_in_dunning, latest_invoice_status
       ,total_touches
       ,CAST(NULL AS INTEGER)        AS min_days_before_conversion
       ,attributed_touch_at
@@ -644,6 +704,16 @@ view: marketing_attribution_test {
       AND sa.is_last_touch
       THEN sa.user_id END) AS activations
       ,COUNT(DISTINCT CASE WHEN sa.conversion_event_type = 'free_trial'
+      AND sa.lifecycle_event_type = 'activation'
+      AND sa.is_in_dunning
+      AND sa.is_last_touch
+      THEN sa.user_id END) AS activations_in_dunning
+      ,COUNT(DISTINCT CASE WHEN sa.conversion_event_type = 'free_trial'
+      AND sa.lifecycle_event_type = 'activation'
+      AND NOT sa.is_in_dunning
+      AND sa.is_last_touch
+      THEN sa.user_id END) AS effective_activations
+      ,COUNT(DISTINCT CASE WHEN sa.conversion_event_type = 'free_trial'
       AND sa.is_last_touch
       THEN sa.user_id END) AS unique_trial_users
       ,COUNT(DISTINCT CASE WHEN sa.conversion_event_type = 'free_trial'
@@ -685,6 +755,8 @@ view: marketing_attribution_test {
       m.report_date, m.campaign_name, m.campaign_medium, m.campaign_content
       ,m.standard_trials, m.bundle_trials, m.reacquisitions, m.activations
       ,m.unique_trial_users
+      ,COALESCE(m.activations_in_dunning, 0)  AS activations_in_dunning
+      ,COALESCE(m.effective_activations, 0)   AS effective_activations
       ,CAST(COALESCE(m.total_order_value, 0)  AS NUMERIC(12,2)) AS total_order_value
       ,CAST(COALESCE(m.avg_order_value, 0)    AS NUMERIC(10,2)) AS avg_order_value
       ,COALESCE(m.yearly_plan_users, 0)       AS yearly_plan_users
@@ -695,6 +767,18 @@ view: marketing_attribution_test {
       ELSE 0 END
       AS NUMERIC(5,4)
       ) AS trial_to_paid_rate
+      ,CAST(
+      CASE WHEN m.unique_trial_users > 0
+      THEN 1.0 * COALESCE(m.effective_activations, 0) / m.unique_trial_users
+      ELSE 0 END
+      AS NUMERIC(5,4)
+      ) AS effective_trial_to_paid_rate
+      ,CAST(
+      CASE WHEN m.activations > 0
+      THEN 1.0 * COALESCE(m.activations_in_dunning, 0) / m.activations
+      ELSE 0 END
+      AS NUMERIC(5,4)
+      ) AS dunning_rate
       ,CAST(COALESCE(m.churn_rate_raw, 0)         AS NUMERIC(5,4)) AS churn_rate
       ,CAST(1.0 - COALESCE(m.churn_rate_raw, 0)   AS NUMERIC(5,4)) AS retention_rate
       ,CAST(100.0 * m.standard_trials  / n.max_standard    AS NUMERIC(10,4)) AS std_trial_score
@@ -708,6 +792,11 @@ view: marketing_attribution_test {
       + (SELECT w_activations     FROM params) * (100.0 * m.activations      / n.max_activations)
       AS NUMERIC(10,4)
       ) AS volume_score
+      -- ------------------------------------------------------------
+      -- quality_score: retention multiplier removed (v2 change).
+      -- New formula:  volume_score * (0.5 + min(trial_to_paid / conv_rate_max, 1.0))
+      -- Retention/churn remain exposed as standalone daily metrics.
+      -- ------------------------------------------------------------
       ,CAST(
       CAST(
       (SELECT w_standard_trials FROM params) * (100.0 * m.standard_trials  / n.max_standard)
@@ -722,12 +811,6 @@ view: marketing_attribution_test {
       THEN 1.0 * m.activations / m.unique_trial_users
       ELSE 0 END)
       / (SELECT conv_rate_max FROM params), 1.0
-      ) AS NUMERIC(5,4)
-      )
-      * CAST(
-      GREATEST(
-      1.0 - COALESCE(m.churn_rate_raw, 0),
-      1.0 - (SELECT retention_floor FROM params)
       ) AS NUMERIC(5,4)
       )
       AS NUMERIC(10,4)
@@ -763,6 +846,8 @@ view: marketing_attribution_test {
       ,CAST(0.0 AS NUMERIC(10,2)) AS activation_value
       ,FALSE                      AS is_yearly_plan
       ,CAST(NULL AS VARCHAR(20))  AS plan_type
+      ,FALSE                      AS is_in_dunning
+      ,CAST(NULL AS VARCHAR(20))  AS latest_invoice_status
       ,0                          AS total_touches
       ,CAST(NULL AS INTEGER)      AS min_days_before_conversion
       ,CAST(NULL AS TIMESTAMP)    AS attributed_touch_at
@@ -785,6 +870,8 @@ view: marketing_attribution_test {
       ,CAST(NULL AS NUMERIC(10,2))  AS quality_score
       ,CAST(NULL AS NUMERIC(10,2))  AS volume_score
       ,CAST(NULL AS NUMERIC(5,4))   AS trial_to_paid_rate
+      ,CAST(NULL AS NUMERIC(5,4))   AS effective_trial_to_paid_rate
+      ,CAST(NULL AS NUMERIC(5,4))   AS dunning_rate
       ,CAST(NULL AS NUMERIC(5,4))   AS churn_rate
       ,CAST(NULL AS NUMERIC(5,4))   AS retention_rate
       ,CAST(NULL AS NUMERIC(12,2))  AS campaign_total_aov
@@ -816,6 +903,7 @@ view: marketing_attribution_test {
       ,sa.is_activated_or_reacquired, sa.is_not_retained
       ,CAST(sa.activation_value    AS NUMERIC(10,2)) AS activation_value
       ,sa.is_yearly_plan, sa.plan_type
+      ,sa.is_in_dunning, sa.latest_invoice_status
       ,sa.total_touches
       ,sa.min_days_before_conversion
       ,sa.attributed_touch_at
@@ -831,17 +919,19 @@ view: marketing_attribution_test {
       ,CAST(NULL AS VARCHAR(100)) AS branch_feature
       ,CAST(NULL AS VARCHAR(500)) AS creative_name
       ,FALSE                      AS is_paid_branch
-      ,CAST(dq.quality_score      AS NUMERIC(10,2)) AS quality_score
-      ,CAST(dq.volume_score       AS NUMERIC(10,2)) AS volume_score
-      ,CAST(dq.trial_to_paid_rate AS NUMERIC(5,4))  AS trial_to_paid_rate
-      ,CAST(dq.churn_rate         AS NUMERIC(5,4))  AS churn_rate
-      ,CAST(dq.retention_rate     AS NUMERIC(5,4))  AS retention_rate
-      ,CAST(dq.total_order_value  AS NUMERIC(12,2)) AS campaign_total_aov
-      ,CAST(dq.avg_order_value    AS NUMERIC(10,2)) AS campaign_avg_aov
-      ,CAST(dq.std_trial_score    AS NUMERIC(10,2)) AS std_trial_score
-      ,CAST(dq.bundle_trial_score AS NUMERIC(10,2)) AS bundle_trial_score
-      ,CAST(dq.reacq_score        AS NUMERIC(10,2)) AS reacq_score
-      ,CAST(dq.activation_score   AS NUMERIC(10,2)) AS activation_score
+      ,CAST(dq.quality_score                AS NUMERIC(10,2)) AS quality_score
+      ,CAST(dq.volume_score                 AS NUMERIC(10,2)) AS volume_score
+      ,CAST(dq.trial_to_paid_rate           AS NUMERIC(5,4))  AS trial_to_paid_rate
+      ,CAST(dq.effective_trial_to_paid_rate AS NUMERIC(5,4))  AS effective_trial_to_paid_rate
+      ,CAST(dq.dunning_rate                 AS NUMERIC(5,4))  AS dunning_rate
+      ,CAST(dq.churn_rate                   AS NUMERIC(5,4))  AS churn_rate
+      ,CAST(dq.retention_rate               AS NUMERIC(5,4))  AS retention_rate
+      ,CAST(dq.total_order_value            AS NUMERIC(12,2)) AS campaign_total_aov
+      ,CAST(dq.avg_order_value              AS NUMERIC(10,2)) AS campaign_avg_aov
+      ,CAST(dq.std_trial_score              AS NUMERIC(10,2)) AS std_trial_score
+      ,CAST(dq.bundle_trial_score           AS NUMERIC(10,2)) AS bundle_trial_score
+      ,CAST(dq.reacq_score                  AS NUMERIC(10,2)) AS reacq_score
+      ,CAST(dq.activation_score             AS NUMERIC(10,2)) AS activation_score
       FROM selected_attributed sa
       LEFT JOIN daily_campaign_quality dq
       ON DATE(sa.conversion_event_at)                = dq.report_date
@@ -877,6 +967,8 @@ view: marketing_attribution_test {
       ,CAST(0 AS NUMERIC(10,2))                                             AS activation_value
       ,FALSE                                                                AS is_yearly_plan
       ,CAST(NULL AS VARCHAR(20))                                            AS plan_type
+      ,FALSE                                                                AS is_in_dunning
+      ,CAST(NULL AS VARCHAR(20))                                            AS latest_invoice_status
       ,0                                                                    AS total_touches
       ,CAST(NULL AS INTEGER)                                                AS min_days_before_conversion
       ,CAST(NULL AS TIMESTAMP)                                              AS attributed_touch_at
@@ -899,6 +991,8 @@ view: marketing_attribution_test {
       ,CAST(NULL AS NUMERIC(10,2))                                          AS quality_score
       ,CAST(NULL AS NUMERIC(10,2))                                          AS volume_score
       ,CAST(NULL AS NUMERIC(5,4))                                           AS trial_to_paid_rate
+      ,CAST(NULL AS NUMERIC(5,4))                                           AS effective_trial_to_paid_rate
+      ,CAST(NULL AS NUMERIC(5,4))                                           AS dunning_rate
       ,CAST(NULL AS NUMERIC(5,4))                                           AS churn_rate
       ,CAST(NULL AS NUMERIC(5,4))                                           AS retention_rate
       ,CAST(NULL AS NUMERIC(12,2))                                          AS campaign_total_aov
@@ -937,6 +1031,8 @@ view: marketing_attribution_test {
       ,CAST(0 AS NUMERIC(10,2))                                             AS activation_value
       ,FALSE                                                                AS is_yearly_plan
       ,CAST(NULL AS VARCHAR(20))                                            AS plan_type
+      ,FALSE                                                                AS is_in_dunning
+      ,CAST(NULL AS VARCHAR(20))                                            AS latest_invoice_status
       ,0                                                                    AS total_touches
       ,CAST(NULL AS INTEGER)                                                AS min_days_before_conversion
       ,CAST(NULL AS TIMESTAMP)                                              AS attributed_touch_at
@@ -959,6 +1055,8 @@ view: marketing_attribution_test {
       ,CAST(NULL AS NUMERIC(10,2))                                          AS quality_score
       ,CAST(NULL AS NUMERIC(10,2))                                          AS volume_score
       ,CAST(NULL AS NUMERIC(5,4))                                           AS trial_to_paid_rate
+      ,CAST(NULL AS NUMERIC(5,4))                                           AS effective_trial_to_paid_rate
+      ,CAST(NULL AS NUMERIC(5,4))                                           AS dunning_rate
       ,CAST(NULL AS NUMERIC(5,4))                                           AS churn_rate
       ,CAST(NULL AS NUMERIC(5,4))                                           AS retention_rate
       ,CAST(NULL AS NUMERIC(12,2))                                          AS campaign_total_aov
@@ -997,6 +1095,8 @@ view: marketing_attribution_test {
       ,CAST(0 AS NUMERIC(10,2))                                             AS activation_value
       ,FALSE                                                                AS is_yearly_plan
       ,CAST(NULL AS VARCHAR(20))                                            AS plan_type
+      ,FALSE                                                                AS is_in_dunning
+      ,CAST(NULL AS VARCHAR(20))                                            AS latest_invoice_status
       ,0                                                                    AS total_touches
       ,CAST(NULL AS INTEGER)                                                AS min_days_before_conversion
       ,CAST(NULL AS TIMESTAMP)                                              AS attributed_touch_at
@@ -1019,6 +1119,8 @@ view: marketing_attribution_test {
       ,CAST(NULL AS NUMERIC(10,2))                                          AS quality_score
       ,CAST(NULL AS NUMERIC(10,2))                                          AS volume_score
       ,CAST(NULL AS NUMERIC(5,4))                                           AS trial_to_paid_rate
+      ,CAST(NULL AS NUMERIC(5,4))                                           AS effective_trial_to_paid_rate
+      ,CAST(NULL AS NUMERIC(5,4))                                           AS dunning_rate
       ,CAST(NULL AS NUMERIC(5,4))                                           AS churn_rate
       ,CAST(NULL AS NUMERIC(5,4))                                           AS retention_rate
       ,CAST(NULL AS NUMERIC(12,2))                                          AS campaign_total_aov
@@ -1252,6 +1354,27 @@ view: marketing_attribution_test {
   dimension: plan_type      { type: string  sql: ${TABLE}.plan_type ;; }
 
   ##############################################################
+  # DUNNING DIMENSIONS
+  # Sourced from chargebee_webhook_events.invoice_updated.
+  # is_in_dunning is TRUE when the user's most recent UP-plan invoice
+  # is in 'not_paid' or 'payment_due'. A subsequent 'paid' invoice
+  # clears the flag (latest invoice wins).
+  ##############################################################
+  dimension: is_in_dunning {
+    type: yesno
+    label: "Is In Dunning"
+    description: "User's most recent UP-plan invoice is unpaid (not_paid or payment_due)."
+    sql: ${TABLE}.is_in_dunning ;;
+  }
+
+  dimension: latest_invoice_status {
+    type: string
+    label: "Latest Invoice Status"
+    description: "Status of the user's most recent UP-plan invoice (paid, not_paid, payment_due, voided, etc.)."
+    sql: ${TABLE}.latest_invoice_status ;;
+  }
+
+  ##############################################################
   # ATTRIBUTION ROW METADATA
   ##############################################################
   dimension: credit_weight {
@@ -1340,6 +1463,20 @@ view: marketing_attribution_test {
   }
 
   dimension: trial_to_paid_rate { type: number label: "Trial → Paid Rate (Daily)" sql: ${TABLE}.trial_to_paid_rate ;; value_format_name: percent_2 }
+  dimension: effective_trial_to_paid_rate {
+    type: number
+    label: "Effective Trial → Paid Rate (Daily)"
+    description: "Activations excluding users currently in dunning, divided by trial users. Reflects revenue-collecting conversions only."
+    sql: ${TABLE}.effective_trial_to_paid_rate ;;
+    value_format_name: percent_2
+  }
+  dimension: dunning_rate {
+    type: number
+    label: "Dunning Rate (Daily)"
+    description: "Share of daily activations currently in dunning (unpaid invoice). High values flag at-risk revenue."
+    sql: ${TABLE}.dunning_rate ;;
+    value_format_name: percent_2
+  }
   dimension: churn_rate         { type: number label: "Churn Rate (Daily)"        sql: ${TABLE}.churn_rate ;;        value_format_name: percent_2 }
   dimension: retention_rate     { type: number label: "Retention Rate (Daily)"    sql: ${TABLE}.retention_rate ;;    value_format_name: percent_2 }
 
@@ -1402,6 +1539,24 @@ view: marketing_attribution_test {
     drill_fields: [drill_conversions*]
   }
 
+  measure: free_trials_converted_in_dunning {
+    type: count_distinct
+    label: "Free Trials Converted (In Dunning)"
+    description: "Activated trial users whose latest UP-plan invoice is unpaid. Revenue is not yet collected."
+    sql: ${TABLE}.user_id ;;
+    filters: [event_type: "conversion", conversion_event_type: "free_trial", is_activated: "yes", is_in_dunning: "yes", is_primary_attribution: "yes", within_attribution_window: "yes"]
+    drill_fields: [drill_conversions*]
+  }
+
+  measure: effective_free_trials_converted {
+    type: count_distinct
+    label: "Free Trials Converted (Effective)"
+    description: "Activated trial users whose payment cleared (excludes users currently in dunning)."
+    sql: ${TABLE}.user_id ;;
+    filters: [event_type: "conversion", conversion_event_type: "free_trial", is_activated: "yes", is_in_dunning: "no", is_primary_attribution: "yes", within_attribution_window: "yes"]
+    drill_fields: [drill_conversions*]
+  }
+
   measure: reacquisitions {
     type: count
     label: "Reacquisitions"
@@ -1413,6 +1568,22 @@ view: marketing_attribution_test {
     type: number
     label: "Trial to Paid Conversion Rate"
     sql: 1.0 * ${free_trials_converted} / NULLIF(${web_trials_started}, 0) ;;
+    value_format_name: percent_2
+  }
+
+  measure: effective_trial_to_paid_conversion_rate {
+    type: number
+    label: "Trial to Paid Conversion Rate (Effective)"
+    description: "Same as Trial to Paid, but counts only activations whose latest invoice cleared."
+    sql: 1.0 * ${effective_free_trials_converted} / NULLIF(${web_trials_started}, 0) ;;
+    value_format_name: percent_2
+  }
+
+  measure: dunning_share_of_activations {
+    type: number
+    label: "Dunning Share of Activations"
+    description: "Share of activations currently in dunning. Higher = more at-risk revenue."
+    sql: 1.0 * ${free_trials_converted_in_dunning} / NULLIF(${free_trials_converted}, 0) ;;
     value_format_name: percent_2
   }
 
@@ -1753,6 +1924,7 @@ view: marketing_attribution_test {
       plan_type, activation_value, surface, device_os, marketing_platform,
       campaign_source, campaign_medium, campaign_name, campaign_content,
       lifecycle_event_type, lifecycle_event_date, is_not_retained,
+      is_in_dunning, latest_invoice_status,
       total_touches, touch_position, credit_weight, quality_score, quality_grade
     ]
   }
@@ -1762,7 +1934,8 @@ view: marketing_attribution_test {
       report_date_date, campaign_name, campaign_medium, campaign_content,
       marketing_platform, surface, standard_trials, bundle_trials, reacquisitions,
       total_converted, not_retained_users, avg_touches_per_conversion,
-      retention_rate, trial_to_paid_rate, avg_order_value, pct_yearly_plan,
+      retention_rate, trial_to_paid_rate, effective_trial_to_paid_rate,
+      dunning_rate, avg_order_value, pct_yearly_plan,
       pct_monthly_plan, quality_score, quality_grade
     ]
   }
