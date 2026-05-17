@@ -98,7 +98,8 @@ view: free_trials {
 
       SELECT *
       FROM all_rows
-     WHERE 1=1
+      WHERE
+        {% incrementcondition %} report_date {% endincrementcondition %}
       ;;
   }
 
