@@ -261,7 +261,7 @@ view: churn_gain {
 
       ) all_rows
       WHERE
-      {% incrementcondition %} report_date {% endincrementcondition %}
+      1=1
       ;;
   }
 
