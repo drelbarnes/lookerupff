@@ -1151,7 +1151,7 @@ view: marketing_attribution_test {
       SELECT * FROM app_reinstall_rows
       ) all_rows
       WHERE
-      {% incrementcondition %} report_date {% endincrementcondition %}
+      1=1
       ;;
   }
 
