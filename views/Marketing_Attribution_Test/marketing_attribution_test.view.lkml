@@ -52,10 +52,19 @@
 #   Effective activations = activations - activations_in_dunning. Two new daily
 #   campaign metrics ride along: effective_trial_to_paid_rate and dunning_rate.
 #
-# === QUALITY SCORE (formula change) ===
-#   The retention multiplier was removed from quality_score; it is now:
-#       volume_score * (0.5 + min(trial_to_paid / conv_rate_max, 1.0))
-#   Retention/churn still flow through as standalone daily metrics.
+# === QUALITY SCORE (formula) ===
+#   Weights (this revision): 50% activations, 40% standard trials, 10% bundle trials.
+#   The reacquisition component was removed. Standard trials now include
+#   Branch.io app free trials in addition to web standard trials, so the score
+#   reflects total top-of-funnel volume across both surfaces.
+#       volume_score   = w_act*activation_score + w_std*std_trial_score
+#                      + w_bun*bundle_trial_score   (each score normalized 0–100)
+#       quality_score  = volume_score * (0.5 + min(trial_to_paid / conv_rate_max, 1.0))
+#   Retention/churn and reacquisition counts remain exposed as standalone metrics.
+#
+# === INITIAL BUILD WINDOW ===
+#   Full rebuilds cover the last 180 days (was 90). Incremental runs still use
+#   the 7-day look-back via increment_offset.
 ################################################################################
 
 view: marketing_attribution_test {
@@ -74,15 +83,14 @@ view: marketing_attribution_test {
     sql:
       WITH params AS (
           SELECT
-               -- Initial build covers 90 days; incremental runs are filtered
+               -- Initial build covers 180 days; incremental runs are filtered
                -- by the single on the outer SELECT.
-               (CURRENT_DATE - INTERVAL '90 days')::DATE AS start_date
+               (CURRENT_DATE - INTERVAL '180 days')::DATE AS start_date
               ,CURRENT_DATE                               AS end_date
               ,90                  AS max_attribution_window_days
-              ,0.40                AS w_activations
-              ,0.25                AS w_reacquisitions
-              ,0.20                AS w_bundle_trials
-              ,0.15                AS w_standard_trials
+              ,0.50                AS w_activations
+              ,0.40                AS w_standard_trials
+              ,0.10                AS w_bundle_trials
               ,0.50                AS conv_rate_max
               ,10000               AS cancel_window_seconds
               ,1.0                 AS retention_floor
@@ -682,16 +690,42 @@ view: marketing_attribution_test {
       UNION ALL SELECT * FROM selected_attributed_direct
       ),
 
+      -- ============================================================
+      -- APP TRIALS aggregated to the campaign-day grain so they can
+      -- be folded into the standard_trials count for quality scoring.
+      -- Joined into daily_campaign_metrics on (date, name, medium, content).
+      -- App rows use campaign_medium = 'paid' and NULL content, matching
+      -- the same grain used elsewhere in this pipeline.
+      -- ============================================================
+      app_trials_by_campaign_day AS (
+      SELECT
+      report_date
+      ,CAST(campaign_name AS VARCHAR(255))   AS campaign_name
+      ,CAST('paid'        AS VARCHAR(255))   AS campaign_medium
+      ,CAST(NULL          AS VARCHAR(255))   AS campaign_content
+      ,SUM(app_trial_count)                  AS app_trial_count
+      FROM branch_app_trials
+      GROUP BY 1, 2, 3, 4
+      ),
+
       daily_campaign_metrics AS (
       SELECT
       DATE(sa.conversion_event_at)   AS report_date
       ,sa.attributed_campaign_name    AS campaign_name
       ,sa.attributed_campaign_medium  AS campaign_medium
       ,sa.attributed_campaign_content AS campaign_content
+      -- standard_trials now includes Branch.io app free trials so
+      -- the score reflects total funnel volume, not just web.
       ,SUM(CASE WHEN sa.conversion_event_type = 'free_trial'
       AND sa.trial_type = 'standard'
       AND sa.is_last_touch
-      THEN 1 ELSE 0 END)        AS standard_trials
+      THEN 1 ELSE 0 END)
+      + COALESCE(MAX(at.app_trial_count), 0) AS standard_trials
+      ,SUM(CASE WHEN sa.conversion_event_type = 'free_trial'
+      AND sa.trial_type = 'standard'
+      AND sa.is_last_touch
+      THEN 1 ELSE 0 END)              AS web_standard_trials
+      ,COALESCE(MAX(at.app_trial_count), 0) AS app_standard_trials
       ,SUM(CASE WHEN sa.conversion_event_type = 'free_trial'
       AND sa.trial_type = 'bundle'
       AND sa.is_last_touch
@@ -736,6 +770,11 @@ view: marketing_attribution_test {
       AND NOT sa.is_yearly_plan
       THEN sa.user_id END)                   AS monthly_plan_users
       FROM selected_attributed sa
+      LEFT JOIN app_trials_by_campaign_day at
+      ON DATE(sa.conversion_event_at)                = at.report_date
+      AND COALESCE(sa.attributed_campaign_name, '')   = COALESCE(at.campaign_name, '')
+      AND COALESCE(sa.attributed_campaign_medium, '') = COALESCE(at.campaign_medium, '')
+      AND COALESCE(sa.attributed_campaign_content,'') = COALESCE(at.campaign_content, '')
       GROUP BY 1, 2, 3, 4
       ),
 
@@ -744,7 +783,6 @@ view: marketing_attribution_test {
       report_date
       ,GREATEST(MAX(standard_trials), 1)  AS max_standard
       ,GREATEST(MAX(bundle_trials), 1)    AS max_bundle
-      ,GREATEST(MAX(reacquisitions), 1)   AS max_reacq
       ,GREATEST(MAX(activations), 1)      AS max_activations
       FROM daily_campaign_metrics
       GROUP BY report_date
@@ -754,6 +792,7 @@ view: marketing_attribution_test {
       SELECT
       m.report_date, m.campaign_name, m.campaign_medium, m.campaign_content
       ,m.standard_trials, m.bundle_trials, m.reacquisitions, m.activations
+      ,m.web_standard_trials, m.app_standard_trials
       ,m.unique_trial_users
       ,COALESCE(m.activations_in_dunning, 0)  AS activations_in_dunning
       ,COALESCE(m.effective_activations, 0)   AS effective_activations
@@ -783,25 +822,28 @@ view: marketing_attribution_test {
       ,CAST(1.0 - COALESCE(m.churn_rate_raw, 0)   AS NUMERIC(5,4)) AS retention_rate
       ,CAST(100.0 * m.standard_trials  / n.max_standard    AS NUMERIC(10,4)) AS std_trial_score
       ,CAST(100.0 * m.bundle_trials    / n.max_bundle      AS NUMERIC(10,4)) AS bundle_trial_score
-      ,CAST(100.0 * m.reacquisitions   / n.max_reacq       AS NUMERIC(10,4)) AS reacq_score
       ,CAST(100.0 * m.activations      / n.max_activations AS NUMERIC(10,4)) AS activation_score
+      -- ------------------------------------------------------------
+      -- volume_score: reacquisition component removed. Weights are now
+      --   50% activations, 40% standard trials (web + app), 10% bundle trials.
+      -- standard_trials is the combined web standard + app free trial count.
+      -- ------------------------------------------------------------
       ,CAST(
       (SELECT w_standard_trials FROM params) * (100.0 * m.standard_trials  / n.max_standard)
       + (SELECT w_bundle_trials   FROM params) * (100.0 * m.bundle_trials    / n.max_bundle)
-      + (SELECT w_reacquisitions  FROM params) * (100.0 * m.reacquisitions   / n.max_reacq)
       + (SELECT w_activations     FROM params) * (100.0 * m.activations      / n.max_activations)
       AS NUMERIC(10,4)
       ) AS volume_score
       -- ------------------------------------------------------------
-      -- quality_score: retention multiplier removed (v2 change).
-      -- New formula:  volume_score * (0.5 + min(trial_to_paid / conv_rate_max, 1.0))
-      -- Retention/churn remain exposed as standalone daily metrics.
+      -- quality_score: retention multiplier removed (v2 change), reacquisition
+      -- component removed (this revision). New formula:
+      --   volume_score * (0.5 + min(trial_to_paid / conv_rate_max, 1.0))
+      -- Retention/churn and reacquisition counts remain exposed as standalone metrics.
       -- ------------------------------------------------------------
       ,CAST(
       CAST(
       (SELECT w_standard_trials FROM params) * (100.0 * m.standard_trials  / n.max_standard)
       + (SELECT w_bundle_trials   FROM params) * (100.0 * m.bundle_trials    / n.max_bundle)
-      + (SELECT w_reacquisitions  FROM params) * (100.0 * m.reacquisitions   / n.max_reacq)
       + (SELECT w_activations     FROM params) * (100.0 * m.activations      / n.max_activations)
       AS NUMERIC(10,4)
       )
@@ -878,7 +920,6 @@ view: marketing_attribution_test {
       ,CAST(NULL AS NUMERIC(10,2))  AS campaign_avg_aov
       ,CAST(NULL AS NUMERIC(10,2))  AS std_trial_score
       ,CAST(NULL AS NUMERIC(10,2))  AS bundle_trial_score
-      ,CAST(NULL AS NUMERIC(10,2))  AS reacq_score
       ,CAST(NULL AS NUMERIC(10,2))  AS activation_score
       FROM marketing_touches
       ),
@@ -930,7 +971,6 @@ view: marketing_attribution_test {
       ,CAST(dq.avg_order_value              AS NUMERIC(10,2)) AS campaign_avg_aov
       ,CAST(dq.std_trial_score              AS NUMERIC(10,2)) AS std_trial_score
       ,CAST(dq.bundle_trial_score           AS NUMERIC(10,2)) AS bundle_trial_score
-      ,CAST(dq.reacq_score                  AS NUMERIC(10,2)) AS reacq_score
       ,CAST(dq.activation_score             AS NUMERIC(10,2)) AS activation_score
       FROM selected_attributed sa
       LEFT JOIN daily_campaign_quality dq
@@ -999,7 +1039,6 @@ view: marketing_attribution_test {
       ,CAST(NULL AS NUMERIC(10,2))                                          AS campaign_avg_aov
       ,CAST(NULL AS NUMERIC(10,2))                                          AS std_trial_score
       ,CAST(NULL AS NUMERIC(10,2))                                          AS bundle_trial_score
-      ,CAST(NULL AS NUMERIC(10,2))                                          AS reacq_score
       ,CAST(NULL AS NUMERIC(10,2))                                          AS activation_score
       FROM branch_app_trials
       ),
@@ -1063,7 +1102,6 @@ view: marketing_attribution_test {
       ,CAST(NULL AS NUMERIC(10,2))                                          AS campaign_avg_aov
       ,CAST(NULL AS NUMERIC(10,2))                                          AS std_trial_score
       ,CAST(NULL AS NUMERIC(10,2))                                          AS bundle_trial_score
-      ,CAST(NULL AS NUMERIC(10,2))                                          AS reacq_score
       ,CAST(NULL AS NUMERIC(10,2))                                          AS activation_score
       FROM branch_app_installs
       ),
@@ -1127,7 +1165,6 @@ view: marketing_attribution_test {
       ,CAST(NULL AS NUMERIC(10,2))                                          AS campaign_avg_aov
       ,CAST(NULL AS NUMERIC(10,2))                                          AS std_trial_score
       ,CAST(NULL AS NUMERIC(10,2))                                          AS bundle_trial_score
-      ,CAST(NULL AS NUMERIC(10,2))                                          AS reacq_score
       ,CAST(NULL AS NUMERIC(10,2))                                          AS activation_score
       FROM branch_app_reinstalls
       )
@@ -1496,7 +1533,6 @@ view: marketing_attribution_test {
 
   dimension: std_trial_score    { type: number hidden: yes sql: ${TABLE}.std_trial_score ;; }
   dimension: bundle_trial_score { type: number hidden: yes sql: ${TABLE}.bundle_trial_score ;; }
-  dimension: reacq_score        { type: number hidden: yes sql: ${TABLE}.reacq_score ;; }
   dimension: activation_score   { type: number hidden: yes sql: ${TABLE}.activation_score ;; }
 
   ##############################################################
