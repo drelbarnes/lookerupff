@@ -11,6 +11,7 @@ view: redshift_first_plays {
               AND user_id ~ '^[0-9]*$'
               AND user_id is NOT NULL
               AND title is NOT NULL
+              AND DATE("TIMESTAMP") >= '2024-01-01'
               ),
 
               plays_most_granular AS
