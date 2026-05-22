@@ -6,7 +6,7 @@ view: redshift_first_plays {
               (
               SELECT
                 *
-              FROM ${redshift_timeupdate.SQL_TABLE_NAME}
+              FROM ${redshift_allfirst_play_p0.SQL_TABLE_NAME}
               WHERE user_id <> '0'
               AND user_id ~ '^[0-9]*$'
               AND user_id is NOT NULL
@@ -17,10 +17,15 @@ view: redshift_first_plays {
               (
               SELECT
                 user_id
-                , collection
                 , ROW_NUMBER() OVER (PARTITION BY user_id, DATE("TIMESTAMP"), collection ORDER BY DATE("TIMESTAMP")) AS min_count
-                , "TIMESTAMP"
-                , CASE WHEN media_type = 'episode' THEN 'series' ELSE media_type END AS asset_type
+                , "TIMESTAMP" AS ts
+                , collection
+                , TYPE AS media_type
+                , video_id
+                , series
+                , title
+                , source
+                , episode
               FROM play_data_global
               ),
 
@@ -28,8 +33,8 @@ view: redshift_first_plays {
               (
               SELECT
                 user_id
-                , collection
-                , DATE("TIMESTAMP") AS date_stamp
+                , vide_id
+                , DATE(ts) AS ds
                 , MAX(min_count) AS min_count
               FROM plays_most_granular
               GROUP BY 1,2,3
@@ -39,22 +44,23 @@ view: redshift_first_plays {
               (
               SELECT
                 a.*
-                , ROW_NUMBER() OVER (PARTITION BY a.user_id ORDER BY a."TIMESTAMP") AS play_number
+                , ROW_NUMBER() OVER (PARTITION BY a.user_id ORDER BY a.ts) AS play_number
               FROM plays_most_granular AS a
               INNER JOIN plays_max_duration AS b
               ON a.user_id = b.user_id
               AND a.collection = b.collection
-              AND DATE(a."TIMESTAMP") = b.date_stamp
+              AND DATE(a.ts) = b.ds
               AND a.min_count = b.min_count
               ),
 
               first_plays AS
               (
               SELECT
-                  collection, COUNT(DISTINCT user_id) AS play_count
+                collection
+                , COUNT(DISTINCT user_id) AS play_count
               FROM plays_less_granular
               WHERE play_number = 1
-              AND DATE("TIMESTAMP") BETWEEN {% date_start date_filter %} AND {% date_end date_filter %}
+              AND ts BETWEEN {% date_start date_filter %} AND {% date_end date_filter %}
               GROUP BY 1
               )
 
