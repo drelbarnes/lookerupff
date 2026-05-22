@@ -33,7 +33,7 @@ view: redshift_first_plays {
               (
               SELECT
                 user_id
-                , vide_id
+                , video_id
                 , DATE(ts) AS ds
                 , MAX(min_count) AS min_count
               FROM plays_most_granular
