@@ -39,13 +39,22 @@
 #   - One-time rebuild needed when scoring weights or attribution logic changes
 #
 # === ROW TYPES (event_type) ===
-#   1. 'page_visit'    — every marketing-site page view (web)
-#   2. 'conversion'    — attributed free trials and reacquisitions (web)
-#   3. 'app_trial'     — app free trials from Branch.io (php.branch_purchase)
-#   4. 'app_install'   — app installs from Branch.io (php.branch_install)
-#   5. 'app_reinstall' — app reinstalls from Branch.io (php.branch_reinstall)
+#   1. 'page_visit'           — marketing-site pageviews (javascript_upff_home.pages)
+#   2. 'checkout_page_visit'  — checkout pageviews (high-intent funnel step,
+#                               sourced from javascript_upentertainment_checkout.pages)
+#   3. 'conversion'           — attributed free trials and reacquisitions (web)
+#   4. 'app_trial'            — app free trials from Branch.io (php.branch_purchase)
+#   5. 'app_install'          — app installs from Branch.io (php.branch_install)
+#   6. 'app_reinstall'        — app reinstalls from Branch.io (php.branch_reinstall)
 #
-# === DUNNING STATUS (added) ===
+# === PAGE-LEVEL FIELDS (added) ===
+#   Populated only for page_visit and checkout_page_visit rows; NULL elsewhere.
+#     page_path        — vanity URL portion (Segment `path`)
+#     page_referrer    — referrer URL (Segment `referrer`)
+#     consent_c0001..5 — boolean consent preference flags
+#                        (context_consent_category_preferences_c0001..5)
+#
+# === DUNNING STATUS ===
 #   User-level dunning state is sourced from chargebee_webhook_events.invoice_updated.
 #   A user is "in dunning" when their latest invoice for a UP plan is in
 #   'not_paid' or 'payment_due'. A subsequent 'paid' invoice clears the flag.
@@ -85,7 +94,7 @@ view: marketing_attribution_test {
           SELECT
                -- Initial build covers 180 days; incremental runs are filtered
                -- by the single on the outer SELECT.
-               (CURRENT_DATE - INTERVAL '90 days')::DATE AS start_date
+               (CURRENT_DATE - INTERVAL '365 days')::DATE AS start_date
               ,CURRENT_DATE                               AS end_date
               ,90                  AS max_attribution_window_days
               ,0.50                AS w_activations
@@ -274,6 +283,12 @@ view: marketing_attribution_test {
       --       injection point on report_date.
       -- ============================================================
       lifecycle_events AS (
+      -- ------------------------------------------------------------
+      -- Seven new fields appended to every branch:
+      --   page_path, page_referrer  VARCHAR
+      --   consent_c0001..5          BOOLEAN
+      -- Real values populate page_visit + checkout_page_visit; NULL elsewhere.
+      -- ------------------------------------------------------------
       SELECT
       user_id, context_ip, anonymous_id
       ,received_at                AS event_received_at
@@ -288,7 +303,48 @@ view: marketing_attribution_test {
       ,CAST(NULL AS VARCHAR(255)) AS order_id
       ,CAST(NULL AS VARCHAR(255)) AS bundle_plan
       ,CAST(NULL AS VARCHAR(20))  AS trial_type
+      ,path                                                  AS page_path
+      ,referrer                                              AS page_referrer
+      ,CAST(context_consent_category_preferences_c0001 AS BOOLEAN) AS consent_c0001
+      ,CAST(context_consent_category_preferences_c0002 AS BOOLEAN) AS consent_c0002
+      ,CAST(context_consent_category_preferences_c0003 AS BOOLEAN) AS consent_c0003
+      ,CAST(context_consent_category_preferences_c0004 AS BOOLEAN) AS consent_c0004
+      ,CAST(context_consent_category_preferences_c0005 AS BOOLEAN) AS consent_c0005
       FROM javascript_upff_home.pages
+      WHERE received_at >= (SELECT start_date FROM params)
+      AND received_at <  (SELECT end_date   FROM params) + INTERVAL '1 day'
+
+      UNION ALL
+
+      -- ------------------------------------------------------------
+      -- CHECKOUT PAGE VISITS — high-intent funnel step between marketing
+      -- pageview and trial start. Sourced from the checkout property's
+      -- pages stream. Same column layout as page_visit; distinguished by
+      -- source_event_type = 'checkout_page_visit'. Does NOT enter
+      -- marketing_touches (funnel step, not an attribution touch).
+      -- ------------------------------------------------------------
+      SELECT
+      user_id, context_ip, anonymous_id
+      ,received_at                AS event_received_at
+      ,DATE(received_at)          AS event_date
+      ,'checkout_page_visit'      AS source_event_type
+      ,id                         AS event_id
+      ,context_campaign_source    AS campaign_source
+      ,context_campaign_name      AS campaign_name
+      ,context_campaign_id        AS campaign_id
+      ,context_campaign_medium    AS campaign_medium
+      ,context_campaign_content   AS campaign_content
+      ,CAST(NULL AS VARCHAR(255)) AS order_id
+      ,CAST(NULL AS VARCHAR(255)) AS bundle_plan
+      ,CAST(NULL AS VARCHAR(20))  AS trial_type
+      ,path                                                  AS page_path
+      ,referrer                                              AS page_referrer
+      ,CAST(context_consent_category_preferences_c0001 AS BOOLEAN) AS consent_c0001
+      ,CAST(context_consent_category_preferences_c0002 AS BOOLEAN) AS consent_c0002
+      ,CAST(context_consent_category_preferences_c0003 AS BOOLEAN) AS consent_c0003
+      ,CAST(context_consent_category_preferences_c0004 AS BOOLEAN) AS consent_c0004
+      ,CAST(context_consent_category_preferences_c0005 AS BOOLEAN) AS consent_c0005
+      FROM javascript_upentertainment_checkout.pages
       WHERE received_at >= (SELECT start_date FROM params)
       AND received_at <  (SELECT end_date   FROM params) + INTERVAL '1 day'
 
@@ -302,6 +358,13 @@ view: marketing_attribution_test {
       ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255))
       ,CAST(NULL AS VARCHAR(255))
       ,order_id, CAST(NULL AS VARCHAR(255)), CAST('standard' AS VARCHAR(20))
+      ,CAST(NULL AS VARCHAR(500)) AS page_path
+      ,CAST(NULL AS VARCHAR(500)) AS page_referrer
+      ,CAST(NULL AS BOOLEAN)      AS consent_c0001
+      ,CAST(NULL AS BOOLEAN)      AS consent_c0002
+      ,CAST(NULL AS BOOLEAN)      AS consent_c0003
+      ,CAST(NULL AS BOOLEAN)      AS consent_c0004
+      ,CAST(NULL AS BOOLEAN)      AS consent_c0005
       FROM javaScript_upentertainment_checkout.order_completed
       WHERE received_at >= (SELECT start_date FROM params)
       AND received_at <  (SELECT end_date   FROM params) + INTERVAL '1 day'
@@ -318,6 +381,13 @@ view: marketing_attribution_test {
       ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255))
       ,CAST(NULL AS VARCHAR(255))
       ,order_id, bundle_plan, CAST('bundle' AS VARCHAR(20))
+      ,CAST(NULL AS VARCHAR(500)) AS page_path
+      ,CAST(NULL AS VARCHAR(500)) AS page_referrer
+      ,CAST(NULL AS BOOLEAN)      AS consent_c0001
+      ,CAST(NULL AS BOOLEAN)      AS consent_c0002
+      ,CAST(NULL AS BOOLEAN)      AS consent_c0003
+      ,CAST(NULL AS BOOLEAN)      AS consent_c0004
+      ,CAST(NULL AS BOOLEAN)      AS consent_c0005
       FROM javaScript_upentertainment_checkout.order_updated
       WHERE received_at >= (SELECT start_date FROM params)
       AND received_at <  (SELECT end_date   FROM params) + INTERVAL '1 day'
@@ -336,6 +406,13 @@ view: marketing_attribution_test {
       ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255))
       ,CAST(NULL AS VARCHAR(255))
       ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(20))
+      ,CAST(NULL AS VARCHAR(500)) AS page_path
+      ,CAST(NULL AS VARCHAR(500)) AS page_referrer
+      ,CAST(NULL AS BOOLEAN)      AS consent_c0001
+      ,CAST(NULL AS BOOLEAN)      AS consent_c0002
+      ,CAST(NULL AS BOOLEAN)      AS consent_c0003
+      ,CAST(NULL AS BOOLEAN)      AS consent_c0004
+      ,CAST(NULL AS BOOLEAN)      AS consent_c0005
       FROM chargebee_webhook_events.subscription_activated
       WHERE DATE(received_at) BETWEEN (SELECT start_date FROM params)
       AND (SELECT end_date   FROM params)
@@ -351,6 +428,13 @@ view: marketing_attribution_test {
       ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255))
       ,CAST(NULL AS VARCHAR(255))
       ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(20))
+      ,CAST(NULL AS VARCHAR(500)) AS page_path
+      ,CAST(NULL AS VARCHAR(500)) AS page_referrer
+      ,CAST(NULL AS BOOLEAN)      AS consent_c0001
+      ,CAST(NULL AS BOOLEAN)      AS consent_c0002
+      ,CAST(NULL AS BOOLEAN)      AS consent_c0003
+      ,CAST(NULL AS BOOLEAN)      AS consent_c0004
+      ,CAST(NULL AS BOOLEAN)      AS consent_c0005
       FROM javascript_upentertainment_checkout.order_resubscribed
       WHERE received_at >= (SELECT start_date FROM params)
       AND received_at <  (SELECT end_date   FROM params) + INTERVAL '1 day'
@@ -369,6 +453,13 @@ view: marketing_attribution_test {
       ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255))
       ,CAST(NULL AS VARCHAR(255))
       ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(20))
+      ,CAST(NULL AS VARCHAR(500)) AS page_path
+      ,CAST(NULL AS VARCHAR(500)) AS page_referrer
+      ,CAST(NULL AS BOOLEAN)      AS consent_c0001
+      ,CAST(NULL AS BOOLEAN)      AS consent_c0002
+      ,CAST(NULL AS BOOLEAN)      AS consent_c0003
+      ,CAST(NULL AS BOOLEAN)      AS consent_c0004
+      ,CAST(NULL AS BOOLEAN)      AS consent_c0005
       FROM (
       SELECT
       user_id
@@ -401,6 +492,8 @@ view: marketing_attribution_test {
       ,campaign_content
       ,event_id           AS touch_event_id
       ,user_id
+      ,page_path, page_referrer
+      ,consent_c0001, consent_c0002, consent_c0003, consent_c0004, consent_c0005
       FROM lifecycle_events
       WHERE source_event_type = 'page_visit'
       ),
@@ -921,7 +1014,91 @@ view: marketing_attribution_test {
       ,CAST(NULL AS NUMERIC(10,2))  AS std_trial_score
       ,CAST(NULL AS NUMERIC(10,2))  AS bundle_trial_score
       ,CAST(NULL AS NUMERIC(10,2))  AS activation_score
+      -- new page-level fields (real values on page_visit + checkout_page_visit)
+      ,CAST(page_path     AS VARCHAR(500))   AS page_path
+      ,CAST(page_referrer AS VARCHAR(500))   AS page_referrer
+      ,CAST(consent_c0001 AS BOOLEAN)        AS consent_c0001
+      ,CAST(consent_c0002 AS BOOLEAN)        AS consent_c0002
+      ,CAST(consent_c0003 AS BOOLEAN)        AS consent_c0003
+      ,CAST(consent_c0004 AS BOOLEAN)        AS consent_c0004
+      ,CAST(consent_c0005 AS BOOLEAN)        AS consent_c0005
       FROM marketing_touches
+      ),
+
+      -- ============================================================
+      -- CHECKOUT PAGE VISIT ROWS — sixth event type in the unified PDT.
+      -- Sourced from lifecycle_events filtered to
+      -- source_event_type = 'checkout_page_visit'. These rows do NOT
+      -- participate in marketing attribution (they are funnel steps,
+      -- not touches), so attribution columns are NULL/FALSE/0.
+      -- Same column shape as page_visit_rows.
+      -- ============================================================
+      checkout_page_visit_rows AS (
+      SELECT
+      CAST('checkout_page_visit' AS VARCHAR(20)) AS event_type
+      ,event_id
+      ,user_id, context_ip, anonymous_id
+      ,event_received_at                      AS event_at
+      ,event_date                             AS report_date
+      ,CAST(campaign_source AS VARCHAR(255))  AS campaign_source
+      ,CAST(campaign_name   AS VARCHAR(255))  AS campaign_name
+      ,campaign_id
+      ,CAST(campaign_medium AS VARCHAR(255))  AS campaign_medium
+      ,campaign_content
+      ,CAST(NULL AS VARCHAR(255)) AS order_id
+      ,CAST(NULL AS VARCHAR(20))  AS conversion_event_type
+      ,CAST(NULL AS VARCHAR(20))  AS trial_type
+      ,CAST(NULL AS VARCHAR(255)) AS bundle_plan
+      ,FALSE                      AS is_bundle_user
+      ,CAST(NULL AS VARCHAR(20))  AS lifecycle_event_type
+      ,CAST(NULL AS DATE)         AS lifecycle_event_date
+      ,FALSE                      AS is_activated_or_reacquired
+      ,FALSE                      AS is_not_retained
+      ,CAST(0.0 AS NUMERIC(10,2)) AS activation_value
+      ,FALSE                      AS is_yearly_plan
+      ,CAST(NULL AS VARCHAR(20))  AS plan_type
+      ,FALSE                      AS is_in_dunning
+      ,CAST(NULL AS VARCHAR(20))  AS latest_invoice_status
+      ,0                          AS total_touches
+      ,CAST(NULL AS INTEGER)      AS min_days_before_conversion
+      ,CAST(NULL AS TIMESTAMP)    AS attributed_touch_at
+      ,CAST(0.0 AS NUMERIC(7,6))  AS credit_first_touch
+      ,CAST(0.0 AS NUMERIC(7,6))  AS credit_last_touch
+      ,CAST(0.0 AS NUMERIC(7,6))  AS credit_first_last
+      ,CAST(0.0 AS NUMERIC(7,6))  AS credit_position_based
+      ,CAST(NULL AS VARCHAR(20))  AS touch_position
+      ,FALSE                      AS is_first_touch
+      ,FALSE                      AS is_last_touch
+      ,FALSE                      AS is_first_and_last
+      ,CAST(0 AS INTEGER)         AS app_trial_count
+      ,CAST(0 AS INTEGER)         AS app_install_count
+      ,CAST(0 AS INTEGER)         AS app_reinstall_count
+      ,CAST(NULL AS VARCHAR(50))  AS device_os
+      ,CAST(NULL AS VARCHAR(255)) AS branch_channel
+      ,CAST(NULL AS VARCHAR(100)) AS branch_feature
+      ,CAST(NULL AS VARCHAR(500)) AS creative_name
+      ,FALSE                      AS is_paid_branch
+      ,CAST(NULL AS NUMERIC(10,2))  AS quality_score
+      ,CAST(NULL AS NUMERIC(10,2))  AS volume_score
+      ,CAST(NULL AS NUMERIC(5,4))   AS trial_to_paid_rate
+      ,CAST(NULL AS NUMERIC(5,4))   AS effective_trial_to_paid_rate
+      ,CAST(NULL AS NUMERIC(5,4))   AS dunning_rate
+      ,CAST(NULL AS NUMERIC(5,4))   AS churn_rate
+      ,CAST(NULL AS NUMERIC(5,4))   AS retention_rate
+      ,CAST(NULL AS NUMERIC(12,2))  AS campaign_total_aov
+      ,CAST(NULL AS NUMERIC(10,2))  AS campaign_avg_aov
+      ,CAST(NULL AS NUMERIC(10,2))  AS std_trial_score
+      ,CAST(NULL AS NUMERIC(10,2))  AS bundle_trial_score
+      ,CAST(NULL AS NUMERIC(10,2))  AS activation_score
+      ,CAST(page_path     AS VARCHAR(500))   AS page_path
+      ,CAST(page_referrer AS VARCHAR(500))   AS page_referrer
+      ,CAST(consent_c0001 AS BOOLEAN)        AS consent_c0001
+      ,CAST(consent_c0002 AS BOOLEAN)        AS consent_c0002
+      ,CAST(consent_c0003 AS BOOLEAN)        AS consent_c0003
+      ,CAST(consent_c0004 AS BOOLEAN)        AS consent_c0004
+      ,CAST(consent_c0005 AS BOOLEAN)        AS consent_c0005
+      FROM lifecycle_events
+      WHERE source_event_type = 'checkout_page_visit'
       ),
 
       conversion_rows AS (
@@ -972,6 +1149,13 @@ view: marketing_attribution_test {
       ,CAST(dq.std_trial_score              AS NUMERIC(10,2)) AS std_trial_score
       ,CAST(dq.bundle_trial_score           AS NUMERIC(10,2)) AS bundle_trial_score
       ,CAST(dq.activation_score             AS NUMERIC(10,2)) AS activation_score
+      ,CAST(NULL AS VARCHAR(500))           AS page_path
+      ,CAST(NULL AS VARCHAR(500))           AS page_referrer
+      ,CAST(NULL AS BOOLEAN)                AS consent_c0001
+      ,CAST(NULL AS BOOLEAN)                AS consent_c0002
+      ,CAST(NULL AS BOOLEAN)                AS consent_c0003
+      ,CAST(NULL AS BOOLEAN)                AS consent_c0004
+      ,CAST(NULL AS BOOLEAN)                AS consent_c0005
       FROM selected_attributed sa
       LEFT JOIN daily_campaign_quality dq
       ON DATE(sa.conversion_event_at)                = dq.report_date
@@ -1040,6 +1224,13 @@ view: marketing_attribution_test {
       ,CAST(NULL AS NUMERIC(10,2))                                          AS std_trial_score
       ,CAST(NULL AS NUMERIC(10,2))                                          AS bundle_trial_score
       ,CAST(NULL AS NUMERIC(10,2))                                          AS activation_score
+      ,CAST(NULL AS VARCHAR(500))                                           AS page_path
+      ,CAST(NULL AS VARCHAR(500))                                           AS page_referrer
+      ,CAST(NULL AS BOOLEAN)                                                AS consent_c0001
+      ,CAST(NULL AS BOOLEAN)                                                AS consent_c0002
+      ,CAST(NULL AS BOOLEAN)                                                AS consent_c0003
+      ,CAST(NULL AS BOOLEAN)                                                AS consent_c0004
+      ,CAST(NULL AS BOOLEAN)                                                AS consent_c0005
       FROM branch_app_trials
       ),
 
@@ -1103,6 +1294,13 @@ view: marketing_attribution_test {
       ,CAST(NULL AS NUMERIC(10,2))                                          AS std_trial_score
       ,CAST(NULL AS NUMERIC(10,2))                                          AS bundle_trial_score
       ,CAST(NULL AS NUMERIC(10,2))                                          AS activation_score
+      ,CAST(NULL AS VARCHAR(500))                                           AS page_path
+      ,CAST(NULL AS VARCHAR(500))                                           AS page_referrer
+      ,CAST(NULL AS BOOLEAN)                                                AS consent_c0001
+      ,CAST(NULL AS BOOLEAN)                                                AS consent_c0002
+      ,CAST(NULL AS BOOLEAN)                                                AS consent_c0003
+      ,CAST(NULL AS BOOLEAN)                                                AS consent_c0004
+      ,CAST(NULL AS BOOLEAN)                                                AS consent_c0005
       FROM branch_app_installs
       ),
 
@@ -1166,6 +1364,13 @@ view: marketing_attribution_test {
       ,CAST(NULL AS NUMERIC(10,2))                                          AS std_trial_score
       ,CAST(NULL AS NUMERIC(10,2))                                          AS bundle_trial_score
       ,CAST(NULL AS NUMERIC(10,2))                                          AS activation_score
+      ,CAST(NULL AS VARCHAR(500))                                           AS page_path
+      ,CAST(NULL AS VARCHAR(500))                                           AS page_referrer
+      ,CAST(NULL AS BOOLEAN)                                                AS consent_c0001
+      ,CAST(NULL AS BOOLEAN)                                                AS consent_c0002
+      ,CAST(NULL AS BOOLEAN)                                                AS consent_c0003
+      ,CAST(NULL AS BOOLEAN)                                                AS consent_c0004
+      ,CAST(NULL AS BOOLEAN)                                                AS consent_c0005
       FROM branch_app_reinstalls
       )
 
@@ -1173,11 +1378,13 @@ view: marketing_attribution_test {
       -- OUTER SELECT — single  lives here.
       -- Looker injects a WHERE clause on report_date for incremental
       -- runs; on a full rebuild it expands to 1=1.
-      -- All five row-type CTEs share the report_date column so the
+      -- All six row-type CTEs share the report_date column so the
       -- single filter correctly gates every event type.
       -- ============================================================
       SELECT * FROM (
       SELECT * FROM page_visit_rows
+      UNION ALL
+      SELECT * FROM checkout_page_visit_rows
       UNION ALL
       SELECT * FROM conversion_rows
       UNION ALL
@@ -1188,8 +1395,8 @@ view: marketing_attribution_test {
       SELECT * FROM app_reinstall_rows
       ) all_rows
       WHERE
-      --1=1
-      {% incrementcondition %} report_date {% endincrementcondition %}
+      1=1
+      --{% incrementcondition %} report_date {% endincrementcondition %}
       ;;
   }
 
@@ -1345,6 +1552,44 @@ view: marketing_attribution_test {
       END
     ;;
   }
+
+  ##############################################################
+  # PAGE-LEVEL DIMENSIONS
+  # Populated only for page_visit and checkout_page_visit rows.
+  ##############################################################
+  dimension: page_path {
+    type: string
+    label: "Page Path"
+    description: "Vanity URL portion of the visited page. NULL for non-pageview events."
+    sql: ${TABLE}.page_path ;;
+  }
+
+  dimension: page_referrer {
+    type: string
+    label: "Page Referrer"
+    description: "Referrer URL of the visited page. NULL for non-pageview events."
+    sql: ${TABLE}.page_referrer ;;
+  }
+
+  dimension: is_checkout_visit {
+    type: yesno
+    label: "Is Checkout Visit"
+    description: "TRUE on rows where event_type = 'checkout_page_visit'."
+    sql: ${TABLE}.event_type = 'checkout_page_visit' ;;
+  }
+
+  dimension: is_marketing_visit {
+    type: yesno
+    label: "Is Marketing Page Visit"
+    description: "TRUE on rows where event_type = 'page_visit' (marketing site, not checkout)."
+    sql: ${TABLE}.event_type = 'page_visit' ;;
+  }
+
+  dimension: consent_c0001 { type: yesno label: "Consent C0001" sql: ${TABLE}.consent_c0001 ;; }
+  dimension: consent_c0002 { type: yesno label: "Consent C0002" sql: ${TABLE}.consent_c0002 ;; }
+  dimension: consent_c0003 { type: yesno label: "Consent C0003" sql: ${TABLE}.consent_c0003 ;; }
+  dimension: consent_c0004 { type: yesno label: "Consent C0004" sql: ${TABLE}.consent_c0004 ;; }
+  dimension: consent_c0005 { type: yesno label: "Consent C0005" sql: ${TABLE}.consent_c0005 ;; }
 
   ##############################################################
   # TRIAL / LIFECYCLE DIMENSIONS
@@ -1628,6 +1873,43 @@ view: marketing_attribution_test {
     type: number
     label: "Visit → Trial Rate"
     sql: 1.0 * ${web_trials_started} / NULLIF(${distinct_web_visits}, 0) ;;
+    value_format_name: percent_2
+  }
+
+  ##############################################################
+  # MEASURES — Checkout Funnel
+  # Surface the high-intent middle step of the funnel:
+  #   marketing visit → CHECKOUT VISIT → trial → activation
+  ##############################################################
+  measure: distinct_checkout_visits {
+    type: count_distinct
+    label: "Distinct Checkout Visits"
+    description: "Unique users who visited a checkout page."
+    sql: COALESCE(${TABLE}.user_id, ${TABLE}.anonymous_id) ;;
+    filters: [event_type: "checkout_page_visit"]
+    drill_fields: [drill_visits*]
+  }
+
+  measure: total_checkout_visits {
+    type: count
+    label: "Total Checkout Visits"
+    description: "Raw checkout pageview events (not deduplicated by user)."
+    filters: [event_type: "checkout_page_visit"]
+  }
+
+  measure: visit_to_checkout_rate {
+    type: number
+    label: "Marketing Visit → Checkout Rate"
+    description: "Share of marketing-site visitors who reach a checkout page."
+    sql: 1.0 * ${distinct_checkout_visits} / NULLIF(${distinct_web_visits}, 0) ;;
+    value_format_name: percent_2
+  }
+
+  measure: checkout_to_trial_rate {
+    type: number
+    label: "Checkout → Trial Rate"
+    description: "Share of checkout visitors who start a free trial."
+    sql: 1.0 * ${web_trials_started} / NULLIF(${distinct_checkout_visits}, 0) ;;
     value_format_name: percent_2
   }
 
@@ -1951,7 +2233,10 @@ view: marketing_attribution_test {
   set: drill_visits {
     fields: [
       report_date_date, marketing_platform, campaign_source, campaign_medium,
-      campaign_name, total_visits, distinct_web_visits
+      campaign_name, page_path, page_referrer,
+      total_visits, distinct_web_visits,
+      total_checkout_visits, distinct_checkout_visits,
+      visit_to_checkout_rate, checkout_to_trial_rate
     ]
   }
 
@@ -1992,12 +2277,12 @@ view: marketing_attribution_test {
 }
 
 ################################################################################
-# Datagroup — triggers the daily incremental run at 1 AM ET
+# Datagroup — triggers the daily incremental run at 10 PM ET
 ################################################################################
 datagroup: marketing_attribution_daily {
   sql_trigger: SELECT TO_CHAR(
                    CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE())
-                   - INTERVAL '2 hour',
+                   + INTERVAL '2 hour',
                    'YYYY-MM-DD'
                ) ;;
   max_cache_age: "24 hours"
