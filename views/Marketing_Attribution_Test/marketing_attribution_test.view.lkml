@@ -86,8 +86,9 @@ view: marketing_attribution_test {
     increment_offset: 7
     datagroup_trigger: marketing_attribution_daily
     distribution_style: even
+    sortkeys: ["report_date"]
     #sortkeys: ["report_date", "event_type"]
-    indexes: ["report_date", "event_type", "campaign_source", "user_id"]
+    #indexes: ["report_date", "event_type", "campaign_source", "user_id"]
 
     sql:
       WITH params AS (
@@ -1395,8 +1396,8 @@ view: marketing_attribution_test {
       SELECT * FROM app_reinstall_rows
       ) all_rows
       WHERE
-      1=1
-      --{% incrementcondition %} report_date {% endincrementcondition %}
+      --1=1
+      {% incrementcondition %} report_date {% endincrementcondition %}
       ;;
   }
 
