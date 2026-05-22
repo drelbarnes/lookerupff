@@ -48,7 +48,7 @@ view: redshift_first_plays {
               FROM plays_most_granular AS a
               INNER JOIN plays_max_duration AS b
               ON a.user_id = b.user_id
-              AND a.collection = b.collection
+              AND a.video_id = b.video_id
               AND DATE(a.ts) = b.ds
               AND a.min_count = b.min_count
               ),
