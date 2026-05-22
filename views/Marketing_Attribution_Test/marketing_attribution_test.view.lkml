@@ -95,7 +95,7 @@ view: marketing_attribution_test {
           SELECT
                -- Initial build covers 180 days; incremental runs are filtered
                -- by the single on the outer SELECT.
-               (CURRENT_DATE - INTERVAL '365 days')::DATE AS start_date
+               (CURRENT_DATE - INTERVAL '180 days')::DATE AS start_date
               ,CURRENT_DATE                               AS end_date
               ,90                  AS max_attribution_window_days
               ,0.50                AS w_activations
