@@ -95,7 +95,7 @@ view: marketing_attribution_test {
           SELECT
                -- Initial build covers 180 days; incremental runs are filtered
                -- by the single on the outer SELECT.
-               (CURRENT_DATE - INTERVAL '365 days')::DATE AS start_date
+               (CURRENT_DATE - INTERVAL '90 days')::DATE AS start_date
               ,CURRENT_DATE                               AS end_date
               ,90                  AS max_attribution_window_days
               ,0.50                AS w_activations
@@ -2290,10 +2290,12 @@ view: marketing_attribution_test {
 # Datagroup — triggers the daily incremental run at 10 PM ET
 ################################################################################
 datagroup: marketing_attribution_daily {
-  sql_trigger: SELECT TO_CHAR(
-                   CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE())
-                   + INTERVAL '2 hour',
-                   'YYYY-MM-DD'
+  # Fires once daily at 10 PM America/New_York. DST-safe.
+  sql_trigger: SELECT FLOOR(
+                   EXTRACT(EPOCH FROM
+                       CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE())
+                       - INTERVAL '22 hour'
+                   ) / 86400
                ) ;;
   max_cache_age: "24 hours"
 }
