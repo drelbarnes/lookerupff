@@ -95,7 +95,7 @@ view: marketing_attribution_test {
           SELECT
                -- Initial build covers 180 days; incremental runs are filtered
                -- by the single on the outer SELECT.
-               (CURRENT_DATE - INTERVAL '90 days')::DATE AS start_date
+               (CURRENT_DATE - INTERVAL '365 days')::DATE AS start_date
               ,CURRENT_DATE                               AS end_date
               ,90                  AS max_attribution_window_days
               ,0.50                AS w_activations
@@ -1888,6 +1888,15 @@ view: marketing_attribution_test {
     description: "Unique users who visited a checkout page."
     sql: COALESCE(${TABLE}.user_id, ${TABLE}.anonymous_id) ;;
     filters: [event_type: "checkout_page_visit"]
+    drill_fields: [drill_visits*]
+  }
+
+  measure: distinct_checkout_visits_create_account {
+    type: count_distinct
+    label: "Distinct Checkout Visits Create Account"
+    description: "Unique users who visited a checkout page."
+    sql: COALESCE(${TABLE}.user_id, ${TABLE}.anonymous_id) ;;
+    filters: [event_type: "checkout_page_visit", page_path: "%/index.php/welcome/create_account/upfaithandfamily/%"]
     drill_fields: [drill_visits*]
   }
 
