@@ -7,6 +7,7 @@ include: "upff_google.model.lkml"
 
 view: churn_training_input {
   derived_table: {
+    datagroup_trigger: upff_google_datagroup_churn_model
     explore_source: bigquery_churn_model {
       column: customer_id {}
       column: email_open {}
@@ -102,6 +103,7 @@ view: churn_training_input {
 
 view: churn_testing_input {
   derived_table: {
+    datagroup_trigger: upff_google_datagroup_churn_model
     explore_source: bigquery_churn_model {
       column: customer_id {}
       column: end_date2 {}
@@ -444,7 +446,7 @@ view: churn_prediction {
     sql: SELECT * FROM ml.PREDICT(
           MODEL ${churn_model.SQL_TABLE_NAME},
           (SELECT * FROM ${churn_future_input.SQL_TABLE_NAME}),struct(0.17 as threshold));;
-    sql_trigger_value: SELECT FLOOR((TIMESTAMP_DIFF(CURRENT_TIMESTAMP(),'1970-01-01 00:00:00',SECOND)) / (672*60*60)) ;;
+    #sql_trigger_value: SELECT FLOOR((TIMESTAMP_DIFF(CURRENT_TIMESTAMP(),'1970-01-01 00:00:00',SECOND)) / (672*60*60)) ;;
   }
 
   dimension: customer_id {
