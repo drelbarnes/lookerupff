@@ -198,10 +198,11 @@ view: ltv_cpa {
 # not inside the view file.
 ################################################################################
 datagroup: ltv_cpa_datagroup {
-  sql_trigger: SELECT TO_CHAR(
-                   CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE())
-                   - INTERVAL '6 hour',
-                   'YYYY-MM-DD'
+  sql_trigger: SELECT FLOOR(
+                   EXTRACT(EPOCH FROM
+                       CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE())
+                       - INTERVAL '11 hour'
+                   ) / 86400
                ) ;;
   max_cache_age: "24 hours"
 }

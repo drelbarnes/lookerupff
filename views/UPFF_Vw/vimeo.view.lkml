@@ -201,10 +201,11 @@ view: vimeo {
 # not inside the view file.
 ################################################################################
 datagroup: vimeo_datagroup {
-  sql_trigger: SELECT TO_CHAR(
-                   CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE())
-                   - INTERVAL '7 hour',
-                   'YYYY-MM-DD'
+  sql_trigger: SELECT FLOOR(
+                   EXTRACT(EPOCH FROM
+                       CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE())
+                       - INTERVAL '12 hour'
+                   ) / 86400
                ) ;;
   max_cache_age: "24 hours"
 }
