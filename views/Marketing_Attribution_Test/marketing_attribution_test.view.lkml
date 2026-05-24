@@ -1509,12 +1509,12 @@ view: marketing_attribution_test {
                   OR LOWER(${TABLE}.campaign_name) LIKE '%performance max%')    THEN 'Google PMax'
         WHEN LOWER(${TABLE}.campaign_source) IN ('google','google_ads','adwords')
              AND LOWER(${TABLE}.campaign_medium) IN ('cpc','ppc','paid','g')    THEN 'Google Search'
-        WHEN LOWER(${TABLE}.campaign_source) IN ('meta','instagram','ig','fb', 'an', 'campaign.name')
+        WHEN LOWER(${TABLE}.campaign_source) IN ('Facebook','meta','ig','fb','an','fb-SiteLink','th','msg','site_source_name', 'site.source.name','campaign.name')
              OR LOWER(${TABLE}.campaign_source) LIKE 'meta%'                    THEN 'Meta Ads'
-        WHEN LOWER(${TABLE}.campaign_source) IN ('bing','microsoft','msn')      THEN 'Bing Ads'
+        WHEN LOWER(${TABLE}.campaign_source) IN ('bing', 'bing_ads','microsoft','msn')      THEN 'Bing Ads'
         WHEN LOWER(${TABLE}.campaign_source) IN ('hubspot', 'hubspot_upff', 'hubspot_uptv')
              OR LOWER(${TABLE}.campaign_medium) LIKE 'email%'                   THEN 'HubSpot'
-        WHEN LOWER(${TABLE}.campaign_source) LIKE '%uptv%'                      THEN 'UPtv Digital'
+        WHEN LOWER(${TABLE}.campaign_source) IN ('uptv', 'uptv_movies_app') THEN 'UPtv Digital'
         WHEN LOWER(${TABLE}.campaign_medium) = 'organic'
              AND LOWER(${TABLE}.campaign_source) IN ('google','bing','duckduckgo','yahoo') THEN 'Organic Search'
         WHEN LOWER(${TABLE}.campaign_medium) IN ('social','organic_social')
