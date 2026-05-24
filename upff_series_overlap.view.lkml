@@ -82,9 +82,10 @@ view: upff_series_overlap {
       sql: ${TABLE}.user_count ;;
     }
 
-    dimension: pct_total_users {
-      type: number
+    measure: pct_total_users {
+      type: sum
       sql: ${TABLE}.pct_total_users ;;
+      value_format_name: percent_2
     }
 
     dimension: stack_group {
