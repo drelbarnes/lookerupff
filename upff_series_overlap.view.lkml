@@ -1,69 +1,97 @@
 view: upff_series_overlap {
-  # # You can specify the table name if it's different from the view name:
-  # sql_table_name: my_schema_name.tester ;;
-  #
-  # # Define your dimensions and measures here, like this:
-  # dimension: user_id {
-  #   description: "Unique ID for each user that has ordered"
-  #   type: number
-  #   sql: ${TABLE}.user_id ;;
-  # }
-  #
-  # dimension: lifetime_orders {
-  #   description: "The total number of orders for each user"
-  #   type: number
-  #   sql: ${TABLE}.lifetime_orders ;;
-  # }
-  #
-  # dimension_group: most_recent_purchase {
-  #   description: "The date when each user last ordered"
-  #   type: time
-  #   timeframes: [date, week, month, year]
-  #   sql: ${TABLE}.most_recent_purchase_at ;;
-  # }
-  #
-  # measure: total_lifetime_orders {
-  #   description: "Use this for counting lifetime orders across many users"
-  #   type: sum
-  #   sql: ${lifetime_orders} ;;
-  # }
-}
+    derived_table: {
+      sql: {% raw %} with
 
-# view: upff_series_overlap {
-#   # Or, you could make this view a derived table, like this:
-#   derived_table: {
-#     sql: SELECT
-#         user_id as user_id
-#         , COUNT(*) as lifetime_orders
-#         , MAX(orders.created_at) as most_recent_purchase_at
-#       FROM orders
-#       GROUP BY user_id
-#       ;;
-#   }
-#
-#   # Define your dimensions and measures here, like this:
-#   dimension: user_id {
-#     description: "Unique ID for each user that has ordered"
-#     type: number
-#     sql: ${TABLE}.user_id ;;
-#   }
-#
-#   dimension: lifetime_orders {
-#     description: "The total number of orders for each user"
-#     type: number
-#     sql: ${TABLE}.lifetime_orders ;;
-#   }
-#
-#   dimension_group: most_recent_purchase {
-#     description: "The date when each user last ordered"
-#     type: time
-#     timeframes: [date, week, month, year]
-#     sql: ${TABLE}.most_recent_purchase_at ;;
-#   }
-#
-#   measure: total_lifetime_orders {
-#     description: "Use this for counting lifetime orders across many users"
-#     type: sum
-#     sql: ${lifetime_orders} ;;
-#   }
-# }
+              a AS
+              (
+              SELECT
+                user_id
+                , collection
+              FROM looker_scratch.lr$rmc5u1779595405461_redshift_timeupdate
+              WHERE collection in
+                ('Sugarcreek Amish Mysteries - Season 1', 'Blue Skies - Season 1')
+              ),
+
+              b AS
+              (
+              SELECT
+                user_id
+                , collection
+                , CASE WHEN collection = 'Sugarcreek Amish Mysteries - Season 1' THEN 1 ELSE 0 END AS series1_flag
+                , CASE WHEN collection = 'Blue Skies - Season 1' THEN 1 ELSE 0 END AS series2_flag
+              FROM a
+              ),
+
+              c AS
+              (
+              SELECT
+                user_id
+                , MAX(series1_flag) AS max_s1_flag
+                , MAX(series2_flag) AS max_s2_flag
+              FROM b
+              GROUP BY user_id
+              ),
+
+              d AS
+              (
+              SELECT
+                user_id
+                , max_s1_flag
+                , max_s2_flag
+                , CASE
+                    WHEN max_s1_flag = 1 AND max_s2_flag = 0 THEN '1 only'
+                    WHEN max_s2_flag = 1 AND max_s1_flag = 0 THEN '2 only'
+                    WHEN max_s1_flag = 1 AND max_s2_flag = 1 THEN 'both'
+                    ELSE 'neither'
+                  END AS set_membership_flag
+              FROM c
+              ),
+
+              e AS
+              (
+              SELECT
+                set_membership_flag AS label
+                , COUNT(*) AS user_count
+                , ROUND(COUNT(*)::DECIMAL / SUM(COUNT(*)) OVER (), 2) AS pct_total_users
+              FROM d
+              WHERE set_membership_flag in ('1 only', '2 only', 'both')
+              GROUP BY set_membership_flag
+              ORDER BY
+                CASE
+                  WHEN set_membership_flag = '1 only' THEN 1
+                  WHEN set_membership_flag = '2 only' THEN 2
+                  WHEN set_membership_flag = 'both' THEN 3
+                END
+              )
+
+              select * from e {% endraw %} ;;
+    }
+
+    measure: count {
+      type: count
+      drill_fields: [detail*]
+    }
+
+    dimension: label {
+      type: string
+      sql: ${TABLE}.label ;;
+    }
+
+    dimension: user_count {
+      type: number
+      sql: ${TABLE}.user_count ;;
+    }
+
+    dimension: pct_total_users {
+      type: number
+      sql: ${TABLE}.pct_total_users ;;
+    }
+
+    set: detail {
+      fields: [
+        label,
+        user_count,
+        pct_total_users
+      ]
+    }
+}
