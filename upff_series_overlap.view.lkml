@@ -87,6 +87,17 @@ view: upff_series_overlap {
       sql: ${TABLE}.pct_total_users ;;
     }
 
+    measure: pct_total_users_dim {
+      type: number
+      sql: 1.0 * ${user_count} / SUM(${user_count}) OVER () ;;
+      value_format_name: percent_2
+    }
+
+    dimension: stack_group {
+      type: string
+      sql: 'All Users' ;;
+    }
+
     set: detail {
       fields: [
         label,
