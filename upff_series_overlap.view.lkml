@@ -55,7 +55,7 @@ view: upff_series_overlap {
                 , ROUND(COUNT(*)::DECIMAL / SUM(COUNT(*)) OVER (), 2) AS pct_total_users
               FROM d
               WHERE set_membership_flag in ('1 only', '2 only', 'both')
-              GROUP BY set_membership_flag, user_count
+              GROUP BY set_membership_flag
               ORDER BY
                 CASE
                   WHEN set_membership_flag = '1 only' THEN 1
@@ -85,12 +85,6 @@ view: upff_series_overlap {
     dimension: pct_total_users {
       type: number
       sql: ${TABLE}.pct_total_users ;;
-    }
-
-    measure: pct_total_users_measure {
-      type: number
-      sql: 1.0 * ${user_count} / SUM(${user_count}) OVER () ;;
-      value_format_name: percent_2
     }
 
     dimension: stack_group {
