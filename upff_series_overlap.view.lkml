@@ -55,7 +55,7 @@ view: upff_series_overlap {
                 , ROUND(COUNT(*)::DECIMAL / SUM(COUNT(*)) OVER (), 2) AS pct_total_users
               FROM d
               WHERE set_membership_flag in ('1 only', '2 only', 'both')
-              GROUP BY set_membership_flag
+              GROUP BY set_membership_flag, user_count
               ORDER BY
                 CASE
                   WHEN set_membership_flag = '1 only' THEN 1
