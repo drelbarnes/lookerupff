@@ -247,7 +247,8 @@ view: sub_count {
 
       ) all_rows
       WHERE
-      {% incrementcondition %} report_date {% endincrementcondition %}
+      1=1
+      --{% incrementcondition %} report_date {% endincrementcondition %}
       ;;
   }
 
