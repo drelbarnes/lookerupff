@@ -1395,9 +1395,7 @@ view: marketing_attribution_test {
       UNION ALL
       SELECT * FROM app_reinstall_rows
       ) all_rows
-      WHERE
-        1=1
-      --{% incrementcondition %} report_date {% endincrementcondition %}
+      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
       ;;
   }
 
