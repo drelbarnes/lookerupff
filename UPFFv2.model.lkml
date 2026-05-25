@@ -90,6 +90,11 @@ explore: upff_movie_premier {
   label: "UPFF Movie Premier"
 }
 
+include: "upff_series_overlap.view.lkml"
+explore: upff_series_overlap {
+  label: "UPFF Series Overlap"
+}
+
 include: "upff_weekly_recap_quarterly_benchmarks.view.lkml"
 explore: upff_weekly_recap_quarterly_benchmarks {
   label: "UPFF Weekly Recap Benchmarks"
