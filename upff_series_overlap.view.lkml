@@ -10,8 +10,8 @@ view: upff_series_overlap {
               FROM ${redshift_timeupdate.SQL_TABLE_NAME}
               WHERE collection in
                 (
-                {% condition title_filter_a %} title {% endcondition %},
-                {% condition title_filter_b %} title {% endcondition %}
+                {% condition title_filter_a %} collection {% endcondition %},
+                {% condition title_filter_b %} collection {% endcondition %}
                 )
               AND
                 {% condition date_filter %} DATE(timestamp) {% endcondition %}
@@ -22,8 +22,8 @@ view: upff_series_overlap {
               SELECT
                 user_id
                 , collection
-                , CASE WHEN collection = {% condition title_filter_a %} title {% endcondition %} THEN 1 ELSE 0 END AS series1_flag
-                , CASE WHEN collection = {% condition title_filter_b %} title {% endcondition %} THEN 1 ELSE 0 END AS series2_flag
+                , CASE WHEN {% condition title_filter_a %} collection {% endcondition %} THEN 1 ELSE 0 END AS series1_flag
+                , CASE WHEN {% condition title_filter_b %} collection {% endcondition %} THEN 1 ELSE 0 END AS series2_flag
               FROM a
               ),
 
