@@ -1,15 +1,20 @@
 view: upff_series_overlap {
     derived_table: {
-      sql: {% raw %} with
+      sql:    with
 
               a AS
               (
               SELECT
                 user_id
                 , collection
-              FROM looker_scratch.lr$rmc5u1779595405461_redshift_timeupdate
+              FROM ${redshift_timeupdate.SQL_TABLE_NAME}
               WHERE collection in
-                ('Sugarcreek Amish Mysteries - Season 1', 'Blue Skies - Season 1')
+                (
+                {% condition title_filter_a %} title {% endcondition %},
+                {% condition title_filter_b %} title {% endcondition %}
+                )
+              AND
+                {% condition date_filter %} DATE(timestamp) {% endcondition %}
               ),
 
               b AS
@@ -17,8 +22,8 @@ view: upff_series_overlap {
               SELECT
                 user_id
                 , collection
-                , CASE WHEN collection = 'Sugarcreek Amish Mysteries - Season 1' THEN 1 ELSE 0 END AS series1_flag
-                , CASE WHEN collection = 'Blue Skies - Season 1' THEN 1 ELSE 0 END AS series2_flag
+                , CASE WHEN collection = {% condition title_filter_a %} title {% endcondition %} THEN 1 ELSE 0 END AS series1_flag
+                , CASE WHEN collection = {% condition title_filter_b %} title {% endcondition %} THEN 1 ELSE 0 END AS series2_flag
               FROM a
               ),
 
@@ -64,7 +69,19 @@ view: upff_series_overlap {
                 END
               )
 
-              select * from e {% endraw %} ;;
+              select * from e ;;
+    }
+
+    filter: title_filter_a {
+      type: string
+    }
+
+    filter: title_filter_b {
+      type: string
+    }
+
+    filter: date_filter {
+      type: date
     }
 
     measure: count {
