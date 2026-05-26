@@ -85,7 +85,7 @@ view: upff_series_dropoff {
     measure: percent_of_total {
       type: sum
       sql: ${TABLE}.percent_of_total ;;
-      value_format: "0.00%"
+      value_format: "0%"
     }
 
     set: detail {
