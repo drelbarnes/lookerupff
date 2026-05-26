@@ -9,11 +9,13 @@ view: upff_series_overlap {
                 , collection
               FROM ${redshift_timeupdate.SQL_TABLE_NAME}
               WHERE
-              {% condition title_filter_a %} collection {% endcondition %}
+              {% condition collection_filter_a %} collection {% endcondition %}
               OR
-              {% condition title_filter_b %} collection {% endcondition %}
+              {% condition collection_filter_b %} collection {% endcondition %}
               AND
               {% condition date_filter %} DATE(timestamp) {% endcondition %}
+              AND
+              {% condition minutes_filter %} round(timecode / 60, 0) {% endcondition %}
               ),
 
               b AS
@@ -21,8 +23,8 @@ view: upff_series_overlap {
               SELECT
                 user_id
                 , collection
-                , CASE WHEN {% condition title_filter_a %} collection {% endcondition %} THEN 1 ELSE 0 END AS series1_flag
-                , CASE WHEN {% condition title_filter_b %} collection {% endcondition %} THEN 1 ELSE 0 END AS series2_flag
+                , CASE WHEN {% condition collection_filter_a %} collection {% endcondition %} THEN 1 ELSE 0 END AS series1_flag
+                , CASE WHEN {% condition collection_filter_b %} collection {% endcondition %} THEN 1 ELSE 0 END AS series2_flag
               FROM a
               ),
 
@@ -71,16 +73,20 @@ view: upff_series_overlap {
               select * from e ;;
     }
 
-    filter: title_filter_a {
+    filter: collection_filter_a {
       type: string
     }
 
-    filter: title_filter_b {
+    filter: collection_filter_b {
       type: string
     }
 
     filter: date_filter {
       type: date
+    }
+
+    filter: minutes_filter {
+      type: number
     }
 
     measure: count {
