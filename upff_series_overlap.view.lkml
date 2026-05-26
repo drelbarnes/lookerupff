@@ -43,9 +43,9 @@ view: upff_series_overlap {
                 , max_s1_flag
                 , max_s2_flag
                 , CASE
-                    WHEN max_s1_flag = 1 AND max_s2_flag = 0 THEN '1 only'
-                    WHEN max_s2_flag = 1 AND max_s1_flag = 0 THEN '2 only'
-                    WHEN max_s1_flag = 1 AND max_s2_flag = 1 THEN 'both'
+                    WHEN max_s1_flag = 1 AND max_s2_flag = 0 THEN 'collection 1 only'
+                    WHEN max_s2_flag = 1 AND max_s1_flag = 0 THEN 'collection 2 only'
+                    WHEN max_s1_flag = 1 AND max_s2_flag = 1 THEN 'both collections'
                     ELSE 'neither'
                   END AS set_membership_flag
               FROM c
@@ -58,13 +58,13 @@ view: upff_series_overlap {
                 , COUNT(*) AS user_count
                 , ROUND(COUNT(*)::DECIMAL / SUM(COUNT(*)) OVER (), 2) AS pct_total_users
               FROM d
-              WHERE set_membership_flag in ('1 only', '2 only', 'both')
+              WHERE set_membership_flag in ('collection 1 only', 'collection 2 only', 'both collections')
               GROUP BY set_membership_flag
               ORDER BY
                 CASE
-                  WHEN set_membership_flag = '1 only' THEN 1
-                  WHEN set_membership_flag = '2 only' THEN 2
-                  WHEN set_membership_flag = 'both' THEN 3
+                  WHEN set_membership_flag = 'collection 1 only' THEN 1
+                  WHEN set_membership_flag = 'collection 2 only' THEN 2
+                  WHEN set_membership_flag = 'both collections' THEN 3
                 END
               )
 
