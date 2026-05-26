@@ -1264,15 +1264,6 @@ include: "bigquery_http_api_get_roku_firstplay.view.lkml"
 
 explore: monthly_platform_user_count {}
 
-
-#UPdate Churn Model Refresh Cadence
-datagroup: upff_google_datagroup_churn_model {
-  # sql_trigger: SELECT MAX(id) FROM etl_log;;
-  max_cache_age: "720 hour"
-  sql_trigger: SELECT EXTRACT(YEAR FROM CURRENT_DATE()) * 100 + EXTRACT(MONTH FROM CURRENT_DATE()) ;;
-}
-persist_with: upff_google_datagroup_churn_model
-
 datagroup: upff_google_datagroup {
   # sql_trigger: SELECT MAX(id) FROM etl_log;;
   max_cache_age: "24 hour"
@@ -1287,6 +1278,15 @@ explore: bigquery_clickthroughs {
   }
 
 }
+
+#UPdate Churn Model Refresh Cadence
+datagroup: upff_google_datagroup_churn_model {
+  # sql_trigger: SELECT MAX(id) FROM etl_log;;
+  max_cache_age: "720 hour"
+  sql_trigger: SELECT EXTRACT(YEAR FROM CURRENT_DATE()) * 100 + EXTRACT(MONTH FROM CURRENT_DATE()) ;;
+}
+persist_with: upff_google_datagroup_churn_model
+
 explore: bigquery_android_branch_install {}
 explore: bigquery_android_branch_reinstall {}
 explore: bigquery_ios_branch_install {}

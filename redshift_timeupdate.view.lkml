@@ -473,12 +473,6 @@ view: redshift_timeupdate {
       sql: ${TABLE}.email ;;
     }
 
-    dimension: hours_watched {
-      type: number
-      sql: ${timecode} / 3600 ;;
-      value_format: "#,##0"
-    }
-
     measure: timecode_count {
       type: sum
       value_format: "0"
@@ -488,12 +482,6 @@ view: redshift_timeupdate {
     measure: duration_count {
       type: sum
       sql: ${duration} ;;
-    }
-
-    dimension: minutes_watched_dim {
-      type: number
-      sql: case when ${duration} < ${timecode} then round(${duration} / 60) else round(${timecode} / 60) end ;;
-      value_format: "#,##0"
     }
 
     measure: minutes_watched {
@@ -507,10 +495,55 @@ view: redshift_timeupdate {
       value_format: "#,##0"
     }
 
+    measure: hours_watched {
+      type: sum
+      sql:
+      case
+        when ${duration} < ${timecode}
+        then round(${duration} / 3600)
+        else round(${timecode} / 3600)
+      end ;;
+      value_format: "#,##0"
+    }
+
+    dimension: minutes_watched_dim {
+      type: number
+      sql:
+      case
+        when ${duration} < ${timecode}
+        then round(${duration} / 60)
+        else round(${timecode} / 60)
+      end ;;
+      value_format: "#,##0"
+    }
+
+    measure: minutes_count {
+      type: sum
+      value_format: "#,##0"
+      sql: ${minutes_watched_dim} ;;
+    }
+
+    dimension: hours_watched_dim {
+      type: number
+      sql:
+      case
+        when ${duration} < ${timecode}
+        then round(${duration} / 3600)
+        else round(${timecode} / 3600)
+      end ;;
+    value_format: "#,##0"
+    }
+
+    measure: hours_count {
+      type: sum
+      value_format: "#,##0"
+      sql: ${hours_watched_dim} ;;
+    }
+
     measure: percent_completed {
       type: number
       value_format: "0\%"
-      sql: case when ${timecode_count} > ${duration_count} then 100.00 else 100.00 * ${timecode_count}/${duration_count} end ;;
+      sql: case when ${timecode_count} > ${duration_count} then 100.00 else 100.00 * ${timecode_count} / ${duration_count} end ;;
     }
 
     measure: play_count {
@@ -544,73 +577,4 @@ view: redshift_timeupdate {
         email
       ]
     }
-
-
-  # # You can specify the table name if it's different from the view name:
-  # sql_table_name: my_schema_name.tester ;;
-  #
-  # # Define your dimensions and measures here, like this:
-  # dimension: user_id {
-  #   description: "Unique ID for each user that has ordered"
-  #   type: number
-  #   sql: ${TABLE}.user_id ;;
-  # }
-  #
-  # dimension: lifetime_orders {
-  #   description: "The total number of orders for each user"
-  #   type: number
-  #   sql: ${TABLE}.lifetime_orders ;;
-  # }
-  #
-  # dimension_group: most_recent_purchase {
-  #   description: "The date when each user last ordered"
-  #   type: time
-  #   timeframes: [date, week, month, year]
-  #   sql: ${TABLE}.most_recent_purchase_at ;;
-  # }
-  #
-  # measure: total_lifetime_orders {
-  #   description: "Use this for counting lifetime orders across many users"
-  #   type: sum
-  #   sql: ${lifetime_orders} ;;
-  # }
 }
-
-# view: redshift_timeupdate {
-#   # Or, you could make this view a derived table, like this:
-#   derived_table: {
-#     sql: SELECT
-#         user_id as user_id
-#         , COUNT(*) as lifetime_orders
-#         , MAX(orders.created_at) as most_recent_purchase_at
-#       FROM orders
-#       GROUP BY user_id
-#       ;;
-#   }
-#
-#   # Define your dimensions and measures here, like this:
-#   dimension: user_id {
-#     description: "Unique ID for each user that has ordered"
-#     type: number
-#     sql: ${TABLE}.user_id ;;
-#   }
-#
-#   dimension: lifetime_orders {
-#     description: "The total number of orders for each user"
-#     type: number
-#     sql: ${TABLE}.lifetime_orders ;;
-#   }
-#
-#   dimension_group: most_recent_purchase {
-#     description: "The date when each user last ordered"
-#     type: time
-#     timeframes: [date, week, month, year]
-#     sql: ${TABLE}.most_recent_purchase_at ;;
-#   }
-#
-#   measure: total_lifetime_orders {
-#     description: "Use this for counting lifetime orders across many users"
-#     type: sum
-#     sql: ${lifetime_orders} ;;
-#   }
-# }

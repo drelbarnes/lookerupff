@@ -90,6 +90,16 @@ explore: upff_movie_premier {
   label: "UPFF Movie Premier"
 }
 
+include: "upff_series_overlap.view.lkml"
+explore: upff_series_overlap {
+  label: "UPFF Series Overlap"
+}
+
+include: "upff_series_dropoff.view.lkml"
+explore: upff_series_dropoff {
+  label: "UPFF Series Dropoff"
+}
+
 include: "upff_weekly_recap_quarterly_benchmarks.view.lkml"
 explore: upff_weekly_recap_quarterly_benchmarks {
   label: "UPFF Weekly Recap Benchmarks"
@@ -107,6 +117,11 @@ explore: redshift_timeupdate {
 include: "redshift_title_histogram.view.lkml"
 explore: redshift_title_histogram {
   label: "Movie Title Minutes Histogram"
+}
+
+include: "redshift_first_plays.view.lkml"
+explore: redshift_first_plays {
+  label: "First Plays Redshift"
 }
 
 include: "redshift_allfirstplay_javascript_video_content_playing.view.lkml"

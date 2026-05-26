@@ -2,7 +2,7 @@ view: sub_count {
   derived_table: {
 
     increment_key: "report_date"
-    increment_offset: 13
+    increment_offset: 12
     datagroup_trigger: sub_count_datagroup
     distribution_style: even
     indexes: ["report_date"]
@@ -246,9 +246,7 @@ view: sub_count {
       ) total_trial_count
 
       ) all_rows
-      WHERE (
-      {% incrementcondition %} report_date {% endincrementcondition %}
-      )
+      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
       ;;
   }
 
@@ -325,10 +323,11 @@ view: sub_count {
 }
 
 datagroup: sub_count_datagroup {
-  sql_trigger: SELECT TO_CHAR(
-                   CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE())
-                   - INTERVAL '6 hour',
-                   'YYYY-MM-DD'
+  sql_trigger: SELECT FLOOR(
+                   EXTRACT(EPOCH FROM
+                       CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE())
+                       - INTERVAL '11 hour'
+                   ) / 86400
                ) ;;
   max_cache_age: "24 hours"
 }

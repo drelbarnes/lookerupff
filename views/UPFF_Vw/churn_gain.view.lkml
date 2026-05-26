@@ -260,9 +260,7 @@ view: churn_gain {
       FROM ${rolling_platform.SQL_TABLE_NAME}
 
       ) all_rows
-      WHERE (
-      {% incrementcondition %} report_date {% endincrementcondition %}
-      )
+      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
       ;;
   }
 
@@ -348,10 +346,11 @@ view: churn_gain {
 }
 
 datagroup: churn_gain_datagroup {
-  sql_trigger: SELECT TO_CHAR(
-                   CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE())
-                   - INTERVAL '6 hour 30 minute',
-                   'YYYY-MM-DD'
+  sql_trigger: SELECT FLOOR(
+                   EXTRACT(EPOCH FROM
+                       CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE())
+                       - INTERVAL '12 hour'
+                   ) / 86400
                ) ;;
   max_cache_age: "24 hours"
 }

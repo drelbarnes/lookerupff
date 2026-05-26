@@ -98,9 +98,7 @@ view: free_trials {
 
       SELECT *
       FROM all_rows
-      WHERE (
-      {% incrementcondition %} report_date {% endincrementcondition %}
-      )
+      WHERE 1=1
       ;;
   }
 
@@ -197,10 +195,11 @@ view: free_trials {
 # not inside the view file.
 ################################################################################
 datagroup: free_trials_datagroup {
-  sql_trigger: SELECT TO_CHAR(
-                   CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE())
-                   - INTERVAL '6 hour',
-                   'YYYY-MM-DD'
+  sql_trigger: SELECT FLOOR(
+                   EXTRACT(EPOCH FROM
+                       CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE())
+                       - INTERVAL '10 hour'
+                   ) / 86400
                ) ;;
   max_cache_age: "24 hours"
 }
