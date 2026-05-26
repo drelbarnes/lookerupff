@@ -105,11 +105,6 @@ view: upff_series_overlap {
       value_format_name: percent_2
     }
 
-    dimension: stack_group {
-      type: string
-      sql: 'All Users' ;;
-    }
-
     set: detail {
       fields: [
         label,
