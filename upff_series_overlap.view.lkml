@@ -101,7 +101,7 @@ view: upff_series_overlap {
     measure: pct_total_users {
       type: sum
       sql: ${TABLE}.pct_total_users ;;
-      value_format_name: percent_2
+      value_format: "0%"
     }
 
     set: detail {
