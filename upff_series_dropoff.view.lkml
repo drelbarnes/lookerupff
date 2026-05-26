@@ -76,14 +76,16 @@ view: upff_series_dropoff {
       sql: ${TABLE}.completion_indicator ;;
     }
 
-    dimension: number_unique_viewers {
-      type: number
+    measure: number_unique_viewers {
+      type: sum
       sql: ${TABLE}.number_unique_viewers ;;
+      value_format_name: decimal_0
     }
 
-    dimension: percent_of_total {
-      type: number
+    measure: percent_of_total {
+      type: sum
       sql: ${TABLE}.percent_of_total ;;
+      value_format: "0.00%"
     }
 
     set: detail {
