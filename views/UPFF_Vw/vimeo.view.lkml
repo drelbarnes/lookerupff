@@ -89,7 +89,7 @@ view: vimeo {
 
       SELECT *
       FROM all_rows
-      WHERE {% incrementcondition %} report_date {% endincrementcondition %}
+      WHERE 1=1
       ;;
   }
 
