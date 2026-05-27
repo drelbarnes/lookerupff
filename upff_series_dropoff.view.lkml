@@ -7,7 +7,7 @@ view: upff_series_dropoff {
               SELECT
                 user_id
                 , episode
-              FROM looker_scratch.lr$rmc5u1779769415826_redshift_timeupdate
+              FROM ${redshift_timeupdate.SQL_TABLE_NAME}
               WHERE {% condition collection_filter %} collection {% endcondition %}
               AND {% condition date_filter %} DATE(timestamp) {% endcondition %}
               ),
