@@ -1,24 +1,23 @@
-view: paypal {
+view: stripe {
   derived_table: {
-    sql: -- Declare variables for start and end dates
- with cfg AS (  -- renamed from "cfg"
+    sql: with cfg AS (  -- renamed from "cfg"
   SELECT report_date
   FROM ${config.SQL_TABLE_NAME}),
 
  paypal as (
 SELECT distinct
-To_Email_Address as email
-, date(_Date_) as charge_created
+customer_email as email
+, date(charge_created) as charge_created
 , 'charge' as reporting_category
-, Reference_Txn_ID as source_id
-, Transaction_ID as transaction_id
-, Gross
-, fee
+, source_id
+, balance_transaction_id as transaction_id
+, gross
+,  fee
 , 'paypal' as payment_gateway
-,type as payment_description
-FROM  `up-faith-and-family-216419.customers.paypal_payout_recon_4_2026`
+,reporting_category as payment_description
+FROM  `up-faith-and-family-216419.customers.stripe_payout_recon_4_2026_exact_match`
 --FROM  `up-faith-and-family-216419.customers.paypal_payout_recon_3_2026`
-WHERE date(_Date_) between (SELECT report_date FROM config) - INTERVAL 31 DAY
+WHERE date(charge_created) between (SELECT report_date FROM config) - INTERVAL 31 DAY
   AND (SELECT report_date FROM config)),
 
 paypal_chargebee as (
@@ -194,31 +193,7 @@ left join chargebee_transactions c on p.transaction_id = c.transaction_id
 ),
 
 charge_refund as (
-  select
-  customer_id
-  ,email
-  ,transaction_id
-  ,report_date
-  ,product_1
-  ,product_2
-  ,product_3
-  ,product_1_period
-  ,product_2_period
-  ,product_3_period
-  ,original_amount1
-  ,original_amount2
-  ,original_amount3
-  ,discount_amount1
-  ,discount_amount2
-  ,discount_amount3
-  ,tax_1
-  ,tax_2
-  ,tax_3
-  ,total_amount
-  ,null as content_customer_payment_method_reference_id
-  from ${paypal_old.SQL_TABLE_NAME}
 
-  UNION ALL
   SELECT * FROM
   chargebee_transactions
 
@@ -264,151 +239,6 @@ SELECT * FROM fill_non_chargebee
 
 
 
-   select distinct * from result ;;
+   select distinct * from result  ;;
   }
-
-    dimension: customer_id {
-      type: string
-      sql: ${TABLE}.customer_id ;;
-    }
-
-    dimension: email {
-      type: string
-      sql: ${TABLE}.email ;;
-    }
-
-    dimension_group: report_date {
-      type: time
-      timeframes: [raw, date, week, month, quarter, year]
-      sql: ${TABLE}.report_date ;;
-    }
-
-    dimension: payment_gateway {
-      type: string
-      sql: ${TABLE}.payment_gateway ;;
-    }
-
-    dimension: payment_description {
-      type: string
-      sql: ${TABLE}.payment_description ;;
-    }
-
-    dimension: product_1 {
-      type: string
-      sql: ${TABLE}.product_1 ;;
-    }
-
-    dimension: product_2 {
-      type: string
-      sql: ${TABLE}.product_2 ;;
-    }
-
-    dimension: product_3 {
-      type: string
-      sql: ${TABLE}.product_3 ;;
-    }
-
-    dimension: product_1_period {
-      type: string
-      sql: ${TABLE}.product_1_period ;;
-    }
-
-    dimension: product_2_period {
-      type: string
-      sql: ${TABLE}.product_2_period ;;
-    }
-
-    dimension: product_3_period {
-      type: string
-      sql: ${TABLE}.product_3_period ;;
-    }
-
-    dimension: transaction_id {
-      type: string
-      primary_key: yes
-      sql: ${TABLE}.transaction_id ;;
-    }
-
-    dimension: ref_id {
-      type: string
-      sql: ${TABLE}.ref_id ;;
-    }
-
-    dimension: original_amount1 {
-      type: number
-      value_format_name: usd
-      sql: ${TABLE}.original_amount1 /100.0;;
-    }
-
-    dimension: original_amount2 {
-      type: number
-      value_format_name: usd
-      sql: ${TABLE}.original_amount2 /100.0;;
-    }
-
-    dimension: original_amount3 {
-      type: number
-      value_format_name: usd
-      sql: ${TABLE}.original_amount3/100.0 ;;
-    }
-
-    dimension: discount_amount1 {
-      type: number
-      value_format_name: usd
-      sql: ${TABLE}.discount_amount1/100.0 ;;
-    }
-
-    dimension: discount_amount2 {
-      type: number
-      value_format_name: usd
-      sql: ${TABLE}.discount_amount2/100.0 ;;
-    }
-
-    dimension: discount_amount3 {
-      type: number
-      value_format_name: usd
-      sql: ${TABLE}.discount_amount3/100.0 ;;
-    }
-
-    dimension: tax_1 {
-      type: number
-      value_format_name: usd
-      sql: ${TABLE}.tax_1/100.0 ;;
-    }
-
-    dimension: tax_2 {
-      type: number
-      value_format_name: usd
-      sql: ${TABLE}.tax_2/100.0 ;;
-    }
-
-    dimension: tax_3 {
-      type: number
-      value_format_name: usd
-      sql: ${TABLE}.tax_3/100.0 ;;
-    }
-
-    dimension: total_amount {
-      type: number
-      value_format_name: usd
-      sql: ${TABLE}.total_amount/100.0 ;;
-    }
-
-    dimension: gross {
-      type: number
-      value_format_name: usd
-      sql: ${TABLE}.gross ;;
-    }
-
-    dimension: fee {
-      type: number
-      value_format_name: usd
-      sql: ${TABLE}.fee ;;
-    }
-  measure: total_charge {
-    type: sum
-    sql: ${TABLE}.stripe_remitted ;;
-  }
-
-
-  }
+}

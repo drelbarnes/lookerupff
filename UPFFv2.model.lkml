@@ -95,6 +95,11 @@ explore: upff_series_overlap {
   label: "UPFF Series Overlap"
 }
 
+include: "upff_series_dropoff.view.lkml"
+explore: upff_series_dropoff {
+  label: "UPFF Series Dropoff"
+}
+
 include: "upff_weekly_recap_quarterly_benchmarks.view.lkml"
 explore: upff_weekly_recap_quarterly_benchmarks {
   label: "UPFF Weekly Recap Benchmarks"

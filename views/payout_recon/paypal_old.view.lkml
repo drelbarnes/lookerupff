@@ -18,7 +18,9 @@ To_Email_Address as email
 , fee
 , 'paypal' as payment_gateway
 , type as payment_description
-FROM `up-faith-and-family-216419.customers.paypal_recon_payout_feb_2026`   WHERE date(_Date_) between (SELECT report_date FROM config) - INTERVAL 31 DAY - INTERVAL 1 MONTH
+FROM `up-faith-and-family-216419.customers.paypal_payout_recon_3_2026`
+--FROM `up-faith-and-family-216419.customers.paypal_recon_payout_feb_2026`
+WHERE date(_Date_) between (SELECT report_date FROM config) - INTERVAL 31 DAY - INTERVAL 1 MONTH
   AND (SELECT report_date FROM config)- INTERVAL 1 MONTH
 
   UNION ALL
@@ -32,8 +34,44 @@ To_Email_Address as email
 , fee
 , 'paypal' as payment_gateway
 , type as payment_description
-FROM `up-faith-and-family-216419.customers.paypal_payout_recon_2_2026`  WHERE date(_Date_) between (SELECT report_date FROM config) - INTERVAL 31 DAY - INTERVAL 2 MONTH
+FROM `up-faith-and-family-216419.customers.paypal_recon_payout_feb_2026`
+--FROM `up-faith-and-family-216419.customers.paypal_payout_recon_2_2026`
+WHERE date(_Date_) between (SELECT report_date FROM config) - INTERVAL 31 DAY - INTERVAL 2 MONTH
   AND (SELECT report_date FROM config)- INTERVAL 2 MONTH
+
+  UNION ALL
+  SELECT distinct
+To_Email_Address as email
+, date(_Date_) as charge_created
+, 'charge' as reporting_category
+, Reference_Txn_ID as source_id
+, Transaction_ID as transaction_id
+, Gross
+, fee
+, 'paypal' as payment_gateway
+, type as payment_description
+FROM `up-faith-and-family-216419.customers.paypal_payout_recon_2_2026`
+--FROM `up-faith-and-family-216419.customers.paypal_payout_recon_12_2025`
+WHERE date(_Date_) between (SELECT report_date FROM config) - INTERVAL 31 DAY - INTERVAL 3 MONTH
+  AND (SELECT report_date FROM config)- INTERVAL 3 MONTH
+
+  UNION ALL
+  SELECT distinct
+To_Email_Address as email
+, date(_Date_) as charge_created
+, 'charge' as reporting_category
+, Reference_Txn_ID as source_id
+, Transaction_ID as transaction_id
+, Gross
+, fee
+, 'paypal' as payment_gateway
+, type as payment_description
+FROM `up-faith-and-family-216419.customers.paypal_payout_recon_12_2025`
+--FROM `up-faith-and-family-216419.customers.paypal_recon_payout_11_2025_v2`
+WHERE date(_Date_) between (SELECT report_date FROM config) - INTERVAL 31 DAY - INTERVAL 4 MONTH
+  AND (SELECT report_date FROM config)- INTERVAL 4 MONTH
+
+
 
   ),
 
@@ -91,7 +129,7 @@ charges as (SELECT distinct
   content_invoice_line_items_2_discount_amount  AS discount_amount3,
   content_invoice_amount_paid as total_amount
   --'charge' AS reporting_category
- from `up-faith-and-family-216419.chargebee_webhook_events.payment_succeeded` WHERE date(received_at) between (SELECT report_date FROM config) - INTERVAL 31 DAY - INTERVAL 2 MONTH
+ from `up-faith-and-family-216419.chargebee_webhook_events.payment_succeeded` WHERE date(received_at) between (SELECT report_date FROM config) - INTERVAL 31 DAY - INTERVAL 5 MONTH
   AND (SELECT report_date FROM config)- INTERVAL 1 MONTH),
 
  refunds as (SELECT distinct
@@ -144,7 +182,7 @@ charges as (SELECT distinct
   content_invoice_amount_paid as total_amount
   --'refund' AS reporting_category
 FROM
- `up-faith-and-family-216419.chargebee_webhook_events.payment_refunded` WHERE date(received_at) between (SELECT report_date FROM config) - INTERVAL 31 DAY - INTERVAL 2 MONTH
+ `up-faith-and-family-216419.chargebee_webhook_events.payment_refunded` WHERE date(received_at) between (SELECT report_date FROM config) - INTERVAL 31 DAY - INTERVAL 5 MONTH
   AND (SELECT report_date FROM config)- INTERVAL 1 MONTH
  ),
 

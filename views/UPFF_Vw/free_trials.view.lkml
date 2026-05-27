@@ -63,7 +63,7 @@ view: free_trials {
       platform,
       DATE(timestamp) AS report_date
       FROM vimeo_ott_webhook.customer_product_free_trial_created
-      WHERE DATE(timestamp) >= '2025-06-01'
+      WHERE DATE(timestamp) >= '2025-01-01'
       ),
 
       vimeo2 AS (
