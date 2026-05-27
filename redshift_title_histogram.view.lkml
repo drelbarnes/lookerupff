@@ -32,7 +32,7 @@ view: redshift_title_histogram {
               ORDER BY 2 ASC
               )
 
-              select * from histogram where count(user_id) > 10
+              select * from histogram where viewers > 10
 
              ;;
     }
