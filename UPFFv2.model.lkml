@@ -105,6 +105,11 @@ explore: upff_weekly_recap_quarterly_benchmarks {
   label: "UPFF Weekly Recap Benchmarks"
 }
 
+include: "upff_series_benchmark_7d_30d.view.lkml"
+explore: upff_series_benchmark_7d_30d {
+  label: "UPFF Series Benchmarks 7 days 30 days"
+}
+
 #end redshift upff datamart explores
 
 #redshift allfirstplay and timeupdate explores

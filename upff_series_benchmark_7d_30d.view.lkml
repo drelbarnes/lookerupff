@@ -82,8 +82,8 @@ view: upff_series_benchmark_7d_30d {
     }
 
     parameter: start_date {
-      type: unquoted
-      default_value: "'2024-01-01'"
+      type: string
+      default_value: "2026-02-01"
     }
 
     filter: collection_filter {
