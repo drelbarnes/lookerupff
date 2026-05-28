@@ -42,7 +42,7 @@ view: upff_series_benchmark_7d_30d {
                 , video_id
                 , MIN(ds) AS drop_date
               FROM episode_daily_views
-              WHERE daily_views >= 100
+              WHERE daily_views >= 10
               GROUP BY 1,2,3
               ),
 
