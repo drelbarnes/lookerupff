@@ -83,8 +83,8 @@ view: upff_series_benchmark_7d_30d {
                   END) AS uniques_30d
                 , cr.avg_complete_rate
                 , e.title
-                , CASE WHEN CURRENT_DATE > DATEADD(day, 7, drop_date) THEN 'yes' ELSE 'no' END AS finalized_7d
-                , CASE WHEN CURRENT_DATE > DATEADD(day, 30, drop_date) THEN 'yes' ELSE 'no' END AS finalized_30d
+                , CASE WHEN CURRENT_DATE > DATEADD(day, 7, drop_date) THEN 'yes' ELSE 'no - ' || DATEDIFF(day, CURRENT_DATE, DATEADD(day, 7, drop_date)) || ' days left' END AS finalized_7d
+                , CASE WHEN CURRENT_DATE > DATEADD(day, 30, drop_date) THEN 'yes' ELSE 'no - ' || DATEDIFF(day, CURRENT_DATE, DATEADD(day, 30, drop_date)) || ' days left' END AS finalized_30d
               FROM episode_views AS e
               LEFT JOIN completion_rates AS cr
               ON e.episode = cr.ep
