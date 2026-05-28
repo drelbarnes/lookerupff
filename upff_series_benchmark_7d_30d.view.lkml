@@ -158,6 +158,15 @@ view: upff_series_benchmark_7d_30d {
       sql: ${TABLE}.finalized_30d ;;
     }
 
+    measure: pct_change_7d_views {
+      type: number
+      sql:
+      (${views_7d} - LAG(${views_7d}) OVER (ORDER BY ${episode}))
+      /
+      NULLIF(LAG(${views_7d}) OVER (ORDER BY ${episode}), 0) ;;
+      value_format_name: percent_1
+    }
+
     set: detail {
       fields: [
         episode,
