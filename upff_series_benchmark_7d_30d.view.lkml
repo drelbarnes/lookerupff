@@ -22,14 +22,27 @@ view: upff_series_benchmark_7d_30d {
               select * from b
               ),
 
+              episode_daily_views AS
+              (
+              SELECT
+                episode
+                , title
+                , video_id
+                , DATE(TIMESTAMP) AS ds
+                , COUNT(*) AS daily_views
+              FROM universe
+              GROUP BY 1,2,3,4
+              ),
+
               episode_drop_dates AS
               (
               SELECT
                 episode
                 , title
                 , video_id
-                , MIN(DATE(TIMESTAMP)) AS drop_date
-              FROM universe
+                , MIN(ds) AS drop_date
+              FROM episode_daily_views
+              WHERE daily_views >= 1000
               GROUP BY 1,2,3
               ),
 
