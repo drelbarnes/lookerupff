@@ -51,6 +51,8 @@
 #   Populated only for page_visit and checkout_page_visit rows; NULL elsewhere.
 #     page_path        — vanity URL portion (Segment `path`)
 #     page_referrer    — referrer URL (Segment `referrer`)
+#     campaign_term    — utm_term URL parameter (Segment `context_campaign_term`)
+#     page_search      — URL query string (Segment `context_page_search`)
 #     consent_c0001..5 — boolean consent preference flags
 #                        (context_consent_category_preferences_c0001..5)
 #
@@ -285,9 +287,10 @@ view: marketing_attribution_test {
       -- ============================================================
       lifecycle_events AS (
       -- ------------------------------------------------------------
-      -- Seven new fields appended to every branch:
-      --   page_path, page_referrer  VARCHAR
-      --   consent_c0001..5          BOOLEAN
+      -- Nine new fields appended to every branch:
+      --   page_path, page_referrer    VARCHAR
+      --   campaign_term, page_search  VARCHAR
+      --   consent_c0001..5            BOOLEAN
       -- Real values populate page_visit + checkout_page_visit; NULL elsewhere.
       -- ------------------------------------------------------------
       SELECT
@@ -306,6 +309,8 @@ view: marketing_attribution_test {
       ,CAST(NULL AS VARCHAR(20))  AS trial_type
       ,path                                                  AS page_path
       ,referrer                                              AS page_referrer
+      ,context_campaign_term                                 AS campaign_term
+      ,context_page_search                                   AS page_search
       ,CAST(context_consent_category_preferences_c0001 AS BOOLEAN) AS consent_c0001
       ,CAST(context_consent_category_preferences_c0002 AS BOOLEAN) AS consent_c0002
       ,CAST(context_consent_category_preferences_c0003 AS BOOLEAN) AS consent_c0003
@@ -340,6 +345,8 @@ view: marketing_attribution_test {
       ,CAST(NULL AS VARCHAR(20))  AS trial_type
       ,path                                                  AS page_path
       ,referrer                                              AS page_referrer
+      ,context_campaign_term                                 AS campaign_term
+      ,context_page_search                                   AS page_search
       ,CAST(context_consent_category_preferences_c0001 AS BOOLEAN) AS consent_c0001
       ,CAST(context_consent_category_preferences_c0002 AS BOOLEAN) AS consent_c0002
       ,CAST(context_consent_category_preferences_c0003 AS BOOLEAN) AS consent_c0003
@@ -361,6 +368,8 @@ view: marketing_attribution_test {
       ,order_id, CAST(NULL AS VARCHAR(255)), CAST('standard' AS VARCHAR(20))
       ,CAST(NULL AS VARCHAR(500)) AS page_path
       ,CAST(NULL AS VARCHAR(500)) AS page_referrer
+      ,CAST(NULL AS VARCHAR(500)) AS campaign_term
+      ,CAST(NULL AS VARCHAR(1000)) AS page_search
       ,CAST(NULL AS BOOLEAN)      AS consent_c0001
       ,CAST(NULL AS BOOLEAN)      AS consent_c0002
       ,CAST(NULL AS BOOLEAN)      AS consent_c0003
@@ -384,6 +393,8 @@ view: marketing_attribution_test {
       ,order_id, bundle_plan, CAST('bundle' AS VARCHAR(20))
       ,CAST(NULL AS VARCHAR(500)) AS page_path
       ,CAST(NULL AS VARCHAR(500)) AS page_referrer
+      ,CAST(NULL AS VARCHAR(500)) AS campaign_term
+      ,CAST(NULL AS VARCHAR(1000)) AS page_search
       ,CAST(NULL AS BOOLEAN)      AS consent_c0001
       ,CAST(NULL AS BOOLEAN)      AS consent_c0002
       ,CAST(NULL AS BOOLEAN)      AS consent_c0003
@@ -409,6 +420,8 @@ view: marketing_attribution_test {
       ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(20))
       ,CAST(NULL AS VARCHAR(500)) AS page_path
       ,CAST(NULL AS VARCHAR(500)) AS page_referrer
+      ,CAST(NULL AS VARCHAR(500)) AS campaign_term
+      ,CAST(NULL AS VARCHAR(1000)) AS page_search
       ,CAST(NULL AS BOOLEAN)      AS consent_c0001
       ,CAST(NULL AS BOOLEAN)      AS consent_c0002
       ,CAST(NULL AS BOOLEAN)      AS consent_c0003
@@ -431,6 +444,8 @@ view: marketing_attribution_test {
       ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(20))
       ,CAST(NULL AS VARCHAR(500)) AS page_path
       ,CAST(NULL AS VARCHAR(500)) AS page_referrer
+      ,CAST(NULL AS VARCHAR(500)) AS campaign_term
+      ,CAST(NULL AS VARCHAR(1000)) AS page_search
       ,CAST(NULL AS BOOLEAN)      AS consent_c0001
       ,CAST(NULL AS BOOLEAN)      AS consent_c0002
       ,CAST(NULL AS BOOLEAN)      AS consent_c0003
@@ -456,6 +471,8 @@ view: marketing_attribution_test {
       ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(20))
       ,CAST(NULL AS VARCHAR(500)) AS page_path
       ,CAST(NULL AS VARCHAR(500)) AS page_referrer
+      ,CAST(NULL AS VARCHAR(500)) AS campaign_term
+      ,CAST(NULL AS VARCHAR(1000)) AS page_search
       ,CAST(NULL AS BOOLEAN)      AS consent_c0001
       ,CAST(NULL AS BOOLEAN)      AS consent_c0002
       ,CAST(NULL AS BOOLEAN)      AS consent_c0003
@@ -494,6 +511,7 @@ view: marketing_attribution_test {
       ,event_id           AS touch_event_id
       ,user_id
       ,page_path, page_referrer
+      ,campaign_term, page_search
       ,consent_c0001, consent_c0002, consent_c0003, consent_c0004, consent_c0005
       FROM lifecycle_events
       WHERE source_event_type = 'page_visit'
@@ -1018,6 +1036,8 @@ view: marketing_attribution_test {
       -- new page-level fields (real values on page_visit + checkout_page_visit)
       ,CAST(page_path     AS VARCHAR(500))   AS page_path
       ,CAST(page_referrer AS VARCHAR(500))   AS page_referrer
+      ,CAST(campaign_term AS VARCHAR(500))   AS campaign_term
+      ,CAST(page_search   AS VARCHAR(1000))  AS page_search
       ,CAST(consent_c0001 AS BOOLEAN)        AS consent_c0001
       ,CAST(consent_c0002 AS BOOLEAN)        AS consent_c0002
       ,CAST(consent_c0003 AS BOOLEAN)        AS consent_c0003
@@ -1093,6 +1113,8 @@ view: marketing_attribution_test {
       ,CAST(NULL AS NUMERIC(10,2))  AS activation_score
       ,CAST(page_path     AS VARCHAR(500))   AS page_path
       ,CAST(page_referrer AS VARCHAR(500))   AS page_referrer
+      ,CAST(campaign_term AS VARCHAR(500))   AS campaign_term
+      ,CAST(page_search   AS VARCHAR(1000))  AS page_search
       ,CAST(consent_c0001 AS BOOLEAN)        AS consent_c0001
       ,CAST(consent_c0002 AS BOOLEAN)        AS consent_c0002
       ,CAST(consent_c0003 AS BOOLEAN)        AS consent_c0003
@@ -1152,6 +1174,8 @@ view: marketing_attribution_test {
       ,CAST(dq.activation_score             AS NUMERIC(10,2)) AS activation_score
       ,CAST(NULL AS VARCHAR(500))           AS page_path
       ,CAST(NULL AS VARCHAR(500))           AS page_referrer
+      ,CAST(NULL AS VARCHAR(500))           AS campaign_term
+      ,CAST(NULL AS VARCHAR(1000))          AS page_search
       ,CAST(NULL AS BOOLEAN)                AS consent_c0001
       ,CAST(NULL AS BOOLEAN)                AS consent_c0002
       ,CAST(NULL AS BOOLEAN)                AS consent_c0003
@@ -1227,6 +1251,8 @@ view: marketing_attribution_test {
       ,CAST(NULL AS NUMERIC(10,2))                                          AS activation_score
       ,CAST(NULL AS VARCHAR(500))                                           AS page_path
       ,CAST(NULL AS VARCHAR(500))                                           AS page_referrer
+      ,CAST(NULL AS VARCHAR(500))                                           AS campaign_term
+      ,CAST(NULL AS VARCHAR(1000))                                          AS page_search
       ,CAST(NULL AS BOOLEAN)                                                AS consent_c0001
       ,CAST(NULL AS BOOLEAN)                                                AS consent_c0002
       ,CAST(NULL AS BOOLEAN)                                                AS consent_c0003
@@ -1297,6 +1323,8 @@ view: marketing_attribution_test {
       ,CAST(NULL AS NUMERIC(10,2))                                          AS activation_score
       ,CAST(NULL AS VARCHAR(500))                                           AS page_path
       ,CAST(NULL AS VARCHAR(500))                                           AS page_referrer
+      ,CAST(NULL AS VARCHAR(500))                                           AS campaign_term
+      ,CAST(NULL AS VARCHAR(1000))                                          AS page_search
       ,CAST(NULL AS BOOLEAN)                                                AS consent_c0001
       ,CAST(NULL AS BOOLEAN)                                                AS consent_c0002
       ,CAST(NULL AS BOOLEAN)                                                AS consent_c0003
@@ -1367,6 +1395,8 @@ view: marketing_attribution_test {
       ,CAST(NULL AS NUMERIC(10,2))                                          AS activation_score
       ,CAST(NULL AS VARCHAR(500))                                           AS page_path
       ,CAST(NULL AS VARCHAR(500))                                           AS page_referrer
+      ,CAST(NULL AS VARCHAR(500))                                           AS campaign_term
+      ,CAST(NULL AS VARCHAR(1000))                                          AS page_search
       ,CAST(NULL AS BOOLEAN)                                                AS consent_c0001
       ,CAST(NULL AS BOOLEAN)                                                AS consent_c0002
       ,CAST(NULL AS BOOLEAN)                                                AS consent_c0003
@@ -1491,6 +1521,12 @@ view: marketing_attribution_test {
   dimension: campaign_id       { type: string  label: "Campaign ID"       sql: ${TABLE}.campaign_id ;; }
   dimension: campaign_medium   { type: string  label: "Campaign Medium"   sql: ${TABLE}.campaign_medium ;; }
   dimension: campaign_content  { type: string  label: "Campaign Content"  sql: ${TABLE}.campaign_content ;; }
+  dimension: campaign_term {
+    type: string
+    label: "Campaign Term"
+    description: "utm_term URL parameter (Segment context_campaign_term). Populated on page_visit + checkout_page_visit; NULL elsewhere."
+    sql: ${TABLE}.campaign_term ;;
+  }
 
   dimension: marketing_platform {
     type: string
@@ -1568,6 +1604,13 @@ view: marketing_attribution_test {
     label: "Page Referrer"
     description: "Referrer URL of the visited page. NULL for non-pageview events."
     sql: ${TABLE}.page_referrer ;;
+  }
+
+  dimension: page_search {
+    type: string
+    label: "Page Search (Query String)"
+    description: "URL query string of the visited page (Segment context_page_search). NULL for non-pageview events."
+    sql: ${TABLE}.page_search ;;
   }
 
   dimension: is_checkout_visit {
@@ -2241,7 +2284,7 @@ view: marketing_attribution_test {
   set: drill_visits {
     fields: [
       report_date_date, marketing_platform, campaign_source, campaign_medium,
-      campaign_name, page_path, page_referrer,
+      campaign_name, campaign_term, page_path, page_referrer, page_search,
       total_visits, distinct_web_visits,
       total_checkout_visits, distinct_checkout_visits,
       visit_to_checkout_rate, checkout_to_trial_rate
@@ -2252,7 +2295,7 @@ view: marketing_attribution_test {
     fields: [
       report_date_date, user_id, order_id, conversion_event_type, trial_type,
       plan_type, activation_value, surface, device_os, marketing_platform,
-      campaign_source, campaign_medium, campaign_name, campaign_content,
+      campaign_source, campaign_medium, campaign_name, campaign_content, campaign_term,
       lifecycle_event_type, lifecycle_event_date, is_not_retained,
       is_in_dunning, latest_invoice_status,
       total_touches, touch_position, credit_weight, quality_score, quality_grade
@@ -2285,14 +2328,14 @@ view: marketing_attribution_test {
 }
 
 ################################################################################
-# Datagroup — triggers the daily incremental run at 10 PM ET
+# Datagroup — triggers the daily incremental run at 2 AM ET
 ################################################################################
 datagroup: marketing_attribution_daily {
   # Fires once daily at 10 PM America/New_York. DST-safe.
   sql_trigger: SELECT FLOOR(
                    EXTRACT(EPOCH FROM
                        CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE())
-                       - INTERVAL '22 hour'
+                       - INTERVAL '2 hour'
                    ) / 86400
                ) ;;
   max_cache_age: "24 hours"
