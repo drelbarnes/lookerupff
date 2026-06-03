@@ -6,6 +6,9 @@ include: "/views/payout_recon/config.view.lkml"
 include: "/views/payout_recon/paypal_recon.view.lkml"
 include: "/views/payout_recon/stripe.view.lkml"
 include: "/views/payout_recon/stripe_recon.view.lkml"
+include: "/views/payout_recon/braintree.view.lkml"
+
+
 
 explore: paypal {
   label: "Payout Recon"
@@ -17,4 +20,9 @@ explore: paypal_recon {
 
 explore: stripe_recon {
   label: "Stripe Payout Recon"
+}
+
+
+explore: braintree {
+  label: "Braintree Recon"
 }

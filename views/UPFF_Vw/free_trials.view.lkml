@@ -27,13 +27,6 @@
 
 view: free_trials {
   derived_table: {
-
-    datagroup_trigger: free_trials_datagroup
-    increment_key: "report_date"
-    increment_offset: 7
-    distribution_style: even
-    sortkeys: ["report_date"]
-
     sql:
       WITH chargebee_pre AS (
         SELECT
@@ -98,9 +91,12 @@ view: free_trials {
 
       SELECT *
       FROM all_rows
-      WHERE --1=1
-      {% incrementcondition %} report_date {% endincrementcondition %}
+
       ;;
+    sql_trigger_value: SELECT TO_CHAR( DATEADD(minute, -600, GETDATE()), 'YYYY-MM-DD');;
+    #sql_trigger_value:  SELECT TO_CHAR(DATE_TRUNC('day', CURRENT_TIMESTAMP) + INTERVAL '9 hours 45 minutes', 'YYYY-MM-DD');;
+    distribution: "report_date"
+    sortkeys: ["report_date"]
   }
 
   dimension: date {
@@ -188,19 +184,5 @@ view: free_trials {
     sql: ${TABLE}.user_id ;;
     filters: [platform: "vizio_tv"]
   }
-}
 
-################################################################################
-# Datagroup — triggers the daily incremental run at 10 AM ET
-# NOTE: This must be defined at the MODEL level (in your .model.lkml file),
-# not inside the view file.
-################################################################################
-datagroup: free_trials_datagroup {
-  sql_trigger: SELECT FLOOR(
-                   EXTRACT(EPOCH FROM
-                       CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE())
-                       - INTERVAL '10 hour'
-                   ) / 86400
-               ) ;;
-  max_cache_age: "24 hours"
 }
