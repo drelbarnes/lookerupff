@@ -14,10 +14,10 @@ NULL as email
 , Settlement_Amount as gross
 ,  --0.05 + Settlement_Amount * 0.0015 as fee
 NULL AS fee
-, 'paypal' as payment_gateway
+, 'Braintree' as payment_gateway
 ,Transaction_Type as payment_description
 FROM  `up-faith-and-family-216419.customers.braintree_payout_recon_4_29_to_5_27_2026`
-WHERE date(charge_created) between (SELECT report_date FROM config) - INTERVAL 31 DAY
+WHERE date(Settlement_Date) between (SELECT report_date FROM config) - INTERVAL 31 DAY
   AND (SELECT report_date FROM config)),
 
 paypal_chargebee as (
