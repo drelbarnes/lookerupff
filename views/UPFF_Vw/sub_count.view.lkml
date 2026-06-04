@@ -1,11 +1,6 @@
 view: sub_count {
   derived_table: {
 
-    increment_key: "report_date"
-    increment_offset: 12
-    datagroup_trigger: sub_count_datagroup
-    distribution_style: even
-    indexes: ["report_date"]
 
     sql:
       SELECT
@@ -246,10 +241,18 @@ view: sub_count {
       ) total_trial_count
 
       ) all_rows
-      WHERE 1=1
-      --{% incrementcondition %} report_date {% endincrementcondition %}
+
       ;;
+    sql_trigger_value:
+    SELECT TO_CHAR(
+    CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE()) - INTERVAL '7 hour',
+    'YYYY-MM-DD'
+    ) ;;
+    #sql_trigger_value:  SELECT TO_CHAR(DATE_TRUNC('day', CURRENT_TIMESTAMP) + INTERVAL '9 hours 45 minutes', 'YYYY-MM-DD');;
+    distribution: "report_date"
+    sortkeys: ["report_date"]
   }
+
 
   dimension: date {
     type: date
@@ -321,14 +324,4 @@ view: sub_count {
     filters: [status: "dunning_cancelled"]
     sql: ${TABLE}.user_count ;;
   }
-}
-
-datagroup: sub_count_datagroup {
-  sql_trigger: SELECT FLOOR(
-                   EXTRACT(EPOCH FROM
-                       CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE())
-                       - INTERVAL '11 hour'
-                   ) / 86400
-               ) ;;
-  max_cache_age: "24 hours"
 }
