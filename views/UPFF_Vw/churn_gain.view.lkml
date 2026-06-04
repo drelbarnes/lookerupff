@@ -1,11 +1,7 @@
 view: churn_gain {
   derived_table: {
 
-    datagroup_trigger: churn_gain_datagroup
-    increment_key: "report_date"
-    increment_offset: 8
-    distribution_style: even
-    sortkeys: ["report_date"]
+
 
     sql:
       SELECT
@@ -344,14 +340,4 @@ view: churn_gain {
     sql: ${user_count} ;;
     filters: [status: "rolling_total"]
   }
-}
-
-datagroup: churn_gain_datagroup {
-  sql_trigger: SELECT FLOOR(
-                   EXTRACT(EPOCH FROM
-                       CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE())
-                       - INTERVAL '12 hour'
-                   ) / 86400
-               ) ;;
-  max_cache_age: "24 hours"
 }
