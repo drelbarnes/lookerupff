@@ -4,11 +4,7 @@
 view: ltv_cpa {
   derived_table: {
 
-    datagroup_trigger: ltv_cpa_datagroup
-    increment_key: "report_date"
-    increment_offset: 7
-    distribution: "report_date"
-    sortkeys: ["report_date"]
+
 
     sql:
       -- FIX: leading-comma CTE fragment pattern retained (this sql block is
@@ -145,11 +141,16 @@ view: ltv_cpa {
       )
 
       SELECT *
-      FROM all_rows
-      WHERE 1=1
-      --{% incrementcondition %} report_date {% endincrementcondition %}
+      FROM all_rows;;
+          sql_trigger_value:
+    SELECT TO_CHAR(
+    CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE()) - INTERVAL '7 hour',
+    'YYYY-MM-DD'
+    ) ;;
+    #sql_trigger_value:  SELECT TO_CHAR(DATE_TRUNC('day', CURRENT_TIMESTAMP) + INTERVAL '9 hours 45 minutes', 'YYYY-MM-DD');;
+    distribution: "report_date"
+    sortkeys: ["report_date"]
 
-      ;;
 
   }
 
@@ -197,12 +198,3 @@ view: ltv_cpa {
 # NOTE: This must be defined at the MODEL level (in your .model.lkml file),
 # not inside the view file.
 ################################################################################
-datagroup: ltv_cpa_datagroup {
-  sql_trigger: SELECT FLOOR(
-                   EXTRACT(EPOCH FROM
-                       CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE())
-                       - INTERVAL '11 hour'
-                   ) / 86400
-               ) ;;
-  max_cache_age: "24 hours"
-}
