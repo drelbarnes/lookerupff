@@ -1,11 +1,7 @@
 view: vimeo {
   derived_table: {
 
-    datagroup_trigger: vimeo_datagroup
-    increment_key: "report_date"
-    increment_offset: 7
-    distribution_style: even
-    sortkeys: ["report_date"]
+
 
     sql:
       -- FIX: WITH chain at top level. All row assembly and CAST expressions
@@ -199,12 +195,3 @@ view: vimeo {
 # NOTE: This must be defined at the MODEL level (in your .model.lkml file),
 # not inside the view file.
 ################################################################################
-datagroup: vimeo_datagroup {
-  sql_trigger: SELECT FLOOR(
-                   EXTRACT(EPOCH FROM
-                       CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE())
-                       - INTERVAL '12 hour'
-                   ) / 86400
-               ) ;;
-  max_cache_age: "24 hours"
-}
