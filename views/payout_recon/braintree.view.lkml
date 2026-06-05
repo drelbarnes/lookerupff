@@ -7,7 +7,7 @@ view: braintree {
  paypal as (
 SELECT distinct
 NULL as email
-, date(Settlement_Date) as charge_created
+, date(Disbursement_Date) as charge_created
 , 'charge' as reporting_category
 , Original_Transaction_ID as source_id
 , Transaction_ID as transaction_id
@@ -311,61 +311,61 @@ SELECT * FROM fill_non_chargebee
   dimension: original_amount1 {
     type: number
     value_format_name: usd
-    sql: ${TABLE}.original_amount1 /100.0;;
+    sql: ${TABLE}.original_amount1 /100.00;;
   }
 
   dimension: original_amount2 {
     type: number
     value_format_name: usd
-    sql: ${TABLE}.original_amount2 /100.0;;
+    sql: ${TABLE}.original_amount2 /100.00;;
   }
 
   dimension: original_amount3 {
     type: number
     value_format_name: usd
-    sql: ${TABLE}.original_amount3/100.0 ;;
+    sql: ${TABLE}.original_amount3/100.00 ;;
   }
 
   dimension: discount_amount1 {
     type: number
     value_format_name: usd
-    sql: ${TABLE}.discount_amount1/100.0 ;;
+    sql: ${TABLE}.discount_amount1/100.00;;
   }
 
   dimension: discount_amount2 {
     type: number
     value_format_name: usd
-    sql: ${TABLE}.discount_amount2/100.0 ;;
+    sql: ${TABLE}.discount_amount2/100.00 ;;
   }
 
   dimension: discount_amount3 {
     type: number
     value_format_name: usd
-    sql: ${TABLE}.discount_amount3/100.0 ;;
+    sql: ${TABLE}.discount_amount3/100.00 ;;
   }
 
   dimension: tax_1 {
     type: number
     value_format_name: usd
-    sql: ${TABLE}.tax_1/100.0 ;;
+    sql: ${TABLE}.tax_1/100.00 ;;
   }
 
   dimension: tax_2 {
     type: number
     value_format_name: usd
-    sql: ${TABLE}.tax_2/100.0 ;;
+    sql: ${TABLE}.tax_2/100.00 ;;
   }
 
   dimension: tax_3 {
     type: number
     value_format_name: usd
-    sql: ${TABLE}.tax_3/100.0 ;;
+    sql: ${TABLE}.tax_3/100.00 ;;
   }
 
   dimension: total_amount {
     type: number
     value_format_name: usd
-    sql: ${TABLE}.total_amount/100.0 ;;
+    sql: ${TABLE}.total_amount/100.00 ;;
   }
 
   dimension: gross {

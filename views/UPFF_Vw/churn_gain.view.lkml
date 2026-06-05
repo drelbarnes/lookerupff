@@ -1,10 +1,5 @@
 view: churn_gain {
   derived_table: {
-    datagroup_trigger: churn_gain_datagroup
-    increment_key: "report_date"
-    increment_offset: 8
-    distribution_style: even
-    sortkeys: ["report_date"]
 
 
     sql:
@@ -263,6 +258,14 @@ view: churn_gain {
       WHERE 1=1
         --{% incrementcondition %} report_date {% endincrementcondition %}
       ;;
+    sql_trigger_value:
+    SELECT TO_CHAR(
+    CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE()) - INTERVAL '7 hour',
+    'YYYY-MM-DD'
+    ) ;;
+    #sql_trigger_value:  SELECT TO_CHAR(DATE_TRUNC('day', CURRENT_TIMESTAMP) + INTERVAL '9 hours 45 minutes', 'YYYY-MM-DD');;
+    distribution: "report_date"
+    sortkeys: ["report_date"]
   }
 
   dimension: user_id {
@@ -344,13 +347,4 @@ view: churn_gain {
     sql: ${user_count} ;;
     filters: [status: "rolling_total"]
   }
-}
-datagroup: churn_gain_datagroup {
-  sql_trigger: SELECT FLOOR(
-                   EXTRACT(EPOCH FROM
-                       CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE())
-                       - INTERVAL '12 hour'
-                   ) / 86400
-               ) ;;
-  max_cache_age: "24 hours"
 }

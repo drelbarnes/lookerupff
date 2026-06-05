@@ -100,7 +100,7 @@ view: braintree_recon {
       ,discount_amount
       ,CASE
       WHEN payment_description IN (
-      'refund','dispute'
+      'credit'
       )
       THEN tax*-1
       ELSE tax
@@ -110,7 +110,7 @@ view: braintree_recon {
       ,ref_id
       ,CASE
       WHEN payment_description IN (
-      'refund','dispute'
+      'credit'
       )
       THEN
       CASE

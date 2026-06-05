@@ -1,12 +1,6 @@
 view: vimeo {
   derived_table: {
 
-    datagroup_trigger: vimeo_datagroup
-    increment_key: "report_date"
-    increment_offset: 7
-    distribution_style: even
-    sortkeys: ["report_date"]
-
     sql:
       -- FIX: WITH chain at top level. All row assembly and CAST expressions
       -- promoted into the all_rows CTE. Terminal SELECT is a clean
@@ -89,9 +83,16 @@ view: vimeo {
 
       SELECT *
       FROM all_rows
-      WHERE --1=1
-      {% incrementcondition %} report_date {% endincrementcondition %}
+
       ;;
+    sql_trigger_value:
+    SELECT TO_CHAR(
+    CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE()) - INTERVAL '7 hour',
+    'YYYY-MM-DD'
+    ) ;;
+    #sql_trigger_value:  SELECT TO_CHAR(DATE_TRUNC('day', CURRENT_TIMESTAMP) + INTERVAL '9 hours 45 minutes', 'YYYY-MM-DD');;
+    distribution: "report_date"
+    sortkeys: ["report_date"]
   }
 
   dimension_group: report_date {
