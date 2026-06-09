@@ -18,11 +18,13 @@ view: vimeo_ott_all_customers {
     type: number
     primary_key: yes
     sql: ${TABLE}.user_id ;;
+    tags: ["user_id"]
   }
 
   dimension: email {
     type: string
     sql: ${TABLE}.email ;;
+
   }
 
   dimension: first_name {
