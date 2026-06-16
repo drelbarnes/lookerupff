@@ -84,7 +84,7 @@ explore: vimeo_ott_all_customers {
   join: redshift_php_get_trialist_survey {
     type: left_outer
     sql_on: ${redshift_php_get_trialist_survey.user_id}=${vimeo_ott_all_customers.user_id};;
-    relationship: many_to_many
+    relationship: one_to_one
   }
 }
 
