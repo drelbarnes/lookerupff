@@ -72,7 +72,7 @@ view: bundle_analytics {
           , row_number() over (partition by subscription_id, uploaded_at order by uploaded_at desc) as rn
           FROM http_api.chargebee_subscriptions
           WHERE subscription_subscription_items_0_item_price_id LIKE '%GaitherTV%'
-          and date(uploaded_at >='2026-04-01')
+          and date(uploaded_at) >='2026-04-01')
         )
         select
         *
@@ -97,7 +97,7 @@ view: bundle_analytics {
           , row_number() over (partition by subscription_id, uploaded_at order by uploaded_at desc) as rn
           FROM http_api.chargebee_subscriptions
           WHERE subscription_subscription_items_0_item_price_id LIKE '%UP-Faith-Family%'
-          and date(uploaded_at >='2026-04-01')
+          and date(uploaded_at) >='2026-04-01')
         )
         select
         *
@@ -122,7 +122,7 @@ view: bundle_analytics {
           , row_number() over (partition by subscription_id, uploaded_at order by uploaded_at desc) as rn
           FROM http_api.chargebee_subscriptions
           WHERE subscription_subscription_items_0_item_price_id LIKE '%Minno%'
-          and date(uploaded_at >='2026-04-01')
+          and date(uploaded_at) >='2026-04-01')
         )
         select
         *
