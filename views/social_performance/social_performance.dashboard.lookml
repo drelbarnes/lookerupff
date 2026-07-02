@@ -61,7 +61,7 @@
       type: single_value
       row: 0
       col: 0
-      width: 6
+      width: 4
       height: 4
       measures: [agorapulse_post_performance.total_posts]
       note:
@@ -79,10 +79,48 @@
       explore: social_daily_snapshot
       type: single_value
       row: 0
-      col: 6
-      width: 6
+      col: 4
+      width: 4
       height: 4
       measures: [social_daily_snapshot.total_impressions]
+      listen:
+        agorapulse_snapshot_date: social_daily_snapshot.snapshot_date_date
+        brand: social_daily_snapshot.brand_canonical
+        platform: social_daily_snapshot.platform
+
+    - name: organic_video_views_kpi
+      title: "Organic video views"
+      model: social_performance
+      explore: social_daily_snapshot
+      type: single_value
+      row: 0
+      col: 8
+      width: 4
+      height: 4
+      measures: [social_daily_snapshot.organic_video_views]
+      note:
+        text: "Audience profile-day grain. FB: organic_video_views_count; IG: organic_views_count; TT/YT: views_count or video_views_count (no paid split). Sum of each day in the date filter."
+        state: collapsed
+        display: hover
+      listen:
+        agorapulse_snapshot_date: social_daily_snapshot.snapshot_date_date
+        brand: social_daily_snapshot.brand_canonical
+        platform: social_daily_snapshot.platform
+
+    - name: paid_video_views_kpi
+      title: "Paid video views"
+      model: social_performance
+      explore: social_daily_snapshot
+      type: single_value
+      row: 0
+      col: 12
+      width: 4
+      height: 4
+      measures: [social_daily_snapshot.paid_video_views]
+      note:
+        text: "Audience profile-day grain. FB: paid_video_views_count; IG: paid_views_count; TT/YT: always 0. Sum of each day in the date filter."
+        state: collapsed
+        display: hover
       listen:
         agorapulse_snapshot_date: social_daily_snapshot.snapshot_date_date
         brand: social_daily_snapshot.brand_canonical
@@ -94,10 +132,14 @@
       explore: social_daily_snapshot
       type: single_value
       row: 0
-      col: 12
-      width: 6
+      col: 16
+      width: 4
       height: 4
       measures: [social_daily_snapshot.total_video_views]
+      note:
+        text: "Platform-aware audience total. FB/YT: video_views_count; IG/TT: views_count. Equals organic + paid where Agorapulse splits them."
+        state: collapsed
+        display: hover
       listen:
         agorapulse_snapshot_date: social_daily_snapshot.snapshot_date_date
         brand: social_daily_snapshot.brand_canonical
@@ -109,8 +151,8 @@
       explore: social_daily_snapshot
       type: single_value
       row: 0
-      col: 18
-      width: 6
+      col: 20
+      width: 4
       height: 4
       measures: [social_daily_snapshot.avg_engagement_rate]
       listen:

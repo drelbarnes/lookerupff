@@ -1,7 +1,26 @@
 view: social_daily_snapshot {
   label: "Social Daily Snapshot"
 
-  sql_table_name: agorapulse_webhook.social_daily_snapshot ;;
+  # Latest row per reporting date × profile (backfill appends duplicate profile-days in raw Redshift).
+  sql_table_name: (
+    SELECT s.*
+    FROM (
+      SELECT
+        inner_s.*,
+        ROW_NUMBER() OVER (
+          PARTITION BY inner_s.date::date, inner_s.profile_id
+          ORDER BY
+            COALESCE(
+              NULLIF(TRIM(inner_s.payload_schema_version::varchar), '')::int,
+              1
+            ) DESC,
+            inner_s.ingested_at::timestamp DESC
+        ) AS _snapshot_row_rank
+      FROM agorapulse_webhook.social_daily_snapshot AS inner_s
+      WHERE inner_s.profile_id IS NOT NULL
+    ) AS s
+    WHERE s._snapshot_row_rank = 1
+  ) ;;
 
   # Reporting day (UTC). Cast if your warehouse column is VARCHAR/TIMESTAMP.
   dimension_group: snapshot_date {
@@ -83,12 +102,47 @@ view: social_daily_snapshot {
     description: "Sum of impressions at profile-day grain (Agorapulse viewsCount). See docs/06 and docs/07."
   }
 
+  measure: organic_video_views {
+    label: "Organic video views"
+    type: sum
+    sql:
+      CASE
+        WHEN ${platform} = 'facebook'  THEN COALESCE(${TABLE}.organic_video_views_count, 0)
+        WHEN ${platform} = 'instagram' THEN COALESCE(${TABLE}.organic_views_count, 0)
+        WHEN ${platform} = 'tiktok'    THEN COALESCE(${TABLE}.views_count, 0)
+        WHEN ${platform} = 'youtube'   THEN COALESCE(${TABLE}.video_views_count, 0)
+        ELSE 0
+      END ;;
+    value_format_name: decimal_0
+    description: "Platform-aware audience grain. FB: organic_video_views_count; IG: organic_views_count; TT/YT: views_count or video_views_count (paid=0). See docs/07 §11."
+  }
+
+  measure: paid_video_views {
+    label: "Paid video views"
+    type: sum
+    sql:
+      CASE
+        WHEN ${platform} = 'facebook'  THEN COALESCE(${TABLE}.paid_video_views_count, 0)
+        WHEN ${platform} = 'instagram' THEN COALESCE(${TABLE}.paid_views_count, 0)
+        ELSE 0
+      END ;;
+    value_format_name: decimal_0
+    description: "Platform-aware audience grain. FB: paid_video_views_count; IG: paid_views_count; TT/YT: 0. See docs/07 §11."
+  }
+
   measure: total_video_views {
     label: "Total video views"
     type: sum
-    sql: ${video_views} ;;
+    sql:
+      CASE
+        WHEN ${platform} = 'facebook'  THEN COALESCE(${TABLE}.video_views_count, 0)
+        WHEN ${platform} = 'instagram' THEN COALESCE(${TABLE}.views_count, 0)
+        WHEN ${platform} = 'tiktok'    THEN COALESCE(${TABLE}.views_count, 0)
+        WHEN ${platform} = 'youtube'   THEN COALESCE(${TABLE}.video_views_count, 0)
+        ELSE 0
+      END ;;
     value_format_name: decimal_0
-    description: "Sum of video_views at profile-day grain (Agorapulse videoViewsCount). Audience snapshot, not per-post video metrics. See docs/06 and docs/07 §5."
+    description: "Platform-aware audience grain. FB/YT: video_views_count; IG/TT: views_count. Total = organic + paid per platform. See docs/07 §11."
   }
 
   measure: total_engagements {

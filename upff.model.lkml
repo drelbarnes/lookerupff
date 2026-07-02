@@ -80,6 +80,12 @@ include: "/Vimeo_OTT/vimeo_ott_all_customers.view.lkml"
 explore: vimeo_ott_all_customers {
   label: "Vimeo OTT – All Customers"
   description: "Explore UP Faith & Family All Customer dataset"
+
+  join: redshift_php_get_trialist_survey {
+    type: left_outer
+    sql_on: ${redshift_php_get_trialist_survey.user_id}=${vimeo_ott_all_customers.user_id};;
+    relationship: one_to_one
+  }
 }
 
 explore: up_airtable_reports {
