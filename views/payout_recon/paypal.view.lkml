@@ -16,7 +16,7 @@ To_Email_Address as email
 , fee
 , 'paypal' as payment_gateway
 ,type as payment_description
-FROM  `up-faith-and-family-216419.customers.paypal_payout_recon_4_2026`
+FROM  `up-faith-and-family-216419.customers.paypal_payout_recon_5_2026`
 --FROM  `up-faith-and-family-216419.customers.paypal_payout_recon_3_2026`
 WHERE date(_Date_) between (SELECT report_date FROM config) - INTERVAL 31 DAY
   AND (SELECT report_date FROM config)),
@@ -205,22 +205,24 @@ charge_refund as (
   ,product_1_period
   ,product_2_period
   ,product_3_period
+  ,tax_1
+  ,tax_2
+  ,tax_3
   ,original_amount1
   ,original_amount2
   ,original_amount3
   ,discount_amount1
   ,discount_amount2
   ,discount_amount3
-  ,tax_1
-  ,tax_2
-  ,tax_3
   ,total_amount
   ,null as content_customer_payment_method_reference_id
+  ,fee
   from ${paypal_old.SQL_TABLE_NAME}
 
   UNION ALL
-  SELECT * FROM
+  SELECT *,null as fee FROM
   chargebee_transactions
+
 
 ),
 
@@ -250,7 +252,11 @@ SELECT
   ,p.transaction_id
   ,p.source_id as ref_id
   ,p.gross
-  ,p.fee
+  ,CASE
+  WHEN p.payment_description = 'Cancellation of Hold for Dispute Resolution' THEN
+  c.fee
+  ELSE p.fee
+  end as fee
   FROM paypal_non_chargebee p
   LEFT JOIN charge_refund c
   ON c.transaction_id = p.source_id
@@ -260,11 +266,85 @@ result as (
 SELECT * FROM fill_chargebee
 UNION ALL
 SELECT * FROM fill_non_chargebee
-)
+),
+
+result2 as(
+select distinct
+customer_id
+  ,email
+  ,report_date
+  ,payment_gateway
+  ,payment_description
+  ,product_1
+  ,product_2
+  ,product_3
+  ,product_1_period
+  ,product_2_period
+  ,product_3_period
+  ,CASE
+    WHEN payment_description = 'Dispute Fee' THEN 0
+    ELSE original_amount1
+  end as original_amount1
+  ,original_amount2
+  ,original_amount3
+  ,CASE
+    WHEN payment_description = 'Dispute Fee' THEN 0
+    ELSE discount_amount1
+  end as discount_amount1
+  ,discount_amount2
+  ,discount_amount3
+  ,CASE
+    WHEN payment_description = 'Dispute Fee' THEN 0
+    ELSE tax_1
+  end as tax_1
+  ,tax_2
+  ,tax_3
+  ,CASE
+    WHEN payment_description = 'Dispute Fee' THEN -1500
+    ELSE total_amount
+  end as total_amount
+  ,transaction_id
+  ,ref_id
+  ,gross
+  ,CASE
+    WHEN payment_description = 'Dispute Fee' THEN -15.00
+    ELSE fee
+  end as fee
+  FROM result),
+
+final as (
+  select * from result2
+  where payment_description != 'Cancellation of Hold for Dispute Resolution'
+  union all
+  select * from result2
+  where payment_description = 'Cancellation of Hold for Dispute Resolution'
+  and fee is not null)
+
+  select *
+  ,SAFE_DIVIDE(COALESCE(original_amount1, 0),
+  COALESCE(original_amount1, 0)
+  + COALESCE(original_amount2, 0)
+  + COALESCE(original_amount3, 0)
+) * fee AS fee1
+,SAFE_DIVIDE(COALESCE(original_amount2, 0),
+  COALESCE(original_amount1, 0)
+  + COALESCE(original_amount2, 0)
+  + COALESCE(original_amount3, 0)
+) * fee AS fee2
+,SAFE_DIVIDE(COALESCE(original_amount3, 0),
+  COALESCE(original_amount1, 0)
+  + COALESCE(original_amount2, 0)
+  + COALESCE(original_amount3, 0)
+) * fee AS fee3
+
+
+  from final
 
 
 
-   select distinct * from result ;;
+
+
+    ;;
   }
 
     dimension: customer_id {
@@ -405,6 +485,24 @@ SELECT * FROM fill_non_chargebee
       value_format_name: usd
       sql: ${TABLE}.fee ;;
     }
+
+  dimension: fee1 {
+    type: number
+    value_format_name: usd
+    sql: ${TABLE}.fee1 ;;
+  }
+
+  dimension: fee2 {
+    type: number
+    value_format_name: usd
+    sql: ${TABLE}.fee2 ;;
+  }
+
+  dimension: fee3 {
+    type: number
+    value_format_name: usd
+    sql: ${TABLE}.fee3 ;;
+  }
   measure: total_charge {
     type: sum
     sql: ${TABLE}.stripe_remitted ;;

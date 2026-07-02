@@ -19,12 +19,15 @@ view: paypal_recon {
       ,transaction_id
       ,ref_id
       ,original_amount1 - discount_amount1 as gross
-      ,SAFE_DIVIDE(
+      ,CASE
+      WHEN payment_description = 'Dispute Fee' THEN fee
+      else
+      SAFE_DIVIDE(
   COALESCE(original_amount1, 0),
   COALESCE(original_amount1, 0)
   + COALESCE(original_amount2, 0)
   + COALESCE(original_amount3, 0)
-) * fee AS fee
+) * fee end AS fee
     FROM paypal
 
     ),

@@ -18,13 +18,16 @@ view: braintree_recon {
       ,total_amount
       ,transaction_id
       ,ref_id
-      ,original_amount1 - discount_amount1 as gross
-      ,SAFE_DIVIDE(
-      COALESCE(original_amount1, 0),
-      COALESCE(original_amount1, 0)
-      + COALESCE(original_amount2, 0)
-      + COALESCE(original_amount3, 0)
-      ) * fee AS fee
+      ,original_amount1 - COALESCE(discount_amount1,0) as gross
+      ,0.000015*(original_amount1 - COALESCE(discount_amount1,0) + tax_1) + ROUND(
+    fee / NULLIF(
+        (CASE WHEN product_1 IS NOT NULL THEN 1 ELSE 0 END) +
+        (CASE WHEN product_2 IS NOT NULL THEN 1 ELSE 0 END) +
+        (CASE WHEN product_3 IS NOT NULL THEN 1 ELSE 0 END),
+        0
+    ),
+    3
+) AS fee
       FROM paypal
 
       ),
@@ -43,13 +46,13 @@ view: braintree_recon {
       ,total_amount
       ,transaction_id
       ,ref_id
-      ,original_amount2 - discount_amount2  as gross
-      ,SAFE_DIVIDE(
-      COALESCE(original_amount2, 0),
-      COALESCE(original_amount1, 0)
-      + COALESCE(original_amount2, 0)
-      + COALESCE(original_amount3, 0)
-      ) * fee AS fee
+      ,original_amount2 - COALESCE(discount_amount2,0)  as gross
+      ,CASE
+        WHEN product_2 is NULL THEN 0
+        WHEN product_3 is NULL THEN 0.000015*(original_amount2 - COALESCE(discount_amount2,0) + tax_2) + fee/2.000
+        ELSE fee/3.000
+      END AS fee
+
       FROM paypal
 
       ),
@@ -68,13 +71,10 @@ view: braintree_recon {
       ,total_amount
       ,transaction_id
       ,ref_id
-      ,original_amount3 - discount_amount3  as gross
-      ,SAFE_DIVIDE(
-      COALESCE(original_amount3, 0),
-      COALESCE(original_amount1, 0)
-      + COALESCE(original_amount2, 0)
-      + COALESCE(original_amount3, 0)
-      ) * fee AS fee
+      ,original_amount3 - COALESCE(discount_amount3,0)  as gross
+      ,CASE WHEN product_3 is not NULL THEN 0.000015*(original_amount3 - COALESCE(discount_amount3,0) + tax_3) + fee/3.000
+      ELSE 0
+      END as fee
       FROM paypal
 
       ),
@@ -100,7 +100,7 @@ view: braintree_recon {
       ,discount_amount
       ,CASE
       WHEN payment_description IN (
-      'credit'
+      'credit','charge_back'
       )
       THEN tax*-1
       ELSE tax
@@ -110,7 +110,7 @@ view: braintree_recon {
       ,ref_id
       ,CASE
       WHEN payment_description IN (
-      'credit'
+      'credit','charge_back'
       )
       THEN
       CASE

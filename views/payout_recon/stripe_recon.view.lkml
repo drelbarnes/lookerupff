@@ -13,18 +13,15 @@ view: stripe_recon {
       ,product_1 as product
       ,product_1_period as period
       ,original_amount1 as original_amount
-      ,discount_amount1 as discount_amount
+      ,discount_amount1 + content_invoice_credits_applied as discount_amount
       ,tax_1 as tax
       ,total_amount
       ,transaction_id
       ,ref_id
-      ,original_amount1 - discount_amount1 as gross
-      ,SAFE_DIVIDE(
-      COALESCE(original_amount1, 0),
-      COALESCE(original_amount1, 0)
-      + COALESCE(original_amount2, 0)
-      + COALESCE(original_amount3, 0)
-      ) * fee AS fee
+      ,CASE WHEN payment_description = 'charge' THEN original_amount1 - discount_amount1 - content_invoice_credits_applied
+      ELSE original_amount1 - discount_amount1
+      END as gross
+      ,fee AS fee
       FROM paypal
 
       ),
@@ -44,12 +41,7 @@ view: stripe_recon {
       ,transaction_id
       ,ref_id
       ,original_amount2 - discount_amount2  as gross
-      ,SAFE_DIVIDE(
-      COALESCE(original_amount2, 0),
-      COALESCE(original_amount1, 0)
-      + COALESCE(original_amount2, 0)
-      + COALESCE(original_amount3, 0)
-      ) * fee AS fee
+      ,fee AS fee
       FROM paypal
 
       ),
@@ -69,12 +61,7 @@ view: stripe_recon {
       ,transaction_id
       ,ref_id
       ,original_amount3 - discount_amount3  as gross
-      ,SAFE_DIVIDE(
-      COALESCE(original_amount3, 0),
-      COALESCE(original_amount1, 0)
-      + COALESCE(original_amount2, 0)
-      + COALESCE(original_amount3, 0)
-      ) * fee AS fee
+      ,fee AS fee
       FROM paypal
 
       ),
@@ -102,7 +89,7 @@ view: stripe_recon {
       WHEN payment_description IN (
       'refund','dispute'
       )
-      THEN tax*-1
+      THEN tax*-1.00
       ELSE tax
       end as tax
       ,total_amount
@@ -115,7 +102,7 @@ view: stripe_recon {
       THEN
       CASE
       WHEN gross < 0 THEN gross
-      ELSE gross * -1
+      ELSE gross * -1.00
       END
       ELSE gross
       END AS gross

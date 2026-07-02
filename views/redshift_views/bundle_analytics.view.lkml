@@ -72,6 +72,7 @@ view: bundle_analytics {
           , row_number() over (partition by subscription_id, uploaded_at order by uploaded_at desc) as rn
           FROM http_api.chargebee_subscriptions
           WHERE subscription_subscription_items_0_item_price_id LIKE '%GaitherTV%'
+          and date(uploaded_at >='2026-04-01')
         )
         select
         *
@@ -96,6 +97,7 @@ view: bundle_analytics {
           , row_number() over (partition by subscription_id, uploaded_at order by uploaded_at desc) as rn
           FROM http_api.chargebee_subscriptions
           WHERE subscription_subscription_items_0_item_price_id LIKE '%UP-Faith-Family%'
+          and date(uploaded_at >='2026-04-01')
         )
         select
         *
@@ -120,6 +122,7 @@ view: bundle_analytics {
           , row_number() over (partition by subscription_id, uploaded_at order by uploaded_at desc) as rn
           FROM http_api.chargebee_subscriptions
           WHERE subscription_subscription_items_0_item_price_id LIKE '%Minno%'
+          and date(uploaded_at >='2026-04-01')
         )
         select
         *
@@ -439,8 +442,14 @@ view: bundle_analytics {
       * from bundle_metrics
       order by uploaded_at desc, bundle_type desc
     ;;
-    datagroup_trigger: upff_acquisition_reporting
-    distribution_style: all
+    sql_trigger_value:
+    SELECT TO_CHAR(
+    CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE()) - INTERVAL '8 hour',
+    'YYYY-MM-DD'
+    ) ;;
+    #sql_trigger_value:  SELECT TO_CHAR(DATE_TRUNC('day', CURRENT_TIMESTAMP) + INTERVAL '9 hours 45 minutes', 'YYYY-MM-DD');;
+    distribution: "report_date"
+    sortkeys: ["report_date"]
   }
 #testing
   dimension: brand {

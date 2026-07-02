@@ -23,6 +23,9 @@ explore: stripe_recon {
   label: "Stripe Payout Recon"
 }
 
+explore: stripe {
+  label: "Stripe Payout"
+}
 
 explore: braintree {
   label: "Braintree Recon"
