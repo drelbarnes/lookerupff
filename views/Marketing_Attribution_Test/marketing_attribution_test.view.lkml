@@ -21,10 +21,11 @@
 #   5. 'app_install'          — app installs from Branch.io (php.branch_install)
 #   6. 'app_reinstall'        — app reinstalls from Branch.io (php.branch_reinstall)
 #
-# === entitlements_ott_user_id (added this revision) ===
-#   Streaming-platform (OTT) user identifier sourced from
-#   javaScript_upentertainment_checkout.order_completed. Populated on
-#   conversion rows (standard trials only) and NULL on all other event types.
+# === ott_user_id (added this revision) ===
+#   Streaming-platform (OTT) user identifier extracted from the `entitlements`
+#   JSON array on javaScript_upentertainment_checkout.order_completed
+#   (first element, key 'ott_user_id'). Populated on conversion rows
+#   (standard trials only) and NULL on all other event types.
 #   Threaded through: lifecycle_events → free_trials → attributed_touches /
 #   direct_conversions → all_touches_raw → selected_attributed_* → conversion_rows.
 #   Use for joining marketing conversions to the streaming platform's user table.
@@ -207,7 +208,7 @@ view: marketing_attribution_test {
 
       -- ============================================================
       -- LIFECYCLE EVENTS (web pipeline)
-      -- entitlements_ott_user_id added as final column on every branch.
+      -- ott_user_id added as final column on every branch.
       -- Real value only on order_completed; NULL elsewhere.
       -- ============================================================
       lifecycle_events AS (
@@ -234,7 +235,7 @@ view: marketing_attribution_test {
       ,CAST(context_consent_category_preferences_c0003 AS BOOLEAN) AS consent_c0003
       ,CAST(context_consent_category_preferences_c0004 AS BOOLEAN) AS consent_c0004
       ,CAST(context_consent_category_preferences_c0005 AS BOOLEAN) AS consent_c0005
-      ,CAST(NULL AS VARCHAR(255)) AS entitlements_ott_user_id
+      ,CAST(NULL AS VARCHAR(255)) AS ott_user_id
       FROM javascript_upff_home.pages
       WHERE received_at >= (SELECT start_date FROM params)
       AND received_at <  (SELECT end_date   FROM params) + INTERVAL '1 day'
@@ -264,7 +265,7 @@ view: marketing_attribution_test {
       ,CAST(context_consent_category_preferences_c0003 AS BOOLEAN) AS consent_c0003
       ,CAST(context_consent_category_preferences_c0004 AS BOOLEAN) AS consent_c0004
       ,CAST(context_consent_category_preferences_c0005 AS BOOLEAN) AS consent_c0005
-      ,CAST(NULL AS VARCHAR(255)) AS entitlements_ott_user_id
+      ,CAST(NULL AS VARCHAR(255)) AS ott_user_id
       FROM javascript_upentertainment_checkout.pages
       WHERE received_at >= (SELECT start_date FROM params)
       AND received_at <  (SELECT end_date   FROM params) + INTERVAL '1 day'
@@ -288,7 +289,12 @@ view: marketing_attribution_test {
       ,CAST(NULL AS BOOLEAN)      AS consent_c0003
       ,CAST(NULL AS BOOLEAN)      AS consent_c0004
       ,CAST(NULL AS BOOLEAN)      AS consent_c0005
-      ,CAST(entitlements_ott_user_id AS VARCHAR(255)) AS entitlements_ott_user_id
+      ,CAST(
+      JSON_EXTRACT_PATH_TEXT(
+      JSON_EXTRACT_ARRAY_ELEMENT_TEXT(entitlements, 0),
+      'ott_user_id'
+      ) AS VARCHAR(255)
+      ) AS ott_user_id
       FROM javaScript_upentertainment_checkout.order_completed
       WHERE received_at >= (SELECT start_date FROM params)
       AND received_at <  (SELECT end_date   FROM params) + INTERVAL '1 day'
@@ -314,7 +320,7 @@ view: marketing_attribution_test {
       ,CAST(NULL AS BOOLEAN)      AS consent_c0003
       ,CAST(NULL AS BOOLEAN)      AS consent_c0004
       ,CAST(NULL AS BOOLEAN)      AS consent_c0005
-      ,CAST(NULL AS VARCHAR(255)) AS entitlements_ott_user_id
+      ,CAST(NULL AS VARCHAR(255)) AS ott_user_id
       FROM javaScript_upentertainment_checkout.order_updated
       WHERE received_at >= (SELECT start_date FROM params)
       AND received_at <  (SELECT end_date   FROM params) + INTERVAL '1 day'
@@ -342,7 +348,7 @@ view: marketing_attribution_test {
       ,CAST(NULL AS BOOLEAN)      AS consent_c0003
       ,CAST(NULL AS BOOLEAN)      AS consent_c0004
       ,CAST(NULL AS BOOLEAN)      AS consent_c0005
-      ,CAST(NULL AS VARCHAR(255)) AS entitlements_ott_user_id
+      ,CAST(NULL AS VARCHAR(255)) AS ott_user_id
       FROM chargebee_webhook_events.subscription_activated
       WHERE DATE(received_at) BETWEEN (SELECT start_date FROM params)
       AND (SELECT end_date   FROM params)
@@ -367,7 +373,7 @@ view: marketing_attribution_test {
       ,CAST(NULL AS BOOLEAN)      AS consent_c0003
       ,CAST(NULL AS BOOLEAN)      AS consent_c0004
       ,CAST(NULL AS BOOLEAN)      AS consent_c0005
-      ,CAST(NULL AS VARCHAR(255)) AS entitlements_ott_user_id
+      ,CAST(NULL AS VARCHAR(255)) AS ott_user_id
       FROM javascript_upentertainment_checkout.order_resubscribed
       WHERE received_at >= (SELECT start_date FROM params)
       AND received_at <  (SELECT end_date   FROM params) + INTERVAL '1 day'
@@ -395,7 +401,7 @@ view: marketing_attribution_test {
       ,CAST(NULL AS BOOLEAN)      AS consent_c0003
       ,CAST(NULL AS BOOLEAN)      AS consent_c0004
       ,CAST(NULL AS BOOLEAN)      AS consent_c0005
-      ,CAST(NULL AS VARCHAR(255)) AS entitlements_ott_user_id
+      ,CAST(NULL AS VARCHAR(255)) AS ott_user_id
       FROM (
       SELECT
       user_id
@@ -480,11 +486,11 @@ view: marketing_attribution_test {
       ,COALESCE(uav.plan_type, 'unknown')               AS plan_type
       ,COALESCE(uds.is_in_dunning, FALSE)               AS is_in_dunning
       ,COALESCE(uds.latest_invoice_status, 'unknown')   AS latest_invoice_status
-      ,r.entitlements_ott_user_id
+      ,r.ott_user_id
       FROM (
       SELECT
       user_id, context_ip, anonymous_id, order_id, event_received_at,
-      trial_type, bundle_plan, entitlements_ott_user_id
+      trial_type, bundle_plan, ott_user_id
       ,ROW_NUMBER() OVER (
       PARTITION BY user_id, order_id
       ORDER BY CASE WHEN bundle_plan IS NOT NULL THEN 0 ELSE 1 END,
@@ -520,7 +526,7 @@ view: marketing_attribution_test {
       ,COALESCE(uav.plan_type, 'unknown')               AS plan_type
       ,COALESCE(uds.is_in_dunning, FALSE)               AS is_in_dunning
       ,COALESCE(uds.latest_invoice_status, 'unknown')   AS latest_invoice_status
-      ,CAST(NULL AS VARCHAR(255)) AS entitlements_ott_user_id
+      ,CAST(NULL AS VARCHAR(255)) AS ott_user_id
       FROM lifecycle_events le
       LEFT JOIN user_activation_value uav ON le.user_id = uav.user_id
       LEFT JOIN user_dunning_status uds ON le.user_id = uds.user_id
@@ -541,7 +547,7 @@ view: marketing_attribution_test {
       ,c.is_activated_or_reacquired, c.is_not_retained
       ,c.activation_value, c.is_yearly_plan, c.plan_type
       ,c.is_in_dunning, c.latest_invoice_status
-      ,c.entitlements_ott_user_id
+      ,c.ott_user_id
       ,mt.received_at        AS touch_received_at
       ,mt.campaign_source, mt.campaign_name, mt.campaign_id
       ,mt.campaign_medium, mt.campaign_content
@@ -572,7 +578,7 @@ view: marketing_attribution_test {
       ,c.is_activated_or_reacquired, c.is_not_retained
       ,c.activation_value, c.is_yearly_plan, c.plan_type
       ,c.is_in_dunning, c.latest_invoice_status
-      ,c.entitlements_ott_user_id
+      ,c.ott_user_id
       ,0                              AS total_touches
       ,CAST(NULL AS TIMESTAMP)        AS attributed_touch_at
       ,CAST('direct' AS VARCHAR(20))  AS attributed_campaign_source
@@ -612,7 +618,7 @@ view: marketing_attribution_test {
       ,at.is_activated_or_reacquired, at.is_not_retained
       ,at.activation_value, at.is_yearly_plan, at.plan_type
       ,at.is_in_dunning, at.latest_invoice_status
-      ,at.entitlements_ott_user_id
+      ,at.ott_user_id
       ,at.total_touches
       ,at.touch_received_at  AS attributed_touch_at
       ,at.days_before_conversion
@@ -664,7 +670,7 @@ view: marketing_attribution_test {
       ,is_activated_or_reacquired, is_not_retained
       ,activation_value, is_yearly_plan, plan_type
       ,is_in_dunning, latest_invoice_status
-      ,MAX(entitlements_ott_user_id) AS entitlements_ott_user_id
+      ,MAX(ott_user_id) AS ott_user_id
       ,total_touches
       ,MIN(days_before_conversion)         AS min_days_before_conversion
       ,MIN(attributed_touch_at)            AS attributed_touch_at
@@ -702,7 +708,7 @@ view: marketing_attribution_test {
       ,is_not_retained
       ,activation_value, is_yearly_plan, plan_type
       ,is_in_dunning, latest_invoice_status
-      ,entitlements_ott_user_id
+      ,ott_user_id
       ,total_touches
       ,CAST(NULL AS INTEGER)        AS min_days_before_conversion
       ,attributed_touch_at
@@ -880,8 +886,8 @@ view: marketing_attribution_test {
 
       -- ============================================================
       -- ROW-TYPE CTEs
-      -- entitlements_ott_user_id added at end of every row-type CTE.
-      -- Real value only on conversion_rows (from sa.entitlements_ott_user_id).
+      -- ott_user_id added at end of every row-type CTE.
+      -- Real value only on conversion_rows (from sa.ott_user_id).
       -- ============================================================
       page_visit_rows AS (
       SELECT
@@ -949,7 +955,7 @@ view: marketing_attribution_test {
       ,CAST(consent_c0003 AS BOOLEAN)        AS consent_c0003
       ,CAST(consent_c0004 AS BOOLEAN)        AS consent_c0004
       ,CAST(consent_c0005 AS BOOLEAN)        AS consent_c0005
-      ,CAST(NULL AS VARCHAR(255))            AS entitlements_ott_user_id
+      ,CAST(NULL AS VARCHAR(255))            AS ott_user_id
       FROM marketing_touches
       ),
 
@@ -1019,7 +1025,7 @@ view: marketing_attribution_test {
       ,CAST(consent_c0003 AS BOOLEAN)        AS consent_c0003
       ,CAST(consent_c0004 AS BOOLEAN)        AS consent_c0004
       ,CAST(consent_c0005 AS BOOLEAN)        AS consent_c0005
-      ,CAST(NULL AS VARCHAR(255))            AS entitlements_ott_user_id
+      ,CAST(NULL AS VARCHAR(255))            AS ott_user_id
       FROM lifecycle_events
       WHERE source_event_type = 'checkout_page_visit'
       ),
@@ -1081,7 +1087,7 @@ view: marketing_attribution_test {
       ,CAST(NULL AS BOOLEAN)                AS consent_c0003
       ,CAST(NULL AS BOOLEAN)                AS consent_c0004
       ,CAST(NULL AS BOOLEAN)                AS consent_c0005
-      ,CAST(sa.entitlements_ott_user_id AS VARCHAR(255)) AS entitlements_ott_user_id
+      ,CAST(sa.ott_user_id AS VARCHAR(255)) AS ott_user_id
       FROM selected_attributed sa
       LEFT JOIN daily_campaign_quality dq
       ON DATE(sa.conversion_event_at)                = dq.report_date
@@ -1159,7 +1165,7 @@ view: marketing_attribution_test {
       ,CAST(NULL AS BOOLEAN)                                                AS consent_c0003
       ,CAST(NULL AS BOOLEAN)                                                AS consent_c0004
       ,CAST(NULL AS BOOLEAN)                                                AS consent_c0005
-      ,CAST(NULL AS VARCHAR(255))                                           AS entitlements_ott_user_id
+      ,CAST(NULL AS VARCHAR(255))                                           AS ott_user_id
       FROM branch_app_trials
       ),
 
@@ -1232,7 +1238,7 @@ view: marketing_attribution_test {
       ,CAST(NULL AS BOOLEAN)                                                AS consent_c0003
       ,CAST(NULL AS BOOLEAN)                                                AS consent_c0004
       ,CAST(NULL AS BOOLEAN)                                                AS consent_c0005
-      ,CAST(NULL AS VARCHAR(255))                                           AS entitlements_ott_user_id
+      ,CAST(NULL AS VARCHAR(255))                                           AS ott_user_id
       FROM branch_app_installs
       ),
 
@@ -1305,7 +1311,7 @@ view: marketing_attribution_test {
       ,CAST(NULL AS BOOLEAN)                                                AS consent_c0003
       ,CAST(NULL AS BOOLEAN)                                                AS consent_c0004
       ,CAST(NULL AS BOOLEAN)                                                AS consent_c0005
-      ,CAST(NULL AS VARCHAR(255))                                           AS entitlements_ott_user_id
+      ,CAST(NULL AS VARCHAR(255))                                           AS ott_user_id
       FROM branch_app_reinstalls
       )
 
@@ -1380,11 +1386,11 @@ view: marketing_attribution_test {
   dimension: anonymous_id   { type: string  sql: ${TABLE}.anonymous_id ;; }
   dimension: context_ip     { type: string  sql: ${TABLE}.context_ip ;; }
 
-  dimension: entitlements_ott_user_id {
+  dimension: ott_user_id {
     type: string
-    label: "Entitlements OTT User ID"
-    description: "Streaming-platform (OTT) user identifier from the checkout order_completed event. Use to join marketing conversions to the streaming platform's user table. Populated on standard-trial conversion rows only; NULL on bundle trials, reacquisitions, page visits, checkout page visits, and app events."
-    sql: ${TABLE}.entitlements_ott_user_id ;;
+    label: "OTT User ID"
+    description: "Streaming-platform (OTT) user identifier extracted from the `entitlements` JSON array on the checkout order_completed event (first element, key 'ott_user_id'). Use to join marketing conversions to the streaming platform's user table. Populated on standard-trial conversion rows only; NULL on bundle trials, reacquisitions, page visits, checkout page visits, and app events."
+    sql: ${TABLE}.ott_user_id ;;
   }
 
   ##############################################################
@@ -2134,7 +2140,7 @@ view: marketing_attribution_test {
     type: count_distinct
     label: "Distinct OTT Users"
     description: "Unique streaming-platform user IDs across conversions. Use to size the audience joinable back to the OTT platform."
-    sql: ${TABLE}.entitlements_ott_user_id ;;
+    sql: ${TABLE}.ott_user_id ;;
     filters: [event_type: "conversion", is_primary_attribution: "yes", within_attribution_window: "yes"]
   }
 
@@ -2199,7 +2205,7 @@ view: marketing_attribution_test {
 
   set: drill_conversions {
     fields: [
-      report_date_date, user_id, entitlements_ott_user_id, order_id,
+      report_date_date, user_id, ott_user_id, order_id,
       conversion_event_type, trial_type,
       plan_type, activation_value, surface, device_os, marketing_platform,
       campaign_source, campaign_medium, campaign_name, campaign_content, campaign_term,
