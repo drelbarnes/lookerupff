@@ -13,69 +13,22 @@
 #       * Web page visits can arrive after their associated conversion
 #       * Retroactive attribution changes within ~1 week are captured
 #
-# FIX (FATAL_INCREMENTAL_ERROR):
-#   The prior version placed  inside multiple inner CTEs
-#   (branch_app_trials, branch_app_installs, branch_app_reinstalls, and six
-#   branches of lifecycle_events). Looker's incremental PDT engine supports
-#   exactly ONE injection point. Multiple tags — or tags inside UNION ALL branches
-#   — cause Looker to emit the literal string FATAL_INCREMENTAL_ERROR in the SQL.
-#
-#   Fix: all  tags removed from inner CTEs. A single
-#    incrementcondition is placed on the outermost SELECT, which wraps the
-#   five row-type UNION ALLs and filters on the shared `report_date` column.
-#   The `params` CTE start_date / end_date guards still bound every inner CTE on
-#   full rebuilds; the outer filter handles the narrow incremental window.
-#
-# When to rebuild from scratch:
-#   - If late-arriving data extends past 7 days on a particular event
-#   - If you change a derived column (credit_weight formula, quality_score weights)
-#   - If you change a CTE structure
-#   Use Looker's "Rebuild Derived Tables & Run" or persist_with: rebuilds
-#
-# Trade-offs vs. the prior full-rebuild PDT:
-#   + Builds are much faster (minutes vs hours on a 180-day window)
-#   + Lower warehouse cost
-#   - Data older than 7 days will NOT reflect new touches/attribution
-#   - One-time rebuild needed when scoring weights or attribution logic changes
-#
 # === ROW TYPES (event_type) ===
 #   1. 'page_visit'           — marketing-site pageviews (javascript_upff_home.pages)
-#   2. 'checkout_page_visit'  — checkout pageviews (high-intent funnel step,
-#                               sourced from javascript_upentertainment_checkout.pages)
+#   2. 'checkout_page_visit'  — checkout pageviews (javascript_upentertainment_checkout.pages)
 #   3. 'conversion'           — attributed free trials and reacquisitions (web)
 #   4. 'app_trial'            — app free trials from Branch.io (php.branch_purchase)
 #   5. 'app_install'          — app installs from Branch.io (php.branch_install)
 #   6. 'app_reinstall'        — app reinstalls from Branch.io (php.branch_reinstall)
 #
-# === PAGE-LEVEL FIELDS (added) ===
-#   Populated only for page_visit and checkout_page_visit rows; NULL elsewhere.
-#     page_path        — vanity URL portion (Segment `path`)
-#     page_referrer    — referrer URL (Segment `referrer`)
-#     campaign_term    — utm_term URL parameter (Segment `context_campaign_term`)
-#     page_search      — URL query string (Segment `context_page_search`)
-#     consent_c0001..5 — boolean consent preference flags
-#                        (context_consent_category_preferences_c0001..5)
-#
-# === DUNNING STATUS ===
-#   User-level dunning state is sourced from chargebee_webhook_events.invoice_updated.
-#   A user is "in dunning" when their latest invoice for a UP plan is in
-#   'not_paid' or 'payment_due'. A subsequent 'paid' invoice clears the flag.
-#   Effective activations = activations - activations_in_dunning. Two new daily
-#   campaign metrics ride along: effective_trial_to_paid_rate and dunning_rate.
-#
-# === QUALITY SCORE (formula) ===
-#   Weights (this revision): 50% activations, 40% standard trials, 10% bundle trials.
-#   The reacquisition component was removed. Standard trials now include
-#   Branch.io app free trials in addition to web standard trials, so the score
-#   reflects total top-of-funnel volume across both surfaces.
-#       volume_score   = w_act*activation_score + w_std*std_trial_score
-#                      + w_bun*bundle_trial_score   (each score normalized 0–100)
-#       quality_score  = volume_score * (0.5 + min(trial_to_paid / conv_rate_max, 1.0))
-#   Retention/churn and reacquisition counts remain exposed as standalone metrics.
-#
-# === INITIAL BUILD WINDOW ===
-#   Full rebuilds cover the last 180 days (was 90). Incremental runs still use
-#   the 7-day look-back via increment_offset.
+# === ott_user_id (added this revision) ===
+#   Streaming-platform (OTT) user identifier extracted from the `entitlements`
+#   JSON array on javaScript_upentertainment_checkout.order_completed
+#   (first element, key 'ott_user_id'). Populated on conversion rows
+#   (standard trials only) and NULL on all other event types.
+#   Threaded through: lifecycle_events → free_trials → attributed_touches /
+#   direct_conversions → all_touches_raw → selected_attributed_* → conversion_rows.
+#   Use for joining marketing conversions to the streaming platform's user table.
 ################################################################################
 
 view: marketing_attribution_test {
@@ -95,8 +48,6 @@ view: marketing_attribution_test {
     sql:
       WITH params AS (
           SELECT
-               -- Initial build covers 180 days; incremental runs are filtered
-               -- by the single on the outer SELECT.
                (CURRENT_DATE - INTERVAL '365 days')::DATE AS start_date
               ,CURRENT_DATE                               AS end_date
               ,90                  AS max_attribution_window_days
@@ -108,9 +59,6 @@ view: marketing_attribution_test {
               ,1.0                 AS retention_floor
       ),
 
-      -- ============================================================
-      -- USER ACTIVATION VALUE from Chargebee
-      -- ============================================================
       user_activation_value AS (
       SELECT
       user_id
@@ -137,14 +85,6 @@ view: marketing_attribution_test {
       WHERE rn = 1
       ),
 
-      -- ============================================================
-      -- USER DUNNING STATUS from Chargebee invoice_updated
-      -- A user is "in dunning" when their most recent invoice for a UP
-      -- subscription is in 'not_paid' or 'payment_due' status. We take
-      -- the latest invoice per customer ordered by content_invoice_updated_at
-      -- so that a subsequent successful payment ('paid') correctly clears
-      -- the dunning flag.
-      -- ============================================================
       user_dunning_status AS (
       SELECT
       content_invoice_customer_id            AS user_id
@@ -173,11 +113,6 @@ view: marketing_attribution_test {
       WHERE rn = 1
       ),
 
-      -- ============================================================
-      -- BRANCH.IO APP FREE TRIALS — from php.branch_purchase
-      -- NOTE:  removed from this CTE.
-      --       The outer SELECT wrapper carries the single injection point.
-      -- ============================================================
       branch_app_trials AS (
       SELECT
       DATE(report_date)                AS report_date
@@ -209,10 +144,6 @@ view: marketing_attribution_test {
       AND count > 0
       ),
 
-      -- ============================================================
-      -- BRANCH.IO APP INSTALLS — from php.branch_install
-      -- NOTE:  removed from this CTE.
-      -- ============================================================
       branch_app_installs AS (
       SELECT
       DATE(report_date)                AS report_date
@@ -244,10 +175,6 @@ view: marketing_attribution_test {
       AND count > 0
       ),
 
-      -- ============================================================
-      -- BRANCH.IO APP REINSTALLS — from php.branch_reinstall
-      -- NOTE: removed from this CTE.
-      -- ============================================================
       branch_app_reinstalls AS (
       SELECT
       DATE(report_date)                AS report_date
@@ -281,18 +208,10 @@ view: marketing_attribution_test {
 
       -- ============================================================
       -- LIFECYCLE EVENTS (web pipeline)
-      -- NOTE: all tags removed from every
-      --       UNION ALL branch. The outer SELECT carries the single
-      --       injection point on report_date.
+      -- ott_user_id added as final column on every branch.
+      -- Real value only on order_completed; NULL elsewhere.
       -- ============================================================
       lifecycle_events AS (
-      -- ------------------------------------------------------------
-      -- Nine new fields appended to every branch:
-      --   page_path, page_referrer    VARCHAR
-      --   campaign_term, page_search  VARCHAR
-      --   consent_c0001..5            BOOLEAN
-      -- Real values populate page_visit + checkout_page_visit; NULL elsewhere.
-      -- ------------------------------------------------------------
       SELECT
       user_id, context_ip, anonymous_id
       ,received_at                AS event_received_at
@@ -316,19 +235,13 @@ view: marketing_attribution_test {
       ,CAST(context_consent_category_preferences_c0003 AS BOOLEAN) AS consent_c0003
       ,CAST(context_consent_category_preferences_c0004 AS BOOLEAN) AS consent_c0004
       ,CAST(context_consent_category_preferences_c0005 AS BOOLEAN) AS consent_c0005
+      ,CAST(NULL AS VARCHAR(255)) AS ott_user_id
       FROM javascript_upff_home.pages
       WHERE received_at >= (SELECT start_date FROM params)
       AND received_at <  (SELECT end_date   FROM params) + INTERVAL '1 day'
 
       UNION ALL
 
-      -- ------------------------------------------------------------
-      -- CHECKOUT PAGE VISITS — high-intent funnel step between marketing
-      -- pageview and trial start. Sourced from the checkout property's
-      -- pages stream. Same column layout as page_visit; distinguished by
-      -- source_event_type = 'checkout_page_visit'. Does NOT enter
-      -- marketing_touches (funnel step, not an attribution touch).
-      -- ------------------------------------------------------------
       SELECT
       user_id, context_ip, anonymous_id
       ,received_at                AS event_received_at
@@ -352,6 +265,7 @@ view: marketing_attribution_test {
       ,CAST(context_consent_category_preferences_c0003 AS BOOLEAN) AS consent_c0003
       ,CAST(context_consent_category_preferences_c0004 AS BOOLEAN) AS consent_c0004
       ,CAST(context_consent_category_preferences_c0005 AS BOOLEAN) AS consent_c0005
+      ,CAST(NULL AS VARCHAR(255)) AS ott_user_id
       FROM javascript_upentertainment_checkout.pages
       WHERE received_at >= (SELECT start_date FROM params)
       AND received_at <  (SELECT end_date   FROM params) + INTERVAL '1 day'
@@ -375,6 +289,12 @@ view: marketing_attribution_test {
       ,CAST(NULL AS BOOLEAN)      AS consent_c0003
       ,CAST(NULL AS BOOLEAN)      AS consent_c0004
       ,CAST(NULL AS BOOLEAN)      AS consent_c0005
+      ,CAST(
+      JSON_EXTRACT_PATH_TEXT(
+      JSON_EXTRACT_ARRAY_ELEMENT_TEXT(entitlements, 0),
+      'ott_user_id'
+      ) AS VARCHAR(255)
+      ) AS ott_user_id
       FROM javaScript_upentertainment_checkout.order_completed
       WHERE received_at >= (SELECT start_date FROM params)
       AND received_at <  (SELECT end_date   FROM params) + INTERVAL '1 day'
@@ -400,6 +320,7 @@ view: marketing_attribution_test {
       ,CAST(NULL AS BOOLEAN)      AS consent_c0003
       ,CAST(NULL AS BOOLEAN)      AS consent_c0004
       ,CAST(NULL AS BOOLEAN)      AS consent_c0005
+      ,CAST(NULL AS VARCHAR(255)) AS ott_user_id
       FROM javaScript_upentertainment_checkout.order_updated
       WHERE received_at >= (SELECT start_date FROM params)
       AND received_at <  (SELECT end_date   FROM params) + INTERVAL '1 day'
@@ -427,6 +348,7 @@ view: marketing_attribution_test {
       ,CAST(NULL AS BOOLEAN)      AS consent_c0003
       ,CAST(NULL AS BOOLEAN)      AS consent_c0004
       ,CAST(NULL AS BOOLEAN)      AS consent_c0005
+      ,CAST(NULL AS VARCHAR(255)) AS ott_user_id
       FROM chargebee_webhook_events.subscription_activated
       WHERE DATE(received_at) BETWEEN (SELECT start_date FROM params)
       AND (SELECT end_date   FROM params)
@@ -451,6 +373,7 @@ view: marketing_attribution_test {
       ,CAST(NULL AS BOOLEAN)      AS consent_c0003
       ,CAST(NULL AS BOOLEAN)      AS consent_c0004
       ,CAST(NULL AS BOOLEAN)      AS consent_c0005
+      ,CAST(NULL AS VARCHAR(255)) AS ott_user_id
       FROM javascript_upentertainment_checkout.order_resubscribed
       WHERE received_at >= (SELECT start_date FROM params)
       AND received_at <  (SELECT end_date   FROM params) + INTERVAL '1 day'
@@ -478,6 +401,7 @@ view: marketing_attribution_test {
       ,CAST(NULL AS BOOLEAN)      AS consent_c0003
       ,CAST(NULL AS BOOLEAN)      AS consent_c0004
       ,CAST(NULL AS BOOLEAN)      AS consent_c0005
+      ,CAST(NULL AS VARCHAR(255)) AS ott_user_id
       FROM (
       SELECT
       user_id
@@ -562,10 +486,11 @@ view: marketing_attribution_test {
       ,COALESCE(uav.plan_type, 'unknown')               AS plan_type
       ,COALESCE(uds.is_in_dunning, FALSE)               AS is_in_dunning
       ,COALESCE(uds.latest_invoice_status, 'unknown')   AS latest_invoice_status
+      ,r.ott_user_id
       FROM (
       SELECT
       user_id, context_ip, anonymous_id, order_id, event_received_at,
-      trial_type, bundle_plan
+      trial_type, bundle_plan, ott_user_id
       ,ROW_NUMBER() OVER (
       PARTITION BY user_id, order_id
       ORDER BY CASE WHEN bundle_plan IS NOT NULL THEN 0 ELSE 1 END,
@@ -601,6 +526,7 @@ view: marketing_attribution_test {
       ,COALESCE(uav.plan_type, 'unknown')               AS plan_type
       ,COALESCE(uds.is_in_dunning, FALSE)               AS is_in_dunning
       ,COALESCE(uds.latest_invoice_status, 'unknown')   AS latest_invoice_status
+      ,CAST(NULL AS VARCHAR(255)) AS ott_user_id
       FROM lifecycle_events le
       LEFT JOIN user_activation_value uav ON le.user_id = uav.user_id
       LEFT JOIN user_dunning_status uds ON le.user_id = uds.user_id
@@ -621,6 +547,7 @@ view: marketing_attribution_test {
       ,c.is_activated_or_reacquired, c.is_not_retained
       ,c.activation_value, c.is_yearly_plan, c.plan_type
       ,c.is_in_dunning, c.latest_invoice_status
+      ,c.ott_user_id
       ,mt.received_at        AS touch_received_at
       ,mt.campaign_source, mt.campaign_name, mt.campaign_id
       ,mt.campaign_medium, mt.campaign_content
@@ -651,6 +578,7 @@ view: marketing_attribution_test {
       ,c.is_activated_or_reacquired, c.is_not_retained
       ,c.activation_value, c.is_yearly_plan, c.plan_type
       ,c.is_in_dunning, c.latest_invoice_status
+      ,c.ott_user_id
       ,0                              AS total_touches
       ,CAST(NULL AS TIMESTAMP)        AS attributed_touch_at
       ,CAST('direct' AS VARCHAR(20))  AS attributed_campaign_source
@@ -690,6 +618,7 @@ view: marketing_attribution_test {
       ,at.is_activated_or_reacquired, at.is_not_retained
       ,at.activation_value, at.is_yearly_plan, at.plan_type
       ,at.is_in_dunning, at.latest_invoice_status
+      ,at.ott_user_id
       ,at.total_touches
       ,at.touch_received_at  AS attributed_touch_at
       ,at.days_before_conversion
@@ -741,6 +670,7 @@ view: marketing_attribution_test {
       ,is_activated_or_reacquired, is_not_retained
       ,activation_value, is_yearly_plan, plan_type
       ,is_in_dunning, latest_invoice_status
+      ,MAX(ott_user_id) AS ott_user_id
       ,total_touches
       ,MIN(days_before_conversion)         AS min_days_before_conversion
       ,MIN(attributed_touch_at)            AS attributed_touch_at
@@ -778,6 +708,7 @@ view: marketing_attribution_test {
       ,is_not_retained
       ,activation_value, is_yearly_plan, plan_type
       ,is_in_dunning, latest_invoice_status
+      ,ott_user_id
       ,total_touches
       ,CAST(NULL AS INTEGER)        AS min_days_before_conversion
       ,attributed_touch_at
@@ -802,13 +733,6 @@ view: marketing_attribution_test {
       UNION ALL SELECT * FROM selected_attributed_direct
       ),
 
-      -- ============================================================
-      -- APP TRIALS aggregated to the campaign-day grain so they can
-      -- be folded into the standard_trials count for quality scoring.
-      -- Joined into daily_campaign_metrics on (date, name, medium, content).
-      -- App rows use campaign_medium = 'paid' and NULL content, matching
-      -- the same grain used elsewhere in this pipeline.
-      -- ============================================================
       app_trials_by_campaign_day AS (
       SELECT
       report_date
@@ -826,8 +750,6 @@ view: marketing_attribution_test {
       ,sa.attributed_campaign_name    AS campaign_name
       ,sa.attributed_campaign_medium  AS campaign_medium
       ,sa.attributed_campaign_content AS campaign_content
-      -- standard_trials now includes Branch.io app free trials so
-      -- the score reflects total funnel volume, not just web.
       ,SUM(CASE WHEN sa.conversion_event_type = 'free_trial'
       AND sa.trial_type = 'standard'
       AND sa.is_last_touch
@@ -935,23 +857,12 @@ view: marketing_attribution_test {
       ,CAST(100.0 * m.standard_trials  / n.max_standard    AS NUMERIC(10,4)) AS std_trial_score
       ,CAST(100.0 * m.bundle_trials    / n.max_bundle      AS NUMERIC(10,4)) AS bundle_trial_score
       ,CAST(100.0 * m.activations      / n.max_activations AS NUMERIC(10,4)) AS activation_score
-      -- ------------------------------------------------------------
-      -- volume_score: reacquisition component removed. Weights are now
-      --   50% activations, 40% standard trials (web + app), 10% bundle trials.
-      -- standard_trials is the combined web standard + app free trial count.
-      -- ------------------------------------------------------------
       ,CAST(
       (SELECT w_standard_trials FROM params) * (100.0 * m.standard_trials  / n.max_standard)
       + (SELECT w_bundle_trials   FROM params) * (100.0 * m.bundle_trials    / n.max_bundle)
       + (SELECT w_activations     FROM params) * (100.0 * m.activations      / n.max_activations)
       AS NUMERIC(10,4)
       ) AS volume_score
-      -- ------------------------------------------------------------
-      -- quality_score: retention multiplier removed (v2 change), reacquisition
-      -- component removed (this revision). New formula:
-      --   volume_score * (0.5 + min(trial_to_paid / conv_rate_max, 1.0))
-      -- Retention/churn and reacquisition counts remain exposed as standalone metrics.
-      -- ------------------------------------------------------------
       ,CAST(
       CAST(
       (SELECT w_standard_trials FROM params) * (100.0 * m.standard_trials  / n.max_standard)
@@ -974,7 +885,9 @@ view: marketing_attribution_test {
       ),
 
       -- ============================================================
-      -- ROW-TYPE CTEs — assembled before the outer incremental filter
+      -- ROW-TYPE CTEs
+      -- ott_user_id added at end of every row-type CTE.
+      -- Real value only on conversion_rows (from sa.ott_user_id).
       -- ============================================================
       page_visit_rows AS (
       SELECT
@@ -1033,7 +946,6 @@ view: marketing_attribution_test {
       ,CAST(NULL AS NUMERIC(10,2))  AS std_trial_score
       ,CAST(NULL AS NUMERIC(10,2))  AS bundle_trial_score
       ,CAST(NULL AS NUMERIC(10,2))  AS activation_score
-      -- new page-level fields (real values on page_visit + checkout_page_visit)
       ,CAST(page_path     AS VARCHAR(500))   AS page_path
       ,CAST(page_referrer AS VARCHAR(500))   AS page_referrer
       ,CAST(campaign_term AS VARCHAR(500))   AS campaign_term
@@ -1043,17 +955,10 @@ view: marketing_attribution_test {
       ,CAST(consent_c0003 AS BOOLEAN)        AS consent_c0003
       ,CAST(consent_c0004 AS BOOLEAN)        AS consent_c0004
       ,CAST(consent_c0005 AS BOOLEAN)        AS consent_c0005
+      ,CAST(NULL AS VARCHAR(255))            AS ott_user_id
       FROM marketing_touches
       ),
 
-      -- ============================================================
-      -- CHECKOUT PAGE VISIT ROWS — sixth event type in the unified PDT.
-      -- Sourced from lifecycle_events filtered to
-      -- source_event_type = 'checkout_page_visit'. These rows do NOT
-      -- participate in marketing attribution (they are funnel steps,
-      -- not touches), so attribution columns are NULL/FALSE/0.
-      -- Same column shape as page_visit_rows.
-      -- ============================================================
       checkout_page_visit_rows AS (
       SELECT
       CAST('checkout_page_visit' AS VARCHAR(20)) AS event_type
@@ -1120,6 +1025,7 @@ view: marketing_attribution_test {
       ,CAST(consent_c0003 AS BOOLEAN)        AS consent_c0003
       ,CAST(consent_c0004 AS BOOLEAN)        AS consent_c0004
       ,CAST(consent_c0005 AS BOOLEAN)        AS consent_c0005
+      ,CAST(NULL AS VARCHAR(255))            AS ott_user_id
       FROM lifecycle_events
       WHERE source_event_type = 'checkout_page_visit'
       ),
@@ -1181,6 +1087,7 @@ view: marketing_attribution_test {
       ,CAST(NULL AS BOOLEAN)                AS consent_c0003
       ,CAST(NULL AS BOOLEAN)                AS consent_c0004
       ,CAST(NULL AS BOOLEAN)                AS consent_c0005
+      ,CAST(sa.ott_user_id AS VARCHAR(255)) AS ott_user_id
       FROM selected_attributed sa
       LEFT JOIN daily_campaign_quality dq
       ON DATE(sa.conversion_event_at)                = dq.report_date
@@ -1258,6 +1165,7 @@ view: marketing_attribution_test {
       ,CAST(NULL AS BOOLEAN)                                                AS consent_c0003
       ,CAST(NULL AS BOOLEAN)                                                AS consent_c0004
       ,CAST(NULL AS BOOLEAN)                                                AS consent_c0005
+      ,CAST(NULL AS VARCHAR(255))                                           AS ott_user_id
       FROM branch_app_trials
       ),
 
@@ -1330,6 +1238,7 @@ view: marketing_attribution_test {
       ,CAST(NULL AS BOOLEAN)                                                AS consent_c0003
       ,CAST(NULL AS BOOLEAN)                                                AS consent_c0004
       ,CAST(NULL AS BOOLEAN)                                                AS consent_c0005
+      ,CAST(NULL AS VARCHAR(255))                                           AS ott_user_id
       FROM branch_app_installs
       ),
 
@@ -1402,16 +1311,10 @@ view: marketing_attribution_test {
       ,CAST(NULL AS BOOLEAN)                                                AS consent_c0003
       ,CAST(NULL AS BOOLEAN)                                                AS consent_c0004
       ,CAST(NULL AS BOOLEAN)                                                AS consent_c0005
+      ,CAST(NULL AS VARCHAR(255))                                           AS ott_user_id
       FROM branch_app_reinstalls
       )
 
-      -- ============================================================
-      -- OUTER SELECT — single  lives here.
-      -- Looker injects a WHERE clause on report_date for incremental
-      -- runs; on a full rebuild it expands to 1=1.
-      -- All six row-type CTEs share the report_date column so the
-      -- single filter correctly gates every event type.
-      -- ============================================================
       SELECT * FROM (
       SELECT * FROM page_visit_rows
       UNION ALL
@@ -1475,13 +1378,20 @@ view: marketing_attribution_test {
 
   dimension: event_type {
     type: string
-    description: "'page_visit' | 'conversion' | 'app_trial' | 'app_install' | 'app_reinstall'"
+    description: "'page_visit' | 'checkout_page_visit' | 'conversion' | 'app_trial' | 'app_install' | 'app_reinstall'"
     sql: ${TABLE}.event_type ;;
   }
 
   dimension: user_id        { type: string  sql: ${TABLE}.user_id ;; }
   dimension: anonymous_id   { type: string  sql: ${TABLE}.anonymous_id ;; }
   dimension: context_ip     { type: string  sql: ${TABLE}.context_ip ;; }
+
+  dimension: ott_user_id {
+    type: string
+    label: "OTT User ID"
+    description: "Streaming-platform (OTT) user identifier extracted from the `entitlements` JSON array on the checkout order_completed event (first element, key 'ott_user_id'). Use to join marketing conversions to the streaming platform's user table. Populated on standard-trial conversion rows only; NULL on bundle trials, reacquisitions, page visits, checkout page visits, and app events."
+    sql: ${TABLE}.ott_user_id ;;
+  }
 
   ##############################################################
   # TIME DIMENSIONS
@@ -1591,7 +1501,6 @@ view: marketing_attribution_test {
 
   ##############################################################
   # PAGE-LEVEL DIMENSIONS
-  # Populated only for page_visit and checkout_page_visit rows.
   ##############################################################
   dimension: page_path {
     type: string
@@ -1681,10 +1590,6 @@ view: marketing_attribution_test {
 
   ##############################################################
   # DUNNING DIMENSIONS
-  # Sourced from chargebee_webhook_events.invoice_updated.
-  # is_in_dunning is TRUE when the user's most recent UP-plan invoice
-  # is in 'not_paid' or 'payment_due'. A subsequent 'paid' invoice
-  # clears the flag (latest invoice wins).
   ##############################################################
   dimension: is_in_dunning {
     type: yesno
@@ -1921,8 +1826,6 @@ view: marketing_attribution_test {
 
   ##############################################################
   # MEASURES — Checkout Funnel
-  # Surface the high-intent middle step of the funnel:
-  #   marketing visit → CHECKOUT VISIT → trial → activation
   ##############################################################
   measure: distinct_checkout_visits {
     type: count_distinct
@@ -2233,6 +2136,14 @@ view: marketing_attribution_test {
     filters: [event_type: "conversion", is_primary_attribution: "yes", within_attribution_window: "yes"]
   }
 
+  measure: distinct_ott_users {
+    type: count_distinct
+    label: "Distinct OTT Users"
+    description: "Unique streaming-platform user IDs across conversions. Use to size the audience joinable back to the OTT platform."
+    sql: ${TABLE}.ott_user_id ;;
+    filters: [event_type: "conversion", is_primary_attribution: "yes", within_attribution_window: "yes"]
+  }
+
   ##############################################################
   # MEASURES — Credit-weighted
   ##############################################################
@@ -2294,7 +2205,8 @@ view: marketing_attribution_test {
 
   set: drill_conversions {
     fields: [
-      report_date_date, user_id, order_id, conversion_event_type, trial_type,
+      report_date_date, user_id, ott_user_id, order_id,
+      conversion_event_type, trial_type,
       plan_type, activation_value, surface, device_os, marketing_platform,
       campaign_source, campaign_medium, campaign_name, campaign_content, campaign_term,
       lifecycle_event_type, lifecycle_event_date, is_not_retained,
@@ -2329,7 +2241,7 @@ view: marketing_attribution_test {
 }
 
 ################################################################################
-# Datagroup — triggers the daily incremental run at 2 AM ET
+# Datagroup — triggers the daily incremental run at 10 PM ET
 ################################################################################
 datagroup: marketing_attribution_daily {
   # Fires once daily at 10 PM America/New_York. DST-safe.
