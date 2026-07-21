@@ -42,6 +42,7 @@ view: vimeo {
       DATE(DATEADD(HOUR, -5, timestamp)) AS report_date
       FROM chargebee_webhook_events.subscription_reactivated
       WHERE content_subscription_subscription_items LIKE '%UP%'
+      and content_subscription_status != 'in_trial'
 
       UNION ALL
 

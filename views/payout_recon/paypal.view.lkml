@@ -16,7 +16,7 @@ To_Email_Address as email
 , fee
 , 'paypal' as payment_gateway
 ,type as payment_description
-FROM  `up-faith-and-family-216419.customers.paypal_payout_recon_5_2026`
+FROM  `up-faith-and-family-216419.customers.paypal_payout_recon_june_2026`
 --FROM  `up-faith-and-family-216419.customers.paypal_payout_recon_3_2026`
 WHERE date(_Date_) between (SELECT report_date FROM config) - INTERVAL 31 DAY
   AND (SELECT report_date FROM config)),

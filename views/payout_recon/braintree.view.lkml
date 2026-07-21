@@ -17,7 +17,7 @@ ELSE 0
  END as fee
 , 'Braintree' as payment_gateway
 ,Transaction_Type as payment_description
-FROM  `up-faith-and-family-216419.customers.braintree_payout_recon_4_29_to_5_31`
+FROM  `up-faith-and-family-216419.customers.braintree_payout_recon_june_2026`
 WHERE date(Disbursement_Date) between (SELECT report_date FROM config) - INTERVAL 30 DAY
   AND (SELECT report_date FROM config)
 
@@ -32,10 +32,70 @@ NULL as email
 ,15.00 as fee
 , 'Braintree' as payment_gateway
 ,'charge_back' as payment_description
-FROM `up-faith-and-family-216419.customers.braintree_dispute_report_4_29_5_31`
+FROM `up-faith-and-family-216419.customers.braintree_dispute_report_june_2026_v2`
 WHERE date(Disbursement_Date) between (SELECT report_date FROM config) - INTERVAL 30 DAY
   AND (SELECT report_date FROM config)
   ),
+
+count_dict as (
+  select count(*) as count,
+  CASE
+    WHEN content_invoice_line_items_0_entity_id LIKE '%UP%' THEN 'UP-Faith-Family'
+    WHEN content_invoice_line_items_0_entity_id LIKE '%Minno%' THEN 'Minno'
+    WHEN content_invoice_line_items_0_entity_id LIKE '%Gaither%' THEN 'GaitherTV'
+    ELSE NULL
+  END AS product_1,
+  CASE
+    WHEN content_invoice_line_items_1_entity_id LIKE '%UP%' THEN 'UP-Faith-Family'
+    WHEN content_invoice_line_items_1_entity_id LIKE '%Minno%' THEN 'Minno'
+    WHEN content_invoice_line_items_1_entity_id LIKE '%Gaither%' THEN 'GaitherTV'
+    ELSE NULL
+  END AS product_2,
+  CASE
+    WHEN content_invoice_line_items_2_entity_id LIKE '%UP%' THEN 'UP-Faith-Family'
+    WHEN content_invoice_line_items_2_entity_id LIKE '%Minno%' THEN 'Minno'
+    WHEN content_invoice_line_items_2_entity_id LIKE '%Gaither%' THEN 'GaitherTV'
+    ELSE NULL
+  END AS product_3,
+  CASE
+    WHEN content_invoice_line_items_0_entity_id LIKE '%Yearly%' THEN 'Yearly'
+    WHEN content_invoice_line_items_0_entity_id LIKE '%Monthly%' THEN 'Monthly'
+    ELSE NULL
+  END AS product_1_period,
+  CASE
+    WHEN content_invoice_line_items_1_entity_id LIKE '%Yearly%' THEN 'Yearly'
+    WHEN content_invoice_line_items_1_entity_id LIKE '%Monthly%' THEN 'Monthly'
+    ELSE NULL
+  END AS product_2_period,
+  CASE
+    WHEN content_invoice_line_items_2_entity_id LIKE '%Yearly%' THEN 'Yearly'
+    WHEN content_invoice_line_items_2_entity_id LIKE '%Monthly%' THEN 'Monthly'
+    ELSE NULL
+  END AS product_3_period,
+  content_invoice_line_items_0_tax_amount as tax_1,
+  content_invoice_line_items_1_tax_amount as tax_2,
+  content_invoice_line_items_2_tax_amount as tax_3,
+  content_invoice_line_items_0_unit_amount as original_amount1,
+  content_invoice_line_items_1_unit_amount as original_amount2,
+  content_invoice_line_items_2_unit_amount as original_amount3,
+  content_invoice_line_items_0_discount_amount +content_invoice_credits_applied +content_invoice_amount_adjusted AS discount_amount1,
+  content_invoice_line_items_1_discount_amount  AS discount_amount2,
+  content_invoice_line_items_2_discount_amount AS discount_amount3,
+  content_invoice_amount_paid as total_amount
+  ,content_invoice_credits_applied
+
+  from `up-faith-and-family-216419.chargebee_webhook_events.payment_succeeded`
+  where date(timestamp) >='2024-07-01'
+  GROUP BY 2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18
+  ),
+  count_dict_deduped AS (
+  SELECT *
+  FROM count_dict
+  QUALIFY ROW_NUMBER() OVER (
+    PARTITION BY total_amount
+    ORDER BY count DESC
+  ) = 1
+),
 
 paypal_chargebee as (
 SELECT * FROM paypal
@@ -88,13 +148,13 @@ charges as (SELECT distinct
   content_invoice_line_items_0_unit_amount as original_amount1,
   content_invoice_line_items_1_unit_amount as original_amount2,
   content_invoice_line_items_2_unit_amount as original_amount3,
-  content_invoice_line_items_0_discount_amount +content_invoice_credits_applied AS discount_amount1,
+  content_invoice_line_items_0_discount_amount +content_invoice_credits_applied+content_invoice_amount_adjusted AS discount_amount1,
   content_invoice_line_items_1_discount_amount  AS discount_amount2,
   content_invoice_line_items_2_discount_amount AS discount_amount3,
   content_invoice_amount_paid as total_amount
   ,content_customer_payment_method_reference_id
   --'charge' AS reporting_category
- from `up-faith-and-family-216419.chargebee_webhook_events.payment_succeeded` WHERE date(received_at) between (SELECT report_date FROM config) - INTERVAL 34 DAY
+ from `up-faith-and-family-216419.chargebee_webhook_events.payment_succeeded` WHERE date(received_at) between (SELECT report_date FROM config) - INTERVAL 234 DAY
   AND (SELECT report_date FROM config)),
 
  refunds as (SELECT distinct
@@ -284,12 +344,56 @@ SELECT
   LEFT JOIN charge_refund c
   ON c.transaction_id = p.transaction_id
 ),
+refund_not_filled as (
+select * from fill_non_chargebee
+where total_amount is NULL or( cast(total_amount/100.0 * -1.0 as string) != cast(gross as string))
+
+UNION ALL
+select * from fill_chargebee
+where total_amount is NULL
+),
+fill_not_filled as (
+SELECT
+  cast(NULL as string) AS customer_id
+  ,cast(NULL as string) AS email
+  ,p.report_date
+  ,p.payment_gateway
+  ,p.payment_description
+  ,c.product_1
+  ,c.product_2
+  ,c.product_3
+  ,c.product_1_period
+  ,c.product_2_period
+  ,c.product_3_period
+  ,c.original_amount1
+  ,c.original_amount2
+  ,c.original_amount3
+  ,c.discount_amount1
+  ,c.discount_amount2
+  ,c.discount_amount3
+  ,c.tax_1
+  ,c.tax_2
+  ,c.tax_3
+  ,c.total_amount
+  ,p.transaction_id
+  ,p.ref_id
+  ,p.gross
+  ,p.fee
+  FROM refund_not_filled p
+  LEFT JOIN count_dict_deduped c
+  ON cast(c.total_amount/100.0 * -1.0 as string)= cast(p.gross as string)),
+
 
 result as (
 SELECT * FROM fill_chargebee
+
 UNION ALL
 SELECT * FROM fill_non_chargebee
-)
+WHERE total_amount is not NULL
+and cast(total_amount/100.0 * -1.0 as string) = cast(gross as string)
+
+UNION ALL
+SELECT * FROM fill_not_filled)
 
 select *
 ,CASE
@@ -497,17 +601,17 @@ from result
   }
   dimension: fee1 {
     type: number
-    value_format_name: usd
+
     sql:  ROUND(${TABLE}.fee1, 4) ;;
   }
   dimension: fee2 {
     type: number
-    value_format_name: usd
+
     sql:  ROUND(${TABLE}.fee2, 4);;
   }
   dimension: fee3 {
     type: number
-    value_format_name: usd
+
     sql:  ROUND(${TABLE}.fee3, 4) ;;
   }
   measure: total_charge {

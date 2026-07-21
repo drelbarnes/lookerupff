@@ -18,10 +18,28 @@ view: paypal_old {
       , fee
       , 'paypal' as payment_gateway
       , type as payment_description
-      FROM `up-faith-and-family-216419.customers.paypal_payout_recon_5_2026`
+      FROM `up-faith-and-family-216419.customers.paypal_payout_recon_june_2026`
       --FROM `up-faith-and-family-216419.customers.paypal_recon_payout_feb_2026`
       WHERE date(_Date_) between (SELECT report_date FROM config) - INTERVAL 31 DAY
       AND (SELECT report_date FROM config)
+
+
+      UNION ALL
+
+       SELECT distinct
+      To_Email_Address as email
+      , date(_Date_) as charge_created
+      , 'charge' as reporting_category
+      , Reference_Txn_ID as source_id
+      , Transaction_ID as transaction_id
+      , Gross
+      , fee
+      , 'paypal' as payment_gateway
+      , type as payment_description
+      FROM `up-faith-and-family-216419.customers.paypal_payout_recon_5_2026`
+      --FROM `up-faith-and-family-216419.customers.paypal_recon_payout_feb_2026`
+      WHERE date(_Date_) between (SELECT report_date FROM config) - INTERVAL 31 DAY - INTERVAL 1 MONTH
+      AND (SELECT report_date FROM config) - INTERVAL 1 MONTH
 
 
       UNION ALL
@@ -37,22 +55,6 @@ view: paypal_old {
       , type as payment_description
       FROM `up-faith-and-family-216419.customers.paypal_payout_recon_4_2026`
       --FROM `up-faith-and-family-216419.customers.paypal_recon_payout_feb_2026`
-      WHERE date(_Date_) between (SELECT report_date FROM config) - INTERVAL 31 DAY - INTERVAL 1 MONTH
-      AND (SELECT report_date FROM config)- INTERVAL 1 MONTH
-
-      UNION ALL
-      SELECT distinct
-      To_Email_Address as email
-      , date(_Date_) as charge_created
-      , 'charge' as reporting_category
-      , Reference_Txn_ID as source_id
-      , Transaction_ID as transaction_id
-      , Gross
-      , fee
-      , 'paypal' as payment_gateway
-      , type as payment_description
-      FROM `up-faith-and-family-216419.customers.paypal_payout_recon_3_2026`
-      --FROM `up-faith-and-family-216419.customers.paypal_payout_recon_2_2026`
       WHERE date(_Date_) between (SELECT report_date FROM config) - INTERVAL 31 DAY - INTERVAL 2 MONTH
       AND (SELECT report_date FROM config)- INTERVAL 2 MONTH
 
@@ -67,8 +69,8 @@ view: paypal_old {
       , fee
       , 'paypal' as payment_gateway
       , type as payment_description
-      FROM `up-faith-and-family-216419.customers.paypal_recon_payout_feb_2026`
-      --FROM `up-faith-and-family-216419.customers.paypal_payout_recon_12_2025`
+      FROM `up-faith-and-family-216419.customers.paypal_payout_recon_3_2026`
+      --FROM `up-faith-and-family-216419.customers.paypal_payout_recon_2_2026`
       WHERE date(_Date_) between (SELECT report_date FROM config) - INTERVAL 31 DAY - INTERVAL 3 MONTH
       AND (SELECT report_date FROM config)- INTERVAL 3 MONTH
 
@@ -83,10 +85,26 @@ view: paypal_old {
       , fee
       , 'paypal' as payment_gateway
       , type as payment_description
-      FROM `up-faith-and-family-216419.customers.paypal_payout_recon_2_2026`
-      --FROM `up-faith-and-family-216419.customers.paypal_recon_payout_11_2025_v2`
+      FROM `up-faith-and-family-216419.customers.paypal_recon_payout_feb_2026`
+      --FROM `up-faith-and-family-216419.customers.paypal_payout_recon_12_2025`
       WHERE date(_Date_) between (SELECT report_date FROM config) - INTERVAL 31 DAY - INTERVAL 4 MONTH
       AND (SELECT report_date FROM config)- INTERVAL 4 MONTH
+
+      UNION ALL
+      SELECT distinct
+      To_Email_Address as email
+      , date(_Date_) as charge_created
+      , 'charge' as reporting_category
+      , Reference_Txn_ID as source_id
+      , Transaction_ID as transaction_id
+      , Gross
+      , fee
+      , 'paypal' as payment_gateway
+      , type as payment_description
+      FROM `up-faith-and-family-216419.customers.paypal_payout_recon_2_2026`
+      --FROM `up-faith-and-family-216419.customers.paypal_recon_payout_11_2025_v2`
+      WHERE date(_Date_) between (SELECT report_date FROM config) - INTERVAL 31 DAY - INTERVAL 5 MONTH
+      AND (SELECT report_date FROM config)- INTERVAL 5 MONTH
 
 
 

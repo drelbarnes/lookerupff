@@ -16,7 +16,7 @@ customer_email as email
 , fee
 , 'paypal' as payment_gateway
 ,reporting_category as payment_description
-FROM  `up-faith-and-family-216419.customers.stripe_payout_recon_5_2026_v3`
+FROM  `up-faith-and-family-216419.customers.stripe_payout_recon_june_2026`
 --FROM  `up-faith-and-family-216419.customers.paypal_payout_recon_3_2026`
 WHERE date(charge_created) <= (SELECT report_date FROM config)),
 
@@ -41,6 +41,12 @@ count_dict as (
     ELSE NULL
   END AS product_3,
   CASE
+    WHEN content_invoice_line_items_3_entity_id LIKE '%UP%' THEN 'UP-Faith-Family'
+    WHEN content_invoice_line_items_3_entity_id LIKE '%Minno%' THEN 'Minno'
+    WHEN content_invoice_line_items_3_entity_id LIKE '%Gaither%' THEN 'GaitherTV'
+    ELSE NULL
+  END AS product_4,
+  CASE
     WHEN content_invoice_line_items_0_entity_id LIKE '%Yearly%' THEN 'Yearly'
     WHEN content_invoice_line_items_0_entity_id LIKE '%Monthly%' THEN 'Monthly'
     ELSE NULL
@@ -55,21 +61,29 @@ count_dict as (
     WHEN content_invoice_line_items_2_entity_id LIKE '%Monthly%' THEN 'Monthly'
     ELSE NULL
   END AS product_3_period,
+  CASE
+    WHEN content_invoice_line_items_3_entity_id LIKE '%Yearly%' THEN 'Yearly'
+    WHEN content_invoice_line_items_3_entity_id LIKE '%Monthly%' THEN 'Monthly'
+    ELSE NULL
+  END AS product_4_period,
   content_invoice_line_items_0_tax_amount as tax_1,
   content_invoice_line_items_1_tax_amount as tax_2,
   content_invoice_line_items_2_tax_amount as tax_3,
+  content_invoice_line_items_3_tax_amount as tax_4,
   content_invoice_line_items_0_unit_amount as original_amount1,
   content_invoice_line_items_1_unit_amount as original_amount2,
   content_invoice_line_items_2_unit_amount as original_amount3,
+  content_invoice_line_items_3_unit_amount as original_amount4,
   content_invoice_line_items_0_discount_amount +content_invoice_credits_applied AS discount_amount1,
   content_invoice_line_items_1_discount_amount  AS discount_amount2,
   content_invoice_line_items_2_discount_amount AS discount_amount3,
+  content_invoice_line_items_3_discount_amount AS discount_amount4,
   content_invoice_amount_paid as total_amount
   ,content_invoice_credits_applied
 
   from `up-faith-and-family-216419.chargebee_webhook_events.payment_succeeded`
   where date(timestamp) >='2024-07-01'
-  GROUP BY 2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18
+  GROUP BY 2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
   ),
   count_dict_deduped AS (
   SELECT *
@@ -111,6 +125,12 @@ charges as (SELECT distinct
     ELSE NULL
   END AS product_3,
   CASE
+    WHEN content_invoice_line_items_3_entity_id LIKE '%UP%' THEN 'UP-Faith-Family'
+    WHEN content_invoice_line_items_3_entity_id LIKE '%Minno%' THEN 'Minno'
+    WHEN content_invoice_line_items_3_entity_id LIKE '%Gaither%' THEN 'GaitherTV'
+    ELSE NULL
+  END AS product_4,
+  CASE
     WHEN content_invoice_line_items_0_entity_id LIKE '%Yearly%' THEN 'Yearly'
     WHEN content_invoice_line_items_0_entity_id LIKE '%Monthly%' THEN 'Monthly'
     ELSE NULL
@@ -125,15 +145,23 @@ charges as (SELECT distinct
     WHEN content_invoice_line_items_2_entity_id LIKE '%Monthly%' THEN 'Monthly'
     ELSE NULL
   END AS product_3_period,
+  CASE
+    WHEN content_invoice_line_items_3_entity_id LIKE '%Yearly%' THEN 'Yearly'
+    WHEN content_invoice_line_items_3_entity_id LIKE '%Monthly%' THEN 'Monthly'
+    ELSE NULL
+  END AS product_4_period,
   content_invoice_line_items_0_tax_amount as tax_1,
   content_invoice_line_items_1_tax_amount as tax_2,
   content_invoice_line_items_2_tax_amount as tax_3,
+  content_invoice_line_items_3_tax_amount as tax_4,
   content_invoice_line_items_0_unit_amount as original_amount1,
   content_invoice_line_items_1_unit_amount as original_amount2,
   content_invoice_line_items_2_unit_amount as original_amount3,
-  content_invoice_line_items_0_discount_amount +content_invoice_credits_applied  AS discount_amount1,
+  content_invoice_line_items_3_unit_amount as original_amount4,
+  content_invoice_line_items_0_discount_amount +content_invoice_credits_applied AS discount_amount1,
   content_invoice_line_items_1_discount_amount  AS discount_amount2,
-  content_invoice_line_items_2_discount_amount  AS discount_amount3,
+  content_invoice_line_items_2_discount_amount AS discount_amount3,
+  content_invoice_line_items_3_discount_amount AS discount_amount4,
   content_invoice_amount_paid as total_amount
   ,content_customer_payment_method_reference_id
   ,content_invoice_credits_applied
@@ -163,6 +191,7 @@ charges as (SELECT distinct
     WHEN content_invoice_line_items_2_entity_id LIKE '%Gaither%' THEN 'GaitherTV'
     ELSE NULL
   END AS product_3,
+  cast(NULL as string) AS product_4,
   CASE
     WHEN content_invoice_line_items_0_entity_id LIKE '%Yearly%' THEN 'Yearly'
     WHEN content_invoice_line_items_0_entity_id LIKE '%Monthly%' THEN 'Monthly'
@@ -178,15 +207,19 @@ charges as (SELECT distinct
     WHEN content_invoice_line_items_2_entity_id LIKE '%Monthly%' THEN 'Monthly'
     ELSE NULL
   END AS product_3_period,
+  cast(NULL as string) AS product_4_period,
   content_invoice_line_items_0_tax_amount as tax_1,
   content_invoice_line_items_1_tax_amount as tax_2,
   content_invoice_line_items_2_tax_amount as tax_3,
+  NULL as tax_4,
   content_invoice_line_items_0_unit_amount as original_amount1,
   content_invoice_line_items_1_unit_amount as original_amount2,
   content_invoice_line_items_2_unit_amount as original_amount3,
-  content_invoice_line_items_0_discount_amount +COALESCE(content_invoice_credits_applied) AS discount_amount1,
+  NULL as original_amount4,
+  content_invoice_line_items_0_discount_amount +content_invoice_credits_applied AS discount_amount1,
   content_invoice_line_items_1_discount_amount  AS discount_amount2,
   content_invoice_line_items_2_discount_amount AS discount_amount3,
+  NULL AS discount_amount4,
   content_invoice_amount_paid as total_amount,
   content_customer_payment_method_reference_id
   ,content_invoice_credits_applied
@@ -208,24 +241,47 @@ FROM
     WHEN content_invoice_line_items_0_entity_id LIKE '%Gaither%' THEN 'GaitherTV'
     ELSE NULL
   END AS product_1,
-  CAST(NULL AS STRING) AS product_2,
-  CAST(NULL AS STRING) AS  product_3,
+  CASE
+    WHEN content_invoice_line_items_1_entity_id LIKE '%UP%' THEN 'UP-Faith-Family'
+    WHEN content_invoice_line_items_1_entity_id LIKE '%Minno%' THEN 'Minno'
+    WHEN content_invoice_line_items_1_entity_id LIKE '%Gaither%' THEN 'GaitherTV'
+    ELSE NULL
+  END AS product_2,
+  CASE
+    WHEN content_invoice_line_items_2_entity_id LIKE '%UP%' THEN 'UP-Faith-Family'
+    WHEN content_invoice_line_items_2_entity_id LIKE '%Minno%' THEN 'Minno'
+    WHEN content_invoice_line_items_2_entity_id LIKE '%Gaither%' THEN 'GaitherTV'
+    ELSE NULL
+  END AS product_3,
+  cast(NULL as string) AS product_4,
   CASE
     WHEN content_invoice_line_items_0_entity_id LIKE '%Yearly%' THEN 'Yearly'
     WHEN content_invoice_line_items_0_entity_id LIKE '%Monthly%' THEN 'Monthly'
     ELSE NULL
   END AS product_1_period,
-  CAST(NULL AS STRING) AS  product_2_period,
-  CAST(NULL AS STRING) AS product_3_period,
-  content_invoice_tax-(content_credit_note_amount_allocated-content_subscription_subscription_items_0_unit_price) as tax_1,
-  CAST(NULL AS int64) as tax_2,
-  CAST(NULL AS int64) as tax_3,
-  content_credit_note_sub_total-content_subscription_subscription_items_0_unit_price as original_amount1,
-  CAST(NULL AS int64) as original_amount2,
-  CAST(NULL AS int64) as original_amount3,
-  CAST(NULL AS int64) AS discount_amount1,
-  CAST(NULL AS int64) AS discount_amount2,
-  CAST(NULL AS int64) AS discount_amount3,
+  CASE
+    WHEN content_invoice_line_items_1_entity_id LIKE '%Yearly%' THEN 'Yearly'
+    WHEN content_invoice_line_items_1_entity_id LIKE '%Monthly%' THEN 'Monthly'
+    ELSE NULL
+  END AS product_2_period,
+  CASE
+    WHEN content_invoice_line_items_2_entity_id LIKE '%Yearly%' THEN 'Yearly'
+    WHEN content_invoice_line_items_2_entity_id LIKE '%Monthly%' THEN 'Monthly'
+    ELSE NULL
+  END AS product_3_period,
+  cast(NULL as string) AS product_4_period,
+  content_invoice_line_items_0_tax_amount as tax_1,
+  content_invoice_line_items_1_tax_amount as tax_2,
+  content_invoice_line_items_2_tax_amount as tax_3,
+  NULL as tax_4,
+  content_invoice_line_items_0_unit_amount as original_amount1,
+  content_invoice_line_items_1_unit_amount as original_amount2,
+  content_invoice_line_items_2_unit_amount as original_amount3,
+  NULL as original_amount4,
+  content_invoice_line_items_0_discount_amount +content_invoice_credits_applied AS discount_amount1,
+  content_invoice_line_items_1_discount_amount  AS discount_amount2,
+  content_invoice_line_items_2_discount_amount AS discount_amount3,
+  NULL AS discount_amount4,
   content_invoice_amount_paid as total_amount,
   content_customer_payment_method_reference_id
   ,content_invoice_credits_applied
@@ -253,18 +309,23 @@ SELECT * FROM refunds
   ,c.product_1
   ,c.product_2
   ,c.product_3
+  ,c.product_4
   ,c.product_1_period
   ,c.product_2_period
   ,c.product_3_period
+  ,c.product_4_period
   ,c.original_amount1
   ,c.original_amount2
   ,c.original_amount3
+  ,c.original_amount4
   ,c.discount_amount1
   ,c.discount_amount2
   ,c.discount_amount3
+  ,c.discount_amount4
   ,c.tax_1
   ,c.tax_2
   ,c.tax_3
+  ,c.tax_4
   ,c.total_amount
   ,p.transaction_id
   ,p.source_id as ref_id
@@ -290,18 +351,23 @@ SELECT
   ,c.product_1
   ,c.product_2
   ,c.product_3
+  ,c.product_4
   ,c.product_1_period
   ,c.product_2_period
   ,c.product_3_period
+  ,c.product_4_period
   ,c.original_amount1
   ,c.original_amount2
   ,c.original_amount3
+  ,c.original_amount4
   ,c.discount_amount1
   ,c.discount_amount2
   ,c.discount_amount3
+  ,c.discount_amount4
   ,c.tax_1
   ,c.tax_2
   ,c.tax_3
+  ,c.tax_4
   ,c.total_amount
   ,p.transaction_id
   ,p.ref_id
@@ -330,18 +396,23 @@ SELECT
   ,c.product_1
   ,c.product_2
   ,c.product_3
+  ,c.product_4
   ,c.product_1_period
   ,c.product_2_period
   ,c.product_3_period
+  ,c.product_4_period
   ,c.original_amount1
   ,c.original_amount2
   ,c.original_amount3
+  ,c.original_amount4
   ,c.discount_amount1
   ,c.discount_amount2
   ,c.discount_amount3
+  ,c.discount_amount4
   ,c.tax_1
   ,c.tax_2
   ,c.tax_3
+  ,c.tax_4
   ,c.total_amount
   ,p.transaction_id
   ,p.source_id as ref_id
@@ -368,18 +439,23 @@ SELECT
   ,c.product_1
   ,c.product_2
   ,c.product_3
+  ,c.product_4
   ,c.product_1_period
   ,c.product_2_period
   ,c.product_3_period
+  ,c.product_4_period
   ,c.original_amount1
   ,c.original_amount2
   ,c.original_amount3
+  ,c.original_amount4
   ,c.discount_amount1
   ,c.discount_amount2
   ,c.discount_amount3
+  ,c.discount_amount4
   ,c.tax_1
   ,c.tax_2
   ,c.tax_3
+  ,c.tax_4
   ,c.total_amount
   ,p.transaction_id
   ,p.ref_id
@@ -452,6 +528,11 @@ select * from fill_charge_not_filled
       sql: ${TABLE}.product_3 ;;
     }
 
+  dimension: product_4 {
+    type: string
+    sql: ${TABLE}.product_4 ;;
+  }
+
     dimension: product_1_period {
       type: string
       sql: ${TABLE}.product_1_period ;;
@@ -466,6 +547,11 @@ select * from fill_charge_not_filled
       type: string
       sql: ${TABLE}.product_3_period ;;
     }
+
+  dimension: product_4_period {
+    type: string
+    sql: ${TABLE}.product_4_period ;;
+  }
 
     dimension: transaction_id {
       type: string
@@ -496,6 +582,12 @@ select * from fill_charge_not_filled
       sql: ${TABLE}.original_amount3/100.0 ;;
     }
 
+  dimension: original_amount4 {
+    type: number
+    value_format_name: usd
+    sql: ${TABLE}.original_amount4/100.0 ;;
+  }
+
     dimension: discount_amount1 {
       type: number
       value_format_name: usd
@@ -513,6 +605,11 @@ select * from fill_charge_not_filled
       value_format_name: usd
       sql: ${TABLE}.discount_amount3/100.0 ;;
     }
+  dimension: discount_amount4 {
+    type: number
+    value_format_name: usd
+    sql: ${TABLE}.discount_amount4/100.0 ;;
+  }
 
     dimension: tax_1 {
       type: number
@@ -535,6 +632,12 @@ select * from fill_charge_not_filled
       value_format_name: usd
       sql: ${TABLE}.tax_3/100.0 ;;
     }
+
+  dimension: tax_4 {
+    type: number
+    value_format_name: usd
+    sql: ${TABLE}.tax_4/100.0 ;;
+  }
 
     dimension: total_amount {
       type: number
