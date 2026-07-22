@@ -1,20 +1,11 @@
 view: free_trials {
   derived_table: {
     sql:
-      with users as (
-      SELECT
-        created_at
-        ,user_id
-        ,platform
-      FROM ${gaither_analytics_v2.SQL_TABLE_NAME}
-      WHERE platform != 'Chargebee'
-      and status in ( 'in_trial','free_trial')
-
-      UNION ALL
+    with chargebee as (
 
       SELECT
         date(DATEADD(HOUR, -4, received_at)) as created_at,
-        content_subscription_id::VARCHAR AS user_id,
+        content_customer_id::VARCHAR AS user_id,
         /*
         CASE
         WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'::VARCHAR
@@ -24,7 +15,47 @@ view: free_trials {
         'web'::VARCHAR AS platform
         FROM chargebee_webhook_events.subscription_created
         WHERE content_subscription_subscription_items LIKE '%Gai%'
-      )
+      ),
+
+
+    chargebee_bundle as (
+      select count(*) as count
+      ,content_customer_id as user_id
+      ,DATE(DATEADD(HOUR, -4, received_at)) AS created_at
+      from chargebee_webhook_events.subscription_created
+      group by 2,3
+      ),
+
+    chargebee_joined as (
+    SELECT
+      a.user_id
+      ,a.created_at
+      ,b.count
+    FROM chargebee a
+    LEFT JOIN chargebee_bundle b
+    ON a.user_id = b.user_id and a.created_at = b.created_at
+
+    ),
+
+     users as (
+      SELECT
+        created_at
+        ,user_id
+        ,platform
+      FROM ${gaither_analytics_v2.SQL_TABLE_NAME}
+      WHERE platform != 'Chargebee'
+      and status in ( 'in_trial','free_trial')
+
+      UNION ALL
+      SELECT
+        created_at
+        ,user_id
+        ,CASE
+          WHEN count = 1 THEN 'web_nobundle'
+          ELSE 'web_bundle'
+        END AS platform
+      FROM chargebee_joined
+     )
 
       SELECT
         *
