@@ -29,9 +29,9 @@ view: free_trials {
   derived_table: {
 
     sql:
-      WITH chargebee_pre AS (
+      WITH chargebee AS (
         SELECT
-          content_subscription_id AS user_id,
+          content_customer_id AS user_id,
           CASE
             WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'
             ELSE 'yearly'
@@ -41,6 +41,38 @@ view: free_trials {
         FROM chargebee_webhook_events.subscription_created
         WHERE content_subscription_subscription_items LIKE '%UP%'
       ),
+
+      chargebee_bundle as (
+      select count(*) as count
+      ,content_customer_id as user_id
+      ,DATE(DATEADD(HOUR, -4, received_at)) AS report_date
+      from chargebee_webhook_events.subscription_created
+      group by 2,3
+      ),
+
+      chargebee_join as (
+      SELECT
+        a.user_id
+        ,a.billing_period
+        ,b.count
+        ,a.report_date
+      FROM chargebee a
+      LEFT JOIN chargebee_bundle b
+      ON a.user_id = b.user_id and a.report_date = b.report_date
+
+      ),
+      chargebee_pre as (
+      SELECT
+        user_id
+        ,billing_period
+        ,CASE
+          WHEN count = 1 THEN 'web_nobundle'
+          ELSE 'web_bundle'
+        END AS platform
+        ,report_date
+      FROM chargebee_join
+      ),
+
 
       vimeo_pre AS (
       SELECT DISTINCT
@@ -144,10 +176,16 @@ view: free_trials {
     filters: [platform: "tvos"]
   }
 
-  measure: free_trials_web {
+  measure: free_trials_web_bundle {
     type: count_distinct
     sql: ${TABLE}.user_id ;;
-    filters: [platform: "web"]
+    filters: [platform: "web_bundle"]
+  }
+
+  measure: free_trials_web_no_bundle {
+    type: count_distinct
+    sql: ${TABLE}.user_id ;;
+    filters: [platform: "web_nobundle"]
   }
 
   measure: free_trials_android {

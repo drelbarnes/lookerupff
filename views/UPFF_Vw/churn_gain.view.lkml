@@ -100,6 +100,7 @@ view: churn_gain {
       'web'::VARCHAR                           AS platform
       FROM chargebee_webhook_events.subscription_activated
       WHERE content_subscription_subscription_items LIKE '%UP%'
+      and (content_subscription_activated_at-content_subscription_created_at)<864000
 
       UNION ALL
 
@@ -144,6 +145,7 @@ view: churn_gain {
       'web'::VARCHAR                           AS platform
       FROM chargebee_webhook_events.subscription_reactivated
       WHERE content_subscription_subscription_items LIKE '%UP%'
+      and content_subscription_status != 'in_trial'
 
       UNION ALL
 
