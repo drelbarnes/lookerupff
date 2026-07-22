@@ -34,6 +34,27 @@ view: app_installers {
         ,timestamp
       FROM roku.app_installed
 
+      UNION ALL
+      SELECT
+        anonymous_id
+        ,'Tizen' as platform
+        ,timestamp
+      FROM tizen_tv.app_installed
+
+      UNION ALL
+      SELECT
+        anonymous_id
+        ,'LG_tv' as platform
+        ,timestamp
+      FROM lg_tv.app_installed
+
+      UNION ALL
+      SELECT
+        anonymous_id
+        ,'Vizio' as platform
+        ,timestamp
+      FROM vizio_tv.app_installed
+
 
        ;;
   }
