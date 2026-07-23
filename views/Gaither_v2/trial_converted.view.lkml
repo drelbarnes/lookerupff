@@ -24,6 +24,7 @@ view: trial_converted {
         'web'::VARCHAR AS platform
         FROM chargebee_webhook_events.subscription_activated
         WHERE content_subscription_subscription_items LIKE '%Gai%'
+        and (content_subscription_activated_at-content_subscription_created_at)<864000
       --AND DATE(received_at) >= '2025-07-01'
       )
 

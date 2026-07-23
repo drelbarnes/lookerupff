@@ -50,6 +50,7 @@ view: gaither_analytics_v2 {
       ,'Yes' as trials_converted
       FROM chargebee_webhook_events.subscription_activated
       WHERE content_subscription_subscription_items like '%Gaither%'
+      and (content_subscription_activated_at-content_subscription_created_at)<864000
 
       ),
       -- get sub cancelled data for each user
@@ -70,6 +71,8 @@ view: gaither_analytics_v2 {
       ,date(received_at) as re_acquisition_date
       FROM chargebee_webhook_events.subscription_reactivated
       WHERE content_subscription_subscription_items like '%Gaither%'
+              and content_subscription_status != 'in_trial'
+
       ),
 
       --left join trial start data to daily report for created date
