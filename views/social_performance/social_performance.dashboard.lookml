@@ -325,8 +325,8 @@
         - agorapulse_post_performance.post_url
       measures:
         - agorapulse_post_performance.post_impressions
-        - agorapulse_post_performance.post_engagements
         - agorapulse_post_performance.post_video_views
+        - agorapulse_post_performance.post_engagements
       sorts:
         - agorapulse_post_performance.post_impressions desc
       limit: 20
