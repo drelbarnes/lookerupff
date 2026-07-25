@@ -102,6 +102,34 @@ view: social_daily_snapshot {
     description: "Sum of impressions at profile-day grain (Agorapulse viewsCount). See docs/06 and docs/07."
   }
 
+  measure: organic_impressions {
+    label: "Organic impressions"
+    type: sum
+    sql:
+      CASE
+        WHEN ${platform} = 'facebook'  THEN COALESCE(${TABLE}.organic_views_count, 0)
+        WHEN ${platform} = 'instagram' THEN COALESCE(${TABLE}.organic_views_count, 0)
+        WHEN ${platform} = 'tiktok'    THEN COALESCE(${impressions}, 0)
+        WHEN ${platform} = 'youtube'   THEN COALESCE(${impressions}, 0)
+        ELSE 0
+      END ;;
+    value_format_name: decimal_0
+    description: "Platform-aware audience grain. FB/IG: organic_views_count; TT/YT: impressions (paid=0). Organic + paid = total_impressions where Agorapulse splits them."
+  }
+
+  measure: paid_impressions {
+    label: "Paid impressions"
+    type: sum
+    sql:
+      CASE
+        WHEN ${platform} = 'facebook'  THEN COALESCE(${TABLE}.paid_views_count, 0)
+        WHEN ${platform} = 'instagram' THEN COALESCE(${TABLE}.paid_views_count, 0)
+        ELSE 0
+      END ;;
+    value_format_name: decimal_0
+    description: "Platform-aware audience grain. FB/IG: paid_views_count; TT/YT: 0. Organic + paid = total_impressions where Agorapulse splits them."
+  }
+
   measure: organic_video_views {
     label: "Organic video views"
     type: sum

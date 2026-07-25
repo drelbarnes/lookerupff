@@ -341,40 +341,50 @@
         platform: agorapulse_post_performance.platform
 
     - name: impressions_over_time
-      title: "Impressions over time by platform"
+      title: "Impressions over time (organic vs paid)"
       model: social_performance
       explore: social_daily_snapshot
-      type: looker_area
+      type: looker_line
       row: 32
       col: 0
       dimensions: [social_daily_snapshot.snapshot_date_date]
-      pivots: [social_daily_snapshot.platform]
-      measures: [social_daily_snapshot.total_impressions]
+      measures:
+        - social_daily_snapshot.organic_impressions
+        - social_daily_snapshot.paid_impressions
       sorts: [social_daily_snapshot.snapshot_date_date asc]
       x_axis_scale: auto
       width: 24
       height: 10
       stacking: ""
+      note:
+        text: "Two series from audience profile-day grain. FB/IG: organic_views_count and paid_views_count (sum to viewsCount / total impressions). TikTok/YouTube: organic = total impressions, paid = 0. Platform filter still scopes which networks are included."
+        state: collapsed
+        display: hover
       listen:
         agorapulse_snapshot_date: social_daily_snapshot.snapshot_date_date
         brand: social_daily_snapshot.brand_canonical
         platform: social_daily_snapshot.platform
 
     - name: video_views_over_time
-      title: "Video views over time by platform"
+      title: "Video views over time (organic vs paid)"
       model: social_performance
       explore: social_daily_snapshot
-      type: looker_area
+      type: looker_line
       row: 42
       col: 0
       dimensions: [social_daily_snapshot.snapshot_date_date]
-      pivots: [social_daily_snapshot.platform]
-      measures: [social_daily_snapshot.total_video_views]
+      measures:
+        - social_daily_snapshot.organic_video_views
+        - social_daily_snapshot.paid_video_views
       sorts: [social_daily_snapshot.snapshot_date_date asc]
       x_axis_scale: auto
       width: 24
       height: 10
       stacking: ""
+      note:
+        text: "Two series from audience profile-day grain (doc 07 §11). FB: organic/paid video views; IG: organic/paid views; TikTok/YouTube: organic = total, paid = 0. Platform filter still scopes which networks are included."
+        state: collapsed
+        display: hover
       listen:
         agorapulse_snapshot_date: social_daily_snapshot.snapshot_date_date
         brand: social_daily_snapshot.brand_canonical
