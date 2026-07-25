@@ -331,7 +331,7 @@
         - agorapulse_post_performance.post_impressions desc
       limit: 20
       note:
-        text: "Rows grouped by post_id; ranked by SUM(impressions_count) in the selected publish-date range and brand/platform filters. Engagements and video views are summed for the same rows (context). Multiple Segment snapshots per post add into the sums—see doc 07 Social Post Snapshot if you need latest-row-only logic."
+        text: "Rows grouped by post_id; ranked by platform-aware post impressions (FB/TT: views_count; IG: impressions_count; YT: video_views_count). Video views are also platform-aware (FB/YT: video_views_count; IG: organic+paid impressions_count; TT: views_count). Engagements summed for the same rows. Multiple Segment snapshots per post add into the sums—see doc 07 Social Post Snapshot if you need latest-row-only logic."
         state: collapsed
         display: hover
       listen:
