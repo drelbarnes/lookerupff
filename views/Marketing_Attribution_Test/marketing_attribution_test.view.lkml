@@ -1746,6 +1746,14 @@ view: marketing_attribution_test {
     filters: [event_type: "page_visit"]
   }
 
+  measure: clicks {
+    type: count
+    label: "Clicks"
+    description: "Attributed page visit events (site landings) for the campaign — proxy for link clicks generated."
+    filters: [event_type: "page_visit"]
+  }
+
+
   measure: web_trials_started {
     type: count
     label: "Free Trials Started (Web)"

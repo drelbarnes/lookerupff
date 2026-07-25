@@ -287,9 +287,8 @@
       dimensions:
         - marketing_attribution_test.campaign_name
         - marketing_attribution_test.campaign_content
-        - marketing_attribution_test.marketing_platform
-        - marketing_attribution_test.campaign_medium
       measures:
+        - marketing_attribution_test.clicks
         - marketing_attribution_test.free_trials_started
         - marketing_attribution_test.free_trials_converted
         - marketing_attribution_test.reacquisitions
@@ -300,7 +299,7 @@
         - marketing_attribution_test.free_trials_started desc
       limit: 200
       note:
-        text: "Primary-attributed conversion rows in the marketing attribution PDT, campaign_medium = organic_social + web. Measures match KPI definitions: Free trials started (count), Free trials converted (distinct users activated), Reacquisitions (count). Date filter → report_date; attribution model and window from dashboard."
+        text: "Primary-attributed rows in the marketing attribution PDT, campaign_medium = organic_social + web. Clicks = attributed page visits (site landings). Measures match KPI definitions: Free trials started (count), Free trials converted (distinct users activated), Reacquisitions (count). Date filter → report_date; attribution model and window from dashboard."
         state: collapsed
         display: hover
       listen:
