@@ -294,13 +294,13 @@
         - marketing_attribution_test.free_trials_converted
         - marketing_attribution_test.reacquisitions
       filters:
-        marketing_attribution_test.marketing_platform: "Organic Social"
+        marketing_attribution_test.campaign_medium: "organic_social"
         marketing_attribution_test.surface: "web"
       sorts:
         - marketing_attribution_test.free_trials_started desc
       limit: 200
       note:
-        text: "Primary-attributed conversion rows in the marketing attribution PDT, Organic Social + web. Measures match KPI definitions: Free trials started (count), Free trials converted (distinct users activated), Reacquisitions (count). Date filter → report_date; attribution model and window from dashboard."
+        text: "Primary-attributed conversion rows in the marketing attribution PDT, campaign_medium = organic_social + web. Measures match KPI definitions: Free trials started (count), Free trials converted (distinct users activated), Reacquisitions (count). Date filter → report_date; attribution model and window from dashboard."
         state: collapsed
         display: hover
       listen:
