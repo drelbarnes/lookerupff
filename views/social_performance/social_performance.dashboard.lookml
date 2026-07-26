@@ -38,7 +38,7 @@
       explore: marketing_attribution_test
       field: marketing_attribution_test.campaign_name
 
-       # Use brand_canonical (not raw brand) so UPFF + UP Faith & Family roll up to one filter value.
+       # Use brand_canonical (not raw brand) so UPFF + UP Faith & Family roll up to one filter value ("UP Faith & Family").
     - name: brand
       title: "Brand"
       type: field_filter

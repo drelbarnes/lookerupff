@@ -46,10 +46,10 @@ view: social_daily_snapshot {
       CASE
         WHEN LOWER(TRIM(${TABLE}.brand)) IN ('ovation', 'ovation tv', 'ovationtv') THEN 'Ovation TV'
         WHEN LOWER(TRIM(${TABLE}.brand)) IN ('aspire', 'aspire tv', 'aspiretv') THEN 'Aspire TV'
-        WHEN LOWER(TRIM(${TABLE}.brand)) IN ('upff', 'up faith & family', 'up faith and family') THEN 'UPFF'
+        WHEN LOWER(TRIM(${TABLE}.brand)) IN ('upff', 'up faith & family', 'up faith and family') THEN 'UP Faith & Family'
         ELSE ${TABLE}.brand
       END ;;
-    description: "Normalized brand for rollup. UPFF and UP Faith & Family warehouse spellings both map to UPFF. Ovation / Aspire aliases match doc 02 / PROFILE_MAP."
+    description: "Normalized brand for rollup. UPFF and UP Faith & Family warehouse spellings both map to UP Faith & Family. Ovation / Aspire aliases match doc 02 / PROFILE_MAP."
   }
 
   dimension: platform {
