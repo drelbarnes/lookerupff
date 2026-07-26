@@ -1,9 +1,10 @@
 view: agorapulse_post_performance {
-  label: "Social Post Snapshot"
+  label: "Social Post Last 30"
 
-  sql_table_name: agorapulse_webhook.social_post_snapshot ;;
+  # Segment event "Social Post Last 30" → social_post_last_30 (lean schema; replaces bloated social_post_snapshot).
+  sql_table_name: agorapulse_webhook.social_post_last_30 ;;
 
-  # Warehouse column is publishing_date on social_post_snapshot.
+  # Warehouse column is publishing_date on social_post_last_30.
   dimension_group: publishing {
     label: "Publish date"
     type: time
@@ -55,7 +56,7 @@ view: agorapulse_post_performance {
     label: "Event"
     type: string
     sql: ${TABLE}.event ;;
-    description: "Segment event name (e.g. Social Post Snapshot)."
+    description: "Segment event name (e.g. Social Post Last 30)."
   }
 
   measure: total_posts {

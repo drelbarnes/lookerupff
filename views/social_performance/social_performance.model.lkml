@@ -21,7 +21,7 @@ explore: social_daily_snapshot {
 }
 
 explore: agorapulse_post_performance {
-  label: "Social Post Snapshot"
+  label: "Social Post Last 30"
 }
 
 explore: marketing_attribution_test {
