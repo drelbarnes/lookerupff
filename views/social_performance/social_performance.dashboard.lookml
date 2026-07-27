@@ -38,7 +38,7 @@
       explore: marketing_attribution_test
       field: marketing_attribution_test.campaign_name
 
-       # Use brand_canonical (not raw brand) so UPFF + UP Faith & Family roll up to one filter value.
+       # Use brand_canonical (not raw brand) so UPFF + UP Faith & Family roll up to one filter value ("UP Faith & Family").
     - name: brand
       title: "Brand"
       type: field_filter
@@ -287,20 +287,19 @@
       dimensions:
         - marketing_attribution_test.campaign_name
         - marketing_attribution_test.campaign_content
-        - marketing_attribution_test.marketing_platform
-        - marketing_attribution_test.campaign_medium
       measures:
+        - marketing_attribution_test.clicks
         - marketing_attribution_test.free_trials_started
         - marketing_attribution_test.free_trials_converted
         - marketing_attribution_test.reacquisitions
       filters:
-        marketing_attribution_test.marketing_platform: "Organic Social"
+        marketing_attribution_test.campaign_medium: "organic_social"
         marketing_attribution_test.surface: "web"
       sorts:
         - marketing_attribution_test.free_trials_started desc
       limit: 200
       note:
-        text: "Primary-attributed conversion rows in the marketing attribution PDT, Organic Social + web. Measures match KPI definitions: Free trials started (count), Free trials converted (distinct users activated), Reacquisitions (count). Date filter → report_date; attribution model and window from dashboard."
+        text: "Primary-attributed rows in the marketing attribution PDT, campaign_medium = organic_social + web. Clicks = attributed page visits (site landings). Measures match KPI definitions: Free trials started (count), Free trials converted (distinct users activated), Reacquisitions (count). Date filter → report_date; attribution model and window from dashboard."
         state: collapsed
         display: hover
       listen:
@@ -326,13 +325,13 @@
         - agorapulse_post_performance.post_url
       measures:
         - agorapulse_post_performance.post_impressions
-        - agorapulse_post_performance.post_engagements
         - agorapulse_post_performance.post_video_views
+        - agorapulse_post_performance.post_engagements
       sorts:
         - agorapulse_post_performance.post_impressions desc
       limit: 20
       note:
-        text: "Rows grouped by post_id; ranked by SUM(impressions_count) in the selected publish-date range and brand/platform filters. Engagements and video views are summed for the same rows (context). Multiple Segment snapshots per post add into the sums—see doc 07 Social Post Snapshot if you need latest-row-only logic."
+        text: "Rows grouped by post_id; ranked by platform-aware post impressions (FB/TT: views_count; IG: impressions_count; YT: video_views_count). Video views are also platform-aware (FB/YT: video_views_count; IG: organic+paid impressions_count; TT: views_count). Engagements summed for the same rows. Multiple Segment snapshots per post add into the sums—see doc 07 Social Post Snapshot if you need latest-row-only logic."
         state: collapsed
         display: hover
       listen:
@@ -341,40 +340,50 @@
         platform: agorapulse_post_performance.platform
 
     - name: impressions_over_time
-      title: "Impressions over time by platform"
+      title: "Impressions over time (organic vs paid)"
       model: social_performance
       explore: social_daily_snapshot
-      type: looker_area
+      type: looker_line
       row: 32
       col: 0
       dimensions: [social_daily_snapshot.snapshot_date_date]
-      pivots: [social_daily_snapshot.platform]
-      measures: [social_daily_snapshot.total_impressions]
+      measures:
+        - social_daily_snapshot.organic_impressions
+        - social_daily_snapshot.paid_impressions
       sorts: [social_daily_snapshot.snapshot_date_date asc]
       x_axis_scale: auto
       width: 24
       height: 10
       stacking: ""
+      note:
+        text: "Two series from audience profile-day grain. FB/IG: organic_views_count and paid_views_count (sum to viewsCount / total impressions). TikTok/YouTube: organic = total impressions, paid = 0. Platform filter still scopes which networks are included."
+        state: collapsed
+        display: hover
       listen:
         agorapulse_snapshot_date: social_daily_snapshot.snapshot_date_date
         brand: social_daily_snapshot.brand_canonical
         platform: social_daily_snapshot.platform
 
     - name: video_views_over_time
-      title: "Video views over time by platform"
+      title: "Video views over time (organic vs paid)"
       model: social_performance
       explore: social_daily_snapshot
-      type: looker_area
+      type: looker_line
       row: 42
       col: 0
       dimensions: [social_daily_snapshot.snapshot_date_date]
-      pivots: [social_daily_snapshot.platform]
-      measures: [social_daily_snapshot.total_video_views]
+      measures:
+        - social_daily_snapshot.organic_video_views
+        - social_daily_snapshot.paid_video_views
       sorts: [social_daily_snapshot.snapshot_date_date asc]
       x_axis_scale: auto
       width: 24
       height: 10
       stacking: ""
+      note:
+        text: "Two series from audience profile-day grain (doc 07 §11). FB: organic/paid video views; IG: organic/paid views; TikTok/YouTube: organic = total, paid = 0. Platform filter still scopes which networks are included."
+        state: collapsed
+        display: hover
       listen:
         agorapulse_snapshot_date: social_daily_snapshot.snapshot_date_date
         brand: social_daily_snapshot.brand_canonical

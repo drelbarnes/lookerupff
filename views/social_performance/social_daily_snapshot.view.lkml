@@ -46,10 +46,10 @@ view: social_daily_snapshot {
       CASE
         WHEN LOWER(TRIM(${TABLE}.brand)) IN ('ovation', 'ovation tv', 'ovationtv') THEN 'Ovation TV'
         WHEN LOWER(TRIM(${TABLE}.brand)) IN ('aspire', 'aspire tv', 'aspiretv') THEN 'Aspire TV'
-        WHEN LOWER(TRIM(${TABLE}.brand)) IN ('upff', 'up faith & family', 'up faith and family') THEN 'UPFF'
+        WHEN LOWER(TRIM(${TABLE}.brand)) IN ('upff', 'up faith & family', 'up faith and family') THEN 'UP Faith & Family'
         ELSE ${TABLE}.brand
       END ;;
-    description: "Normalized brand for rollup. UPFF and UP Faith & Family warehouse spellings both map to UPFF. Ovation / Aspire aliases match doc 02 / PROFILE_MAP."
+    description: "Normalized brand for rollup. UPFF and UP Faith & Family warehouse spellings both map to UP Faith & Family. Ovation / Aspire aliases match doc 02 / PROFILE_MAP."
   }
 
   dimension: platform {
@@ -100,6 +100,34 @@ view: social_daily_snapshot {
     sql: ${impressions} ;;
     value_format_name: decimal_0
     description: "Sum of impressions at profile-day grain (Agorapulse viewsCount). See docs/06 and docs/07."
+  }
+
+  measure: organic_impressions {
+    label: "Organic impressions"
+    type: sum
+    sql:
+      CASE
+        WHEN ${platform} = 'facebook'  THEN COALESCE(${TABLE}.organic_views_count, 0)
+        WHEN ${platform} = 'instagram' THEN COALESCE(${TABLE}.organic_views_count, 0)
+        WHEN ${platform} = 'tiktok'    THEN COALESCE(${impressions}, 0)
+        WHEN ${platform} = 'youtube'   THEN COALESCE(${impressions}, 0)
+        ELSE 0
+      END ;;
+    value_format_name: decimal_0
+    description: "Platform-aware audience grain. FB/IG: organic_views_count; TT/YT: impressions (paid=0). Organic + paid = total_impressions where Agorapulse splits them."
+  }
+
+  measure: paid_impressions {
+    label: "Paid impressions"
+    type: sum
+    sql:
+      CASE
+        WHEN ${platform} = 'facebook'  THEN COALESCE(${TABLE}.paid_views_count, 0)
+        WHEN ${platform} = 'instagram' THEN COALESCE(${TABLE}.paid_views_count, 0)
+        ELSE 0
+      END ;;
+    value_format_name: decimal_0
+    description: "Platform-aware audience grain. FB/IG: paid_views_count; TT/YT: 0. Organic + paid = total_impressions where Agorapulse splits them."
   }
 
   measure: organic_video_views {

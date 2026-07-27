@@ -27,7 +27,7 @@ view: agorapulse_post_performance {
       CASE
         WHEN LOWER(TRIM(${TABLE}.brand)) IN ('ovation', 'ovation tv', 'ovationtv') THEN 'Ovation TV'
         WHEN LOWER(TRIM(${TABLE}.brand)) IN ('aspire', 'aspire tv', 'aspiretv') THEN 'Aspire TV'
-        WHEN LOWER(TRIM(${TABLE}.brand)) IN ('upff', 'up faith & family', 'up faith and family') THEN 'UPFF'
+        WHEN LOWER(TRIM(${TABLE}.brand)) IN ('upff', 'up faith & family', 'up faith and family') THEN 'UP Faith & Family'
         ELSE ${TABLE}.brand
       END ;;
     description: "Same normalization as social_daily_snapshot.brand_canonical (including UPFF + UP Faith & Family as one) so dashboard Brand filter matches both explores."
@@ -69,9 +69,16 @@ view: agorapulse_post_performance {
   measure: post_impressions {
     label: "Post impressions (sum)"
     type: sum
-    sql: COALESCE(${TABLE}.impressions_count, 0) ;;
+    sql:
+      CASE
+        WHEN ${platform} = 'facebook'  THEN COALESCE(${TABLE}.views_count, 0)
+        WHEN ${platform} = 'instagram' THEN COALESCE(${TABLE}.impressions_count, 0)
+        WHEN ${platform} = 'tiktok'    THEN COALESCE(${TABLE}.views_count, 0)
+        WHEN ${platform} = 'youtube'   THEN COALESCE(${TABLE}.video_views_count, 0)
+        ELSE COALESCE(${TABLE}.impressions_count, ${TABLE}.views_count, 0)
+      END ;;
     value_format_name: decimal_0
-    description: "Sum of impressions_count for rows in the query; group by post_id for top-post ranking (see doc 07 §8)."
+    description: "Platform-aware post volume for top-post ranking. FB/TT: views_count (Agorapulse viewsCount); IG: impressions_count; YT: video_views_count. Meta deprecated FB impressions in favor of views."
   }
 
   measure: post_engagements {
@@ -85,8 +92,15 @@ view: agorapulse_post_performance {
   measure: post_video_views {
     label: "Post video views (sum)"
     type: sum
-    sql: COALESCE(${TABLE}.video_views_count, 0) ;;
+    sql:
+      CASE
+        WHEN ${platform} = 'facebook'  THEN COALESCE(${TABLE}.video_views_count, 0)
+        WHEN ${platform} = 'instagram' THEN COALESCE(${TABLE}.organic_impressions_count, 0) + COALESCE(${TABLE}.paid_impressions_count, 0)
+        WHEN ${platform} = 'tiktok'    THEN COALESCE(${TABLE}.views_count, 0)
+        WHEN ${platform} = 'youtube'   THEN COALESCE(${TABLE}.video_views_count, 0)
+        ELSE COALESCE(${TABLE}.video_views_count, 0)
+      END ;;
     value_format_name: decimal_0
-    description: "Sum of video_views_count for rows in the query; context alongside impressions."
+    description: "Platform-aware post video views. FB/YT: video_views_count; IG: organic_impressions_count + paid_impressions_count (Agorapulse content report; see IG video validation); TT: views_count."
   }
 }
