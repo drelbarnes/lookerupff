@@ -4,10 +4,10 @@ view: braintree {
   SELECT report_date
   FROM ${config.SQL_TABLE_NAME}),
 
- paypal as (
+ paypal0 as (
 SELECT distinct
 NULL as email
-, date(Disbursement_Date) as charge_created
+, date(Disbursement_Date) +1 as charge_created
 , 'charge' as reporting_category
 , Original_Transaction_ID as source_id
 , Transaction_ID as transaction_id
@@ -18,13 +18,11 @@ ELSE 0
 , 'Braintree' as payment_gateway
 ,Transaction_Type as payment_description
 FROM  `up-faith-and-family-216419.customers.braintree_payout_recon_june_2026`
-WHERE date(Disbursement_Date) between (SELECT report_date FROM config) - INTERVAL 30 DAY
-  AND (SELECT report_date FROM config)
 
 UNION ALL
 SELECT distinct
 NULL as email
-, date(Disbursement_Date) as charge_created
+, date(Disbursement_Date) +1 as charge_created
 , 'charge' as reporting_category
 , cast(NULL as string) as source_id
 , Transaction_ID as transaction_id
@@ -33,9 +31,42 @@ NULL as email
 , 'Braintree' as payment_gateway
 ,'charge_back' as payment_description
 FROM `up-faith-and-family-216419.customers.braintree_dispute_report_june_2026_v2`
-WHERE date(Disbursement_Date) between (SELECT report_date FROM config) - INTERVAL 30 DAY
-  AND (SELECT report_date FROM config)
+
+UNION ALL
+SELECT distinct
+NULL as email
+, date(Disbursement_Date) +3 as charge_created
+, 'charge' as reporting_category
+, Original_Transaction_ID as source_id
+, Transaction_ID as transaction_id
+, Settlement_Amount as gross
+,CASE WHEN Transaction_Type = 'sale' THEN 0.05
+ELSE 0
+ END as fee
+, 'Braintree' as payment_gateway
+,Transaction_Type as payment_description
+FROM  `up-faith-and-family-216419.customers.braintree_payout_recon_4_29_to_5_31`
+where date(Disbursement_Date) < '2026-05-30'
+UNION ALL
+SELECT distinct
+NULL as email
+, date(Disbursement_Date) +3 as charge_created
+, 'charge' as reporting_category
+, cast(NULL as string) as source_id
+, Transaction_ID as transaction_id
+, Amount_Disputed as gross
+,15.00 as fee
+, 'Braintree' as payment_gateway
+,'charge_back' as payment_description
+FROM `up-faith-and-family-216419.customers.braintree_dispute_report_4_29_5_31`
+where date(Disbursement_Date) < '2026-05-30'
+
   ),
+  paypal as (
+  select * from paypal0
+  WHERE charge_created between '2026-06-01' and '2026-06-30'
+  ),
+
 
 count_dict as (
   select count(*) as count,
