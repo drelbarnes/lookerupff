@@ -94,5 +94,17 @@ WHERE report_date = month_max_date
     sql:   ${TABLE}.user_count;;
   }
 
+  measure: paused_count {
+    type: sum
+    sql: ${user_count} ;;
+    filters: [status: "paused"]
+  }
+
+  measure: dunning_count {
+    type: sum
+    sql: ${user_count} ;;
+    filters: [status: "dunning"]
+  }
+
 
 }

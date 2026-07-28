@@ -19,23 +19,25 @@ view: free_trials {
 
 
     chargebee_bundle as (
-      select count(*) as count
-      ,content_customer_id as user_id
+      select user_id
       ,DATE(DATEADD(HOUR, -4, received_at)) AS created_at
-      from chargebee_webhook_events.subscription_created
-      group by 2,3
+      from JavaScript_upentertainment_checkout.order_updated
+      where brand like '%up%'
       ),
 
-    chargebee_joined as (
+   chargebee_joined AS (
     SELECT
-      a.user_id
-      ,a.created_at
-      ,b.count
+        a.user_id,
+        a.created_at,
+        CASE
+            WHEN b.user_id IS NOT NULL THEN 'Yes'
+            ELSE 'No'
+        END AS bundle_flag
     FROM chargebee a
     LEFT JOIN chargebee_bundle b
-    ON a.user_id = b.user_id and a.created_at = b.created_at
-
-    ),
+        ON a.user_id = b.user_id
+       AND a.created_at = b.created_at
+),
 
      users as (
       SELECT
@@ -51,7 +53,7 @@ view: free_trials {
         created_at
         ,user_id
         ,CASE
-          WHEN count = 1 THEN 'web_nobundle'
+          WHEN bundle_flag = 'No' THEN 'web_nobundle'
           ELSE 'web_bundle'
         END AS platform
       FROM chargebee_joined
