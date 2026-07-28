@@ -174,7 +174,7 @@
         marketing_attribution_test.campaign_medium: "organic_social"
         marketing_attribution_test.surface: "web"
       note:
-        text: "Marketing attribution PDT: page_visit rows, campaign_medium = organic_social, surface = web. Date filter → report_date (not Agorapulse snapshot)."
+        text: "Marketing attribution PDT: page_visit rows, campaign_medium = organic_social, surface = web. Date filter → report_date (not Agorapulse snapshot). Platform filter → campaign_source mapped to facebook/instagram/tiktok/youtube; empty = all platforms."
         state: collapsed
         display: hover
       listen:
@@ -182,6 +182,7 @@
         marketing_attribution_attribution_model: marketing_attribution_test.attribution_model
         marketing_attribution_attribution_window: marketing_attribution_test.attribution_window_days
         marketing_attribution_campaign_name: marketing_attribution_test.campaign_name
+        platform: marketing_attribution_test.platform
 
     - name: organic_social_free_trials_started_kpi
       title: "Free trials started (organic social, web)"
@@ -197,7 +198,7 @@
         marketing_attribution_test.campaign_medium: "organic_social"
         marketing_attribution_test.surface: "web"
       note:
-        text: "Web free trials with primary attribution (default last-touch) within attribution window; filtered to campaign_medium = organic_social + web."
+        text: "Web free trials with primary attribution (default last-touch) within attribution window; filtered to campaign_medium = organic_social + web. Platform filter → campaign_source; empty = all platforms."
         state: collapsed
         display: hover
       listen:
@@ -205,6 +206,7 @@
         marketing_attribution_attribution_model: marketing_attribution_test.attribution_model
         marketing_attribution_attribution_window: marketing_attribution_test.attribution_window_days
         marketing_attribution_campaign_name: marketing_attribution_test.campaign_name
+        platform: marketing_attribution_test.platform
 
     - name: organic_social_trial_to_paid_kpi
       title: "Trial to paid conversion rate (organic social, web)"
@@ -220,7 +222,7 @@
         marketing_attribution_test.campaign_medium: "organic_social"
         marketing_attribution_test.surface: "web"
       note:
-        text: "free_trials_converted ÷ web_trials_started for filtered rows; campaign_medium = organic_social + web. Explore default attribution model (parameters) applies."
+        text: "free_trials_converted ÷ web_trials_started for filtered rows; campaign_medium = organic_social + web. Platform filter → campaign_source; empty = all platforms."
         state: collapsed
         display: hover
       listen:
@@ -228,6 +230,7 @@
         marketing_attribution_attribution_model: marketing_attribution_test.attribution_model
         marketing_attribution_attribution_window: marketing_attribution_test.attribution_window_days
         marketing_attribution_campaign_name: marketing_attribution_test.campaign_name
+        platform: marketing_attribution_test.platform
 
     - name: organic_social_free_trials_converted_kpi
       title: "Free trials converted (organic social, web)"
@@ -243,7 +246,7 @@
         marketing_attribution_test.campaign_medium: "organic_social"
         marketing_attribution_test.surface: "web"
       note:
-        text: "Distinct users activated from free trial under same attribution filters; campaign_medium = organic_social + web only."
+        text: "Distinct users activated from free trial under same attribution filters; campaign_medium = organic_social + web. Platform filter → campaign_source; empty = all platforms."
         state: collapsed
         display: hover
       listen:
@@ -251,6 +254,7 @@
         marketing_attribution_attribution_model: marketing_attribution_test.attribution_model
         marketing_attribution_attribution_window: marketing_attribution_test.attribution_window_days
         marketing_attribution_campaign_name: marketing_attribution_test.campaign_name
+        platform: marketing_attribution_test.platform
 
     - name: organic_social_reacquisitions_kpi
       title: "Reacquisitions (organic social, web)"
@@ -266,7 +270,7 @@
         marketing_attribution_test.campaign_medium: "organic_social"
         marketing_attribution_test.surface: "web"
       note:
-        text: "Reacquisition conversion rows with primary attribution; campaign_medium = organic_social + web only."
+        text: "Reacquisition conversion rows with primary attribution; campaign_medium = organic_social + web. Platform filter → campaign_source; empty = all platforms."
         state: collapsed
         display: hover
       listen:
@@ -274,6 +278,7 @@
         marketing_attribution_attribution_model: marketing_attribution_test.attribution_model
         marketing_attribution_attribution_window: marketing_attribution_test.attribution_window_days
         marketing_attribution_campaign_name: marketing_attribution_test.campaign_name
+        platform: marketing_attribution_test.platform
 
     - name: campaign_subscription_events_organic_social
       title: "Campaign Subscription Events (Organic Social)"
@@ -299,7 +304,7 @@
         - marketing_attribution_test.free_trials_started desc
       limit: 200
       note:
-        text: "Primary-attributed rows in the marketing attribution PDT, campaign_medium = organic_social + web. Clicks = attributed page visits (site landings). Measures match KPI definitions: Free trials started (count), Free trials converted (distinct users activated), Reacquisitions (count). Date filter → report_date; attribution model and window from dashboard."
+        text: "Primary-attributed rows in the marketing attribution PDT, campaign_medium = organic_social + web. Clicks = attributed page visits (site landings). Measures match KPI definitions. Date filter → report_date; Platform filter → campaign_source (empty = all); attribution model and window from dashboard."
         state: collapsed
         display: hover
       listen:
@@ -307,6 +312,7 @@
         marketing_attribution_attribution_model: marketing_attribution_test.attribution_model
         marketing_attribution_attribution_window: marketing_attribution_test.attribution_window_days
         marketing_attribution_campaign_name: marketing_attribution_test.campaign_name
+        platform: marketing_attribution_test.platform
 
     - name: top_posts_by_impressions
       title: "Top 20 posts by impressions (publish window)"
