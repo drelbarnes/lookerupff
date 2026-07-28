@@ -288,7 +288,7 @@
       row: 8
       col: 0
       width: 24
-      height: 14
+      height: 8
       dimensions:
         - marketing_attribution_test.campaign_name
         - marketing_attribution_test.campaign_content
@@ -320,7 +320,7 @@
       model: social_performance
       explore: agorapulse_post_performance
       type: looker_grid
-      row: 22
+      row: 16
       col: 0
       width: 24
       height: 10
@@ -351,7 +351,7 @@
       model: social_performance
       explore: social_daily_snapshot
       type: looker_line
-      row: 32
+      row: 26
       col: 0
       dimensions: [social_daily_snapshot.snapshot_date_date]
       measures:
@@ -376,7 +376,7 @@
       model: social_performance
       explore: social_daily_snapshot
       type: looker_line
-      row: 42
+      row: 36
       col: 0
       dimensions: [social_daily_snapshot.snapshot_date_date]
       measures:
@@ -401,7 +401,7 @@
       model: social_performance
       explore: social_daily_snapshot
       type: looker_bar
-      row: 52
+      row: 46
       col: 0
       width: 12
       height: 10
@@ -424,7 +424,7 @@
       model: social_performance
       explore: agorapulse_post_performance
       type: looker_bar
-      row: 62
+      row: 56
       col: 0
       width: 24
       height: 10
@@ -450,7 +450,7 @@
       model: social_performance
       explore: social_daily_snapshot
       type: looker_bar
-      row: 52
+      row: 46
       col: 12
       width: 12
       height: 10
