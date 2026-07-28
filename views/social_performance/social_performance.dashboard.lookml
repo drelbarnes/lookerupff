@@ -171,10 +171,10 @@
       height: 4
       measures: [marketing_attribution_test.total_visits]
       filters:
-        marketing_attribution_test.marketing_platform: "Organic Social"
+        marketing_attribution_test.campaign_medium: "organic_social"
         marketing_attribution_test.surface: "web"
       note:
-        text: "Marketing attribution PDT: page_visit rows, marketing_platform = Organic Social, surface = web. Date filter → report_date (not Agorapulse snapshot)."
+        text: "Marketing attribution PDT: page_visit rows, campaign_medium = organic_social, surface = web. Date filter → report_date (not Agorapulse snapshot)."
         state: collapsed
         display: hover
       listen:
@@ -194,10 +194,10 @@
       height: 4
       measures: [marketing_attribution_test.web_trials_started]
       filters:
-        marketing_attribution_test.marketing_platform: "Organic Social"
+        marketing_attribution_test.campaign_medium: "organic_social"
         marketing_attribution_test.surface: "web"
       note:
-        text: "Web free trials with primary attribution (default last-touch) within attribution window; filtered to Organic Social in attribution PDT."
+        text: "Web free trials with primary attribution (default last-touch) within attribution window; filtered to campaign_medium = organic_social + web."
         state: collapsed
         display: hover
       listen:
@@ -217,10 +217,10 @@
       height: 4
       measures: [marketing_attribution_test.trial_to_paid_conversion_rate]
       filters:
-        marketing_attribution_test.marketing_platform: "Organic Social"
+        marketing_attribution_test.campaign_medium: "organic_social"
         marketing_attribution_test.surface: "web"
       note:
-        text: "free_trials_converted ÷ web_trials_started for filtered rows; Explore default attribution model (parameters) applies."
+        text: "free_trials_converted ÷ web_trials_started for filtered rows; campaign_medium = organic_social + web. Explore default attribution model (parameters) applies."
         state: collapsed
         display: hover
       listen:
@@ -240,10 +240,10 @@
       height: 4
       measures: [marketing_attribution_test.free_trials_converted]
       filters:
-        marketing_attribution_test.marketing_platform: "Organic Social"
+        marketing_attribution_test.campaign_medium: "organic_social"
         marketing_attribution_test.surface: "web"
       note:
-        text: "Distinct users activated from free trial under same attribution filters; Organic Social + web only."
+        text: "Distinct users activated from free trial under same attribution filters; campaign_medium = organic_social + web only."
         state: collapsed
         display: hover
       listen:
@@ -263,10 +263,10 @@
       height: 4
       measures: [marketing_attribution_test.reacquisitions]
       filters:
-        marketing_attribution_test.marketing_platform: "Organic Social"
+        marketing_attribution_test.campaign_medium: "organic_social"
         marketing_attribution_test.surface: "web"
       note:
-        text: "Reacquisition conversion rows with primary attribution; Organic Social + web only."
+        text: "Reacquisition conversion rows with primary attribution; campaign_medium = organic_social + web only."
         state: collapsed
         display: hover
       listen:
