@@ -1,15 +1,19 @@
 view: agorapulse_post_performance {
-  label: "Social Post Snapshot"
+  label: "Social Post Last 30"
 
-  sql_table_name: agorapulse_webhook.social_post_snapshot ;;
+  # Segment event "Social Post Last 30" → social_post_last_30 (lean schema; replaces bloated social_post_snapshot).
+  sql_table_name: agorapulse_webhook.social_post_last_30 ;;
 
-  # Warehouse column is publishing_date on social_post_snapshot.
+  # Warehouse stores UTC (Agorapulse API). Convert for display/filters to match Agorapulse UI
+  # (America/New_York). convert_tz: no avoids a second Looker-side conversion.
   dimension_group: publishing {
     label: "Publish date"
     type: time
     datatype: timestamp
-    timeframes: [raw, date, week, month, quarter, year]
-    sql: ${TABLE}.publishing_date ;;
+    timeframes: [raw, time, date, week, month, quarter, year]
+    convert_tz: no
+    sql: CONVERT_TIMEZONE('UTC', 'America/New_York', ${TABLE}.publishing_date::timestamp) ;;
+    description: "Publish time in America/New_York to align with Agorapulse UI. Warehouse column remains UTC."
   }
 
   dimension: brand {
@@ -55,7 +59,7 @@ view: agorapulse_post_performance {
     label: "Event"
     type: string
     sql: ${TABLE}.event ;;
-    description: "Segment event name (e.g. Social Post Snapshot)."
+    description: "Segment event name (e.g. Social Post Last 30)."
   }
 
   measure: total_posts {

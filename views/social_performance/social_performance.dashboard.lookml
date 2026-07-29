@@ -65,7 +65,7 @@
       height: 4
       measures: [agorapulse_post_performance.total_posts]
       note:
-        text: "Count of distinct post_id from social_post_snapshot where publish date (publishing_date) falls in the date filter. Audience tiles use snapshot reporting date on social_daily_snapshot."
+        text: "Count of distinct post_id from social_post_last_30 where publish date (America/New_York, matching Agorapulse UI) falls in the date filter. Audience tiles use UTC snapshot reporting date on social_daily_snapshot."
         state: collapsed
         display: hover
       listen:
@@ -171,10 +171,10 @@
       height: 4
       measures: [marketing_attribution_test.total_visits]
       filters:
-        marketing_attribution_test.marketing_platform: "Organic Social"
+        marketing_attribution_test.campaign_medium: "organic_social"
         marketing_attribution_test.surface: "web"
       note:
-        text: "Marketing attribution PDT: page_visit rows, marketing_platform = Organic Social, surface = web. Date filter → report_date (not Agorapulse snapshot)."
+        text: "Marketing attribution PDT: page_visit rows, campaign_medium = organic_social, surface = web. Date filter → report_date (not Agorapulse snapshot). Platform filter → campaign_source mapped to facebook/instagram/tiktok/youtube; empty = all platforms."
         state: collapsed
         display: hover
       listen:
@@ -182,6 +182,7 @@
         marketing_attribution_attribution_model: marketing_attribution_test.attribution_model
         marketing_attribution_attribution_window: marketing_attribution_test.attribution_window_days
         marketing_attribution_campaign_name: marketing_attribution_test.campaign_name
+        platform: marketing_attribution_test.platform
 
     - name: organic_social_free_trials_started_kpi
       title: "Free trials started (organic social, web)"
@@ -194,10 +195,10 @@
       height: 4
       measures: [marketing_attribution_test.web_trials_started]
       filters:
-        marketing_attribution_test.marketing_platform: "Organic Social"
+        marketing_attribution_test.campaign_medium: "organic_social"
         marketing_attribution_test.surface: "web"
       note:
-        text: "Web free trials with primary attribution (default last-touch) within attribution window; filtered to Organic Social in attribution PDT."
+        text: "Web free trials with primary attribution (default last-touch) within attribution window; filtered to campaign_medium = organic_social + web. Platform filter → campaign_source; empty = all platforms."
         state: collapsed
         display: hover
       listen:
@@ -205,6 +206,7 @@
         marketing_attribution_attribution_model: marketing_attribution_test.attribution_model
         marketing_attribution_attribution_window: marketing_attribution_test.attribution_window_days
         marketing_attribution_campaign_name: marketing_attribution_test.campaign_name
+        platform: marketing_attribution_test.platform
 
     - name: organic_social_trial_to_paid_kpi
       title: "Trial to paid conversion rate (organic social, web)"
@@ -217,10 +219,10 @@
       height: 4
       measures: [marketing_attribution_test.trial_to_paid_conversion_rate]
       filters:
-        marketing_attribution_test.marketing_platform: "Organic Social"
+        marketing_attribution_test.campaign_medium: "organic_social"
         marketing_attribution_test.surface: "web"
       note:
-        text: "free_trials_converted ÷ web_trials_started for filtered rows; Explore default attribution model (parameters) applies."
+        text: "free_trials_converted ÷ web_trials_started for filtered rows; campaign_medium = organic_social + web. Platform filter → campaign_source; empty = all platforms."
         state: collapsed
         display: hover
       listen:
@@ -228,6 +230,7 @@
         marketing_attribution_attribution_model: marketing_attribution_test.attribution_model
         marketing_attribution_attribution_window: marketing_attribution_test.attribution_window_days
         marketing_attribution_campaign_name: marketing_attribution_test.campaign_name
+        platform: marketing_attribution_test.platform
 
     - name: organic_social_free_trials_converted_kpi
       title: "Free trials converted (organic social, web)"
@@ -240,10 +243,10 @@
       height: 4
       measures: [marketing_attribution_test.free_trials_converted]
       filters:
-        marketing_attribution_test.marketing_platform: "Organic Social"
+        marketing_attribution_test.campaign_medium: "organic_social"
         marketing_attribution_test.surface: "web"
       note:
-        text: "Distinct users activated from free trial under same attribution filters; Organic Social + web only."
+        text: "Distinct users activated from free trial under same attribution filters; campaign_medium = organic_social + web. Platform filter → campaign_source; empty = all platforms."
         state: collapsed
         display: hover
       listen:
@@ -251,6 +254,7 @@
         marketing_attribution_attribution_model: marketing_attribution_test.attribution_model
         marketing_attribution_attribution_window: marketing_attribution_test.attribution_window_days
         marketing_attribution_campaign_name: marketing_attribution_test.campaign_name
+        platform: marketing_attribution_test.platform
 
     - name: organic_social_reacquisitions_kpi
       title: "Reacquisitions (organic social, web)"
@@ -263,10 +267,10 @@
       height: 4
       measures: [marketing_attribution_test.reacquisitions]
       filters:
-        marketing_attribution_test.marketing_platform: "Organic Social"
+        marketing_attribution_test.campaign_medium: "organic_social"
         marketing_attribution_test.surface: "web"
       note:
-        text: "Reacquisition conversion rows with primary attribution; Organic Social + web only."
+        text: "Reacquisition conversion rows with primary attribution; campaign_medium = organic_social + web. Platform filter → campaign_source; empty = all platforms."
         state: collapsed
         display: hover
       listen:
@@ -274,6 +278,7 @@
         marketing_attribution_attribution_model: marketing_attribution_test.attribution_model
         marketing_attribution_attribution_window: marketing_attribution_test.attribution_window_days
         marketing_attribution_campaign_name: marketing_attribution_test.campaign_name
+        platform: marketing_attribution_test.platform
 
     - name: campaign_subscription_events_organic_social
       title: "Campaign Subscription Events (Organic Social)"
@@ -283,10 +288,11 @@
       row: 8
       col: 0
       width: 24
-      height: 14
+      height: 8
       dimensions:
         - marketing_attribution_test.campaign_name
         - marketing_attribution_test.campaign_content
+        - marketing_attribution_test.platform
       measures:
         - marketing_attribution_test.clicks
         - marketing_attribution_test.free_trials_started
@@ -299,7 +305,7 @@
         - marketing_attribution_test.free_trials_started desc
       limit: 200
       note:
-        text: "Primary-attributed rows in the marketing attribution PDT, campaign_medium = organic_social + web. Clicks = attributed page visits (site landings). Measures match KPI definitions: Free trials started (count), Free trials converted (distinct users activated), Reacquisitions (count). Date filter → report_date; attribution model and window from dashboard."
+        text: "Primary-attributed rows in the marketing attribution PDT, campaign_medium = organic_social + web. Platform column = campaign_source mapped to facebook/instagram/tiktok/youtube. Clicks = attributed page visits (site landings). Measures match KPI definitions. Date filter → report_date; Platform filter → campaign_source (empty = all); attribution model and window from dashboard."
         state: collapsed
         display: hover
       listen:
@@ -307,13 +313,14 @@
         marketing_attribution_attribution_model: marketing_attribution_test.attribution_model
         marketing_attribution_attribution_window: marketing_attribution_test.attribution_window_days
         marketing_attribution_campaign_name: marketing_attribution_test.campaign_name
+        platform: marketing_attribution_test.platform
 
     - name: top_posts_by_impressions
       title: "Top 20 posts by impressions (publish window)"
       model: social_performance
       explore: agorapulse_post_performance
       type: looker_grid
-      row: 22
+      row: 16
       col: 0
       width: 24
       height: 10
@@ -325,8 +332,8 @@
         - agorapulse_post_performance.post_url
       measures:
         - agorapulse_post_performance.post_impressions
-        - agorapulse_post_performance.post_video_views
         - agorapulse_post_performance.post_engagements
+        - agorapulse_post_performance.post_video_views
       sorts:
         - agorapulse_post_performance.post_impressions desc
       limit: 20
@@ -344,7 +351,7 @@
       model: social_performance
       explore: social_daily_snapshot
       type: looker_line
-      row: 32
+      row: 26
       col: 0
       dimensions: [social_daily_snapshot.snapshot_date_date]
       measures:
@@ -369,7 +376,7 @@
       model: social_performance
       explore: social_daily_snapshot
       type: looker_line
-      row: 42
+      row: 36
       col: 0
       dimensions: [social_daily_snapshot.snapshot_date_date]
       measures:
@@ -394,7 +401,7 @@
       model: social_performance
       explore: social_daily_snapshot
       type: looker_bar
-      row: 52
+      row: 46
       col: 0
       width: 12
       height: 10
@@ -417,7 +424,7 @@
       model: social_performance
       explore: agorapulse_post_performance
       type: looker_bar
-      row: 62
+      row: 56
       col: 0
       width: 24
       height: 10
@@ -430,7 +437,7 @@
       x_axis_gridlines: false
       y_axis_gridlines: false
       note:
-        text: "Distinct post_id per brand from social_post_snapshot for posts whose publishing_date falls in the date filter (same definition as the Total posts KPI). Horizontal bars compare volume across brands."
+        text: "Distinct post_id per brand from social_post_last_30 for posts whose publish date (America/New_York) falls in the date filter (same definition as the Total posts KPI). Horizontal bars compare volume across brands."
         state: collapsed
         display: hover
       listen:
@@ -443,7 +450,7 @@
       model: social_performance
       explore: social_daily_snapshot
       type: looker_bar
-      row: 52
+      row: 46
       col: 12
       width: 12
       height: 10
