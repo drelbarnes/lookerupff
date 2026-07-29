@@ -43,6 +43,16 @@ FROM (
 ) t
 WHERE report_date = month_max_date
 
+UNION ALL
+SELECT
+    'count_active'::VARCHAR AS status,
+    user_count,
+    report_date
+FROM total_sub
+WHERE DATE(report_date) = DATEADD(day, -1, CURRENT_DATE)
+
+
+
     ;;
   }
 
@@ -69,6 +79,12 @@ WHERE report_date = month_max_date
     filters: [status: "active"]
     sql: ${user_count} ;;
   }
+  measure: current_month_end_active_count {
+    type: sum
+    filters: [status: "count_active"]
+    sql: ${TABLE}.user_count;;
+  }
+
 
   measure: new_trials {
     type: sum
