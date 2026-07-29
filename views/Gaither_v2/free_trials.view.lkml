@@ -22,7 +22,7 @@ view: free_trials {
       select user_id
       ,DATE(DATEADD(HOUR, -4, received_at)) AS created_at
       from JavaScript_upentertainment_checkout.order_updated
-      where context_page_path like '%confirmation/gaithertvplus/%'
+      where context_page_path like '%confirmation/upfaith%'
       ),
 
    chargebee_joined AS (
