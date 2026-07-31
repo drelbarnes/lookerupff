@@ -38,7 +38,7 @@
       explore: marketing_attribution_test
       field: marketing_attribution_test.campaign_name
 
-       # Use brand_canonical (not raw brand) so UPFF + UP Faith & Family roll up to one filter value ("UP Faith & Family").
+       # Use brand_canonical (not raw brand) so UPFF + UP Faith & Family roll up to one filter value.
     - name: brand
       title: "Brand"
       type: field_filter
@@ -61,11 +61,11 @@
       type: single_value
       row: 0
       col: 0
-      width: 4
+      width: 6
       height: 4
       measures: [agorapulse_post_performance.total_posts]
       note:
-        text: "Count of distinct post_id from social_post_last_30 where publish date (America/New_York, matching Agorapulse UI) falls in the date filter. Audience tiles use UTC snapshot reporting date on social_daily_snapshot."
+        text: "Count of distinct post_id from social_post_snapshot where publish date (publishing_date) falls in the date filter. Audience tiles use snapshot reporting date on social_daily_snapshot."
         state: collapsed
         display: hover
       listen:
@@ -79,48 +79,10 @@
       explore: social_daily_snapshot
       type: single_value
       row: 0
-      col: 4
-      width: 4
+      col: 6
+      width: 6
       height: 4
       measures: [social_daily_snapshot.total_impressions]
-      listen:
-        agorapulse_snapshot_date: social_daily_snapshot.snapshot_date_date
-        brand: social_daily_snapshot.brand_canonical
-        platform: social_daily_snapshot.platform
-
-    - name: organic_video_views_kpi
-      title: "Organic video views"
-      model: social_performance
-      explore: social_daily_snapshot
-      type: single_value
-      row: 0
-      col: 8
-      width: 4
-      height: 4
-      measures: [social_daily_snapshot.organic_video_views]
-      note:
-        text: "Audience profile-day grain. FB: organic_video_views_count; IG: organic_views_count; TT/YT: views_count or video_views_count (no paid split). Sum of each day in the date filter."
-        state: collapsed
-        display: hover
-      listen:
-        agorapulse_snapshot_date: social_daily_snapshot.snapshot_date_date
-        brand: social_daily_snapshot.brand_canonical
-        platform: social_daily_snapshot.platform
-
-    - name: paid_video_views_kpi
-      title: "Paid video views"
-      model: social_performance
-      explore: social_daily_snapshot
-      type: single_value
-      row: 0
-      col: 12
-      width: 4
-      height: 4
-      measures: [social_daily_snapshot.paid_video_views]
-      note:
-        text: "Audience profile-day grain. FB: paid_video_views_count; IG: paid_views_count; TT/YT: always 0. Sum of each day in the date filter."
-        state: collapsed
-        display: hover
       listen:
         agorapulse_snapshot_date: social_daily_snapshot.snapshot_date_date
         brand: social_daily_snapshot.brand_canonical
@@ -132,14 +94,10 @@
       explore: social_daily_snapshot
       type: single_value
       row: 0
-      col: 16
-      width: 4
+      col: 12
+      width: 6
       height: 4
       measures: [social_daily_snapshot.total_video_views]
-      note:
-        text: "Platform-aware audience total. FB/YT: video_views_count; IG/TT: views_count. Equals organic + paid where Agorapulse splits them."
-        state: collapsed
-        display: hover
       listen:
         agorapulse_snapshot_date: social_daily_snapshot.snapshot_date_date
         brand: social_daily_snapshot.brand_canonical
@@ -151,8 +109,8 @@
       explore: social_daily_snapshot
       type: single_value
       row: 0
-      col: 20
-      width: 4
+      col: 18
+      width: 6
       height: 4
       measures: [social_daily_snapshot.avg_engagement_rate]
       listen:
@@ -171,10 +129,10 @@
       height: 4
       measures: [marketing_attribution_test.total_visits]
       filters:
-        marketing_attribution_test.campaign_medium: "organic_social"
+        marketing_attribution_test.marketing_platform: "Organic Social"
         marketing_attribution_test.surface: "web"
       note:
-        text: "Marketing attribution PDT: page_visit rows, campaign_medium = organic_social, surface = web. Date filter → report_date (not Agorapulse snapshot). Platform filter → campaign_source mapped to facebook/instagram/tiktok/youtube; empty = all platforms."
+        text: "Marketing attribution PDT: page_visit rows, marketing_platform = Organic Social, surface = web. Date filter → report_date (not Agorapulse snapshot)."
         state: collapsed
         display: hover
       listen:
@@ -182,7 +140,6 @@
         marketing_attribution_attribution_model: marketing_attribution_test.attribution_model
         marketing_attribution_attribution_window: marketing_attribution_test.attribution_window_days
         marketing_attribution_campaign_name: marketing_attribution_test.campaign_name
-        platform: marketing_attribution_test.platform
 
     - name: organic_social_free_trials_started_kpi
       title: "Free trials started (organic social, web)"
@@ -195,10 +152,10 @@
       height: 4
       measures: [marketing_attribution_test.web_trials_started]
       filters:
-        marketing_attribution_test.campaign_medium: "organic_social"
+        marketing_attribution_test.marketing_platform: "Organic Social"
         marketing_attribution_test.surface: "web"
       note:
-        text: "Web free trials with primary attribution (default last-touch) within attribution window; filtered to campaign_medium = organic_social + web. Platform filter → campaign_source; empty = all platforms."
+        text: "Web free trials with primary attribution (default last-touch) within attribution window; filtered to Organic Social in attribution PDT."
         state: collapsed
         display: hover
       listen:
@@ -206,7 +163,6 @@
         marketing_attribution_attribution_model: marketing_attribution_test.attribution_model
         marketing_attribution_attribution_window: marketing_attribution_test.attribution_window_days
         marketing_attribution_campaign_name: marketing_attribution_test.campaign_name
-        platform: marketing_attribution_test.platform
 
     - name: organic_social_trial_to_paid_kpi
       title: "Trial to paid conversion rate (organic social, web)"
@@ -219,10 +175,10 @@
       height: 4
       measures: [marketing_attribution_test.trial_to_paid_conversion_rate]
       filters:
-        marketing_attribution_test.campaign_medium: "organic_social"
+        marketing_attribution_test.marketing_platform: "Organic Social"
         marketing_attribution_test.surface: "web"
       note:
-        text: "free_trials_converted ÷ web_trials_started for filtered rows; campaign_medium = organic_social + web. Platform filter → campaign_source; empty = all platforms."
+        text: "free_trials_converted ÷ web_trials_started for filtered rows; Explore default attribution model (parameters) applies."
         state: collapsed
         display: hover
       listen:
@@ -230,7 +186,6 @@
         marketing_attribution_attribution_model: marketing_attribution_test.attribution_model
         marketing_attribution_attribution_window: marketing_attribution_test.attribution_window_days
         marketing_attribution_campaign_name: marketing_attribution_test.campaign_name
-        platform: marketing_attribution_test.platform
 
     - name: organic_social_free_trials_converted_kpi
       title: "Free trials converted (organic social, web)"
@@ -243,10 +198,10 @@
       height: 4
       measures: [marketing_attribution_test.free_trials_converted]
       filters:
-        marketing_attribution_test.campaign_medium: "organic_social"
+        marketing_attribution_test.marketing_platform: "Organic Social"
         marketing_attribution_test.surface: "web"
       note:
-        text: "Distinct users activated from free trial under same attribution filters; campaign_medium = organic_social + web. Platform filter → campaign_source; empty = all platforms."
+        text: "Distinct users activated from free trial under same attribution filters; Organic Social + web only."
         state: collapsed
         display: hover
       listen:
@@ -254,7 +209,6 @@
         marketing_attribution_attribution_model: marketing_attribution_test.attribution_model
         marketing_attribution_attribution_window: marketing_attribution_test.attribution_window_days
         marketing_attribution_campaign_name: marketing_attribution_test.campaign_name
-        platform: marketing_attribution_test.platform
 
     - name: organic_social_reacquisitions_kpi
       title: "Reacquisitions (organic social, web)"
@@ -267,10 +221,10 @@
       height: 4
       measures: [marketing_attribution_test.reacquisitions]
       filters:
-        marketing_attribution_test.campaign_medium: "organic_social"
+        marketing_attribution_test.marketing_platform: "Organic Social"
         marketing_attribution_test.surface: "web"
       note:
-        text: "Reacquisition conversion rows with primary attribution; campaign_medium = organic_social + web. Platform filter → campaign_source; empty = all platforms."
+        text: "Reacquisition conversion rows with primary attribution; Organic Social + web only."
         state: collapsed
         display: hover
       listen:
@@ -278,7 +232,6 @@
         marketing_attribution_attribution_model: marketing_attribution_test.attribution_model
         marketing_attribution_attribution_window: marketing_attribution_test.attribution_window_days
         marketing_attribution_campaign_name: marketing_attribution_test.campaign_name
-        platform: marketing_attribution_test.platform
 
     - name: campaign_subscription_events_organic_social
       title: "Campaign Subscription Events (Organic Social)"
@@ -288,24 +241,24 @@
       row: 8
       col: 0
       width: 24
-      height: 8
+      height: 14
       dimensions:
         - marketing_attribution_test.campaign_name
         - marketing_attribution_test.campaign_content
-        - marketing_attribution_test.platform
+        - marketing_attribution_test.marketing_platform
+        - marketing_attribution_test.campaign_medium
       measures:
-        - marketing_attribution_test.clicks
         - marketing_attribution_test.free_trials_started
         - marketing_attribution_test.free_trials_converted
         - marketing_attribution_test.reacquisitions
       filters:
-        marketing_attribution_test.campaign_medium: "organic_social"
+        marketing_attribution_test.marketing_platform: "Organic Social"
         marketing_attribution_test.surface: "web"
       sorts:
         - marketing_attribution_test.free_trials_started desc
       limit: 200
       note:
-        text: "Primary-attributed rows in the marketing attribution PDT, campaign_medium = organic_social + web. Platform column = campaign_source mapped to facebook/instagram/tiktok/youtube. Clicks = attributed page visits (site landings). Measures match KPI definitions. Date filter → report_date; Platform filter → campaign_source (empty = all); attribution model and window from dashboard."
+        text: "Primary-attributed conversion rows in the marketing attribution PDT, Organic Social + web. Measures match KPI definitions: Free trials started (count), Free trials converted (distinct users activated), Reacquisitions (count). Date filter → report_date; attribution model and window from dashboard."
         state: collapsed
         display: hover
       listen:
@@ -313,14 +266,13 @@
         marketing_attribution_attribution_model: marketing_attribution_test.attribution_model
         marketing_attribution_attribution_window: marketing_attribution_test.attribution_window_days
         marketing_attribution_campaign_name: marketing_attribution_test.campaign_name
-        platform: marketing_attribution_test.platform
 
     - name: top_posts_by_impressions
       title: "Top 20 posts by impressions (publish window)"
       model: social_performance
       explore: agorapulse_post_performance
       type: looker_grid
-      row: 16
+      row: 22
       col: 0
       width: 24
       height: 10
@@ -338,7 +290,7 @@
         - agorapulse_post_performance.post_impressions desc
       limit: 20
       note:
-        text: "Rows grouped by post_id; ranked by platform-aware post impressions (FB/TT: views_count; IG: impressions_count; YT: video_views_count). Video views are also platform-aware (FB/YT: video_views_count; IG: organic+paid impressions_count; TT: views_count). Engagements summed for the same rows. Multiple Segment snapshots per post add into the sums—see doc 07 Social Post Snapshot if you need latest-row-only logic."
+        text: "Latest Social Post Snapshot per post_id (deduped in LookML—doc 07 §4). Ranked by that row’s impressions_count for posts whose publishing_date falls in the selected range (brand/platform filters apply). Engagements and video views are from the same latest snapshot. Lifetime metrics match Agorapulse content performance for those posts; not period deltas."
         state: collapsed
         display: hover
       listen:
@@ -347,50 +299,40 @@
         platform: agorapulse_post_performance.platform
 
     - name: impressions_over_time
-      title: "Impressions over time (organic vs paid)"
+      title: "Impressions over time by platform"
       model: social_performance
       explore: social_daily_snapshot
-      type: looker_line
-      row: 26
+      type: looker_area
+      row: 32
       col: 0
       dimensions: [social_daily_snapshot.snapshot_date_date]
-      measures:
-        - social_daily_snapshot.organic_impressions
-        - social_daily_snapshot.paid_impressions
+      pivots: [social_daily_snapshot.platform]
+      measures: [social_daily_snapshot.total_impressions]
       sorts: [social_daily_snapshot.snapshot_date_date asc]
       x_axis_scale: auto
       width: 24
       height: 10
       stacking: ""
-      note:
-        text: "Two series from audience profile-day grain. FB/IG: organic_views_count and paid_views_count (sum to viewsCount / total impressions). TikTok/YouTube: organic = total impressions, paid = 0. Platform filter still scopes which networks are included."
-        state: collapsed
-        display: hover
       listen:
         agorapulse_snapshot_date: social_daily_snapshot.snapshot_date_date
         brand: social_daily_snapshot.brand_canonical
         platform: social_daily_snapshot.platform
 
     - name: video_views_over_time
-      title: "Video views over time (organic vs paid)"
+      title: "Video views over time by platform"
       model: social_performance
       explore: social_daily_snapshot
-      type: looker_line
-      row: 36
+      type: looker_area
+      row: 42
       col: 0
       dimensions: [social_daily_snapshot.snapshot_date_date]
-      measures:
-        - social_daily_snapshot.organic_video_views
-        - social_daily_snapshot.paid_video_views
+      pivots: [social_daily_snapshot.platform]
+      measures: [social_daily_snapshot.total_video_views]
       sorts: [social_daily_snapshot.snapshot_date_date asc]
       x_axis_scale: auto
       width: 24
       height: 10
       stacking: ""
-      note:
-        text: "Two series from audience profile-day grain (doc 07 §11). FB: organic/paid video views; IG: organic/paid views; TikTok/YouTube: organic = total, paid = 0. Platform filter still scopes which networks are included."
-        state: collapsed
-        display: hover
       listen:
         agorapulse_snapshot_date: social_daily_snapshot.snapshot_date_date
         brand: social_daily_snapshot.brand_canonical
@@ -401,7 +343,7 @@
       model: social_performance
       explore: social_daily_snapshot
       type: looker_bar
-      row: 46
+      row: 52
       col: 0
       width: 12
       height: 10
@@ -424,7 +366,7 @@
       model: social_performance
       explore: agorapulse_post_performance
       type: looker_bar
-      row: 56
+      row: 62
       col: 0
       width: 24
       height: 10
@@ -437,7 +379,7 @@
       x_axis_gridlines: false
       y_axis_gridlines: false
       note:
-        text: "Distinct post_id per brand from social_post_last_30 for posts whose publish date (America/New_York) falls in the date filter (same definition as the Total posts KPI). Horizontal bars compare volume across brands."
+        text: "Distinct post_id per brand from social_post_snapshot for posts whose publishing_date falls in the date filter (same definition as the Total posts KPI). Horizontal bars compare volume across brands."
         state: collapsed
         display: hover
       listen:
@@ -450,7 +392,7 @@
       model: social_performance
       explore: social_daily_snapshot
       type: looker_bar
-      row: 46
+      row: 52
       col: 12
       width: 12
       height: 10
