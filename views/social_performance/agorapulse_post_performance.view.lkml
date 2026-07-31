@@ -25,12 +25,14 @@ view: agorapulse_post_performance {
     WHERE s._post_row_rank = 1
   ) ;;
 
-  # Warehouse column is publishing_date on social_post_snapshot.
+  # Warehouse column is publishing_date on social_post_snapshot (UTC from Agorapulse API).
+  # convert_tz: no keeps calendar days on GMT/UTC — EST conversion shifted edge posts across days.
   dimension_group: publishing {
     label: "Publish date"
     type: time
     datatype: timestamp
-    timeframes: [raw, date, week, month, quarter, year]
+    convert_tz: no
+    timeframes: [raw, time, date, week, month, quarter, year]
     sql: ${TABLE}.publishing_date ;;
   }
 

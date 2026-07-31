@@ -140,6 +140,7 @@
         marketing_attribution_attribution_model: marketing_attribution_test.attribution_model
         marketing_attribution_attribution_window: marketing_attribution_test.attribution_window_days
         marketing_attribution_campaign_name: marketing_attribution_test.campaign_name
+        brand: marketing_attribution_test.brand_canonical
 
     - name: organic_social_free_trials_started_kpi
       title: "Free trials started (organic social, web)"
@@ -163,6 +164,7 @@
         marketing_attribution_attribution_model: marketing_attribution_test.attribution_model
         marketing_attribution_attribution_window: marketing_attribution_test.attribution_window_days
         marketing_attribution_campaign_name: marketing_attribution_test.campaign_name
+        brand: marketing_attribution_test.brand_canonical
 
     - name: organic_social_trial_to_paid_kpi
       title: "Trial to paid conversion rate (organic social, web)"
@@ -186,6 +188,7 @@
         marketing_attribution_attribution_model: marketing_attribution_test.attribution_model
         marketing_attribution_attribution_window: marketing_attribution_test.attribution_window_days
         marketing_attribution_campaign_name: marketing_attribution_test.campaign_name
+        brand: marketing_attribution_test.brand_canonical
 
     - name: organic_social_free_trials_converted_kpi
       title: "Free trials converted (organic social, web)"
@@ -209,6 +212,7 @@
         marketing_attribution_attribution_model: marketing_attribution_test.attribution_model
         marketing_attribution_attribution_window: marketing_attribution_test.attribution_window_days
         marketing_attribution_campaign_name: marketing_attribution_test.campaign_name
+        brand: marketing_attribution_test.brand_canonical
 
     - name: organic_social_reacquisitions_kpi
       title: "Reacquisitions (organic social, web)"
@@ -232,6 +236,7 @@
         marketing_attribution_attribution_model: marketing_attribution_test.attribution_model
         marketing_attribution_attribution_window: marketing_attribution_test.attribution_window_days
         marketing_attribution_campaign_name: marketing_attribution_test.campaign_name
+        brand: marketing_attribution_test.brand_canonical
 
     - name: campaign_subscription_events_organic_social
       title: "Campaign Subscription Events (Organic Social)"
@@ -243,6 +248,7 @@
       width: 24
       height: 14
       dimensions:
+        - marketing_attribution_test.brand_canonical
         - marketing_attribution_test.campaign_name
         - marketing_attribution_test.campaign_content
         - marketing_attribution_test.marketing_platform
@@ -258,7 +264,7 @@
         - marketing_attribution_test.free_trials_started desc
       limit: 200
       note:
-        text: "Primary-attributed conversion rows in the marketing attribution PDT, Organic Social + web. Measures match KPI definitions: Free trials started (count), Free trials converted (distinct users activated), Reacquisitions (count). Date filter → report_date; attribution model and window from dashboard."
+        text: "Primary-attributed conversion rows in the marketing attribution PDT, Organic Social + web. Measures match KPI definitions: Free trials started (count), Free trials converted (distinct users activated), Reacquisitions (count). Date filter → report_date; attribution model and window from dashboard. Brand filter → brand_canonical (context_campaign_brand / utm_brand). After PDT schema changes, run full Rebuild Derived Tables & Run (not incremental-only)."
         state: collapsed
         display: hover
       listen:
@@ -266,6 +272,7 @@
         marketing_attribution_attribution_model: marketing_attribution_test.attribution_model
         marketing_attribution_attribution_window: marketing_attribution_test.attribution_window_days
         marketing_attribution_campaign_name: marketing_attribution_test.campaign_name
+        brand: marketing_attribution_test.brand_canonical
 
     - name: top_posts_by_impressions
       title: "Top 20 posts by impressions (publish window)"

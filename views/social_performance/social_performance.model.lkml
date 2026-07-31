@@ -2,9 +2,10 @@
 connection: "upff"
 
 # PDT rebuild trigger for marketing_attribution_test (see views/Marketing_Attribution_Test/marketing_attribution_test.view.lkml).
+# UTC/GMT — matches Agorapulse ingest calendar days (not America/New_York).
 datagroup: social_performance_daily  {
   sql_trigger: SELECT TO_CHAR(
-                   CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE())
+                   CONVERT_TIMEZONE('UTC', 'UTC', GETDATE())
                    - INTERVAL '2 hour',
                    'YYYY-MM-DD'
                ) ;;
