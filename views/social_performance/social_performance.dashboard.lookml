@@ -19,15 +19,15 @@
       title: "Attribution Window"
       type: field_filter
       model: social_performance
-      explore: marketing_attribution_test
-      field: marketing_attribution_test.attribution_window_days
+      explore: marketing_attribution_testv2
+      field: marketing_attribution_testv2.attribution_window_days
 
     - name: marketing_attribution_attribution_model
       title: "Attribution Model"
       type: field_filter
       model: social_performance
-      explore: marketing_attribution_test
-      field: marketing_attribution_test.attribution_model
+      explore: marketing_attribution_testv2
+      field: marketing_attribution_testv2.attribution_model
 
 
 
@@ -35,8 +35,8 @@
       title: "Campaign Name"
       type: field_filter
       model: social_performance
-      explore: marketing_attribution_test
-      field: marketing_attribution_test.campaign_name
+      explore: marketing_attribution_testv2
+      field: marketing_attribution_testv2.campaign_name
 
        # Use brand_canonical (not raw brand) so UPFF + UP Faith & Family roll up to one filter value.
     - name: brand
@@ -121,158 +121,158 @@
     - name: organic_social_site_visits_kpi
       title: "Organic social site visits"
       model: social_performance
-      explore: marketing_attribution_test
+      explore: marketing_attribution_testv2
       type: single_value
       row: 4
       col: 0
       width: 5
       height: 4
-      measures: [marketing_attribution_test.total_visits]
+      measures: [marketing_attribution_testv2.total_visits]
       filters:
-        marketing_attribution_test.marketing_platform: "Organic Social"
-        marketing_attribution_test.surface: "web"
+        marketing_attribution_testv2.marketing_platform: "Organic Social"
+        marketing_attribution_testv2.surface: "web"
       note:
         text: "Marketing attribution PDT: page_visit rows, marketing_platform = Organic Social, surface = web. Date filter → report_date (not Agorapulse snapshot)."
         state: collapsed
         display: hover
       listen:
-        agorapulse_snapshot_date: marketing_attribution_test.report_date_date
-        marketing_attribution_attribution_model: marketing_attribution_test.attribution_model
-        marketing_attribution_attribution_window: marketing_attribution_test.attribution_window_days
-        marketing_attribution_campaign_name: marketing_attribution_test.campaign_name
-        brand: marketing_attribution_test.brand_canonical
+        agorapulse_snapshot_date: marketing_attribution_testv2.report_date_date
+        marketing_attribution_attribution_model: marketing_attribution_testv2.attribution_model
+        marketing_attribution_attribution_window: marketing_attribution_testv2.attribution_window_days
+        marketing_attribution_campaign_name: marketing_attribution_testv2.campaign_name
+        brand: marketing_attribution_testv2.brand_canonical
 
     - name: organic_social_free_trials_started_kpi
       title: "Free trials started (organic social, web)"
       model: social_performance
-      explore: marketing_attribution_test
+      explore: marketing_attribution_testv2
       type: single_value
       row: 4
       col: 5
       width: 5
       height: 4
-      measures: [marketing_attribution_test.web_trials_started]
+      measures: [marketing_attribution_testv2.web_trials_started]
       filters:
-        marketing_attribution_test.marketing_platform: "Organic Social"
-        marketing_attribution_test.surface: "web"
+        marketing_attribution_testv2.marketing_platform: "Organic Social"
+        marketing_attribution_testv2.surface: "web"
       note:
         text: "Web free trials with primary attribution (default last-touch) within attribution window; filtered to Organic Social in attribution PDT."
         state: collapsed
         display: hover
       listen:
-        agorapulse_snapshot_date: marketing_attribution_test.report_date_date
-        marketing_attribution_attribution_model: marketing_attribution_test.attribution_model
-        marketing_attribution_attribution_window: marketing_attribution_test.attribution_window_days
-        marketing_attribution_campaign_name: marketing_attribution_test.campaign_name
-        brand: marketing_attribution_test.brand_canonical
+        agorapulse_snapshot_date: marketing_attribution_testv2.report_date_date
+        marketing_attribution_attribution_model: marketing_attribution_testv2.attribution_model
+        marketing_attribution_attribution_window: marketing_attribution_testv2.attribution_window_days
+        marketing_attribution_campaign_name: marketing_attribution_testv2.campaign_name
+        brand: marketing_attribution_testv2.brand_canonical
 
     - name: organic_social_trial_to_paid_kpi
       title: "Trial to paid conversion rate (organic social, web)"
       model: social_performance
-      explore: marketing_attribution_test
+      explore: marketing_attribution_testv2
       type: single_value
       row: 4
       col: 10
       width: 5
       height: 4
-      measures: [marketing_attribution_test.trial_to_paid_conversion_rate]
+      measures: [marketing_attribution_testv2.trial_to_paid_conversion_rate]
       filters:
-        marketing_attribution_test.marketing_platform: "Organic Social"
-        marketing_attribution_test.surface: "web"
+        marketing_attribution_testv2.marketing_platform: "Organic Social"
+        marketing_attribution_testv2.surface: "web"
       note:
         text: "free_trials_converted ÷ web_trials_started for filtered rows; Explore default attribution model (parameters) applies."
         state: collapsed
         display: hover
       listen:
-        agorapulse_snapshot_date: marketing_attribution_test.report_date_date
-        marketing_attribution_attribution_model: marketing_attribution_test.attribution_model
-        marketing_attribution_attribution_window: marketing_attribution_test.attribution_window_days
-        marketing_attribution_campaign_name: marketing_attribution_test.campaign_name
-        brand: marketing_attribution_test.brand_canonical
+        agorapulse_snapshot_date: marketing_attribution_testv2.report_date_date
+        marketing_attribution_attribution_model: marketing_attribution_testv2.attribution_model
+        marketing_attribution_attribution_window: marketing_attribution_testv2.attribution_window_days
+        marketing_attribution_campaign_name: marketing_attribution_testv2.campaign_name
+        brand: marketing_attribution_testv2.brand_canonical
 
     - name: organic_social_free_trials_converted_kpi
       title: "Free trials converted (organic social, web)"
       model: social_performance
-      explore: marketing_attribution_test
+      explore: marketing_attribution_testv2
       type: single_value
       row: 4
       col: 15
       width: 5
       height: 4
-      measures: [marketing_attribution_test.free_trials_converted]
+      measures: [marketing_attribution_testv2.free_trials_converted]
       filters:
-        marketing_attribution_test.marketing_platform: "Organic Social"
-        marketing_attribution_test.surface: "web"
+        marketing_attribution_testv2.marketing_platform: "Organic Social"
+        marketing_attribution_testv2.surface: "web"
       note:
         text: "Distinct users activated from free trial under same attribution filters; Organic Social + web only."
         state: collapsed
         display: hover
       listen:
-        agorapulse_snapshot_date: marketing_attribution_test.report_date_date
-        marketing_attribution_attribution_model: marketing_attribution_test.attribution_model
-        marketing_attribution_attribution_window: marketing_attribution_test.attribution_window_days
-        marketing_attribution_campaign_name: marketing_attribution_test.campaign_name
-        brand: marketing_attribution_test.brand_canonical
+        agorapulse_snapshot_date: marketing_attribution_testv2.report_date_date
+        marketing_attribution_attribution_model: marketing_attribution_testv2.attribution_model
+        marketing_attribution_attribution_window: marketing_attribution_testv2.attribution_window_days
+        marketing_attribution_campaign_name: marketing_attribution_testv2.campaign_name
+        brand: marketing_attribution_testv2.brand_canonical
 
     - name: organic_social_reacquisitions_kpi
       title: "Reacquisitions (organic social, web)"
       model: social_performance
-      explore: marketing_attribution_test
+      explore: marketing_attribution_testv2
       type: single_value
       row: 4
       col: 20
       width: 4
       height: 4
-      measures: [marketing_attribution_test.reacquisitions]
+      measures: [marketing_attribution_testv2.reacquisitions]
       filters:
-        marketing_attribution_test.marketing_platform: "Organic Social"
-        marketing_attribution_test.surface: "web"
+        marketing_attribution_testv2.marketing_platform: "Organic Social"
+        marketing_attribution_testv2.surface: "web"
       note:
         text: "Reacquisition conversion rows with primary attribution; Organic Social + web only."
         state: collapsed
         display: hover
       listen:
-        agorapulse_snapshot_date: marketing_attribution_test.report_date_date
-        marketing_attribution_attribution_model: marketing_attribution_test.attribution_model
-        marketing_attribution_attribution_window: marketing_attribution_test.attribution_window_days
-        marketing_attribution_campaign_name: marketing_attribution_test.campaign_name
-        brand: marketing_attribution_test.brand_canonical
+        agorapulse_snapshot_date: marketing_attribution_testv2.report_date_date
+        marketing_attribution_attribution_model: marketing_attribution_testv2.attribution_model
+        marketing_attribution_attribution_window: marketing_attribution_testv2.attribution_window_days
+        marketing_attribution_campaign_name: marketing_attribution_testv2.campaign_name
+        brand: marketing_attribution_testv2.brand_canonical
 
     - name: campaign_subscription_events_organic_social
       title: "Campaign Subscription Events (Organic Social)"
       model: social_performance
-      explore: marketing_attribution_test
+      explore: marketing_attribution_testv2
       type: looker_grid
       row: 8
       col: 0
       width: 24
       height: 14
       dimensions:
-        - marketing_attribution_test.brand_canonical
-        - marketing_attribution_test.campaign_name
-        - marketing_attribution_test.campaign_content
-        - marketing_attribution_test.marketing_platform
-        - marketing_attribution_test.campaign_medium
+        - marketing_attribution_testv2.brand_canonical
+        - marketing_attribution_testv2.campaign_name
+        - marketing_attribution_testv2.campaign_content
+        - marketing_attribution_testv2.marketing_platform
+        - marketing_attribution_testv2.campaign_medium
       measures:
-        - marketing_attribution_test.free_trials_started
-        - marketing_attribution_test.free_trials_converted
-        - marketing_attribution_test.reacquisitions
+        - marketing_attribution_testv2.free_trials_started
+        - marketing_attribution_testv2.free_trials_converted
+        - marketing_attribution_testv2.reacquisitions
       filters:
-        marketing_attribution_test.marketing_platform: "Organic Social"
-        marketing_attribution_test.surface: "web"
+        marketing_attribution_testv2.marketing_platform: "Organic Social"
+        marketing_attribution_testv2.surface: "web"
       sorts:
-        - marketing_attribution_test.free_trials_started desc
+        - marketing_attribution_testv2.free_trials_started desc
       limit: 200
       note:
         text: "Primary-attributed conversion rows in the marketing attribution PDT, Organic Social + web. Measures match KPI definitions: Free trials started (count), Free trials converted (distinct users activated), Reacquisitions (count). Date filter → report_date; attribution model and window from dashboard. Brand filter → brand_canonical (context_campaign_brand / utm_brand). After PDT schema changes, run full Rebuild Derived Tables & Run (not incremental-only)."
         state: collapsed
         display: hover
       listen:
-        agorapulse_snapshot_date: marketing_attribution_test.report_date_date
-        marketing_attribution_attribution_model: marketing_attribution_test.attribution_model
-        marketing_attribution_attribution_window: marketing_attribution_test.attribution_window_days
-        marketing_attribution_campaign_name: marketing_attribution_test.campaign_name
-        brand: marketing_attribution_test.brand_canonical
+        agorapulse_snapshot_date: marketing_attribution_testv2.report_date_date
+        marketing_attribution_attribution_model: marketing_attribution_testv2.attribution_model
+        marketing_attribution_attribution_window: marketing_attribution_testv2.attribution_window_days
+        marketing_attribution_campaign_name: marketing_attribution_testv2.campaign_name
+        brand: marketing_attribution_testv2.brand_canonical
 
     - name: top_posts_by_impressions
       title: "Top 20 posts by impressions (publish window)"

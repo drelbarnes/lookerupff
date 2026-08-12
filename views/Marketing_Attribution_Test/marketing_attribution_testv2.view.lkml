@@ -1,5 +1,8 @@
 ################################################################################
-# View: marketing_attribution_test
+# View: marketing_attribution_testv2
+#
+# Social Performance dashboard copy of marketing_attribution_test.
+# Keep marketing_attribution_test.view.lkml stable for the other attribution dashboard.
 #
 # === INCREMENTAL PDT ===
 # This view is built as an incremental PDT. On each run, Looker appends new
@@ -17,13 +20,16 @@
 #   - If late-arriving data extends past 7 days on a particular event
 #   - If you change a derived column (credit_weight formula, quality_score weights)
 #   - If you change a CTE structure
+#   - If you add or rename PDT columns (e.g. campaign_brand) — incremental runs leave
+#     older partitions without the new column; use full "Rebuild Derived Tables & Run"
 #   Use Looker's "Rebuild Derived Tables & Run" or persist_with: rebuilds
 #
 # Trade-offs vs. the prior full-rebuild PDT:
 #   + Builds are much faster (minutes vs hours on a 180-day window)
 #   + Lower warehouse cost
 #   - Data older than 7 days will NOT reflect new touches/attribution
-#   - One-time rebuild needed when scoring weights or attribution logic changes
+#   - One-time rebuild needed when scoring weights, attribution logic, or PDT schema changes
+#     (including new columns such as campaign_brand from context_campaign_brand)
 #
 # === ROW TYPES (event_type) ===
 #   1. 'page_visit'    — every marketing-site page view (web)
@@ -33,7 +39,7 @@
 #   5. 'app_reinstall' — app reinstalls from Branch.io (php.branch_reinstall)
 #################################################################################
 
-view: marketing_attribution_test {
+view: marketing_attribution_testv2 {
   derived_table: {
 
     # ============================================================
@@ -41,7 +47,7 @@ view: marketing_attribution_test {
     # ============================================================
     increment_key: "report_date"
     increment_offset: 7
-    datagroup_trigger: marketing_attribution_daily
+    datagroup_trigger: marketing_attribution_daily_v2
     distribution_style: even
     #sortkeys: ["report_date", "event_type"]
     indexes: ["report_date", "event_type", "campaign_source", "user_id"]
@@ -223,6 +229,7 @@ view: marketing_attribution_test {
       ,context_campaign_id        AS campaign_id
       ,context_campaign_medium    AS campaign_medium
       ,context_campaign_content   AS campaign_content
+      ,context_campaign_brand     AS campaign_brand
       ,CAST(NULL AS VARCHAR(255)) AS order_id
       ,CAST(NULL AS VARCHAR(255)) AS bundle_plan
       ,CAST(NULL AS VARCHAR(20))  AS trial_type
@@ -241,7 +248,7 @@ view: marketing_attribution_test {
       ,'free_trial', order_id
       ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255))
       ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255))
-      ,CAST(NULL AS VARCHAR(255))
+      ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255))
       ,order_id, CAST(NULL AS VARCHAR(255)), CAST('standard' AS VARCHAR(20))
       FROM javaScript_upentertainment_checkout.order_completed
       WHERE received_at >= (SELECT start_date FROM params)
@@ -260,7 +267,7 @@ view: marketing_attribution_test {
       ,'free_trial', order_id
       ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255))
       ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255))
-      ,CAST(NULL AS VARCHAR(255))
+      ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255))
       ,order_id, bundle_plan, CAST('bundle' AS VARCHAR(20))
       FROM javaScript_upentertainment_checkout.order_updated
       WHERE received_at >= (SELECT start_date FROM params)
@@ -281,7 +288,7 @@ view: marketing_attribution_test {
       ,'activation', id
       ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255))
       ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255))
-      ,CAST(NULL AS VARCHAR(255))
+      ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255))
       ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(20))
       FROM chargebee_webhook_events.subscription_activated
       WHERE DATE(received_at) BETWEEN (SELECT start_date FROM params)
@@ -299,7 +306,7 @@ view: marketing_attribution_test {
       ,'reacquisition', id
       ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255))
       ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255))
-      ,CAST(NULL AS VARCHAR(255))
+      ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255))
       ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(20))
       FROM javascript_upentertainment_checkout.order_resubscribed
       WHERE received_at >= (SELECT start_date FROM params)
@@ -320,7 +327,7 @@ view: marketing_attribution_test {
       ,'not_retained', event_id
       ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255))
       ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255))
-      ,CAST(NULL AS VARCHAR(255))
+      ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255))
       ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(20))
       FROM (
       SELECT
@@ -355,6 +362,7 @@ view: marketing_attribution_test {
       ,campaign_id
       ,COALESCE(campaign_medium,  'organic')  AS campaign_medium
       ,campaign_content
+      ,campaign_brand
       ,event_id           AS touch_event_id
       ,user_id
       FROM lifecycle_events
@@ -460,7 +468,7 @@ view: marketing_attribution_test {
       ,c.activation_value, c.is_yearly_plan, c.plan_type
       ,mt.received_at        AS touch_received_at
       ,mt.campaign_source, mt.campaign_name, mt.campaign_id
-      ,mt.campaign_medium, mt.campaign_content
+      ,mt.campaign_medium, mt.campaign_content, mt.campaign_brand
       ,DATEDIFF(day, mt.received_at, c.conversion_event_at) AS days_before_conversion
       ,ROW_NUMBER() OVER (
       PARTITION BY c.conversion_event_type, c.order_id
@@ -494,6 +502,7 @@ view: marketing_attribution_test {
       ,CAST(NULL AS VARCHAR(255))     AS attributed_campaign_id
       ,CAST('direct' AS VARCHAR(20))  AS attributed_campaign_medium
       ,CAST(NULL AS VARCHAR(255))     AS attributed_campaign_content
+      ,CAST(NULL AS VARCHAR(255))     AS attributed_campaign_brand
       FROM conversion_events c
       LEFT JOIN attributed_touches at
       ON c.order_id = at.order_id
@@ -533,6 +542,7 @@ view: marketing_attribution_test {
       ,CAST(at.campaign_id      AS VARCHAR(255)) AS attributed_campaign_id
       ,CAST(at.campaign_medium  AS VARCHAR(255)) AS attributed_campaign_medium
       ,CAST(at.campaign_content AS VARCHAR(255)) AS attributed_campaign_content
+      ,CAST(at.campaign_brand   AS VARCHAR(255)) AS attributed_campaign_brand
       ,at.first_touch_rank, at.last_touch_rank
       ,CAST(CASE WHEN at.first_touch_rank = 1 THEN 1.0 ELSE 0.0 END
       AS NUMERIC(7,6)) AS credit_first_touch
@@ -583,6 +593,7 @@ view: marketing_attribution_test {
       ,MAX(attributed_campaign_id)         AS attributed_campaign_id
       ,attributed_campaign_medium
       ,MAX(attributed_campaign_content)    AS attributed_campaign_content
+      ,MAX(attributed_campaign_brand)      AS attributed_campaign_brand
       ,CAST(SUM(credit_first_touch)    AS NUMERIC(7,6)) AS credit_first_touch
       ,CAST(SUM(credit_last_touch)     AS NUMERIC(7,6)) AS credit_last_touch
       ,CAST(SUM(credit_first_last)     AS NUMERIC(7,6)) AS credit_first_last
@@ -618,6 +629,7 @@ view: marketing_attribution_test {
       ,CAST(attributed_campaign_id      AS VARCHAR(255)) AS attributed_campaign_id
       ,CAST(attributed_campaign_medium  AS VARCHAR(255)) AS attributed_campaign_medium
       ,CAST(attributed_campaign_content AS VARCHAR(255)) AS attributed_campaign_content
+      ,CAST(attributed_campaign_brand   AS VARCHAR(255)) AS attributed_campaign_brand
       ,CAST(1.0 AS NUMERIC(7,6))    AS credit_first_touch
       ,CAST(1.0 AS NUMERIC(7,6))    AS credit_last_touch
       ,CAST(1.0 AS NUMERIC(7,6))    AS credit_first_last
@@ -760,6 +772,7 @@ view: marketing_attribution_test {
       ,campaign_id
       ,CAST(campaign_medium AS VARCHAR(255))  AS campaign_medium
       ,campaign_content
+      ,campaign_brand
       ,CAST(NULL AS VARCHAR(255)) AS order_id
       ,CAST(NULL AS VARCHAR(20))  AS conversion_event_type
       ,CAST(NULL AS VARCHAR(20))  AS trial_type
@@ -819,6 +832,7 @@ view: marketing_attribution_test {
       ,sa.attributed_campaign_id                   AS campaign_id
       ,sa.attributed_campaign_medium               AS campaign_medium
       ,sa.attributed_campaign_content              AS campaign_content
+      ,sa.attributed_campaign_brand                AS campaign_brand
       ,sa.order_id, sa.conversion_event_type
       ,sa.trial_type, sa.bundle_plan, sa.is_bundle_user
       ,sa.lifecycle_event_type, sa.lifecycle_event_date
@@ -874,6 +888,7 @@ view: marketing_attribution_test {
       ,CAST(campaign_id      AS VARCHAR(255))                               AS campaign_id
       ,CAST('paid' AS VARCHAR(255))                                         AS campaign_medium
       ,CAST(NULL AS VARCHAR(255))                                           AS campaign_content
+      ,CAST(NULL AS VARCHAR(255))                                           AS campaign_brand
       ,CAST(NULL AS VARCHAR(255))                                           AS order_id
       ,'free_trial'                                                         AS conversion_event_type
       ,CAST('app' AS VARCHAR(20))                                           AS trial_type
@@ -934,6 +949,7 @@ view: marketing_attribution_test {
       ,CAST(campaign_id      AS VARCHAR(255))                               AS campaign_id
       ,CAST('paid' AS VARCHAR(255))                                         AS campaign_medium
       ,CAST(NULL AS VARCHAR(255))                                           AS campaign_content
+      ,CAST(NULL AS VARCHAR(255))                                           AS campaign_brand
       ,CAST(NULL AS VARCHAR(255))                                           AS order_id
       ,CAST(NULL AS VARCHAR(20))                                            AS conversion_event_type
       ,CAST('app_install' AS VARCHAR(20))                                   AS trial_type
@@ -994,6 +1010,7 @@ view: marketing_attribution_test {
       ,CAST(campaign_id      AS VARCHAR(255))                               AS campaign_id
       ,CAST('paid' AS VARCHAR(255))                                         AS campaign_medium
       ,CAST(NULL AS VARCHAR(255))                                           AS campaign_content
+      ,CAST(NULL AS VARCHAR(255))                                           AS campaign_brand
       ,CAST(NULL AS VARCHAR(255))                                           AS order_id
       ,CAST(NULL AS VARCHAR(20))                                            AS conversion_event_type
       ,CAST('app_reinstall' AS VARCHAR(20))                                 AS trial_type
@@ -1143,6 +1160,49 @@ view: marketing_attribution_test {
   dimension: campaign_id       { type: string  label: "Campaign ID"       sql: ${TABLE}.campaign_id ;; }
   dimension: campaign_medium   { type: string  label: "Campaign Medium"   sql: ${TABLE}.campaign_medium ;; }
   dimension: campaign_content  { type: string  label: "Campaign Content"  sql: ${TABLE}.campaign_content ;; }
+
+  # Maps UTM campaign_source to Agorapulse-style platform values so the Social Performance
+  # dashboard Platform filter (defined on social_daily_snapshot.platform) can listen here.
+  # Empty Platform filter = no constraint (all sources). Aliases: fb→facebook, ig→instagram.
+  dimension: platform {
+    type: string
+    label: "Platform"
+    description: "Social network from campaign_source, aligned with Agorapulse platform filter values (facebook, instagram, tiktok, youtube)."
+    sql:
+      CASE
+        WHEN LOWER(TRIM(${TABLE}.campaign_source)) IN ('facebook', 'fb') THEN 'facebook'
+        WHEN LOWER(TRIM(${TABLE}.campaign_source)) IN ('instagram', 'ig') THEN 'instagram'
+        WHEN LOWER(TRIM(${TABLE}.campaign_source)) = 'tiktok' THEN 'tiktok'
+        WHEN LOWER(TRIM(${TABLE}.campaign_source)) IN ('youtube', 'yt') THEN 'youtube'
+        ELSE LOWER(TRIM(${TABLE}.campaign_source))
+      END
+    ;;
+  }
+
+  # Maps context_campaign_brand (utm_brand) to Agorapulse brand_canonical values so the
+  # Social Performance dashboard Brand filter can listen here. Heartland and other
+  # unknown values pass through but are not added to Agorapulse Brand suggestions.
+  dimension: brand_canonical {
+    type: string
+    label: "Brand"
+    description: "UTM brand from context_campaign_brand, aligned with social_daily_snapshot.brand_canonical for dashboard Brand filter listen."
+    sql:
+      CASE
+        WHEN LOWER(TRIM(${TABLE}.campaign_brand))
+          IN ('upff', 'up faith & family', 'up faith and family')
+          THEN 'UP Faith & Family'
+        WHEN LOWER(TRIM(${TABLE}.campaign_brand))
+          IN ('uptv', 'up tv')
+          THEN 'UPtv'
+        WHEN LOWER(TRIM(${TABLE}.campaign_brand))
+          IN ('aspire', 'aspiretv', 'aspire tv')
+          THEN 'Aspire TV'
+        WHEN LOWER(TRIM(${TABLE}.campaign_brand))
+          IN ('ovation', 'ovationtv', 'ovation tv')
+          THEN 'Ovation TV'
+        ELSE ${TABLE}.campaign_brand
+      END ;;
+  }
 
   dimension: marketing_platform {
     type: string
@@ -1374,6 +1434,13 @@ view: marketing_attribution_test {
   measure: total_visits {
     type: count
     label: "Total Visits"
+    filters: [event_type: "page_visit"]
+  }
+
+  measure: clicks {
+    type: count
+    label: "Clicks"
+    description: "Attributed page visit events (site landings) for the campaign — proxy for link clicks generated."
     filters: [event_type: "page_visit"]
   }
 
@@ -1767,7 +1834,7 @@ view: marketing_attribution_test {
 
   set: campaign_subscription_events_set {
     fields: [
-      campaign_name, campaign_content, marketing_platform, surface, device_os,
+      brand_canonical, campaign_name, campaign_content, marketing_platform, surface, device_os,
       campaign_medium, web_trials_started, app_trials_started, app_installs,
       app_reinstalls, app_installs_and_reinstalls,
       total_trials_started, app_share_of_trials, app_install_to_trial_rate,
@@ -1780,11 +1847,11 @@ view: marketing_attribution_test {
 }
 
 ################################################################################
-# Datagroup — triggers the daily incremental run at 1 AM ET
+# Datagroup — triggers the daily incremental run at ~02:00 UTC (GMT)
 ################################################################################
-datagroup: marketing_attribution_daily {
+datagroup: marketing_attribution_daily_v2 {
   sql_trigger: SELECT TO_CHAR(
-                   CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE())
+                   CONVERT_TIMEZONE('UTC', 'UTC', GETDATE())
                    - INTERVAL '2 hour',
                    'YYYY-MM-DD'
                ) ;;
