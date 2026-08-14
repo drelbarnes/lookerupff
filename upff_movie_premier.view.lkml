@@ -1598,6 +1598,10 @@ view: upff_movie_premier {
                     SELECT DATE '2025-12-23', 400000 UNION ALL
                     SELECT DATE '2025-12-24', 400000 UNION ALL
                     SELECT DATE '2025-12-25', 400000
+
+                    UNION ALL
+                    select reported_date as date
+                    ,total_paid_subscribers as total from looker.upff_v2_subcounts
 ),
 
                     upff_premier_titles AS
@@ -1699,7 +1703,19 @@ view: upff_movie_premier {
                     SELECT 'Christmas in Amish Country' UNION ALL
                     SELECT 'Christmas Roses' UNION ALL
                     SELECT 'A Christmas Murder Mystery' UNION ALL
-                    SELECT 'A Country Encore'
+                   SELECT   'North by North Pole' UNION ALL
+ SELECT   'Music City Mistletoe' UNION ALL
+ SELECT 'Best Thing about Christmas' UNION ALL
+ SELECT 'Secret Santa' UNION ALL
+ SELECT 'A Country Encore' UNION ALL
+ SELECT 'Where the Wind Blows' UNION ALL
+ SELECT 'Forgiveness Girl' UNION ALL
+ SELECT 'Sugarhouse' UNION ALL
+ SELECT 'Learning You' UNION ALL
+ SELECT 'The Brighton Miracle' UNION ALL
+ SELECT 'Love in Storytown' UNION ALL
+ SELECT 'A Very Southern Church' UNION ALL
+ SELECT 'Better Together'
                     ),
 
                     upff_premier_completion_rates AS
@@ -1800,8 +1816,7 @@ view: upff_movie_premier {
                     SELECT 'A Change in Heart', 0.76 UNION ALL
                     SELECT 'Christmas in Amish Country', 0.79 UNION ALL
                     SELECT 'Christmas Roses', 0.79 UNION ALL
-                    SELECT 'A Christmas Murder Mystery', 0.79 UNION ALL
-                    SELECT 'A Country Encore', 0.70
+                    SELECT 'A Christmas Murder Mystery', 0.79
                     ),
 
                     upff_premier_dates AS
@@ -1903,7 +1918,20 @@ view: upff_movie_premier {
                     SELECT 'Christmas in Amish Country', DATE '2025-12-02' UNION ALL
                     SELECT 'Christmas Roses', DATE '2025-12-09' UNION ALL
                     SELECT 'A Christmas Murder Mystery', DATE '2025-12-09' UNION ALL
-                    SELECT 'A Country Encore', DATE '2025-10-12'
+                    SELECT 'North by North Pole', DATE '11/25/26' UNION ALL
+                    SELECT 'Music City Mistletoe', DATE '12/16/26' UNION ALL
+                    SELECT 'Best Thing about Christmas', DATE '12/16/26' UNION ALL
+                    SELECT 'Secret Santa', DATE '12/23/26' UNION ALL
+                    SELECT 'A Country Encore', DATE '1/30/2026' UNION ALL
+                    SELECT 'Where the Wind Blows', DATE '2/13/2026' UNION ALL
+                    SELECT 'Forgiveness Girl', DATE '3/13/2026' UNION ALL
+                    SELECT 'Sugarhouse', DATE '3/20/2026' UNION ALL
+                    SELECT 'Learning You', DATE '4/3/2026' UNION ALL
+                    SELECT 'The Brighton Miracle', DATE '5/1/2026' UNION ALL
+                    SELECT 'Love in Storytown', DATE '5/8/2026' UNION ALL
+                    SELECT 'A Very Southern Church', DATE '6/5/2026' UNION ALL
+                    SELECT 'Better Together', DATE '7/24/2026'
+
                     ),
 
                     upff_subscriber_counts AS
@@ -1920,7 +1948,8 @@ view: upff_movie_premier {
                     plays_less_granular AS
                     (
                     SELECT
-                    *
+                    user_id
+                    ,title
                     , ts AS TIMESTAMP
                     FROM ${redshift_allfirst_play_p1_less_granular.SQL_TABLE_NAME}
                     WHERE title in (SELECT title FROM upff_premier_titles)
@@ -1934,7 +1963,7 @@ view: upff_movie_premier {
                     , b.release_date
                     , b.subscriber_count
                     , count(DISTINCT a.user_id) AS number_views
-                    FROM ${redshift_allfirst_play_p1_less_granular.SQL_TABLE_NAME} AS a
+                    FROM (select user_id,title from ${redshift_allfirst_play_p1_less_granular.SQL_TABLE_NAME} where date(ts) >= '2023-01-01') AS a
                     LEFT JOIN upff_subscriber_counts AS b
                     ON a.title = b.title
                     GROUP BY 1,2,3

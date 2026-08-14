@@ -29,6 +29,7 @@ include: "/views/UPFF_Vw/daily_spend.view.lkml"
 include: "/views/UPFF_Vw/trial_converted.view.lkml"
 include: "/views/UPFF_Vw/watch_time_average.view.lkml"
 include: "/views/UPFF_Vw/paused_dates.view.lkml"
+include: "/views/UPFF_Vw/churn_gateway.view.lkml"
 
 
 
@@ -134,4 +135,8 @@ datagroup: upff_acquisition_v2 {
   description: "Datagroup for UPFF Acquisition PDTs. "
   sql_trigger: SELECT FLOOR((EXTRACT(epoch from CONVERT_TIMEZONE('UTC','America/New_York', GETDATE())) - 60*60*12) / (60*60*24));;
   max_cache_age: "5 minutes"
+}
+
+explore: churn_gateway {
+  label: "UPFF churn gateway"
 }

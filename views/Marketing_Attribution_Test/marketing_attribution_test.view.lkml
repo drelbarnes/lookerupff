@@ -1171,6 +1171,10 @@ view: marketing_attribution_test {
         WHEN LOWER(${TABLE}.campaign_source) IN ('google','google_ads','adwords')
              AND LOWER(${TABLE}.campaign_medium) IN ('cpc','ppc','paid','g')
              AND LOWER(${TABLE}.campaign_name) LIKE '%display%'                 THEN 'Google Display'
+         WHEN LOWER(${TABLE}.campaign_source) IN ('youtube') THEN
+              'Youtube'
+        WHEN LOWER(${TABLE}.campaign_source) IN ('chatgpt.com') THEN
+              'ChatGPT'
         WHEN LOWER(${TABLE}.campaign_source) IN ('google','google_ads','adwords')
              AND LOWER(${TABLE}.campaign_medium) IN ('cpc','ppc','paid','g')
              AND (LOWER(${TABLE}.campaign_name) LIKE '%pmax%'

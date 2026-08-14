@@ -25,6 +25,12 @@ paypal_chargebee as (
 SELECT * FROM paypal
 WHERE payment_description in ('Payment Refund','PreApproved Payment Bill User Payment')),
 
+paypal_chargeback as (
+SELECT * FROM paypal
+WHERE payment_description not in ('PreApproved Payment Bill User Payment')
+
+),
+
 paypal_non_chargebee as (SELECT * FROM paypal
 WHERE payment_description not in ('Payment Refund','PreApproved Payment Bill User Payment')),
 
@@ -192,9 +198,8 @@ SELECT * FROM refunds
 left join chargebee_transactions c on p.transaction_id = c.transaction_id
 --or p.source_id = c.content_customer_payment_method_reference_id
 ),
-
-charge_refund as (
-  select
+paypal_old as (
+ select
   customer_id
   ,email
   ,transaction_id
@@ -215,15 +220,51 @@ charge_refund as (
   ,discount_amount2
   ,discount_amount3
   ,total_amount
-  ,null as content_customer_payment_method_reference_id
+  ,CAST(NULL AS STRING) AS content_customer_payment_method_reference_id
   ,fee
   from ${paypal_old.SQL_TABLE_NAME}
+),
+charge_refund as (
+
+select * from paypal_old
 
   UNION ALL
   SELECT *,null as fee FROM
   chargebee_transactions
 
 
+),
+
+fill_chargeback as (
+select
+c.customer_id
+  ,c.email
+  ,p.charge_created as report_date
+  ,p.payment_gateway
+  ,p.payment_description
+  ,c.product_1
+  ,c.product_2
+  ,c.product_3
+  ,c.product_1_period
+  ,c.product_2_period
+  ,c.product_3_period
+  ,c.original_amount1
+  ,c.original_amount2
+  ,c.original_amount3
+  ,c.discount_amount1
+  ,c.discount_amount2
+  ,c.discount_amount3
+  ,c.tax_1
+  ,c.tax_2
+  ,c.tax_3
+  ,c.total_amount
+  ,p.transaction_id
+  ,p.source_id as ref_id
+  ,p.gross
+  ,c.fee
+  FROM paypal_chargeback p
+  LEFT JOIN paypal_old c
+  ON p.source_id = c.transaction_id
 ),
 
 fill_non_chargebee as (
@@ -266,6 +307,8 @@ result as (
 SELECT * FROM fill_chargebee
 UNION ALL
 SELECT * FROM fill_non_chargebee
+UNION ALL
+SELECT * FROM fill_chargeback
 ),
 
 result2 as(
