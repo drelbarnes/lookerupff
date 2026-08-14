@@ -1,19 +1,39 @@
 view: agorapulse_post_performance {
-  label: "Social Post Last 30"
+  label: "Social Post Snapshot"
 
-  # Segment event "Social Post Last 30" → social_post_last_30 (lean schema; replaces bloated social_post_snapshot).
-  sql_table_name: agorapulse_webhook.social_post_last_30 ;;
+  # Latest lifetime snapshot per post_id (backfill + rolling last_30 append duplicate rows).
+  # Without this, SUM(impressions_count) multiplies lifetime metrics by ingest count and
+  # scrambles Top 20 rankings vs Agorapulse. Canonical pattern: docs/07 §4 / docs/04 §3.3.
+  sql_table_name: (
+    SELECT s.*
+    FROM (
+      SELECT
+        inner_s.*,
+        ROW_NUMBER() OVER (
+          PARTITION BY inner_s.post_id
+          ORDER BY
+            COALESCE(
+              inner_s.ingested_at::timestamp,
+              inner_s."timestamp"::timestamp
+            ) DESC,
+            inner_s."timestamp"::timestamp DESC
+        ) AS _post_row_rank
+      FROM agorapulse_webhook.social_post_snapshot AS inner_s
+      WHERE inner_s.post_id IS NOT NULL
+        AND TRIM(inner_s.post_id::varchar) <> ''
+    ) AS s
+    WHERE s._post_row_rank = 1
+  ) ;;
 
-  # Warehouse stores UTC (Agorapulse API). Convert for display/filters to match Agorapulse UI
-  # (America/New_York). convert_tz: no avoids a second Looker-side conversion.
+  # Warehouse column is publishing_date on social_post_snapshot (UTC from Agorapulse API).
+  # convert_tz: no keeps calendar days on GMT/UTC — EST conversion shifted edge posts across days.
   dimension_group: publishing {
     label: "Publish date"
     type: time
     datatype: timestamp
-    timeframes: [raw, time, date, week, month, quarter, year]
     convert_tz: no
-    sql: CONVERT_TIMEZONE('UTC', 'America/New_York', ${TABLE}.publishing_date::timestamp) ;;
-    description: "Publish time in America/New_York to align with Agorapulse UI. Warehouse column remains UTC."
+    timeframes: [raw, time, date, week, month, quarter, year]
+    sql: ${TABLE}.publishing_date ;;
   }
 
   dimension: brand {
@@ -31,7 +51,7 @@ view: agorapulse_post_performance {
       CASE
         WHEN LOWER(TRIM(${TABLE}.brand)) IN ('ovation', 'ovation tv', 'ovationtv') THEN 'Ovation TV'
         WHEN LOWER(TRIM(${TABLE}.brand)) IN ('aspire', 'aspire tv', 'aspiretv') THEN 'Aspire TV'
-        WHEN LOWER(TRIM(${TABLE}.brand)) IN ('upff', 'up faith & family', 'up faith and family') THEN 'UP Faith & Family'
+        WHEN LOWER(TRIM(${TABLE}.brand)) IN ('upff', 'up faith & family', 'up faith and family') THEN 'UPFF'
         ELSE ${TABLE}.brand
       END ;;
     description: "Same normalization as social_daily_snapshot.brand_canonical (including UPFF + UP Faith & Family as one) so dashboard Brand filter matches both explores."
@@ -49,17 +69,33 @@ view: agorapulse_post_performance {
     sql: ${TABLE}.post_id ;;
   }
 
+  # Agorapulse ContentReportData.text (Segment → warehouse column "text").
+  # Fallback to post_id when caption/title is blank (e.g. image-only posts).
+  dimension: post_text {
+    label: "Post title / text"
+    type: string
+    sql: COALESCE(NULLIF(TRIM(${TABLE}."text"), ''), ${TABLE}.post_id) ;;
+    description: "Post caption/title from Agorapulse content report (text). Falls back to post_id when empty."
+  }
+
   dimension: post_url {
     label: "Post URL"
     type: string
     sql: ${TABLE}.post_url ;;
+    html:
+      {% if value != blank %}
+        <a href="{{ value }}" target="_blank" rel="noopener noreferrer">{{ value }}</a>
+      {% else %}
+        {{ rendered_value }}
+      {% endif %} ;;
+    description: "Native post permalink; opens in a new browser tab/window from Explore and dashboard grids."
   }
 
   dimension: event {
     label: "Event"
     type: string
     sql: ${TABLE}.event ;;
-    description: "Segment event name (e.g. Social Post Last 30)."
+    description: "Segment event name (e.g. Social Post Snapshot)."
   }
 
   measure: total_posts {
@@ -67,44 +103,30 @@ view: agorapulse_post_performance {
     type: number
     sql: COUNT(DISTINCT CASE WHEN ${TABLE}.post_id IS NOT NULL AND ${TABLE}.post_id <> '' THEN ${TABLE}.post_id END) ;;
     value_format_name: decimal_0
-    description: "Distinct posts for current filters. Multiple Segment rows per post (backfill + rolling windows) count once."
+    description: "Distinct posts for current filters. Explore is already latest-row-per-post; COUNT DISTINCT stays safe if filters expand the grain."
   }
 
   measure: post_impressions {
-    label: "Post impressions (sum)"
+    label: "Post impressions"
     type: sum
-    sql:
-      CASE
-        WHEN ${platform} = 'facebook'  THEN COALESCE(${TABLE}.views_count, 0)
-        WHEN ${platform} = 'instagram' THEN COALESCE(${TABLE}.impressions_count, 0)
-        WHEN ${platform} = 'tiktok'    THEN COALESCE(${TABLE}.views_count, 0)
-        WHEN ${platform} = 'youtube'   THEN COALESCE(${TABLE}.video_views_count, 0)
-        ELSE COALESCE(${TABLE}.impressions_count, ${TABLE}.views_count, 0)
-      END ;;
+    sql: COALESCE(${TABLE}.impressions_count, 0) ;;
     value_format_name: decimal_0
-    description: "Platform-aware post volume for top-post ranking. FB/TT: views_count (Agorapulse viewsCount); IG: impressions_count; YT: video_views_count. Meta deprecated FB impressions in favor of views."
+    description: "Latest-snapshot impressions_count per post (view deduped). Group by post_id for Top 20 ranking; sums across posts when rolled up (doc 07 §4 / §7)."
   }
 
   measure: post_engagements {
-    label: "Post engagements (sum)"
+    label: "Post engagements"
     type: sum
     sql: COALESCE(${TABLE}.engagement_count, 0) ;;
     value_format_name: decimal_0
-    description: "Sum of engagement_count for rows in the query; context alongside impressions."
+    description: "Latest-snapshot engagement_count per post (view deduped); context alongside impressions."
   }
 
   measure: post_video_views {
-    label: "Post video views (sum)"
+    label: "Post video views"
     type: sum
-    sql:
-      CASE
-        WHEN ${platform} = 'facebook'  THEN COALESCE(${TABLE}.video_views_count, 0)
-        WHEN ${platform} = 'instagram' THEN COALESCE(${TABLE}.organic_impressions_count, 0) + COALESCE(${TABLE}.paid_impressions_count, 0)
-        WHEN ${platform} = 'tiktok'    THEN COALESCE(${TABLE}.views_count, 0)
-        WHEN ${platform} = 'youtube'   THEN COALESCE(${TABLE}.video_views_count, 0)
-        ELSE COALESCE(${TABLE}.video_views_count, 0)
-      END ;;
+    sql: COALESCE(${TABLE}.video_views_count, 0) ;;
     value_format_name: decimal_0
-    description: "Platform-aware post video views. FB/YT: video_views_count; IG: organic_impressions_count + paid_impressions_count (Agorapulse content report; see IG video validation); TT: views_count."
+    description: "Latest-snapshot video_views_count per post (view deduped); context alongside impressions."
   }
 }

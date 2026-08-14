@@ -22,11 +22,12 @@ view: social_daily_snapshot {
     WHERE s._snapshot_row_rank = 1
   ) ;;
 
-  # Reporting day (UTC). Cast if your warehouse column is VARCHAR/TIMESTAMP.
+  # Reporting day (UTC/GMT). Keep convert_tz off so Looker does not shift to EST/EDT.
   dimension_group: snapshot_date {
     label: "Snapshot date"
     type: time
     datatype: date
+    convert_tz: no
     timeframes: [raw, date, week, month, quarter, year]
     sql: ${TABLE}.date ;;
   }

@@ -1,5 +1,8 @@
 ################################################################################
-# View: marketing_attribution_test
+# View: marketing_attribution_testv2
+#
+# Social Performance dashboard copy of marketing_attribution_test.
+# Keep marketing_attribution_test.view.lkml stable for the other attribution dashboard.
 #
 # === INCREMENTAL PDT ===
 # This view is built as an incremental PDT. On each run, Looker appends new
@@ -13,52 +16,62 @@
 #       * Web page visits can arrive after their associated conversion
 #       * Retroactive attribution changes within ~1 week are captured
 #
-# === ROW TYPES (event_type) ===
-#   1. 'page_visit'           — marketing-site pageviews (javascript_upff_home.pages)
-#   2. 'checkout_page_visit'  — checkout pageviews (javascript_upentertainment_checkout.pages)
-#   3. 'conversion'           — attributed free trials and reacquisitions (web)
-#   4. 'app_trial'            — app free trials from Branch.io (php.branch_purchase)
-#   5. 'app_install'          — app installs from Branch.io (php.branch_install)
-#   6. 'app_reinstall'        — app reinstalls from Branch.io (php.branch_reinstall)
+# When to rebuild from scratch:
+#   - If late-arriving data extends past 7 days on a particular event
+#   - If you change a derived column (credit_weight formula, quality_score weights)
+#   - If you change a CTE structure
+#   - If you add or rename PDT columns (e.g. campaign_brand) — incremental runs leave
+#     older partitions without the new column; use full "Rebuild Derived Tables & Run"
+#   Use Looker's "Rebuild Derived Tables & Run" or persist_with: rebuilds
 #
-# === ott_user_id (added this revision) ===
-#   Streaming-platform (OTT) user identifier extracted from the `entitlements`
-#   JSON array on javaScript_upentertainment_checkout.order_completed
-#   (first element, key 'ott_user_id'). Populated on conversion rows
-#   (standard trials only) and NULL on all other event types.
-#   Threaded through: lifecycle_events → free_trials → attributed_touches /
-#   direct_conversions → all_touches_raw → selected_attributed_* → conversion_rows.
-#   Use for joining marketing conversions to the streaming platform's user table.
-################################################################################
+# Trade-offs vs. the prior full-rebuild PDT:
+#   + Builds are much faster (minutes vs hours on a 180-day window)
+#   + Lower warehouse cost
+#   - Data older than 7 days will NOT reflect new touches/attribution
+#   - One-time rebuild needed when scoring weights, attribution logic, or PDT schema changes
+#     (including new columns such as campaign_brand from context_campaign_brand)
+#
+# === ROW TYPES (event_type) ===
+#   1. 'page_visit'    — every marketing-site page view (web)
+#   2. 'conversion'    — attributed free trials and reacquisitions (web)
+#   3. 'app_trial'     — app free trials from Branch.io (php.branch_purchase)
+#   4. 'app_install'   — app installs from Branch.io (php.branch_install)
+#   5. 'app_reinstall' — app reinstalls from Branch.io (php.branch_reinstall)
+#################################################################################
 
-view: marketing_attribution_test {
+view: marketing_attribution_testv2 {
   derived_table: {
 
     # ============================================================
     # INCREMENTAL PDT CONFIG
     # ============================================================
-    #increment_key: "report_date"
-    #increment_offset: 7
-    datagroup_trigger: marketing_attribution_daily
+    increment_key: "report_date"
+    increment_offset: 7
+    datagroup_trigger: marketing_attribution_daily_v2
     distribution_style: even
-    #sortkeys: ["report_date"]
     #sortkeys: ["report_date", "event_type"]
     indexes: ["report_date", "event_type", "campaign_source", "user_id"]
 
     sql:
       WITH params AS (
           SELECT
-               (CURRENT_DATE - INTERVAL '365 days')::DATE AS start_date
+               -- Initial build covers 180 days; incremental runs are filtered
+               -- by Looker's injection of incrementcondition (below).
+               (CURRENT_DATE - INTERVAL '90 days')::DATE AS start_date
               ,CURRENT_DATE                               AS end_date
               ,90                  AS max_attribution_window_days
-              ,0.50                AS w_activations
-              ,0.40                AS w_standard_trials
-              ,0.10                AS w_bundle_trials
+              ,0.40                AS w_activations
+              ,0.25                AS w_reacquisitions
+              ,0.20                AS w_bundle_trials
+              ,0.15                AS w_standard_trials
               ,0.50                AS conv_rate_max
               ,10000               AS cancel_window_seconds
               ,1.0                 AS retention_floor
       ),
 
+      -- ============================================================
+      -- USER ACTIVATION VALUE from Chargebee
+      -- ============================================================
       user_activation_value AS (
       SELECT
       user_id
@@ -85,34 +98,12 @@ view: marketing_attribution_test {
       WHERE rn = 1
       ),
 
-      user_dunning_status AS (
-      SELECT
-      content_invoice_customer_id            AS user_id
-      ,content_invoice_status                 AS latest_invoice_status
-      ,content_invoice_line_items_0_entity_id AS latest_invoice_plan
-      ,CASE
-      WHEN content_invoice_status IN ('not_paid', 'payment_due') THEN TRUE
-      ELSE FALSE
-      END                                    AS is_in_dunning
-      FROM (
-      SELECT
-      content_invoice_customer_id
-      ,content_invoice_status
-      ,content_invoice_line_items_0_entity_id
-      ,content_invoice_updated_at
-      ,ROW_NUMBER() OVER (
-      PARTITION BY content_invoice_customer_id
-      ORDER BY content_invoice_updated_at DESC, received_at DESC
-      ) AS rn
-      FROM chargebee_webhook_events.invoice_updated
-      WHERE content_invoice_line_items_0_entity_id LIKE '%UP%'
-      AND content_invoice_customer_id IS NOT NULL
-      AND DATE(received_at) BETWEEN (SELECT start_date FROM params)
-      AND (SELECT end_date   FROM params)
-      ) ranked
-      WHERE rn = 1
-      ),
-
+      -- ============================================================
+      -- BRANCH.IO APP FREE TRIALS — from php.branch_purchase
+      -- incrementcondition report_date endincrementcondition
+      -- becomes a WHERE clause that Looker injects on incremental runs.
+      -- On a full rebuild, it expands to "1=1".
+      -- ============================================================
       branch_app_trials AS (
       SELECT
       DATE(report_date)                AS report_date
@@ -142,8 +133,14 @@ view: marketing_attribution_test {
       WHERE report_date >= (SELECT start_date FROM params)
       AND report_date <  (SELECT end_date   FROM params) + INTERVAL '1 day'
       AND count > 0
+      AND (
+      {% incrementcondition %} report_date {% endincrementcondition %}
+      )
       ),
 
+      -- ============================================================
+      -- BRANCH.IO APP INSTALLS — from php.branch_install
+      -- ============================================================
       branch_app_installs AS (
       SELECT
       DATE(report_date)                AS report_date
@@ -173,8 +170,15 @@ view: marketing_attribution_test {
       WHERE report_date >= (SELECT start_date FROM params)
       AND report_date <  (SELECT end_date   FROM params) + INTERVAL '1 day'
       AND count > 0
+      AND (
+      {% incrementcondition %} report_date {% endincrementcondition %}
+      )
       ),
 
+      -- ============================================================
+      -- BRANCH.IO APP REINSTALLS — from php.branch_reinstall
+      -- Mirrors branch_app_installs; tracks users who reinstalled the app.
+      -- ============================================================
       branch_app_reinstalls AS (
       SELECT
       DATE(report_date)                AS report_date
@@ -204,12 +208,14 @@ view: marketing_attribution_test {
       WHERE report_date >= (SELECT start_date FROM params)
       AND report_date <  (SELECT end_date   FROM params) + INTERVAL '1 day'
       AND count > 0
+      AND (
+      {% incrementcondition %} report_date {% endincrementcondition %}
+      )
       ),
 
       -- ============================================================
       -- LIFECYCLE EVENTS (web pipeline)
-      -- ott_user_id added as final column on every branch.
-      -- Real value only on order_completed; NULL elsewhere.
+      -- Each UNION branch gets its own incrementcondition filter.
       -- ============================================================
       lifecycle_events AS (
       SELECT
@@ -223,52 +229,16 @@ view: marketing_attribution_test {
       ,context_campaign_id        AS campaign_id
       ,context_campaign_medium    AS campaign_medium
       ,context_campaign_content   AS campaign_content
+      ,context_campaign_brand     AS campaign_brand
       ,CAST(NULL AS VARCHAR(255)) AS order_id
       ,CAST(NULL AS VARCHAR(255)) AS bundle_plan
       ,CAST(NULL AS VARCHAR(20))  AS trial_type
-      ,path                                                  AS page_path
-      ,referrer                                              AS page_referrer
-      ,context_campaign_term                                 AS campaign_term
-      ,context_page_search                                   AS page_search
-      ,CAST(context_consent_category_preferences_c0001 AS BOOLEAN) AS consent_c0001
-      ,CAST(context_consent_category_preferences_c0002 AS BOOLEAN) AS consent_c0002
-      ,CAST(context_consent_category_preferences_c0003 AS BOOLEAN) AS consent_c0003
-      ,CAST(context_consent_category_preferences_c0004 AS BOOLEAN) AS consent_c0004
-      ,CAST(context_consent_category_preferences_c0005 AS BOOLEAN) AS consent_c0005
-      ,CAST(NULL AS VARCHAR(255)) AS ott_user_id
       FROM javascript_upff_home.pages
       WHERE received_at >= (SELECT start_date FROM params)
       AND received_at <  (SELECT end_date   FROM params) + INTERVAL '1 day'
-
-      UNION ALL
-
-      SELECT
-      user_id, context_ip, anonymous_id
-      ,received_at                AS event_received_at
-      ,DATE(received_at)          AS event_date
-      ,'checkout_page_visit'      AS source_event_type
-      ,id                         AS event_id
-      ,context_campaign_source    AS campaign_source
-      ,context_campaign_name      AS campaign_name
-      ,context_campaign_id        AS campaign_id
-      ,context_campaign_medium    AS campaign_medium
-      ,context_campaign_content   AS campaign_content
-      ,CAST(NULL AS VARCHAR(255)) AS order_id
-      ,CAST(NULL AS VARCHAR(255)) AS bundle_plan
-      ,CAST(NULL AS VARCHAR(20))  AS trial_type
-      ,path                                                  AS page_path
-      ,referrer                                              AS page_referrer
-      ,context_campaign_term                                 AS campaign_term
-      ,context_page_search                                   AS page_search
-      ,CAST(context_consent_category_preferences_c0001 AS BOOLEAN) AS consent_c0001
-      ,CAST(context_consent_category_preferences_c0002 AS BOOLEAN) AS consent_c0002
-      ,CAST(context_consent_category_preferences_c0003 AS BOOLEAN) AS consent_c0003
-      ,CAST(context_consent_category_preferences_c0004 AS BOOLEAN) AS consent_c0004
-      ,CAST(context_consent_category_preferences_c0005 AS BOOLEAN) AS consent_c0005
-      ,CAST(NULL AS VARCHAR(255)) AS ott_user_id
-      FROM javascript_upentertainment_checkout.pages
-      WHERE received_at >= (SELECT start_date FROM params)
-      AND received_at <  (SELECT end_date   FROM params) + INTERVAL '1 day'
+      AND (
+      {% incrementcondition %} received_at {% endincrementcondition %}
+      )
 
       UNION ALL
 
@@ -278,28 +248,16 @@ view: marketing_attribution_test {
       ,'free_trial', order_id
       ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255))
       ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255))
-      ,CAST(NULL AS VARCHAR(255))
+      ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255))
       ,order_id, CAST(NULL AS VARCHAR(255)), CAST('standard' AS VARCHAR(20))
-      ,CAST(NULL AS VARCHAR(500)) AS page_path
-      ,CAST(NULL AS VARCHAR(500)) AS page_referrer
-      ,CAST(NULL AS VARCHAR(500)) AS campaign_term
-      ,CAST(NULL AS VARCHAR(1000)) AS page_search
-      ,CAST(NULL AS BOOLEAN)      AS consent_c0001
-      ,CAST(NULL AS BOOLEAN)      AS consent_c0002
-      ,CAST(NULL AS BOOLEAN)      AS consent_c0003
-      ,CAST(NULL AS BOOLEAN)      AS consent_c0004
-      ,CAST(NULL AS BOOLEAN)      AS consent_c0005
-      ,CAST(
-      JSON_EXTRACT_PATH_TEXT(
-      JSON_EXTRACT_ARRAY_ELEMENT_TEXT(entitlements, 0),
-      'ott_user_id'
-      ) AS VARCHAR(255)
-      ) AS ott_user_id
       FROM javaScript_upentertainment_checkout.order_completed
       WHERE received_at >= (SELECT start_date FROM params)
       AND received_at <  (SELECT end_date   FROM params) + INTERVAL '1 day'
       AND user_id IS NOT NULL
       AND brand = 'upfaithandfamily'
+      AND (
+      {% incrementcondition %} received_at {% endincrementcondition %}
+      )
 
       UNION ALL
 
@@ -309,24 +267,17 @@ view: marketing_attribution_test {
       ,'free_trial', order_id
       ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255))
       ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255))
-      ,CAST(NULL AS VARCHAR(255))
+      ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255))
       ,order_id, bundle_plan, CAST('bundle' AS VARCHAR(20))
-      ,CAST(NULL AS VARCHAR(500)) AS page_path
-      ,CAST(NULL AS VARCHAR(500)) AS page_referrer
-      ,CAST(NULL AS VARCHAR(500)) AS campaign_term
-      ,CAST(NULL AS VARCHAR(1000)) AS page_search
-      ,CAST(NULL AS BOOLEAN)      AS consent_c0001
-      ,CAST(NULL AS BOOLEAN)      AS consent_c0002
-      ,CAST(NULL AS BOOLEAN)      AS consent_c0003
-      ,CAST(NULL AS BOOLEAN)      AS consent_c0004
-      ,CAST(NULL AS BOOLEAN)      AS consent_c0005
-      ,CAST(NULL AS VARCHAR(255)) AS ott_user_id
       FROM javaScript_upentertainment_checkout.order_updated
       WHERE received_at >= (SELECT start_date FROM params)
       AND received_at <  (SELECT end_date   FROM params) + INTERVAL '1 day'
       AND user_id IS NOT NULL
       AND brand = 'upfaithandfamily'
       AND bundle_plan IS NOT NULL
+      AND (
+      {% incrementcondition %} received_at {% endincrementcondition %}
+      )
 
       UNION ALL
 
@@ -337,22 +288,15 @@ view: marketing_attribution_test {
       ,'activation', id
       ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255))
       ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255))
-      ,CAST(NULL AS VARCHAR(255))
+      ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255))
       ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(20))
-      ,CAST(NULL AS VARCHAR(500)) AS page_path
-      ,CAST(NULL AS VARCHAR(500)) AS page_referrer
-      ,CAST(NULL AS VARCHAR(500)) AS campaign_term
-      ,CAST(NULL AS VARCHAR(1000)) AS page_search
-      ,CAST(NULL AS BOOLEAN)      AS consent_c0001
-      ,CAST(NULL AS BOOLEAN)      AS consent_c0002
-      ,CAST(NULL AS BOOLEAN)      AS consent_c0003
-      ,CAST(NULL AS BOOLEAN)      AS consent_c0004
-      ,CAST(NULL AS BOOLEAN)      AS consent_c0005
-      ,CAST(NULL AS VARCHAR(255)) AS ott_user_id
       FROM chargebee_webhook_events.subscription_activated
       WHERE DATE(received_at) BETWEEN (SELECT start_date FROM params)
       AND (SELECT end_date   FROM params)
       AND content_subscription_subscription_items LIKE '%UP%'
+      AND (
+      {% incrementcondition %} received_at {% endincrementcondition %}
+      )
 
       UNION ALL
 
@@ -362,23 +306,16 @@ view: marketing_attribution_test {
       ,'reacquisition', id
       ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255))
       ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255))
-      ,CAST(NULL AS VARCHAR(255))
+      ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255))
       ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(20))
-      ,CAST(NULL AS VARCHAR(500)) AS page_path
-      ,CAST(NULL AS VARCHAR(500)) AS page_referrer
-      ,CAST(NULL AS VARCHAR(500)) AS campaign_term
-      ,CAST(NULL AS VARCHAR(1000)) AS page_search
-      ,CAST(NULL AS BOOLEAN)      AS consent_c0001
-      ,CAST(NULL AS BOOLEAN)      AS consent_c0002
-      ,CAST(NULL AS BOOLEAN)      AS consent_c0003
-      ,CAST(NULL AS BOOLEAN)      AS consent_c0004
-      ,CAST(NULL AS BOOLEAN)      AS consent_c0005
-      ,CAST(NULL AS VARCHAR(255)) AS ott_user_id
       FROM javascript_upentertainment_checkout.order_resubscribed
       WHERE received_at >= (SELECT start_date FROM params)
       AND received_at <  (SELECT end_date   FROM params) + INTERVAL '1 day'
       AND user_id IS NOT NULL
       AND brand = 'upfaithandfamily'
+      AND (
+      {% incrementcondition %} received_at {% endincrementcondition %}
+      )
 
       UNION ALL
 
@@ -390,18 +327,8 @@ view: marketing_attribution_test {
       ,'not_retained', event_id
       ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255))
       ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255))
-      ,CAST(NULL AS VARCHAR(255))
+      ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255))
       ,CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(255)), CAST(NULL AS VARCHAR(20))
-      ,CAST(NULL AS VARCHAR(500)) AS page_path
-      ,CAST(NULL AS VARCHAR(500)) AS page_referrer
-      ,CAST(NULL AS VARCHAR(500)) AS campaign_term
-      ,CAST(NULL AS VARCHAR(1000)) AS page_search
-      ,CAST(NULL AS BOOLEAN)      AS consent_c0001
-      ,CAST(NULL AS BOOLEAN)      AS consent_c0002
-      ,CAST(NULL AS BOOLEAN)      AS consent_c0003
-      ,CAST(NULL AS BOOLEAN)      AS consent_c0004
-      ,CAST(NULL AS BOOLEAN)      AS consent_c0005
-      ,CAST(NULL AS VARCHAR(255)) AS ott_user_id
       FROM (
       SELECT
       user_id
@@ -418,6 +345,9 @@ view: marketing_attribution_test {
       AND (content_subscription_cancelled_at - content_subscription_trial_end
       < (SELECT cancel_window_seconds FROM params))
       AND user_id IS NOT NULL
+      AND (
+      {% incrementcondition %} received_at {% endincrementcondition %}
+      )
       ) cancels_deduped
       WHERE rn = 1
       ),
@@ -432,11 +362,9 @@ view: marketing_attribution_test {
       ,campaign_id
       ,COALESCE(campaign_medium,  'organic')  AS campaign_medium
       ,campaign_content
+      ,campaign_brand
       ,event_id           AS touch_event_id
       ,user_id
-      ,page_path, page_referrer
-      ,campaign_term, page_search
-      ,consent_c0001, consent_c0002, consent_c0003, consent_c0004, consent_c0005
       FROM lifecycle_events
       WHERE source_event_type = 'page_visit'
       ),
@@ -484,13 +412,10 @@ view: marketing_attribution_test {
       ,COALESCE(uav.activation_value_dollars, 0)        AS activation_value
       ,COALESCE(uav.is_yearly_plan, FALSE)              AS is_yearly_plan
       ,COALESCE(uav.plan_type, 'unknown')               AS plan_type
-      ,COALESCE(uds.is_in_dunning, FALSE)               AS is_in_dunning
-      ,COALESCE(uds.latest_invoice_status, 'unknown')   AS latest_invoice_status
-      ,r.ott_user_id
       FROM (
       SELECT
       user_id, context_ip, anonymous_id, order_id, event_received_at,
-      trial_type, bundle_plan, ott_user_id
+      trial_type, bundle_plan
       ,ROW_NUMBER() OVER (
       PARTITION BY user_id, order_id
       ORDER BY CASE WHEN bundle_plan IS NOT NULL THEN 0 ELSE 1 END,
@@ -501,7 +426,6 @@ view: marketing_attribution_test {
       ) r
       LEFT JOIN user_lifecycle_flags ulf ON r.user_id = ulf.user_id
       LEFT JOIN user_activation_value uav ON r.user_id = uav.user_id
-      LEFT JOIN user_dunning_status uds ON r.user_id = uds.user_id
       WHERE r.dedup_rank = 1
       ),
 
@@ -524,12 +448,8 @@ view: marketing_attribution_test {
       ,COALESCE(uav.activation_value_dollars, 0)        AS activation_value
       ,COALESCE(uav.is_yearly_plan, FALSE)              AS is_yearly_plan
       ,COALESCE(uav.plan_type, 'unknown')               AS plan_type
-      ,COALESCE(uds.is_in_dunning, FALSE)               AS is_in_dunning
-      ,COALESCE(uds.latest_invoice_status, 'unknown')   AS latest_invoice_status
-      ,CAST(NULL AS VARCHAR(255)) AS ott_user_id
       FROM lifecycle_events le
       LEFT JOIN user_activation_value uav ON le.user_id = uav.user_id
-      LEFT JOIN user_dunning_status uds ON le.user_id = uds.user_id
       WHERE le.source_event_type = 'reacquisition'
       ),
 
@@ -546,11 +466,9 @@ view: marketing_attribution_test {
       ,c.lifecycle_event_date, c.lifecycle_event_type
       ,c.is_activated_or_reacquired, c.is_not_retained
       ,c.activation_value, c.is_yearly_plan, c.plan_type
-      ,c.is_in_dunning, c.latest_invoice_status
-      ,c.ott_user_id
       ,mt.received_at        AS touch_received_at
       ,mt.campaign_source, mt.campaign_name, mt.campaign_id
-      ,mt.campaign_medium, mt.campaign_content
+      ,mt.campaign_medium, mt.campaign_content, mt.campaign_brand
       ,DATEDIFF(day, mt.received_at, c.conversion_event_at) AS days_before_conversion
       ,ROW_NUMBER() OVER (
       PARTITION BY c.conversion_event_type, c.order_id
@@ -577,8 +495,6 @@ view: marketing_attribution_test {
       ,c.lifecycle_event_date, c.lifecycle_event_type
       ,c.is_activated_or_reacquired, c.is_not_retained
       ,c.activation_value, c.is_yearly_plan, c.plan_type
-      ,c.is_in_dunning, c.latest_invoice_status
-      ,c.ott_user_id
       ,0                              AS total_touches
       ,CAST(NULL AS TIMESTAMP)        AS attributed_touch_at
       ,CAST('direct' AS VARCHAR(20))  AS attributed_campaign_source
@@ -586,6 +502,7 @@ view: marketing_attribution_test {
       ,CAST(NULL AS VARCHAR(255))     AS attributed_campaign_id
       ,CAST('direct' AS VARCHAR(20))  AS attributed_campaign_medium
       ,CAST(NULL AS VARCHAR(255))     AS attributed_campaign_content
+      ,CAST(NULL AS VARCHAR(255))     AS attributed_campaign_brand
       FROM conversion_events c
       LEFT JOIN attributed_touches at
       ON c.order_id = at.order_id
@@ -606,7 +523,7 @@ view: marketing_attribution_test {
       JOIN attributed_touches l
       ON f.order_id = l.order_id
       AND f.conversion_event_type = l.conversion_event_type
-      WHERE f.first_touch_rank = 1 AND l.last_touch_rank = 1
+      WHERE f.first_touch_rank = 1 AND l.last_touch_rank  = 1
       ),
 
       all_touches_raw AS (
@@ -617,8 +534,6 @@ view: marketing_attribution_test {
       ,at.lifecycle_event_date, at.lifecycle_event_type
       ,at.is_activated_or_reacquired, at.is_not_retained
       ,at.activation_value, at.is_yearly_plan, at.plan_type
-      ,at.is_in_dunning, at.latest_invoice_status
-      ,at.ott_user_id
       ,at.total_touches
       ,at.touch_received_at  AS attributed_touch_at
       ,at.days_before_conversion
@@ -627,6 +542,7 @@ view: marketing_attribution_test {
       ,CAST(at.campaign_id      AS VARCHAR(255)) AS attributed_campaign_id
       ,CAST(at.campaign_medium  AS VARCHAR(255)) AS attributed_campaign_medium
       ,CAST(at.campaign_content AS VARCHAR(255)) AS attributed_campaign_content
+      ,CAST(at.campaign_brand   AS VARCHAR(255)) AS attributed_campaign_brand
       ,at.first_touch_rank, at.last_touch_rank
       ,CAST(CASE WHEN at.first_touch_rank = 1 THEN 1.0 ELSE 0.0 END
       AS NUMERIC(7,6)) AS credit_first_touch
@@ -649,10 +565,10 @@ view: marketing_attribution_test {
       ELSE COALESCE(0.2 / NULLIF(at.total_touches - 2, 0), 0)
       END AS NUMERIC(7,6)) AS credit_position_based
       ,CAST(CASE
-      WHEN at.total_touches = 1       THEN 'only'
-      WHEN at.first_touch_rank = 1    THEN 'first'
-      WHEN at.last_touch_rank  = 1    THEN 'last'
-      ELSE                                 'middle'
+      WHEN at.total_touches = 1                       THEN 'only'
+      WHEN at.first_touch_rank = 1                    THEN 'first'
+      WHEN at.last_touch_rank  = 1                    THEN 'last'
+      ELSE                                                 'middle'
       END AS VARCHAR(20)) AS touch_position
       ,COALESCE(flm.is_first_and_last, FALSE) AS is_first_and_last
       FROM attributed_touches at
@@ -669,8 +585,6 @@ view: marketing_attribution_test {
       ,lifecycle_event_date, lifecycle_event_type
       ,is_activated_or_reacquired, is_not_retained
       ,activation_value, is_yearly_plan, plan_type
-      ,is_in_dunning, latest_invoice_status
-      ,MAX(ott_user_id) AS ott_user_id
       ,total_touches
       ,MIN(days_before_conversion)         AS min_days_before_conversion
       ,MIN(attributed_touch_at)            AS attributed_touch_at
@@ -679,6 +593,7 @@ view: marketing_attribution_test {
       ,MAX(attributed_campaign_id)         AS attributed_campaign_id
       ,attributed_campaign_medium
       ,MAX(attributed_campaign_content)    AS attributed_campaign_content
+      ,MAX(attributed_campaign_brand)      AS attributed_campaign_brand
       ,CAST(SUM(credit_first_touch)    AS NUMERIC(7,6)) AS credit_first_touch
       ,CAST(SUM(credit_last_touch)     AS NUMERIC(7,6)) AS credit_last_touch
       ,CAST(SUM(credit_first_last)     AS NUMERIC(7,6)) AS credit_first_last
@@ -693,7 +608,6 @@ view: marketing_attribution_test {
       ,trial_type, bundle_plan, is_bundle_user
       ,lifecycle_event_date, lifecycle_event_type, is_activated_or_reacquired
       ,is_not_retained, activation_value, is_yearly_plan, plan_type
-      ,is_in_dunning, latest_invoice_status
       ,total_touches
       ,attributed_campaign_source
       ,attributed_campaign_name
@@ -707,8 +621,6 @@ view: marketing_attribution_test {
       ,lifecycle_event_date, lifecycle_event_type, is_activated_or_reacquired
       ,is_not_retained
       ,activation_value, is_yearly_plan, plan_type
-      ,is_in_dunning, latest_invoice_status
-      ,ott_user_id
       ,total_touches
       ,CAST(NULL AS INTEGER)        AS min_days_before_conversion
       ,attributed_touch_at
@@ -717,6 +629,7 @@ view: marketing_attribution_test {
       ,CAST(attributed_campaign_id      AS VARCHAR(255)) AS attributed_campaign_id
       ,CAST(attributed_campaign_medium  AS VARCHAR(255)) AS attributed_campaign_medium
       ,CAST(attributed_campaign_content AS VARCHAR(255)) AS attributed_campaign_content
+      ,CAST(attributed_campaign_brand   AS VARCHAR(255)) AS attributed_campaign_brand
       ,CAST(1.0 AS NUMERIC(7,6))    AS credit_first_touch
       ,CAST(1.0 AS NUMERIC(7,6))    AS credit_last_touch
       ,CAST(1.0 AS NUMERIC(7,6))    AS credit_first_last
@@ -733,17 +646,6 @@ view: marketing_attribution_test {
       UNION ALL SELECT * FROM selected_attributed_direct
       ),
 
-      app_trials_by_campaign_day AS (
-      SELECT
-      report_date
-      ,CAST(campaign_name AS VARCHAR(255))   AS campaign_name
-      ,CAST('paid'        AS VARCHAR(255))   AS campaign_medium
-      ,CAST(NULL          AS VARCHAR(255))   AS campaign_content
-      ,SUM(app_trial_count)                  AS app_trial_count
-      FROM branch_app_trials
-      GROUP BY 1, 2, 3, 4
-      ),
-
       daily_campaign_metrics AS (
       SELECT
       DATE(sa.conversion_event_at)   AS report_date
@@ -753,13 +655,7 @@ view: marketing_attribution_test {
       ,SUM(CASE WHEN sa.conversion_event_type = 'free_trial'
       AND sa.trial_type = 'standard'
       AND sa.is_last_touch
-      THEN 1 ELSE 0 END)
-      + COALESCE(MAX(at.app_trial_count), 0) AS standard_trials
-      ,SUM(CASE WHEN sa.conversion_event_type = 'free_trial'
-      AND sa.trial_type = 'standard'
-      AND sa.is_last_touch
-      THEN 1 ELSE 0 END)              AS web_standard_trials
-      ,COALESCE(MAX(at.app_trial_count), 0) AS app_standard_trials
+      THEN 1 ELSE 0 END)        AS standard_trials
       ,SUM(CASE WHEN sa.conversion_event_type = 'free_trial'
       AND sa.trial_type = 'bundle'
       AND sa.is_last_touch
@@ -771,16 +667,6 @@ view: marketing_attribution_test {
       AND sa.lifecycle_event_type = 'activation'
       AND sa.is_last_touch
       THEN sa.user_id END) AS activations
-      ,COUNT(DISTINCT CASE WHEN sa.conversion_event_type = 'free_trial'
-      AND sa.lifecycle_event_type = 'activation'
-      AND sa.is_in_dunning
-      AND sa.is_last_touch
-      THEN sa.user_id END) AS activations_in_dunning
-      ,COUNT(DISTINCT CASE WHEN sa.conversion_event_type = 'free_trial'
-      AND sa.lifecycle_event_type = 'activation'
-      AND NOT sa.is_in_dunning
-      AND sa.is_last_touch
-      THEN sa.user_id END) AS effective_activations
       ,COUNT(DISTINCT CASE WHEN sa.conversion_event_type = 'free_trial'
       AND sa.is_last_touch
       THEN sa.user_id END) AS unique_trial_users
@@ -804,11 +690,6 @@ view: marketing_attribution_test {
       AND NOT sa.is_yearly_plan
       THEN sa.user_id END)                   AS monthly_plan_users
       FROM selected_attributed sa
-      LEFT JOIN app_trials_by_campaign_day at
-      ON DATE(sa.conversion_event_at)                = at.report_date
-      AND COALESCE(sa.attributed_campaign_name, '')   = COALESCE(at.campaign_name, '')
-      AND COALESCE(sa.attributed_campaign_medium, '') = COALESCE(at.campaign_medium, '')
-      AND COALESCE(sa.attributed_campaign_content,'') = COALESCE(at.campaign_content, '')
       GROUP BY 1, 2, 3, 4
       ),
 
@@ -817,6 +698,7 @@ view: marketing_attribution_test {
       report_date
       ,GREATEST(MAX(standard_trials), 1)  AS max_standard
       ,GREATEST(MAX(bundle_trials), 1)    AS max_bundle
+      ,GREATEST(MAX(reacquisitions), 1)   AS max_reacq
       ,GREATEST(MAX(activations), 1)      AS max_activations
       FROM daily_campaign_metrics
       GROUP BY report_date
@@ -826,10 +708,7 @@ view: marketing_attribution_test {
       SELECT
       m.report_date, m.campaign_name, m.campaign_medium, m.campaign_content
       ,m.standard_trials, m.bundle_trials, m.reacquisitions, m.activations
-      ,m.web_standard_trials, m.app_standard_trials
       ,m.unique_trial_users
-      ,COALESCE(m.activations_in_dunning, 0)  AS activations_in_dunning
-      ,COALESCE(m.effective_activations, 0)   AS effective_activations
       ,CAST(COALESCE(m.total_order_value, 0)  AS NUMERIC(12,2)) AS total_order_value
       ,CAST(COALESCE(m.avg_order_value, 0)    AS NUMERIC(10,2)) AS avg_order_value
       ,COALESCE(m.yearly_plan_users, 0)       AS yearly_plan_users
@@ -840,26 +719,16 @@ view: marketing_attribution_test {
       ELSE 0 END
       AS NUMERIC(5,4)
       ) AS trial_to_paid_rate
-      ,CAST(
-      CASE WHEN m.unique_trial_users > 0
-      THEN 1.0 * COALESCE(m.effective_activations, 0) / m.unique_trial_users
-      ELSE 0 END
-      AS NUMERIC(5,4)
-      ) AS effective_trial_to_paid_rate
-      ,CAST(
-      CASE WHEN m.activations > 0
-      THEN 1.0 * COALESCE(m.activations_in_dunning, 0) / m.activations
-      ELSE 0 END
-      AS NUMERIC(5,4)
-      ) AS dunning_rate
       ,CAST(COALESCE(m.churn_rate_raw, 0)         AS NUMERIC(5,4)) AS churn_rate
       ,CAST(1.0 - COALESCE(m.churn_rate_raw, 0)   AS NUMERIC(5,4)) AS retention_rate
       ,CAST(100.0 * m.standard_trials  / n.max_standard    AS NUMERIC(10,4)) AS std_trial_score
       ,CAST(100.0 * m.bundle_trials    / n.max_bundle      AS NUMERIC(10,4)) AS bundle_trial_score
+      ,CAST(100.0 * m.reacquisitions   / n.max_reacq       AS NUMERIC(10,4)) AS reacq_score
       ,CAST(100.0 * m.activations      / n.max_activations AS NUMERIC(10,4)) AS activation_score
       ,CAST(
       (SELECT w_standard_trials FROM params) * (100.0 * m.standard_trials  / n.max_standard)
       + (SELECT w_bundle_trials   FROM params) * (100.0 * m.bundle_trials    / n.max_bundle)
+      + (SELECT w_reacquisitions  FROM params) * (100.0 * m.reacquisitions   / n.max_reacq)
       + (SELECT w_activations     FROM params) * (100.0 * m.activations      / n.max_activations)
       AS NUMERIC(10,4)
       ) AS volume_score
@@ -867,6 +736,7 @@ view: marketing_attribution_test {
       CAST(
       (SELECT w_standard_trials FROM params) * (100.0 * m.standard_trials  / n.max_standard)
       + (SELECT w_bundle_trials   FROM params) * (100.0 * m.bundle_trials    / n.max_bundle)
+      + (SELECT w_reacquisitions  FROM params) * (100.0 * m.reacquisitions   / n.max_reacq)
       + (SELECT w_activations     FROM params) * (100.0 * m.activations      / n.max_activations)
       AS NUMERIC(10,4)
       )
@@ -878,17 +748,18 @@ view: marketing_attribution_test {
       / (SELECT conv_rate_max FROM params), 1.0
       ) AS NUMERIC(5,4)
       )
+      * CAST(
+      GREATEST(
+      1.0 - COALESCE(m.churn_rate_raw, 0),
+      1.0 - (SELECT retention_floor FROM params)
+      ) AS NUMERIC(5,4)
+      )
       AS NUMERIC(10,4)
       ) AS quality_score
       FROM daily_campaign_metrics m
       JOIN daily_norms n ON m.report_date = n.report_date
       ),
 
-      -- ============================================================
-      -- ROW-TYPE CTEs
-      -- ott_user_id added at end of every row-type CTE.
-      -- Real value only on conversion_rows (from sa.ott_user_id).
-      -- ============================================================
       page_visit_rows AS (
       SELECT
       CAST('page_visit' AS VARCHAR(20))      AS event_type
@@ -901,6 +772,7 @@ view: marketing_attribution_test {
       ,campaign_id
       ,CAST(campaign_medium AS VARCHAR(255))  AS campaign_medium
       ,campaign_content
+      ,campaign_brand
       ,CAST(NULL AS VARCHAR(255)) AS order_id
       ,CAST(NULL AS VARCHAR(20))  AS conversion_event_type
       ,CAST(NULL AS VARCHAR(20))  AS trial_type
@@ -913,8 +785,6 @@ view: marketing_attribution_test {
       ,CAST(0.0 AS NUMERIC(10,2)) AS activation_value
       ,FALSE                      AS is_yearly_plan
       ,CAST(NULL AS VARCHAR(20))  AS plan_type
-      ,FALSE                      AS is_in_dunning
-      ,CAST(NULL AS VARCHAR(20))  AS latest_invoice_status
       ,0                          AS total_touches
       ,CAST(NULL AS INTEGER)      AS min_days_before_conversion
       ,CAST(NULL AS TIMESTAMP)    AS attributed_touch_at
@@ -937,97 +807,15 @@ view: marketing_attribution_test {
       ,CAST(NULL AS NUMERIC(10,2))  AS quality_score
       ,CAST(NULL AS NUMERIC(10,2))  AS volume_score
       ,CAST(NULL AS NUMERIC(5,4))   AS trial_to_paid_rate
-      ,CAST(NULL AS NUMERIC(5,4))   AS effective_trial_to_paid_rate
-      ,CAST(NULL AS NUMERIC(5,4))   AS dunning_rate
       ,CAST(NULL AS NUMERIC(5,4))   AS churn_rate
       ,CAST(NULL AS NUMERIC(5,4))   AS retention_rate
       ,CAST(NULL AS NUMERIC(12,2))  AS campaign_total_aov
       ,CAST(NULL AS NUMERIC(10,2))  AS campaign_avg_aov
       ,CAST(NULL AS NUMERIC(10,2))  AS std_trial_score
       ,CAST(NULL AS NUMERIC(10,2))  AS bundle_trial_score
+      ,CAST(NULL AS NUMERIC(10,2))  AS reacq_score
       ,CAST(NULL AS NUMERIC(10,2))  AS activation_score
-      ,CAST(page_path     AS VARCHAR(500))   AS page_path
-      ,CAST(page_referrer AS VARCHAR(500))   AS page_referrer
-      ,CAST(campaign_term AS VARCHAR(500))   AS campaign_term
-      ,CAST(page_search   AS VARCHAR(1000))  AS page_search
-      ,CAST(consent_c0001 AS BOOLEAN)        AS consent_c0001
-      ,CAST(consent_c0002 AS BOOLEAN)        AS consent_c0002
-      ,CAST(consent_c0003 AS BOOLEAN)        AS consent_c0003
-      ,CAST(consent_c0004 AS BOOLEAN)        AS consent_c0004
-      ,CAST(consent_c0005 AS BOOLEAN)        AS consent_c0005
-      ,CAST(NULL AS VARCHAR(255))            AS ott_user_id
       FROM marketing_touches
-      ),
-
-      checkout_page_visit_rows AS (
-      SELECT
-      CAST('checkout_page_visit' AS VARCHAR(20)) AS event_type
-      ,event_id
-      ,user_id, context_ip, anonymous_id
-      ,event_received_at                      AS event_at
-      ,event_date                             AS report_date
-      ,CAST(campaign_source AS VARCHAR(255))  AS campaign_source
-      ,CAST(campaign_name   AS VARCHAR(255))  AS campaign_name
-      ,campaign_id
-      ,CAST(campaign_medium AS VARCHAR(255))  AS campaign_medium
-      ,campaign_content
-      ,CAST(NULL AS VARCHAR(255)) AS order_id
-      ,CAST(NULL AS VARCHAR(20))  AS conversion_event_type
-      ,CAST(NULL AS VARCHAR(20))  AS trial_type
-      ,CAST(NULL AS VARCHAR(255)) AS bundle_plan
-      ,FALSE                      AS is_bundle_user
-      ,CAST(NULL AS VARCHAR(20))  AS lifecycle_event_type
-      ,CAST(NULL AS DATE)         AS lifecycle_event_date
-      ,FALSE                      AS is_activated_or_reacquired
-      ,FALSE                      AS is_not_retained
-      ,CAST(0.0 AS NUMERIC(10,2)) AS activation_value
-      ,FALSE                      AS is_yearly_plan
-      ,CAST(NULL AS VARCHAR(20))  AS plan_type
-      ,FALSE                      AS is_in_dunning
-      ,CAST(NULL AS VARCHAR(20))  AS latest_invoice_status
-      ,0                          AS total_touches
-      ,CAST(NULL AS INTEGER)      AS min_days_before_conversion
-      ,CAST(NULL AS TIMESTAMP)    AS attributed_touch_at
-      ,CAST(0.0 AS NUMERIC(7,6))  AS credit_first_touch
-      ,CAST(0.0 AS NUMERIC(7,6))  AS credit_last_touch
-      ,CAST(0.0 AS NUMERIC(7,6))  AS credit_first_last
-      ,CAST(0.0 AS NUMERIC(7,6))  AS credit_position_based
-      ,CAST(NULL AS VARCHAR(20))  AS touch_position
-      ,FALSE                      AS is_first_touch
-      ,FALSE                      AS is_last_touch
-      ,FALSE                      AS is_first_and_last
-      ,CAST(0 AS INTEGER)         AS app_trial_count
-      ,CAST(0 AS INTEGER)         AS app_install_count
-      ,CAST(0 AS INTEGER)         AS app_reinstall_count
-      ,CAST(NULL AS VARCHAR(50))  AS device_os
-      ,CAST(NULL AS VARCHAR(255)) AS branch_channel
-      ,CAST(NULL AS VARCHAR(100)) AS branch_feature
-      ,CAST(NULL AS VARCHAR(500)) AS creative_name
-      ,FALSE                      AS is_paid_branch
-      ,CAST(NULL AS NUMERIC(10,2))  AS quality_score
-      ,CAST(NULL AS NUMERIC(10,2))  AS volume_score
-      ,CAST(NULL AS NUMERIC(5,4))   AS trial_to_paid_rate
-      ,CAST(NULL AS NUMERIC(5,4))   AS effective_trial_to_paid_rate
-      ,CAST(NULL AS NUMERIC(5,4))   AS dunning_rate
-      ,CAST(NULL AS NUMERIC(5,4))   AS churn_rate
-      ,CAST(NULL AS NUMERIC(5,4))   AS retention_rate
-      ,CAST(NULL AS NUMERIC(12,2))  AS campaign_total_aov
-      ,CAST(NULL AS NUMERIC(10,2))  AS campaign_avg_aov
-      ,CAST(NULL AS NUMERIC(10,2))  AS std_trial_score
-      ,CAST(NULL AS NUMERIC(10,2))  AS bundle_trial_score
-      ,CAST(NULL AS NUMERIC(10,2))  AS activation_score
-      ,CAST(page_path     AS VARCHAR(500))   AS page_path
-      ,CAST(page_referrer AS VARCHAR(500))   AS page_referrer
-      ,CAST(campaign_term AS VARCHAR(500))   AS campaign_term
-      ,CAST(page_search   AS VARCHAR(1000))  AS page_search
-      ,CAST(consent_c0001 AS BOOLEAN)        AS consent_c0001
-      ,CAST(consent_c0002 AS BOOLEAN)        AS consent_c0002
-      ,CAST(consent_c0003 AS BOOLEAN)        AS consent_c0003
-      ,CAST(consent_c0004 AS BOOLEAN)        AS consent_c0004
-      ,CAST(consent_c0005 AS BOOLEAN)        AS consent_c0005
-      ,CAST(NULL AS VARCHAR(255))            AS ott_user_id
-      FROM lifecycle_events
-      WHERE source_event_type = 'checkout_page_visit'
       ),
 
       conversion_rows AS (
@@ -1044,13 +832,13 @@ view: marketing_attribution_test {
       ,sa.attributed_campaign_id                   AS campaign_id
       ,sa.attributed_campaign_medium               AS campaign_medium
       ,sa.attributed_campaign_content              AS campaign_content
+      ,sa.attributed_campaign_brand                AS campaign_brand
       ,sa.order_id, sa.conversion_event_type
       ,sa.trial_type, sa.bundle_plan, sa.is_bundle_user
       ,sa.lifecycle_event_type, sa.lifecycle_event_date
       ,sa.is_activated_or_reacquired, sa.is_not_retained
       ,CAST(sa.activation_value    AS NUMERIC(10,2)) AS activation_value
       ,sa.is_yearly_plan, sa.plan_type
-      ,sa.is_in_dunning, sa.latest_invoice_status
       ,sa.total_touches
       ,sa.min_days_before_conversion
       ,sa.attributed_touch_at
@@ -1066,34 +854,23 @@ view: marketing_attribution_test {
       ,CAST(NULL AS VARCHAR(100)) AS branch_feature
       ,CAST(NULL AS VARCHAR(500)) AS creative_name
       ,FALSE                      AS is_paid_branch
-      ,CAST(dq.quality_score                AS NUMERIC(10,2)) AS quality_score
-      ,CAST(dq.volume_score                 AS NUMERIC(10,2)) AS volume_score
-      ,CAST(dq.trial_to_paid_rate           AS NUMERIC(5,4))  AS trial_to_paid_rate
-      ,CAST(dq.effective_trial_to_paid_rate AS NUMERIC(5,4))  AS effective_trial_to_paid_rate
-      ,CAST(dq.dunning_rate                 AS NUMERIC(5,4))  AS dunning_rate
-      ,CAST(dq.churn_rate                   AS NUMERIC(5,4))  AS churn_rate
-      ,CAST(dq.retention_rate               AS NUMERIC(5,4))  AS retention_rate
-      ,CAST(dq.total_order_value            AS NUMERIC(12,2)) AS campaign_total_aov
-      ,CAST(dq.avg_order_value              AS NUMERIC(10,2)) AS campaign_avg_aov
-      ,CAST(dq.std_trial_score              AS NUMERIC(10,2)) AS std_trial_score
-      ,CAST(dq.bundle_trial_score           AS NUMERIC(10,2)) AS bundle_trial_score
-      ,CAST(dq.activation_score             AS NUMERIC(10,2)) AS activation_score
-      ,CAST(NULL AS VARCHAR(500))           AS page_path
-      ,CAST(NULL AS VARCHAR(500))           AS page_referrer
-      ,CAST(NULL AS VARCHAR(500))           AS campaign_term
-      ,CAST(NULL AS VARCHAR(1000))          AS page_search
-      ,CAST(NULL AS BOOLEAN)                AS consent_c0001
-      ,CAST(NULL AS BOOLEAN)                AS consent_c0002
-      ,CAST(NULL AS BOOLEAN)                AS consent_c0003
-      ,CAST(NULL AS BOOLEAN)                AS consent_c0004
-      ,CAST(NULL AS BOOLEAN)                AS consent_c0005
-      ,CAST(sa.ott_user_id AS VARCHAR(255)) AS ott_user_id
+      ,CAST(dq.quality_score      AS NUMERIC(10,2)) AS quality_score
+      ,CAST(dq.volume_score       AS NUMERIC(10,2)) AS volume_score
+      ,CAST(dq.trial_to_paid_rate AS NUMERIC(5,4))  AS trial_to_paid_rate
+      ,CAST(dq.churn_rate         AS NUMERIC(5,4))  AS churn_rate
+      ,CAST(dq.retention_rate     AS NUMERIC(5,4))  AS retention_rate
+      ,CAST(dq.total_order_value  AS NUMERIC(12,2)) AS campaign_total_aov
+      ,CAST(dq.avg_order_value    AS NUMERIC(10,2)) AS campaign_avg_aov
+      ,CAST(dq.std_trial_score    AS NUMERIC(10,2)) AS std_trial_score
+      ,CAST(dq.bundle_trial_score AS NUMERIC(10,2)) AS bundle_trial_score
+      ,CAST(dq.reacq_score        AS NUMERIC(10,2)) AS reacq_score
+      ,CAST(dq.activation_score   AS NUMERIC(10,2)) AS activation_score
       FROM selected_attributed sa
       LEFT JOIN daily_campaign_quality dq
-      ON DATE(sa.conversion_event_at)                = dq.report_date
-      AND COALESCE(sa.attributed_campaign_name, '')   = COALESCE(dq.campaign_name, '')
-      AND COALESCE(sa.attributed_campaign_medium, '') = COALESCE(dq.campaign_medium, '')
-      AND COALESCE(sa.attributed_campaign_content,'') = COALESCE(dq.campaign_content, '')
+      ON DATE(sa.conversion_event_at) = dq.report_date
+      AND COALESCE(sa.attributed_campaign_name, '')    = COALESCE(dq.campaign_name, '')
+      AND COALESCE(sa.attributed_campaign_medium, '')  = COALESCE(dq.campaign_medium, '')
+      AND COALESCE(sa.attributed_campaign_content, '') = COALESCE(dq.campaign_content, '')
       ),
 
       app_trial_rows AS (
@@ -1111,6 +888,7 @@ view: marketing_attribution_test {
       ,CAST(campaign_id      AS VARCHAR(255))                               AS campaign_id
       ,CAST('paid' AS VARCHAR(255))                                         AS campaign_medium
       ,CAST(NULL AS VARCHAR(255))                                           AS campaign_content
+      ,CAST(NULL AS VARCHAR(255))                                           AS campaign_brand
       ,CAST(NULL AS VARCHAR(255))                                           AS order_id
       ,'free_trial'                                                         AS conversion_event_type
       ,CAST('app' AS VARCHAR(20))                                           AS trial_type
@@ -1123,8 +901,6 @@ view: marketing_attribution_test {
       ,CAST(0 AS NUMERIC(10,2))                                             AS activation_value
       ,FALSE                                                                AS is_yearly_plan
       ,CAST(NULL AS VARCHAR(20))                                            AS plan_type
-      ,FALSE                                                                AS is_in_dunning
-      ,CAST(NULL AS VARCHAR(20))                                            AS latest_invoice_status
       ,0                                                                    AS total_touches
       ,CAST(NULL AS INTEGER)                                                AS min_days_before_conversion
       ,CAST(NULL AS TIMESTAMP)                                              AS attributed_touch_at
@@ -1147,25 +923,14 @@ view: marketing_attribution_test {
       ,CAST(NULL AS NUMERIC(10,2))                                          AS quality_score
       ,CAST(NULL AS NUMERIC(10,2))                                          AS volume_score
       ,CAST(NULL AS NUMERIC(5,4))                                           AS trial_to_paid_rate
-      ,CAST(NULL AS NUMERIC(5,4))                                           AS effective_trial_to_paid_rate
-      ,CAST(NULL AS NUMERIC(5,4))                                           AS dunning_rate
       ,CAST(NULL AS NUMERIC(5,4))                                           AS churn_rate
       ,CAST(NULL AS NUMERIC(5,4))                                           AS retention_rate
       ,CAST(NULL AS NUMERIC(12,2))                                          AS campaign_total_aov
       ,CAST(NULL AS NUMERIC(10,2))                                          AS campaign_avg_aov
       ,CAST(NULL AS NUMERIC(10,2))                                          AS std_trial_score
       ,CAST(NULL AS NUMERIC(10,2))                                          AS bundle_trial_score
+      ,CAST(NULL AS NUMERIC(10,2))                                          AS reacq_score
       ,CAST(NULL AS NUMERIC(10,2))                                          AS activation_score
-      ,CAST(NULL AS VARCHAR(500))                                           AS page_path
-      ,CAST(NULL AS VARCHAR(500))                                           AS page_referrer
-      ,CAST(NULL AS VARCHAR(500))                                           AS campaign_term
-      ,CAST(NULL AS VARCHAR(1000))                                          AS page_search
-      ,CAST(NULL AS BOOLEAN)                                                AS consent_c0001
-      ,CAST(NULL AS BOOLEAN)                                                AS consent_c0002
-      ,CAST(NULL AS BOOLEAN)                                                AS consent_c0003
-      ,CAST(NULL AS BOOLEAN)                                                AS consent_c0004
-      ,CAST(NULL AS BOOLEAN)                                                AS consent_c0005
-      ,CAST(NULL AS VARCHAR(255))                                           AS ott_user_id
       FROM branch_app_trials
       ),
 
@@ -1184,6 +949,7 @@ view: marketing_attribution_test {
       ,CAST(campaign_id      AS VARCHAR(255))                               AS campaign_id
       ,CAST('paid' AS VARCHAR(255))                                         AS campaign_medium
       ,CAST(NULL AS VARCHAR(255))                                           AS campaign_content
+      ,CAST(NULL AS VARCHAR(255))                                           AS campaign_brand
       ,CAST(NULL AS VARCHAR(255))                                           AS order_id
       ,CAST(NULL AS VARCHAR(20))                                            AS conversion_event_type
       ,CAST('app_install' AS VARCHAR(20))                                   AS trial_type
@@ -1196,8 +962,6 @@ view: marketing_attribution_test {
       ,CAST(0 AS NUMERIC(10,2))                                             AS activation_value
       ,FALSE                                                                AS is_yearly_plan
       ,CAST(NULL AS VARCHAR(20))                                            AS plan_type
-      ,FALSE                                                                AS is_in_dunning
-      ,CAST(NULL AS VARCHAR(20))                                            AS latest_invoice_status
       ,0                                                                    AS total_touches
       ,CAST(NULL AS INTEGER)                                                AS min_days_before_conversion
       ,CAST(NULL AS TIMESTAMP)                                              AS attributed_touch_at
@@ -1220,25 +984,14 @@ view: marketing_attribution_test {
       ,CAST(NULL AS NUMERIC(10,2))                                          AS quality_score
       ,CAST(NULL AS NUMERIC(10,2))                                          AS volume_score
       ,CAST(NULL AS NUMERIC(5,4))                                           AS trial_to_paid_rate
-      ,CAST(NULL AS NUMERIC(5,4))                                           AS effective_trial_to_paid_rate
-      ,CAST(NULL AS NUMERIC(5,4))                                           AS dunning_rate
       ,CAST(NULL AS NUMERIC(5,4))                                           AS churn_rate
       ,CAST(NULL AS NUMERIC(5,4))                                           AS retention_rate
       ,CAST(NULL AS NUMERIC(12,2))                                          AS campaign_total_aov
       ,CAST(NULL AS NUMERIC(10,2))                                          AS campaign_avg_aov
       ,CAST(NULL AS NUMERIC(10,2))                                          AS std_trial_score
       ,CAST(NULL AS NUMERIC(10,2))                                          AS bundle_trial_score
+      ,CAST(NULL AS NUMERIC(10,2))                                          AS reacq_score
       ,CAST(NULL AS NUMERIC(10,2))                                          AS activation_score
-      ,CAST(NULL AS VARCHAR(500))                                           AS page_path
-      ,CAST(NULL AS VARCHAR(500))                                           AS page_referrer
-      ,CAST(NULL AS VARCHAR(500))                                           AS campaign_term
-      ,CAST(NULL AS VARCHAR(1000))                                          AS page_search
-      ,CAST(NULL AS BOOLEAN)                                                AS consent_c0001
-      ,CAST(NULL AS BOOLEAN)                                                AS consent_c0002
-      ,CAST(NULL AS BOOLEAN)                                                AS consent_c0003
-      ,CAST(NULL AS BOOLEAN)                                                AS consent_c0004
-      ,CAST(NULL AS BOOLEAN)                                                AS consent_c0005
-      ,CAST(NULL AS VARCHAR(255))                                           AS ott_user_id
       FROM branch_app_installs
       ),
 
@@ -1257,6 +1010,7 @@ view: marketing_attribution_test {
       ,CAST(campaign_id      AS VARCHAR(255))                               AS campaign_id
       ,CAST('paid' AS VARCHAR(255))                                         AS campaign_medium
       ,CAST(NULL AS VARCHAR(255))                                           AS campaign_content
+      ,CAST(NULL AS VARCHAR(255))                                           AS campaign_brand
       ,CAST(NULL AS VARCHAR(255))                                           AS order_id
       ,CAST(NULL AS VARCHAR(20))                                            AS conversion_event_type
       ,CAST('app_reinstall' AS VARCHAR(20))                                 AS trial_type
@@ -1269,8 +1023,6 @@ view: marketing_attribution_test {
       ,CAST(0 AS NUMERIC(10,2))                                             AS activation_value
       ,FALSE                                                                AS is_yearly_plan
       ,CAST(NULL AS VARCHAR(20))                                            AS plan_type
-      ,FALSE                                                                AS is_in_dunning
-      ,CAST(NULL AS VARCHAR(20))                                            AS latest_invoice_status
       ,0                                                                    AS total_touches
       ,CAST(NULL AS INTEGER)                                                AS min_days_before_conversion
       ,CAST(NULL AS TIMESTAMP)                                              AS attributed_touch_at
@@ -1293,32 +1045,18 @@ view: marketing_attribution_test {
       ,CAST(NULL AS NUMERIC(10,2))                                          AS quality_score
       ,CAST(NULL AS NUMERIC(10,2))                                          AS volume_score
       ,CAST(NULL AS NUMERIC(5,4))                                           AS trial_to_paid_rate
-      ,CAST(NULL AS NUMERIC(5,4))                                           AS effective_trial_to_paid_rate
-      ,CAST(NULL AS NUMERIC(5,4))                                           AS dunning_rate
       ,CAST(NULL AS NUMERIC(5,4))                                           AS churn_rate
       ,CAST(NULL AS NUMERIC(5,4))                                           AS retention_rate
       ,CAST(NULL AS NUMERIC(12,2))                                          AS campaign_total_aov
       ,CAST(NULL AS NUMERIC(10,2))                                          AS campaign_avg_aov
       ,CAST(NULL AS NUMERIC(10,2))                                          AS std_trial_score
       ,CAST(NULL AS NUMERIC(10,2))                                          AS bundle_trial_score
+      ,CAST(NULL AS NUMERIC(10,2))                                          AS reacq_score
       ,CAST(NULL AS NUMERIC(10,2))                                          AS activation_score
-      ,CAST(NULL AS VARCHAR(500))                                           AS page_path
-      ,CAST(NULL AS VARCHAR(500))                                           AS page_referrer
-      ,CAST(NULL AS VARCHAR(500))                                           AS campaign_term
-      ,CAST(NULL AS VARCHAR(1000))                                          AS page_search
-      ,CAST(NULL AS BOOLEAN)                                                AS consent_c0001
-      ,CAST(NULL AS BOOLEAN)                                                AS consent_c0002
-      ,CAST(NULL AS BOOLEAN)                                                AS consent_c0003
-      ,CAST(NULL AS BOOLEAN)                                                AS consent_c0004
-      ,CAST(NULL AS BOOLEAN)                                                AS consent_c0005
-      ,CAST(NULL AS VARCHAR(255))                                           AS ott_user_id
       FROM branch_app_reinstalls
       )
 
-      SELECT * FROM (
       SELECT * FROM page_visit_rows
-      UNION ALL
-      SELECT * FROM checkout_page_visit_rows
       UNION ALL
       SELECT * FROM conversion_rows
       UNION ALL
@@ -1327,9 +1065,6 @@ view: marketing_attribution_test {
       SELECT * FROM app_install_rows
       UNION ALL
       SELECT * FROM app_reinstall_rows
-      ) all_rows
-      WHERE 1=1
-      --{% incrementcondition %} report_date {% endincrementcondition %}
       ;;
   }
 
@@ -1378,20 +1113,13 @@ view: marketing_attribution_test {
 
   dimension: event_type {
     type: string
-    description: "'page_visit' | 'checkout_page_visit' | 'conversion' | 'app_trial' | 'app_install' | 'app_reinstall'"
+    description: "'page_visit' | 'conversion' | 'app_trial' | 'app_install' | 'app_reinstall'"
     sql: ${TABLE}.event_type ;;
   }
 
   dimension: user_id        { type: string  sql: ${TABLE}.user_id ;; }
   dimension: anonymous_id   { type: string  sql: ${TABLE}.anonymous_id ;; }
   dimension: context_ip     { type: string  sql: ${TABLE}.context_ip ;; }
-
-  dimension: ott_user_id {
-    type: string
-    label: "OTT User ID"
-    description: "Streaming-platform (OTT) user identifier extracted from the `entitlements` JSON array on the checkout order_completed event (first element, key 'ott_user_id'). Use to join marketing conversions to the streaming platform's user table. Populated on standard-trial conversion rows only; NULL on bundle trials, reacquisitions, page visits, checkout page visits, and app events."
-    sql: ${TABLE}.ott_user_id ;;
-  }
 
   ##############################################################
   # TIME DIMENSIONS
@@ -1432,11 +1160,48 @@ view: marketing_attribution_test {
   dimension: campaign_id       { type: string  label: "Campaign ID"       sql: ${TABLE}.campaign_id ;; }
   dimension: campaign_medium   { type: string  label: "Campaign Medium"   sql: ${TABLE}.campaign_medium ;; }
   dimension: campaign_content  { type: string  label: "Campaign Content"  sql: ${TABLE}.campaign_content ;; }
-  dimension: campaign_term {
+
+  # Maps UTM campaign_source to Agorapulse-style platform values so the Social Performance
+  # dashboard Platform filter (defined on social_daily_snapshot.platform) can listen here.
+  # Empty Platform filter = no constraint (all sources). Aliases: fb→facebook, ig→instagram.
+  dimension: platform {
     type: string
-    label: "Campaign Term"
-    description: "utm_term URL parameter (Segment context_campaign_term). Populated on page_visit + checkout_page_visit; NULL elsewhere."
-    sql: ${TABLE}.campaign_term ;;
+    label: "Platform"
+    description: "Social network from campaign_source, aligned with Agorapulse platform filter values (facebook, instagram, tiktok, youtube)."
+    sql:
+      CASE
+        WHEN LOWER(TRIM(${TABLE}.campaign_source)) IN ('facebook', 'fb') THEN 'facebook'
+        WHEN LOWER(TRIM(${TABLE}.campaign_source)) IN ('instagram', 'ig') THEN 'instagram'
+        WHEN LOWER(TRIM(${TABLE}.campaign_source)) = 'tiktok' THEN 'tiktok'
+        WHEN LOWER(TRIM(${TABLE}.campaign_source)) IN ('youtube', 'yt') THEN 'youtube'
+        ELSE LOWER(TRIM(${TABLE}.campaign_source))
+      END
+    ;;
+  }
+
+  # Maps context_campaign_brand (utm_brand) to Agorapulse brand_canonical values so the
+  # Social Performance dashboard Brand filter can listen here. Heartland and other
+  # unknown values pass through but are not added to Agorapulse Brand suggestions.
+  dimension: brand_canonical {
+    type: string
+    label: "Brand"
+    description: "UTM brand from context_campaign_brand, aligned with social_daily_snapshot.brand_canonical for dashboard Brand filter listen."
+    sql:
+      CASE
+        WHEN LOWER(TRIM(${TABLE}.campaign_brand))
+          IN ('upff', 'up faith & family', 'up faith and family')
+          THEN 'UP Faith & Family'
+        WHEN LOWER(TRIM(${TABLE}.campaign_brand))
+          IN ('uptv', 'up tv')
+          THEN 'UPtv'
+        WHEN LOWER(TRIM(${TABLE}.campaign_brand))
+          IN ('aspire', 'aspiretv', 'aspire tv')
+          THEN 'Aspire TV'
+        WHEN LOWER(TRIM(${TABLE}.campaign_brand))
+          IN ('ovation', 'ovationtv', 'ovation tv')
+          THEN 'Ovation TV'
+        ELSE ${TABLE}.campaign_brand
+      END ;;
   }
 
   dimension: marketing_platform {
@@ -1448,22 +1213,18 @@ view: marketing_attribution_test {
         WHEN LOWER(${TABLE}.campaign_source) IN ('google','google_ads','adwords')
              AND LOWER(${TABLE}.campaign_medium) IN ('cpc','ppc','paid','g')
              AND LOWER(${TABLE}.campaign_name) LIKE '%display%'                 THEN 'Google Display'
-         WHEN LOWER(${TABLE}.campaign_source) IN ('youtube') THEN
-              'Youtube'
-        WHEN LOWER(${TABLE}.campaign_source) IN ('chatgpt.com') THEN
-              'ChatGPT'
         WHEN LOWER(${TABLE}.campaign_source) IN ('google','google_ads','adwords')
              AND LOWER(${TABLE}.campaign_medium) IN ('cpc','ppc','paid','g')
              AND (LOWER(${TABLE}.campaign_name) LIKE '%pmax%'
                   OR LOWER(${TABLE}.campaign_name) LIKE '%performance max%')    THEN 'Google PMax'
         WHEN LOWER(${TABLE}.campaign_source) IN ('google','google_ads','adwords')
              AND LOWER(${TABLE}.campaign_medium) IN ('cpc','ppc','paid','g')    THEN 'Google Search'
-        WHEN LOWER(${TABLE}.campaign_source) IN ('Facebook','meta','ig','fb','an','fb-SiteLink','th','msg','site_source_name', 'site.source.name','campaign.name')
+        WHEN LOWER(${TABLE}.campaign_source) IN ('meta','instagram','ig','fb', 'an', 'campaign.name')
              OR LOWER(${TABLE}.campaign_source) LIKE 'meta%'                    THEN 'Meta Ads'
-        WHEN LOWER(${TABLE}.campaign_source) IN ('bing', 'bing_ads','microsoft','msn')      THEN 'Bing Ads'
+        WHEN LOWER(${TABLE}.campaign_source) IN ('bing','microsoft','msn')      THEN 'Bing Ads'
         WHEN LOWER(${TABLE}.campaign_source) IN ('hubspot', 'hubspot_upff', 'hubspot_uptv')
              OR LOWER(${TABLE}.campaign_medium) LIKE 'email%'                   THEN 'HubSpot'
-        WHEN LOWER(${TABLE}.campaign_source) IN ('uptv', 'uptv_movies_app') THEN 'UPtv Digital'
+        WHEN LOWER(${TABLE}.campaign_source) LIKE '%uptv%'                      THEN 'UPtv Digital'
         WHEN LOWER(${TABLE}.campaign_medium) = 'organic'
              AND LOWER(${TABLE}.campaign_source) IN ('google','bing','duckduckgo','yahoo') THEN 'Organic Search'
         WHEN LOWER(${TABLE}.campaign_medium) IN ('social','organic_social')
@@ -1502,50 +1263,6 @@ view: marketing_attribution_test {
       END
     ;;
   }
-
-  ##############################################################
-  # PAGE-LEVEL DIMENSIONS
-  ##############################################################
-  dimension: page_path {
-    type: string
-    label: "Page Path"
-    description: "Vanity URL portion of the visited page. NULL for non-pageview events."
-    sql: ${TABLE}.page_path ;;
-  }
-
-  dimension: page_referrer {
-    type: string
-    label: "Page Referrer"
-    description: "Referrer URL of the visited page. NULL for non-pageview events."
-    sql: ${TABLE}.page_referrer ;;
-  }
-
-  dimension: page_search {
-    type: string
-    label: "Page Search (Query String)"
-    description: "URL query string of the visited page (Segment context_page_search). NULL for non-pageview events."
-    sql: ${TABLE}.page_search ;;
-  }
-
-  dimension: is_checkout_visit {
-    type: yesno
-    label: "Is Checkout Visit"
-    description: "TRUE on rows where event_type = 'checkout_page_visit'."
-    sql: ${TABLE}.event_type = 'checkout_page_visit' ;;
-  }
-
-  dimension: is_marketing_visit {
-    type: yesno
-    label: "Is Marketing Page Visit"
-    description: "TRUE on rows where event_type = 'page_visit' (marketing site, not checkout)."
-    sql: ${TABLE}.event_type = 'page_visit' ;;
-  }
-
-  dimension: consent_c0001 { type: yesno label: "Consent C0001" sql: ${TABLE}.consent_c0001 ;; }
-  dimension: consent_c0002 { type: yesno label: "Consent C0002" sql: ${TABLE}.consent_c0002 ;; }
-  dimension: consent_c0003 { type: yesno label: "Consent C0003" sql: ${TABLE}.consent_c0003 ;; }
-  dimension: consent_c0004 { type: yesno label: "Consent C0004" sql: ${TABLE}.consent_c0004 ;; }
-  dimension: consent_c0005 { type: yesno label: "Consent C0005" sql: ${TABLE}.consent_c0005 ;; }
 
   ##############################################################
   # TRIAL / LIFECYCLE DIMENSIONS
@@ -1591,23 +1308,6 @@ view: marketing_attribution_test {
 
   dimension: is_yearly_plan { type: yesno   sql: ${TABLE}.is_yearly_plan ;; }
   dimension: plan_type      { type: string  sql: ${TABLE}.plan_type ;; }
-
-  ##############################################################
-  # DUNNING DIMENSIONS
-  ##############################################################
-  dimension: is_in_dunning {
-    type: yesno
-    label: "Is In Dunning"
-    description: "User's most recent UP-plan invoice is unpaid (not_paid or payment_due)."
-    sql: ${TABLE}.is_in_dunning ;;
-  }
-
-  dimension: latest_invoice_status {
-    type: string
-    label: "Latest Invoice Status"
-    description: "Status of the user's most recent UP-plan invoice (paid, not_paid, payment_due, voided, etc.)."
-    sql: ${TABLE}.latest_invoice_status ;;
-  }
 
   ##############################################################
   # ATTRIBUTION ROW METADATA
@@ -1698,20 +1398,6 @@ view: marketing_attribution_test {
   }
 
   dimension: trial_to_paid_rate { type: number label: "Trial → Paid Rate (Daily)" sql: ${TABLE}.trial_to_paid_rate ;; value_format_name: percent_2 }
-  dimension: effective_trial_to_paid_rate {
-    type: number
-    label: "Effective Trial → Paid Rate (Daily)"
-    description: "Activations excluding users currently in dunning, divided by trial users. Reflects revenue-collecting conversions only."
-    sql: ${TABLE}.effective_trial_to_paid_rate ;;
-    value_format_name: percent_2
-  }
-  dimension: dunning_rate {
-    type: number
-    label: "Dunning Rate (Daily)"
-    description: "Share of daily activations currently in dunning (unpaid invoice). High values flag at-risk revenue."
-    sql: ${TABLE}.dunning_rate ;;
-    value_format_name: percent_2
-  }
   dimension: churn_rate         { type: number label: "Churn Rate (Daily)"        sql: ${TABLE}.churn_rate ;;        value_format_name: percent_2 }
   dimension: retention_rate     { type: number label: "Retention Rate (Daily)"    sql: ${TABLE}.retention_rate ;;    value_format_name: percent_2 }
 
@@ -1731,6 +1417,7 @@ view: marketing_attribution_test {
 
   dimension: std_trial_score    { type: number hidden: yes sql: ${TABLE}.std_trial_score ;; }
   dimension: bundle_trial_score { type: number hidden: yes sql: ${TABLE}.bundle_trial_score ;; }
+  dimension: reacq_score        { type: number hidden: yes sql: ${TABLE}.reacq_score ;; }
   dimension: activation_score   { type: number hidden: yes sql: ${TABLE}.activation_score ;; }
 
   ##############################################################
@@ -1747,6 +1434,13 @@ view: marketing_attribution_test {
   measure: total_visits {
     type: count
     label: "Total Visits"
+    filters: [event_type: "page_visit"]
+  }
+
+  measure: clicks {
+    type: count
+    label: "Clicks"
+    description: "Attributed page visit events (site landings) for the campaign — proxy for link clicks generated."
     filters: [event_type: "page_visit"]
   }
 
@@ -1773,24 +1467,6 @@ view: marketing_attribution_test {
     drill_fields: [drill_conversions*]
   }
 
-  measure: free_trials_converted_in_dunning {
-    type: count_distinct
-    label: "Free Trials Converted (In Dunning)"
-    description: "Activated trial users whose latest UP-plan invoice is unpaid. Revenue is not yet collected."
-    sql: ${TABLE}.user_id ;;
-    filters: [event_type: "conversion", conversion_event_type: "free_trial", is_activated: "yes", is_in_dunning: "yes", is_primary_attribution: "yes", within_attribution_window: "yes"]
-    drill_fields: [drill_conversions*]
-  }
-
-  measure: effective_free_trials_converted {
-    type: count_distinct
-    label: "Free Trials Converted (Effective)"
-    description: "Activated trial users whose payment cleared (excludes users currently in dunning)."
-    sql: ${TABLE}.user_id ;;
-    filters: [event_type: "conversion", conversion_event_type: "free_trial", is_activated: "yes", is_in_dunning: "no", is_primary_attribution: "yes", within_attribution_window: "yes"]
-    drill_fields: [drill_conversions*]
-  }
-
   measure: reacquisitions {
     type: count
     label: "Reacquisitions"
@@ -1805,70 +1481,10 @@ view: marketing_attribution_test {
     value_format_name: percent_2
   }
 
-  measure: effective_trial_to_paid_conversion_rate {
-    type: number
-    label: "Trial to Paid Conversion Rate (Effective)"
-    description: "Same as Trial to Paid, but counts only activations whose latest invoice cleared."
-    sql: 1.0 * ${effective_free_trials_converted} / NULLIF(${web_trials_started}, 0) ;;
-    value_format_name: percent_2
-  }
-
-  measure: dunning_share_of_activations {
-    type: number
-    label: "Dunning Share of Activations"
-    description: "Share of activations currently in dunning. Higher = more at-risk revenue."
-    sql: 1.0 * ${free_trials_converted_in_dunning} / NULLIF(${free_trials_converted}, 0) ;;
-    value_format_name: percent_2
-  }
-
   measure: visit_to_trial_rate {
     type: number
     label: "Visit → Trial Rate"
     sql: 1.0 * ${web_trials_started} / NULLIF(${distinct_web_visits}, 0) ;;
-    value_format_name: percent_2
-  }
-
-  ##############################################################
-  # MEASURES — Checkout Funnel
-  ##############################################################
-  measure: distinct_checkout_visits {
-    type: count_distinct
-    label: "Distinct Checkout Visits"
-    description: "Unique users who visited a checkout page."
-    sql: COALESCE(${TABLE}.user_id, ${TABLE}.anonymous_id) ;;
-    filters: [event_type: "checkout_page_visit"]
-    drill_fields: [drill_visits*]
-  }
-
-  measure: distinct_checkout_visits_create_account {
-    type: count_distinct
-    label: "Distinct Checkout Visits Create Account"
-    description: "Unique users who visited a checkout page."
-    sql: COALESCE(${TABLE}.user_id, ${TABLE}.anonymous_id) ;;
-    filters: [event_type: "checkout_page_visit", page_path: "%/index.php/welcome/create_account/upfaithandfamily/%"]
-    drill_fields: [drill_visits*]
-  }
-
-  measure: total_checkout_visits {
-    type: count
-    label: "Total Checkout Visits"
-    description: "Raw checkout pageview events (not deduplicated by user)."
-    filters: [event_type: "checkout_page_visit"]
-  }
-
-  measure: visit_to_checkout_rate {
-    type: number
-    label: "Marketing Visit → Checkout Rate"
-    description: "Share of marketing-site visitors who reach a checkout page."
-    sql: 1.0 * ${distinct_checkout_visits} / NULLIF(${distinct_web_visits}, 0) ;;
-    value_format_name: percent_2
-  }
-
-  measure: checkout_to_trial_rate {
-    type: number
-    label: "Checkout → Trial Rate"
-    description: "Share of checkout visitors who start a free trial."
-    sql: 1.0 * ${web_trials_started} / NULLIF(${distinct_checkout_visits}, 0) ;;
     value_format_name: percent_2
   }
 
@@ -1933,7 +1549,7 @@ view: marketing_attribution_test {
   measure: total_trials_started {
     type: number
     label: "Free Trials Started (Web + App)"
-    sql: ${free_trials_started} + ${app_trials_started_paid} ;;
+    sql: ${web_trials_started} + ${app_trials_started} ;;
   }
 
   measure: app_share_of_trials {
@@ -2140,14 +1756,6 @@ view: marketing_attribution_test {
     filters: [event_type: "conversion", is_primary_attribution: "yes", within_attribution_window: "yes"]
   }
 
-  measure: distinct_ott_users {
-    type: count_distinct
-    label: "Distinct OTT Users"
-    description: "Unique streaming-platform user IDs across conversions. Use to size the audience joinable back to the OTT platform."
-    sql: ${TABLE}.ott_user_id ;;
-    filters: [event_type: "conversion", is_primary_attribution: "yes", within_attribution_window: "yes"]
-  }
-
   ##############################################################
   # MEASURES — Credit-weighted
   ##############################################################
@@ -2200,21 +1808,16 @@ view: marketing_attribution_test {
   set: drill_visits {
     fields: [
       report_date_date, marketing_platform, campaign_source, campaign_medium,
-      campaign_name, campaign_term, page_path, page_referrer, page_search,
-      total_visits, distinct_web_visits,
-      total_checkout_visits, distinct_checkout_visits,
-      visit_to_checkout_rate, checkout_to_trial_rate
+      campaign_name, total_visits, distinct_web_visits
     ]
   }
 
   set: drill_conversions {
     fields: [
-      report_date_date, user_id, ott_user_id, order_id,
-      conversion_event_type, trial_type,
+      report_date_date, user_id, order_id, conversion_event_type, trial_type,
       plan_type, activation_value, surface, device_os, marketing_platform,
-      campaign_source, campaign_medium, campaign_name, campaign_content, campaign_term,
+      campaign_source, campaign_medium, campaign_name, campaign_content,
       lifecycle_event_type, lifecycle_event_date, is_not_retained,
-      is_in_dunning, latest_invoice_status,
       total_touches, touch_position, credit_weight, quality_score, quality_grade
     ]
   }
@@ -2224,15 +1827,14 @@ view: marketing_attribution_test {
       report_date_date, campaign_name, campaign_medium, campaign_content,
       marketing_platform, surface, standard_trials, bundle_trials, reacquisitions,
       total_converted, not_retained_users, avg_touches_per_conversion,
-      retention_rate, trial_to_paid_rate, effective_trial_to_paid_rate,
-      dunning_rate, avg_order_value, pct_yearly_plan,
+      retention_rate, trial_to_paid_rate, avg_order_value, pct_yearly_plan,
       pct_monthly_plan, quality_score, quality_grade
     ]
   }
 
   set: campaign_subscription_events_set {
     fields: [
-      campaign_name, campaign_content, marketing_platform, surface, device_os,
+      brand_canonical, campaign_name, campaign_content, marketing_platform, surface, device_os,
       campaign_medium, web_trials_started, app_trials_started, app_installs,
       app_reinstalls, app_installs_and_reinstalls,
       total_trials_started, app_share_of_trials, app_install_to_trial_rate,
@@ -2245,15 +1847,13 @@ view: marketing_attribution_test {
 }
 
 ################################################################################
-# Datagroup — triggers the daily incremental run at 10 PM ET
+# Datagroup — triggers the daily incremental run at ~02:00 UTC (GMT)
 ################################################################################
-datagroup: marketing_attribution_daily {
-  # Fires once daily at 10 PM America/New_York. DST-safe.
-  sql_trigger: SELECT FLOOR(
-                   EXTRACT(EPOCH FROM
-                       CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE())
-                       - INTERVAL '2 hour'
-                   ) / 86400
+datagroup: marketing_attribution_daily_v2 {
+  sql_trigger: SELECT TO_CHAR(
+                   CONVERT_TIMEZONE('UTC', 'UTC', GETDATE())
+                   - INTERVAL '2 hour',
+                   'YYYY-MM-DD'
                ) ;;
   max_cache_age: "24 hours"
 }
