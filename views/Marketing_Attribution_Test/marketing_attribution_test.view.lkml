@@ -34,16 +34,7 @@
 view: marketing_attribution_test {
   derived_table: {
 
-    # ============================================================
-    # INCREMENTAL PDT CONFIG
-    # ============================================================
-    #increment_key: "report_date"
-    #increment_offset: 7
-    datagroup_trigger: marketing_attribution_daily
-    distribution_style: even
-    #sortkeys: ["report_date"]
-    #sortkeys: ["report_date", "event_type"]
-    indexes: ["report_date", "event_type", "campaign_source", "user_id"]
+
 
     sql:
       WITH params AS (
@@ -1331,6 +1322,14 @@ view: marketing_attribution_test {
       WHERE 1=1
       --{% incrementcondition %} report_date {% endincrementcondition %}
       ;;
+    sql_trigger_value:
+    SELECT TO_CHAR(
+    CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE()) - INTERVAL '19 hour',
+    'YYYY-MM-DD'
+    ) ;;
+    #sql_trigger_value:  SELECT TO_CHAR(DATE_TRUNC('day', CURRENT_TIMESTAMP) + INTERVAL '9 hours 45 minutes', 'YYYY-MM-DD');;
+    distribution: "report_date"
+    sortkeys: ["report_date"]
   }
 
   ##############################################################
