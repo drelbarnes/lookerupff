@@ -9,6 +9,7 @@ derived_table: {
         ELSE 'no'
       END AS new_user
       ,date(timestamp) as report_date
+      ,content_transaction_gateway as payment_gateway
     FROM chargebee_webhook_events.payment_failed
     where content_invoice_linked_payments_1_txn_date is null
 
@@ -26,6 +27,11 @@ dimension: report_date {
   dimension: user_id {
     type: string
     sql: ${TABLE}.user_id ;;
+  }
+
+  dimension: payment_gateway {
+    type: string
+    sql: ${TABLE}.payment_gateway ;;
   }
 
 dimension: new_user {
