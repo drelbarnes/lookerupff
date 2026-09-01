@@ -78,6 +78,28 @@ view: braintree_recon {
       FROM paypal
 
       ),
+      product4 as (
+      SELECT
+      customer_id
+      ,email
+      ,report_date
+      ,payment_gateway
+      ,payment_description
+      ,product_4 as product
+      ,product_4_period as period
+      ,original_amount4 as original_amount
+      ,discount_amount4 as discount_amount
+      ,tax_4 as tax
+      ,total_amount
+      ,transaction_id
+      ,ref_id
+      ,original_amount4 - COALESCE(discount_amount4,0)  as gross
+      ,CASE WHEN product_3 is not NULL THEN 0.000015*(original_amount3 - COALESCE(discount_amount3,0) + tax_3) + fee/3.000
+      ELSE 0
+      END as fee
+      FROM paypal
+
+      ),
 
       final as (
       select * from product1
@@ -86,7 +108,9 @@ view: braintree_recon {
       select * from product2
 
       UNION ALL
-      select * from product3)
+      select * from product3
+      UNION ALL
+      select * from product4)
 
       select
       customer_id

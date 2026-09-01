@@ -30,6 +30,7 @@ include: "/views/UPFF_Vw/trial_converted.view.lkml"
 include: "/views/UPFF_Vw/watch_time_average.view.lkml"
 include: "/views/UPFF_Vw/paused_dates.view.lkml"
 include: "/views/UPFF_Vw/churn_gateway.view.lkml"
+include: "/views/UPFF_Vw/dunning.view.lkml"
 
 
 
@@ -139,4 +140,8 @@ datagroup: upff_acquisition_v2 {
 
 explore: churn_gateway {
   label: "UPFF churn gateway"
+}
+
+explore: dunning {
+  label: "UPFF Dunning count"
 }

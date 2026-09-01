@@ -15,12 +15,10 @@ view: churn_gateway {derived_table: {
         content_card_gateway AS gateway,
         content_subscription_cancel_reason_code AS cancel_reason,
         CASE
-            WHEN content_subscription_cancelled_at
-                 - content_subscription_activated_at < 2000000
-                THEN 'trial'
-            ELSE 'reaq'
+            WHEN content_subscription_cancelled_at - content_subscription_created_at<2000800 THEN 'trial'
+            ELSE 'renew'
         END AS trialist
-    FROM chargebee_webhook_events.subscription_cancelled
+    FROM chargebee_webhook_events.subscription_cancelled c
     WHERE content_subscription_cancel_reason_code IN (
         'Not Paid',
         'No Card',
@@ -119,6 +117,11 @@ WHERE rn = 1
     type: string
     sql: ${TABLE}.billing_period ;;
   }
+
+    dimension: trialist {
+      type: string
+      sql: ${TABLE}.trialist ;;
+    }
 
   measure: churn_count {
     type: count_distinct

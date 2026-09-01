@@ -7,90 +7,27 @@ view: paypal_old {
       SELECT report_date
       FROM ${config.SQL_TABLE_NAME}),
 
-      paypal as (
-       SELECT distinct
-      To_Email_Address as email
-      , date(_Date_) as charge_created
-      , 'charge' as reporting_category
-      , Reference_Txn_ID as source_id
-      , Transaction_ID as transaction_id
-      , Gross
-      , fee
-      , 'paypal' as payment_gateway
-      , type as payment_description
+      union_old as (
+       SELECT *
       FROM `up-faith-and-family-216419.customers.paypal_payout_recon_june_2026`
-      --FROM `up-faith-and-family-216419.customers.paypal_recon_payout_feb_2026`
-      WHERE date(_Date_) between (SELECT report_date FROM config) - INTERVAL 31 DAY
-      AND (SELECT report_date FROM config)
-
-
       UNION ALL
-
-       SELECT distinct
-      To_Email_Address as email
-      , date(_Date_) as charge_created
-      , 'charge' as reporting_category
-      , Reference_Txn_ID as source_id
-      , Transaction_ID as transaction_id
-      , Gross
-      , fee
-      , 'paypal' as payment_gateway
-      , type as payment_description
+       SELECT *
       FROM `up-faith-and-family-216419.customers.paypal_payout_recon_5_2026`
-      --FROM `up-faith-and-family-216419.customers.paypal_recon_payout_feb_2026`
-      WHERE date(_Date_) between (SELECT report_date FROM config) - INTERVAL 31 DAY - INTERVAL 1 MONTH
-      AND (SELECT report_date FROM config) - INTERVAL 1 MONTH
-
-
       UNION ALL
-      SELECT distinct
-      To_Email_Address as email
-      , date(_Date_) as charge_created
-      , 'charge' as reporting_category
-      , Reference_Txn_ID as source_id
-      , Transaction_ID as transaction_id
-      , Gross
-      , fee
-      , 'paypal' as payment_gateway
-      , type as payment_description
+      SELECT *
       FROM `up-faith-and-family-216419.customers.paypal_payout_recon_4_2026`
-      --FROM `up-faith-and-family-216419.customers.paypal_recon_payout_feb_2026`
-      WHERE date(_Date_) between (SELECT report_date FROM config) - INTERVAL 31 DAY - INTERVAL 2 MONTH
-      AND (SELECT report_date FROM config)- INTERVAL 2 MONTH
-
       UNION ALL
-      SELECT distinct
-      To_Email_Address as email
-      , date(_Date_) as charge_created
-      , 'charge' as reporting_category
-      , Reference_Txn_ID as source_id
-      , Transaction_ID as transaction_id
-      , Gross
-      , fee
-      , 'paypal' as payment_gateway
-      , type as payment_description
+      SELECT *
       FROM `up-faith-and-family-216419.customers.paypal_payout_recon_3_2026`
-      --FROM `up-faith-and-family-216419.customers.paypal_payout_recon_2_2026`
-      WHERE date(_Date_) between (SELECT report_date FROM config) - INTERVAL 31 DAY - INTERVAL 3 MONTH
-      AND (SELECT report_date FROM config)- INTERVAL 3 MONTH
-
       UNION ALL
-      SELECT distinct
-      To_Email_Address as email
-      , date(_Date_) as charge_created
-      , 'charge' as reporting_category
-      , Reference_Txn_ID as source_id
-      , Transaction_ID as transaction_id
-      , Gross
-      , fee
-      , 'paypal' as payment_gateway
-      , type as payment_description
+      SELECT *
       FROM `up-faith-and-family-216419.customers.paypal_recon_payout_feb_2026`
-      --FROM `up-faith-and-family-216419.customers.paypal_payout_recon_12_2025`
-      WHERE date(_Date_) between (SELECT report_date FROM config) - INTERVAL 31 DAY - INTERVAL 4 MONTH
-      AND (SELECT report_date FROM config)- INTERVAL 4 MONTH
-
       UNION ALL
+      SELECT *
+      FROM `up-faith-and-family-216419.customers.paypal_payout_recon_2_2026`
+      ),
+
+      paypal as (
       SELECT distinct
       To_Email_Address as email
       , date(_Date_) as charge_created
@@ -101,13 +38,7 @@ view: paypal_old {
       , fee
       , 'paypal' as payment_gateway
       , type as payment_description
-      FROM `up-faith-and-family-216419.customers.paypal_payout_recon_2_2026`
-      --FROM `up-faith-and-family-216419.customers.paypal_recon_payout_11_2025_v2`
-      WHERE date(_Date_) between (SELECT report_date FROM config) - INTERVAL 31 DAY - INTERVAL 5 MONTH
-      AND (SELECT report_date FROM config)- INTERVAL 5 MONTH
-
-
-
+      FROM union_old
       ),
 
       paypal_chargebee as (
@@ -164,7 +95,7 @@ view: paypal_old {
       content_invoice_line_items_2_discount_amount  AS discount_amount3,
       content_invoice_amount_paid as total_amount
       --'charge' AS reporting_category
-      from `up-faith-and-family-216419.chargebee_webhook_events.payment_succeeded` WHERE date(received_at) between (SELECT report_date FROM config) - INTERVAL 31 DAY - INTERVAL 5 MONTH
+      from `up-faith-and-family-216419.chargebee_webhook_events.payment_succeeded` WHERE date(received_at) between (SELECT report_date FROM config) - INTERVAL 31 DAY - INTERVAL 12 MONTH
       AND (SELECT report_date FROM config)),
 
       refunds as (SELECT distinct
@@ -217,8 +148,8 @@ view: paypal_old {
       content_invoice_amount_paid as total_amount
       --'refund' AS reporting_category
       FROM
-      `up-faith-and-family-216419.chargebee_webhook_events.payment_refunded` WHERE date(received_at) between (SELECT report_date FROM config) - INTERVAL 31 DAY - INTERVAL 5 MONTH
-      AND (SELECT report_date FROM config)- INTERVAL 1 MONTH
+      `up-faith-and-family-216419.chargebee_webhook_events.payment_refunded` WHERE date(received_at) between (SELECT report_date FROM config) - INTERVAL 31 DAY - INTERVAL 12 MONTH
+      AND (SELECT report_date FROM config)- INTERVAL 12 MONTH
       ),
 
 
@@ -261,6 +192,39 @@ view: paypal_old {
 
 
 
-      select distinct * from fill_chargebee ;;
+      select distinct * from fill_chargebee
+      where total_amount is not null
+
+      UNION ALL
+      SELECT
+      null as customer_id
+      ,null as email
+      ,p.transaction_id
+      ,p.charge_created as report_date
+      ,p.payment_gateway
+      ,p.payment_description
+      ,null as product_1
+      ,null as product_2
+      ,null as product_3
+      ,null as product_1_period
+      ,null as product_2_period
+      ,null as product_3_period
+      ,null as original_amount1
+      ,null as original_amount2
+      ,null as original_amount3
+      ,null as discount_amount1
+      ,null as discount_amount2
+      ,null as discount_amount3
+      ,null as tax_1
+      ,null as tax_2
+      ,null as tax_3
+      ,null as total_amount
+      ,p.source_id as stripe_ref_id
+      ,p.gross as stripe_remitted
+      ,p.fee
+      from paypal_chargebee p
+      where transaction_id  in (select  transaction_id from fill_chargebee where total_amount is null )
+
+      ;;
   }
 }

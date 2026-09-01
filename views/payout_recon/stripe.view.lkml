@@ -8,7 +8,7 @@ view: stripe {
  paypal as (
 SELECT distinct
 customer_email as email
-, date(charge_created) as charge_created
+, date(available_on) as charge_created
 , 'charge' as reporting_category
 , source_id as source_id
 , charge_id as transaction_id
@@ -16,7 +16,7 @@ customer_email as email
 , fee
 , 'paypal' as payment_gateway
 ,reporting_category as payment_description
-FROM  `up-faith-and-family-216419.customers.stripe_payout_recon_june_2026`
+FROM  `up-faith-and-family-216419.customers.stripe_payout_recon_8_24_2026`
 --FROM  `up-faith-and-family-216419.customers.paypal_payout_recon_3_2026`
 WHERE date(charge_created) <= (SELECT report_date FROM config)),
 
@@ -484,7 +484,40 @@ select * from fill_charge_not_filled
 
 
 
-   select distinct * from result ;;
+   select distinct *
+  ,CASE WHEN payment_description = 'dispute' THEN
+    ROUND(
+        fee / NULLIF(
+          (CASE WHEN product_1 IS NOT NULL THEN 1 ELSE 0 END) +
+          (CASE WHEN product_2 IS NOT NULL THEN 1 ELSE 0 END) +
+          (CASE WHEN product_3 IS NOT NULL THEN 1 ELSE 0 END) +
+          (CASE WHEN product_4 IS NOT NULL THEN 1 ELSE 0 END),
+          0
+        ),
+        3
+      )
+
+  ELSE 0
+END AS fee1,
+
+CASE
+  WHEN product_2 IS NULL THEN 0
+  WHEN product_3 IS NULL THEN fee / 2.000
+  WHEN product_4 IS NULL THEN fee / 3.000
+  ELSE fee/4.000
+END AS fee2,
+
+CASE
+  WHEN product_3 is NULL THEN 0
+  WHEN product_4 is NULL THEN fee / 3.000
+  ELSE fee / 4.000
+END AS fee3
+,
+CASE
+  WHEN product_4 is NULL THEN 0
+  ELSE fee / 4.000
+END AS fee4
+from result ;;
   }
 
     dimension: customer_id {
@@ -656,6 +689,27 @@ select * from fill_charge_not_filled
       value_format_name: usd
       sql: ${TABLE}.fee ;;
     }
+
+  dimension: fee1 {
+    type: number
+    value_format_name: usd
+    sql: ${TABLE}.fee1 ;;
+  }
+  dimension: fee2 {
+    type: number
+    value_format_name: usd
+    sql: ${TABLE}.fee2 ;;
+  }
+  dimension: fee3 {
+    type: number
+    value_format_name: usd
+    sql: ${TABLE}.fee3 ;;
+  }
+  dimension: fee4 {
+    type: number
+    value_format_name: usd
+    sql: ${TABLE}.fee4 ;;
+  }
   measure: total_charge {
     type: sum
     sql: ${TABLE}.stripe_remitted ;;

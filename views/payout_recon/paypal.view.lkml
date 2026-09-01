@@ -16,10 +16,84 @@ To_Email_Address as email
 , fee
 , 'paypal' as payment_gateway
 ,type as payment_description
-FROM  `up-faith-and-family-216419.customers.paypal_payout_recon_june_2026`
+FROM  `up-faith-and-family-216419.customers.paypal-payout-recon-7-2026`
 --FROM  `up-faith-and-family-216419.customers.paypal_payout_recon_3_2026`
 WHERE date(_Date_) between (SELECT report_date FROM config) - INTERVAL 31 DAY
   AND (SELECT report_date FROM config)),
+
+  count_dict as (
+  select count(*) as count,
+  CASE
+    WHEN content_invoice_line_items_0_entity_id LIKE '%UP%' THEN 'UP-Faith-Family'
+    WHEN content_invoice_line_items_0_entity_id LIKE '%Minno%' THEN 'Minno'
+    WHEN content_invoice_line_items_0_entity_id LIKE '%Gaither%' THEN 'GaitherTV'
+    ELSE NULL
+  END AS product_1,
+  CASE
+    WHEN content_invoice_line_items_1_entity_id LIKE '%UP%' THEN 'UP-Faith-Family'
+    WHEN content_invoice_line_items_1_entity_id LIKE '%Minno%' THEN 'Minno'
+    WHEN content_invoice_line_items_1_entity_id LIKE '%Gaither%' THEN 'GaitherTV'
+    ELSE NULL
+  END AS product_2,
+  CASE
+    WHEN content_invoice_line_items_2_entity_id LIKE '%UP%' THEN 'UP-Faith-Family'
+    WHEN content_invoice_line_items_2_entity_id LIKE '%Minno%' THEN 'Minno'
+    WHEN content_invoice_line_items_2_entity_id LIKE '%Gaither%' THEN 'GaitherTV'
+    ELSE NULL
+  END AS product_3,
+  CASE
+    WHEN content_invoice_line_items_3_entity_id LIKE '%UP%' THEN 'UP-Faith-Family'
+    WHEN content_invoice_line_items_3_entity_id LIKE '%Minno%' THEN 'Minno'
+    WHEN content_invoice_line_items_3_entity_id LIKE '%Gaither%' THEN 'GaitherTV'
+    ELSE NULL
+  END AS product_4,
+  CASE
+    WHEN content_invoice_line_items_0_entity_id LIKE '%Yearly%' THEN 'Yearly'
+    WHEN content_invoice_line_items_0_entity_id LIKE '%Monthly%' THEN 'Monthly'
+    ELSE NULL
+  END AS product_1_period,
+  CASE
+    WHEN content_invoice_line_items_1_entity_id LIKE '%Yearly%' THEN 'Yearly'
+    WHEN content_invoice_line_items_1_entity_id LIKE '%Monthly%' THEN 'Monthly'
+    ELSE NULL
+  END AS product_2_period,
+  CASE
+    WHEN content_invoice_line_items_2_entity_id LIKE '%Yearly%' THEN 'Yearly'
+    WHEN content_invoice_line_items_2_entity_id LIKE '%Monthly%' THEN 'Monthly'
+    ELSE NULL
+  END AS product_3_period,
+  CASE
+    WHEN content_invoice_line_items_3_entity_id LIKE '%Yearly%' THEN 'Yearly'
+    WHEN content_invoice_line_items_3_entity_id LIKE '%Monthly%' THEN 'Monthly'
+    ELSE NULL
+  END AS product_4_period,
+  content_invoice_line_items_0_tax_amount as tax_1,
+  content_invoice_line_items_1_tax_amount as tax_2,
+  content_invoice_line_items_2_tax_amount as tax_3,
+  content_invoice_line_items_3_tax_amount as tax_4,
+  content_invoice_line_items_0_unit_amount as original_amount1,
+  content_invoice_line_items_1_unit_amount as original_amount2,
+  content_invoice_line_items_2_unit_amount as original_amount3,
+  content_invoice_line_items_3_unit_amount as original_amount4,
+  content_invoice_line_items_0_discount_amount +content_invoice_credits_applied AS discount_amount1,
+  content_invoice_line_items_1_discount_amount  AS discount_amount2,
+  content_invoice_line_items_2_discount_amount AS discount_amount3,
+  content_invoice_line_items_3_discount_amount AS discount_amount4,
+  content_invoice_amount_paid as total_amount
+  ,content_invoice_credits_applied
+
+  from `up-faith-and-family-216419.chargebee_webhook_events.payment_succeeded`
+  where date(timestamp) >='2024-07-01'
+  GROUP BY 2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
+  ),
+  count_dict_deduped AS (
+  SELECT *
+  FROM count_dict
+  QUALIFY ROW_NUMBER() OVER (
+    PARTITION BY total_amount
+    ORDER BY count DESC
+  ) = 1
+),
 
 paypal_chargebee as (
 SELECT * FROM paypal
@@ -27,12 +101,12 @@ WHERE payment_description in ('Payment Refund','PreApproved Payment Bill User Pa
 
 paypal_chargeback as (
 SELECT * FROM paypal
-WHERE payment_description not in ('PreApproved Payment Bill User Payment')
+WHERE payment_description not in ('PreApproved Payment Bill User Payment','Payment Refund')
 
 ),
-
+/*
 paypal_non_chargebee as (SELECT * FROM paypal
-WHERE payment_description not in ('Payment Refund','PreApproved Payment Bill User Payment')),
+WHERE payment_description not in ('Payment Refund','PreApproved Payment Bill User Payment')),*/
 
 charges as (SELECT distinct
   content_transaction_customer_id as customer_id,
@@ -84,7 +158,7 @@ charges as (SELECT distinct
   content_invoice_amount_paid as total_amount
   ,content_customer_payment_method_reference_id
   --'charge' AS reporting_category
- from `up-faith-and-family-216419.chargebee_webhook_events.payment_succeeded` WHERE date(received_at) between (SELECT report_date FROM config) - INTERVAL 31 DAY
+ from `up-faith-and-family-216419.chargebee_webhook_events.payment_succeeded` WHERE date(received_at) between (SELECT report_date FROM config) - INTERVAL 61 DAY
   AND (SELECT report_date FROM config)),
 
  refunds as (SELECT distinct
@@ -93,70 +167,110 @@ charges as (SELECT distinct
   content_transaction_id_at_gateway as transaction_id,
   date(received_at) as report_date,
   CASE
-    WHEN content_invoice_line_items_0_entity_id LIKE '%UP%' THEN 'UP-Faith-Family'
-    WHEN content_invoice_line_items_0_entity_id LIKE '%Minno%' THEN 'Minno'
-    WHEN content_invoice_line_items_0_entity_id LIKE '%Gaither%' THEN 'GaitherTV'
+    WHEN content_credit_note_line_items_0_entity_id LIKE '%UP%' THEN 'UP-Faith-Family'
+    WHEN content_credit_note_line_items_0_entity_id LIKE '%Minno%' THEN 'Minno'
+    WHEN content_credit_note_line_items_0_entity_id LIKE '%Gaither%' THEN 'GaitherTV'
     ELSE NULL
   END AS product_1,
   CASE
-    WHEN content_invoice_line_items_1_entity_id LIKE '%UP%' THEN 'UP-Faith-Family'
-    WHEN content_invoice_line_items_1_entity_id LIKE '%Minno%' THEN 'Minno'
-    WHEN content_invoice_line_items_1_entity_id LIKE '%Gaither%' THEN 'GaitherTV'
+    WHEN content_credit_note_line_items_1_entity_id LIKE '%UP%' THEN 'UP-Faith-Family'
+    WHEN content_credit_note_line_items_1_entity_id LIKE '%Minno%' THEN 'Minno'
+    WHEN content_credit_note_line_items_1_entity_id LIKE '%Gaither%' THEN 'GaitherTV'
     ELSE NULL
   END AS product_2,
   CASE
-    WHEN content_invoice_line_items_2_entity_id LIKE '%UP%' THEN 'UP-Faith-Family'
-    WHEN content_invoice_line_items_2_entity_id LIKE '%Minno%' THEN 'Minno'
-    WHEN content_invoice_line_items_2_entity_id LIKE '%Gaither%' THEN 'GaitherTV'
+    WHEN content_credit_note_line_items_2_entity_id LIKE '%UP%' THEN 'UP-Faith-Family'
+    WHEN content_credit_note_line_items_2_entity_id LIKE '%Minno%' THEN 'Minno'
+    WHEN content_credit_note_line_items_2_entity_id LIKE '%Gaither%' THEN 'GaitherTV'
     ELSE NULL
   END AS product_3,
   CASE
-    WHEN content_invoice_line_items_0_entity_id LIKE '%Yearly%' THEN 'Yearly'
-    WHEN content_invoice_line_items_0_entity_id LIKE '%Monthly%' THEN 'Monthly'
+    WHEN content_credit_note_line_items_0_entity_id LIKE '%Yearly%' THEN 'Yearly'
+    WHEN content_credit_note_line_items_0_entity_id LIKE '%Monthly%' THEN 'Monthly'
     ELSE NULL
   END AS product_1_period,
   CASE
-    WHEN content_invoice_line_items_1_entity_id LIKE '%Yearly%' THEN 'Yearly'
-    WHEN content_invoice_line_items_1_entity_id LIKE '%Monthly%' THEN 'Monthly'
+    WHEN content_credit_note_line_items_1_entity_id LIKE '%Yearly%' THEN 'Yearly'
+    WHEN content_credit_note_line_items_1_entity_id LIKE '%Monthly%' THEN 'Monthly'
     ELSE NULL
   END AS product_2_period,
   CASE
-    WHEN content_invoice_line_items_2_entity_id LIKE '%Yearly%' THEN 'Yearly'
-    WHEN content_invoice_line_items_2_entity_id LIKE '%Monthly%' THEN 'Monthly'
+    WHEN content_credit_note_line_items_2_entity_id LIKE '%Yearly%' THEN 'Yearly'
+    WHEN content_credit_note_line_items_2_entity_id LIKE '%Monthly%' THEN 'Monthly'
     ELSE NULL
   END AS product_3_period,
-  content_invoice_line_items_0_tax_amount as tax_1,
-  content_invoice_line_items_1_tax_amount as tax_2,
-  content_invoice_line_items_2_tax_amount as tax_3,
-  content_invoice_line_items_0_unit_amount as original_amount1,
-  content_invoice_line_items_1_unit_amount as original_amount2,
-  content_invoice_line_items_2_unit_amount as original_amount3,
-  content_invoice_line_items_0_discount_amount  AS discount_amount1,
-  content_invoice_line_items_1_discount_amount  AS discount_amount2,
-  content_invoice_line_items_2_discount_amount  AS discount_amount3,
-  content_invoice_amount_paid as total_amount,
+  content_credit_note_line_items_0_tax_amount as tax_1,
+  content_credit_note_line_items_1_tax_amount as tax_2,
+  content_credit_note_line_items_2_tax_amount as tax_3,
+  content_credit_note_line_items_0_amount as original_amount1,
+  content_credit_note_line_items_1_amount as original_amount2,
+  content_credit_note_line_items_2_amount as original_amount3,
+  content_credit_note_line_items_0_item_level_discount_amount  AS discount_amount1,
+  content_credit_note_line_items_1_item_level_discount_amount  AS discount_amount2,
+  content_credit_note_line_items_2_item_level_discount_amount  AS discount_amount3,
+  content_credit_note_amount_refunded as total_amount,
   content_customer_payment_method_reference_id
   --'refund' AS reporting_category
 FROM
- `up-faith-and-family-216419.chargebee_webhook_events.payment_refunded` WHERE date(received_at) between (SELECT report_date FROM config) - INTERVAL 31 DAY
+ `up-faith-and-family-216419.chargebee_webhook_events.payment_refunded` WHERE date(received_at) between (SELECT report_date FROM config) - INTERVAL 61 DAY
   AND (SELECT report_date FROM config)
- /*
- UNION ALL
+  and content_invoice_issued_credit_notes_0_cn_reason_code != 'subscription_change'
 
- SELECT
-  upper(SUBSTR(content_credit_note_billing_address_first_name, 1, 1)) as first_initial, -- First Name
-  upper(SUBSTR(content_credit_note_billing_address_last_name, 1, 1)) as last_initial, -- Last Name
-  content_credit_note_customer_id as content_transaction_customer_id,
-  NULL as content_customer_email,
-  content_transaction_id_at_gateway,
-  received_at,
-  content_credit_note_status,
-  content_credit_note_line_items_0_entity_id AS entity_id,
-
-
- FROM
- `up-faith-and-family-216419.chargebee_webhook_events.credit_note_created` WHERE date(received_at) between start_date AND end_date
- */
+UNION ALL
+SELECT distinct
+  content_transaction_customer_id as customer_id,
+  content_customer_email as email,
+  content_transaction_id_at_gateway as transaction_id,
+  date(received_at) as report_date,
+  CASE
+    WHEN content_credit_note_line_items_0_entity_id LIKE '%UP%' THEN 'UP-Faith-Family'
+    WHEN content_credit_note_line_items_0_entity_id LIKE '%Minno%' THEN 'Minno'
+    WHEN content_credit_note_line_items_0_entity_id LIKE '%Gaither%' THEN 'GaitherTV'
+    ELSE NULL
+  END AS product_1,
+  CASE
+    WHEN content_credit_note_line_items_1_entity_id LIKE '%UP%' THEN 'UP-Faith-Family'
+    WHEN content_credit_note_line_items_1_entity_id LIKE '%Minno%' THEN 'Minno'
+    WHEN content_credit_note_line_items_1_entity_id LIKE '%Gaither%' THEN 'GaitherTV'
+    ELSE NULL
+  END AS product_2,
+  CASE
+    WHEN content_credit_note_line_items_2_entity_id LIKE '%UP%' THEN 'UP-Faith-Family'
+    WHEN content_credit_note_line_items_2_entity_id LIKE '%Minno%' THEN 'Minno'
+    WHEN content_credit_note_line_items_2_entity_id LIKE '%Gaither%' THEN 'GaitherTV'
+    ELSE NULL
+  END AS product_3,
+  CASE
+    WHEN content_credit_note_line_items_0_entity_id LIKE '%Yearly%' THEN 'Yearly'
+    WHEN content_credit_note_line_items_0_entity_id LIKE '%Monthly%' THEN 'Monthly'
+    ELSE NULL
+  END AS product_1_period,
+  CASE
+    WHEN content_credit_note_line_items_1_entity_id LIKE '%Yearly%' THEN 'Yearly'
+    WHEN content_credit_note_line_items_1_entity_id LIKE '%Monthly%' THEN 'Monthly'
+    ELSE NULL
+  END AS product_2_period,
+  CASE
+    WHEN content_credit_note_line_items_2_entity_id LIKE '%Yearly%' THEN 'Yearly'
+    WHEN content_credit_note_line_items_2_entity_id LIKE '%Monthly%' THEN 'Monthly'
+    ELSE NULL
+  END AS product_3_period,
+   content_credit_note_linked_refunds_0_applied_amount - content_credit_note_linked_refunds_0_applied_amount / (1+ (content_invoice_line_items_0_tax_amount/content_invoice_line_items_0_unit_amount)) as tax_1,
+  content_credit_note_line_items_1_tax_amount as tax_2,
+  content_credit_note_line_items_2_tax_amount as tax_3,
+  content_credit_note_linked_refunds_0_applied_amount / (1+ (content_invoice_line_items_0_tax_amount/content_invoice_line_items_0_unit_amount)) as original_amount1,
+  content_credit_note_line_items_1_amount as original_amount2,
+  content_credit_note_line_items_2_amount as original_amount3,
+  0  AS discount_amount1,
+  content_credit_note_line_items_1_item_level_discount_amount  AS discount_amount2,
+  content_credit_note_line_items_2_item_level_discount_amount  AS discount_amount3,
+  content_credit_note_amount_refunded as total_amount,
+  content_customer_payment_method_reference_id
+  --'refund' AS reporting_category
+FROM
+ `up-faith-and-family-216419.chargebee_webhook_events.payment_refunded` WHERE date(received_at) between (SELECT report_date FROM config) - INTERVAL 61 DAY
+  AND (SELECT report_date FROM config)
+  and content_invoice_issued_credit_notes_0_cn_reason_code = 'subscription_change'
  ),
 
 
@@ -263,10 +377,10 @@ c.customer_id
   ,p.gross
   ,c.fee
   FROM paypal_chargeback p
-  LEFT JOIN paypal_old c
+  LEFT JOIN charge_refund  c
   ON p.source_id = c.transaction_id
 ),
-
+/*
 fill_non_chargebee as (
 SELECT
   c.customer_id
@@ -301,12 +415,56 @@ SELECT
   FROM paypal_non_chargebee p
   LEFT JOIN charge_refund c
   ON c.transaction_id = p.source_id
-),
+),*/
+
+fill_not_filled as (
+      SELECT
+      cast(NULL as string) AS customer_id
+      ,cast(NULL as string) AS email
+      ,p.report_date
+      ,p.payment_gateway
+      ,p.payment_description
+      ,c.product_1
+      ,c.product_2
+      ,c.product_3
+      --,c.product_4
+      ,c.product_1_period
+      ,c.product_2_period
+      ,c.product_3_period
+      --,c.product_4_period
+      ,c.original_amount1
+      ,c.original_amount2
+      ,c.original_amount3
+      --,c.original_amount4
+      ,c.discount_amount1
+      ,c.discount_amount2
+      ,c.discount_amount3
+      --,c.discount_amount4
+      ,c.tax_1
+      ,c.tax_2
+      ,c.tax_3
+      --,c.tax_4
+      ,c.total_amount
+      ,p.transaction_id
+      ,p.ref_id
+      ,p.gross
+      ,p.fee
+      FROM (select * from fill_chargebee where total_amount is null) p
+      LEFT JOIN count_dict_deduped c
+      ON CAST(ABS(c.total_amount / 100.0) AS STRING) = CAST(ABS(p.gross) AS STRING)),
 
 result as (
 SELECT * FROM fill_chargebee
+WHERE total_amount is not null
+
+UNION ALL
+SELECT * FROM fill_not_filled
+--where total_amount is not NULL
+
+/*
 UNION ALL
 SELECT * FROM fill_non_chargebee
+*/
 UNION ALL
 SELECT * FROM fill_chargeback
 ),
@@ -355,30 +513,49 @@ customer_id
   end as fee
   FROM result),
 
-final as (
-  select * from result2
-  where payment_description != 'Cancellation of Hold for Dispute Resolution'
-  union all
-  select * from result2
-  where payment_description = 'Cancellation of Hold for Dispute Resolution'
-  and fee is not null)
 
-  select *
-  ,SAFE_DIVIDE(COALESCE(original_amount1, 0),
-  COALESCE(original_amount1, 0)
-  + COALESCE(original_amount2, 0)
-  + COALESCE(original_amount3, 0)
-) * fee AS fee1
-,SAFE_DIVIDE(COALESCE(original_amount2, 0),
-  COALESCE(original_amount1, 0)
-  + COALESCE(original_amount2, 0)
-  + COALESCE(original_amount3, 0)
-) * fee AS fee2
-,SAFE_DIVIDE(COALESCE(original_amount3, 0),
-  COALESCE(original_amount1, 0)
-  + COALESCE(original_amount2, 0)
-  + COALESCE(original_amount3, 0)
-) * fee AS fee3
+  final AS (
+  SELECT *
+  FROM result2
+  QUALIFY NOT (
+    payment_description = 'Cancellation of Hold for Dispute Resolution'
+    AND fee IS NULL
+    AND COUNTIF(fee IS NOT NULL) OVER (
+      PARTITION BY ref_id, payment_description
+    ) > 0
+  )
+)
+
+ SELECT *
+  ,ROUND(
+    SAFE_DIVIDE(
+      COALESCE(original_amount1, 0),
+      COALESCE(original_amount1, 0)
+      + COALESCE(original_amount2, 0)
+      + COALESCE(original_amount3, 0)
+    ) * fee,
+    5
+  ) AS fee1
+
+  ,ROUND(
+    SAFE_DIVIDE(
+      COALESCE(original_amount2, 0),
+      COALESCE(original_amount1, 0)
+      + COALESCE(original_amount2, 0)
+      + COALESCE(original_amount3, 0)
+    ) * fee,
+    5
+  ) AS fee2
+
+  ,ROUND(
+    SAFE_DIVIDE(
+      COALESCE(original_amount3, 0),
+      COALESCE(original_amount1, 0)
+      + COALESCE(original_amount2, 0)
+      + COALESCE(original_amount3, 0)
+    ) * fee,
+    5
+  ) AS fee3
 
 
   from final
