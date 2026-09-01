@@ -11,8 +11,8 @@ derived_table: {
       ,date(timestamp) as report_date
       ,content_transaction_gateway as payment_gateway
       ,CASE
-        WHEN content_subscription_billing_period_unit = 'month' THEN 'Monthly'
-        ELSE 'Yearly'
+        WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'
+        ELSE 'yearly'
       END AS billing_frequency
     FROM chargebee_webhook_events.payment_failed
     where content_invoice_linked_payments_1_txn_date is null
@@ -33,9 +33,9 @@ dimension: report_date {
     sql: ${TABLE}.user_id ;;
   }
 
-  dimension: frequency {
+  dimension: billing_frequency{
     type: string
-    sql: ${TABLE}.frequency ;;
+    sql: ${TABLE}.billing_frequency ;;
   }
 
   dimension: payment_gateway {
