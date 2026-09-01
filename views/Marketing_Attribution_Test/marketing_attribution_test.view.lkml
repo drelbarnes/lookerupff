@@ -39,7 +39,7 @@ view: marketing_attribution_test {
     sql:
       WITH params AS (
           SELECT
-               (CURRENT_DATE - INTERVAL '365 days')::DATE AS start_date
+               (CURRENT_DATE - INTERVAL '366 days')::DATE AS start_date
               ,CURRENT_DATE                               AS end_date
               ,90                  AS max_attribution_window_days
               ,0.50                AS w_activations
