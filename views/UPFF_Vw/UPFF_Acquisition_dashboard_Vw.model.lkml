@@ -31,7 +31,7 @@ include: "/views/UPFF_Vw/watch_time_average.view.lkml"
 include: "/views/UPFF_Vw/paused_dates.view.lkml"
 include: "/views/UPFF_Vw/churn_gateway.view.lkml"
 include: "/views/UPFF_Vw/dunning.view.lkml"
-
+include: "/views/UPFF_Vw/watch_rate.view.lkml"
 
 
 explore: UPFF_analytics_Vw {
@@ -144,4 +144,8 @@ explore: churn_gateway {
 
 explore: dunning {
   label: "UPFF Dunning count"
+}
+
+explore: watch_rate {
+  label: "UPFF paid users watching content"
 }

@@ -60,7 +60,7 @@ view: daily_spend {
         WHERE report_date >= (SELECT MAX(report_date) FROM cfg)
         AND content_subscription_subscription_items like '%UP%'
         ),
-
+/*
         vimeo as (
         SELECT distinct
         email
@@ -69,6 +69,16 @@ view: daily_spend {
         FROM customers.new_customers
         WHERE event_type = 'New Free Trial' and report_date >= (SELECT MAX(report_date) FROM cfg)
         )
+*/
+      vimeo as (
+      user_id
+      ,subscription_frequency as billing_period
+      ,platform
+      ,date(timestamp) as report_date
+      vimeo_ott_webhook.customer_product_created
+      where platform != 'api'
+      and date(timestamp) = date(created_at)
+      )
 
         SELECT
           report_date
