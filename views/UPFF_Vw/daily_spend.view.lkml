@@ -71,18 +71,19 @@ view: daily_spend {
         )
 */
       vimeo as (
+      select
       user_id
       ,subscription_frequency as billing_period
       ,platform
       ,date(timestamp) as report_date
-      vimeo_ott_webhook.customer_product_created
+      FROM vimeo_ott_webhook.customer_product_created
       where platform != 'api'
       and date(timestamp) = date(created_at)
       )
 
         SELECT
           report_date
-          ,email as user_id
+          ,user_id
         from vimeo
 
         UNION ALL
