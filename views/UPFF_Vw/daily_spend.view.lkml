@@ -402,6 +402,7 @@ view: daily_spend {
 
     measure: free_trial_created {
       type: sum_distinct
+      label: "new_paid_created"
       sql_distinct_key: ${timestamp_date} ;;
       sql: ${TABLE}.free_trial_created ;;
     }
