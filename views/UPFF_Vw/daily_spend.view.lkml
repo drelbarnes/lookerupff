@@ -71,15 +71,87 @@ view: daily_spend {
         )
 */
       vimeo as (
-      select
-      user_id
-      ,subscription_frequency as billing_period
-      ,platform
-      ,date(timestamp) as report_date
-      FROM vimeo_ott_webhook.customer_product_created
-      where platform != 'api'
-      and date(timestamp) = date(created_at)
-      )
+    select
+        user_id,
+        subscription_frequency as billing_period,
+        platform,
+       report_date
+    from (
+        select
+            user_id,
+            subscription_frequency,
+            platform,
+            date(timestamp) as report_date,
+            created_at,
+            row_number() over (
+                partition by user_id
+                order by report_date
+            ) as rn
+        from vimeo_ott_webhook.customer_product_created
+        where platform != 'api'
+          --and date(timestamp) = date(created_at)
+    )
+    where rn = 1)
+
+        SELECT
+          report_date
+          ,user_id
+        from vimeo
+
+        UNION ALL
+        SELECT
+          report_date
+          ,user_id
+        from chargebee),
+
+        reaq as (with chargebee as (
+        SELECT
+        content_subscription_id as user_id
+        ,CASE
+        WHEN content_subscription_billing_period_unit ='month' THEN 'monthly'
+        ELSE 'yearly'
+        END AS billing_period
+        ,'web' as platform
+        ,date(DATEADD(HOUR, -5, received_at)) as report_date
+        FROM chargebee_webhook_events.subscription_reactivated
+        WHERE report_date >= (SELECT MAX(report_date) FROM cfg)
+        AND content_subscription_subscription_items like '%UP%'
+
+        UNION ALL
+        SELECT
+        content_subscription_id as user_id
+        ,CASE
+        WHEN content_subscription_billing_period_unit ='month' THEN 'monthly'
+        ELSE 'yearly'
+        END AS billing_period
+        ,'web' as platform
+        ,date(DATEADD(HOUR, -5, received_at)) as report_date
+        FROM chargebee_webhook_events.subscription_resumed
+        WHERE report_date >= (SELECT MAX(report_date) FROM cfg)
+        AND content_subscription_subscription_items like '%UP%'
+        ),
+      vimeo as (
+    select
+        user_id,
+        subscription_frequency as billing_period,
+        platform,
+       report_date
+    from (
+        select
+            user_id,
+            subscription_frequency,
+            platform,
+            date(timestamp) as report_date,
+            created_at,
+            row_number() over (
+                partition by user_id
+                order by report_date
+            ) as rn
+        from vimeo_ott_webhook.customer_product_created
+        where platform != 'api'
+          --and date(timestamp) = date(created_at)
+    )
+    where rn != 1)
 
         SELECT
           report_date
@@ -97,6 +169,14 @@ view: daily_spend {
         report_date,
         count(user_id) as free_trial_created
         from free_trial
+        group by 1
+        ),
+
+        customers_analytics_reaq as (
+        select
+        report_date,
+        count(user_id) as reaq
+        from reaq
         group by 1
         ),
 
@@ -250,7 +330,7 @@ view: daily_spend {
 
 
         -- NOTE: we discontinued use of the spend forecasting logic.
-        , outer_query as (
+        , outer_query0 as (
         select
         date_start,
         free_trial_created,
@@ -262,7 +342,22 @@ view: daily_spend {
         on date(date_start) =report_date
         group by 1,2,3,4,5
 
+        ),
+        outer_query as (
+        select
+        date_start,
+        free_trial_created,
+        reaq,
+        channel,
+        campaign_name,
+        spend
+        from outer_query0
+        inner join customers_analytics_reaq
+        on date(date_start) =report_date
+        group by 1,2,3,4,5,6
+
         )
+
         select * from outer_query   ;;
 
         #sql_trigger_value: SELECT TO_CHAR( DATEADD(minute, -610, GETDATE()), 'YYYY-MM-DD');;
@@ -310,6 +405,10 @@ view: daily_spend {
       sql_distinct_key: ${timestamp_date} ;;
       sql: ${TABLE}.free_trial_created ;;
     }
-
+  measure: reaq {
+    type: sum_distinct
+    sql_distinct_key: ${timestamp_date} ;;
+    sql: ${TABLE}.reaq ;;
+  }
 
   }

@@ -152,7 +152,7 @@ charges as (SELECT distinct
   content_invoice_line_items_0_unit_amount as original_amount1,
   content_invoice_line_items_1_unit_amount as original_amount2,
   content_invoice_line_items_2_unit_amount as original_amount3,
-  content_invoice_line_items_0_discount_amount  AS discount_amount1,
+  content_invoice_line_items_0_discount_amount +content_invoice_amount_adjusted+content_invoice_credits_applied AS discount_amount1,
   content_invoice_line_items_1_discount_amount  AS discount_amount2,
   content_invoice_line_items_2_discount_amount  AS discount_amount3,
   content_invoice_amount_paid as total_amount
@@ -205,7 +205,7 @@ charges as (SELECT distinct
   content_credit_note_line_items_0_amount as original_amount1,
   content_credit_note_line_items_1_amount as original_amount2,
   content_credit_note_line_items_2_amount as original_amount3,
-  content_credit_note_line_items_0_item_level_discount_amount  AS discount_amount1,
+  content_credit_note_line_items_0_item_level_discount_amount  +content_invoice_credits_applied AS discount_amount1,
   content_credit_note_line_items_1_item_level_discount_amount  AS discount_amount2,
   content_credit_note_line_items_2_item_level_discount_amount  AS discount_amount3,
   content_credit_note_amount_refunded as total_amount,
@@ -342,9 +342,6 @@ charge_refund as (
 
 select * from paypal_old
 
-  UNION ALL
-  SELECT *,null as fee FROM
-  chargebee_transactions
 
 
 ),
@@ -375,10 +372,46 @@ c.customer_id
   ,p.transaction_id
   ,p.source_id as ref_id
   ,p.gross
-  ,c.fee
+  ,CASE
+    WHEN payment_description = 'Payment Reversal' THEN p.fee
+  ELSE c.fee
+  END AS fee
   FROM paypal_chargeback p
   LEFT JOIN charge_refund  c
   ON p.source_id = c.transaction_id
+),
+
+fill_chargeback_not_filled as (
+select
+  customer_id
+  ,email
+  ,report_date
+  ,payment_gateway
+  ,payment_description
+  ,product_1
+  ,product_2
+  ,product_3
+  ,product_1_period
+  ,product_2_period
+  ,product_3_period
+  ,original_amount1
+  ,original_amount2
+  ,original_amount3
+  ,discount_amount1
+  ,discount_amount2
+  ,discount_amount3
+  ,tax_1
+  ,tax_2
+  ,tax_3
+  ,total_amount
+  ,transaction_id
+  ,ref_id
+  ,CASE WHEN payment_description = 'Hold on Balance for Dispute Investigation' THEN  gross + fee
+  ELSE gross - fee
+  END AS gross
+  ,fee
+  from fill_chargeback
+  where total_amount is null
 ),
 /*
 fill_non_chargebee as (
@@ -449,7 +482,9 @@ fill_not_filled as (
       ,p.ref_id
       ,p.gross
       ,p.fee
-      FROM (select * from fill_chargebee where total_amount is null) p
+      FROM (select * from fill_chargebee where total_amount is null
+      UNION ALL
+      SELECT * from fill_chargeback_not_filled) p
       LEFT JOIN count_dict_deduped c
       ON CAST(ABS(c.total_amount / 100.0) AS STRING) = CAST(ABS(p.gross) AS STRING)),
 
@@ -467,6 +502,7 @@ SELECT * FROM fill_non_chargebee
 */
 UNION ALL
 SELECT * FROM fill_chargeback
+where total_amount is not null
 ),
 
 result2 as(
@@ -534,7 +570,7 @@ customer_id
       + COALESCE(original_amount2, 0)
       + COALESCE(original_amount3, 0)
     ) * fee,
-    5
+    9
   ) AS fee1
 
   ,ROUND(
@@ -544,7 +580,7 @@ customer_id
       + COALESCE(original_amount2, 0)
       + COALESCE(original_amount3, 0)
     ) * fee,
-    5
+    9
   ) AS fee2
 
   ,ROUND(
@@ -554,7 +590,7 @@ customer_id
       + COALESCE(original_amount2, 0)
       + COALESCE(original_amount3, 0)
     ) * fee,
-    5
+    9
   ) AS fee3
 
 

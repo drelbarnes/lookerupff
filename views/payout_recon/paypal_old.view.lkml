@@ -25,6 +25,8 @@ view: paypal_old {
       UNION ALL
       SELECT *
       FROM `up-faith-and-family-216419.customers.paypal_payout_recon_2_2026`
+      UNION ALL
+      select * from  `up-faith-and-family-216419.customers.paypal-payout-recon-7-2026`
       ),
 
       paypal as (
@@ -90,7 +92,7 @@ view: paypal_old {
       content_invoice_line_items_0_unit_amount as original_amount1,
       content_invoice_line_items_1_unit_amount as original_amount2,
       content_invoice_line_items_2_unit_amount as original_amount3,
-      content_invoice_line_items_0_discount_amount  AS discount_amount1,
+      content_invoice_line_items_0_discount_amount + content_invoice_amount_adjusted+content_invoice_credits_applied AS discount_amount1,
       content_invoice_line_items_1_discount_amount  AS discount_amount2,
       content_invoice_line_items_2_discount_amount  AS discount_amount3,
       content_invoice_amount_paid as total_amount
@@ -142,7 +144,7 @@ view: paypal_old {
       content_invoice_line_items_0_unit_amount as original_amount1,
       content_invoice_line_items_1_unit_amount as original_amount2,
       content_invoice_line_items_2_unit_amount as original_amount3,
-      content_invoice_line_items_0_discount_amount  AS discount_amount1,
+      content_invoice_line_items_0_discount_amount +content_invoice_credits_applied  AS discount_amount1,
       content_invoice_line_items_1_discount_amount  AS discount_amount2,
       content_invoice_line_items_2_discount_amount  AS discount_amount3,
       content_invoice_amount_paid as total_amount
