@@ -73,7 +73,7 @@ view: free_trials {
       FROM chargebee_join
       ),
 
-
+/*
       vimeo_pre AS (
       SELECT DISTINCT
       email,
@@ -102,7 +102,30 @@ view: free_trials {
       LEFT JOIN vimeo_platform_pre b
       ON  a.email       = b.email
       AND a.report_date = b.report_date
-      ),
+      ),*/
+
+      vimeo2 as (
+    select
+        user_id,
+        subscription_frequency as billing_period,
+        platform,
+       report_date
+    from (
+        select
+            user_id,
+            subscription_frequency,
+            platform,
+            date(timestamp) as report_date,
+            created_at,
+            row_number() over (
+                partition by user_id
+                order by report_date
+            ) as rn
+        from vimeo_ott_webhook.customer_product_created
+        where platform != 'api'
+          --and date(timestamp) = date(created_at)
+    )
+    where rn = 1),
 
       all_rows AS (
       SELECT
