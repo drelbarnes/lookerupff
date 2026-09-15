@@ -213,6 +213,50 @@ view: churn_gain {
       GROUP BY 2, 3, 4
       ) dunning_count
 
+      UNION ALL
+
+      SELECT user_count, report_date, billing_period, platform, 'new_paid'::VARCHAR AS status
+      FROM (
+      SELECT COUNT(DISTINCT user_id) AS user_count, report_date, billing_period, platform
+      FROM (
+      SELECT
+        content_subscription_id as user_id
+        ,CASE
+        WHEN content_subscription_billing_period_unit ='month' THEN 'monthly'
+        ELSE 'yearly'
+        END AS billing_period
+        ,'web' as platform
+        ,date(DATEADD(HOUR, -4, received_at)) as report_date
+        FROM chargebee_webhook_events.subscription_created
+        WHERE content_subscription_subscription_items like '%UP%'
+
+UNION ALL
+    select
+        user_id,
+        subscription_frequency as billing_period,
+        platform,
+       report_date
+    from (
+        select
+            user_id,
+            subscription_frequency,
+            platform,
+            date(timestamp) as report_date,
+            created_at,
+            row_number() over (
+                partition by user_id
+                order by report_date
+            ) as rn
+        from vimeo_ott_webhook.customer_product_created
+        where platform != 'api'
+          --and date(timestamp) = date(created_at)
+    )
+    where rn = 1
+
+      ) new_paid_pre
+      GROUP BY 2, 3, 4
+      ) new_paid_count
+
       ) result
       GROUP BY 2, 3, 4, 5
 
@@ -258,7 +302,7 @@ view: churn_gain {
 
       ) all_rows
       WHERE 1=1
-        --{% incrementcondition %} report_date {% endincrementcondition %}
+      --{% incrementcondition %} report_date {% endincrementcondition %}
       ;;
     sql_trigger_value:
     SELECT TO_CHAR(
@@ -266,9 +310,9 @@ view: churn_gain {
     'YYYY-MM-DD'
     ) ;;
     #sql_trigger_value:  SELECT TO_CHAR(DATE_TRUNC('day', CURRENT_TIMESTAMP) + INTERVAL '9 hours 45 minutes', 'YYYY-MM-DD');;
-    distribution: "report_date"
-    sortkeys: ["report_date"]
-  }
+      distribution: "report_date"
+      sortkeys: ["report_date"]
+    }
 
   dimension: user_id {
     type: number
@@ -336,6 +380,12 @@ view: churn_gain {
     type: sum
     sql: ${user_count} ;;
     filters: [status: "reacquisition"]
+  }
+
+  measure: new_paid_count {
+    type: sum
+    sql: ${user_count} ;;
+    filters: [status: "new_paid"]
   }
 
   measure: rolling_churn_count {
