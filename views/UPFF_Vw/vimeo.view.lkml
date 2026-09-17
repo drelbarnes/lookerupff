@@ -9,7 +9,8 @@ view: vimeo {
       -- pattern used across all incremental PDTs in this project.
       -- Redundant pass-through CTEs (platform, customers,
       -- chargebee_re_acquisition) collapsed into their _pre sources.
-      WITH platform_pre AS (
+      WITH
+      /* platform_pre AS (
         SELECT
           CAST(user_id AS VARCHAR)           AS user_id,
           platform,
@@ -29,6 +30,7 @@ view: vimeo {
       WHERE subscription_frequency != 'custom'
       AND current_customer_status = 'enabled'
       ),
+      */
 
       chargebee_re_acquisition_pre AS (
       SELECT
@@ -39,7 +41,7 @@ view: vimeo {
       ELSE 'yearly'
       END                                AS billing_period,
       'Direct to Paid'                   AS event_type,
-      DATE(DATEADD(HOUR, -5, timestamp)) AS report_date
+      DATE(DATEADD(HOUR, +18, timestamp)) AS report_date
       FROM chargebee_webhook_events.subscription_reactivated
       WHERE content_subscription_subscription_items LIKE '%UP%'
       and content_subscription_status != 'in_trial'
@@ -54,13 +56,13 @@ view: vimeo {
       ELSE 'yearly'
       END                                AS billing_period,
       'Direct to Paid'                   AS event_type,
-      DATE(DATEADD(HOUR, -5, timestamp)) AS report_date
+      DATE(DATEADD(HOUR, +18, timestamp)) AS report_date
       FROM chargebee_webhook_events.subscription_resumed
       WHERE content_subscription_subscription_items LIKE '%UP%'
       ),
 
       all_rows AS (
-      SELECT
+      /* SELECT
       CAST(b.user_id       AS VARCHAR) AS user_id,
       CAST(a.platform      AS VARCHAR) AS platform,
       CAST(b.billing_period AS VARCHAR) AS billing_period,
@@ -69,7 +71,30 @@ view: vimeo {
       FROM customers_pre b
       LEFT JOIN platform_pre a
       ON  a.report_date = b.report_date
-      AND a.user_id     = b.user_id
+      AND a.user_id     = b.user_id */
+
+      select
+        user_id,
+        platform,
+        subscription_frequency as billing_period,
+        'Direct to Paid'                   AS event_type,
+       report_date
+    from (
+        select
+            user_id,
+            subscription_frequency,
+            platform,
+            DATE(DATEADD(HOUR, -4, timestamp)) AS report_date,
+            created_at,
+            row_number() over (
+                partition by user_id
+                order by report_date
+            ) as rn
+        from vimeo_ott_webhook.customer_product_created
+        where platform != 'api'
+          --and date(timestamp) = date(created_at)
+    )
+    where rn != 1
 
       UNION ALL
 

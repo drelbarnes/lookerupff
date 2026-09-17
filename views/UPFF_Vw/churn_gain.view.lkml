@@ -161,7 +161,7 @@ view: churn_gain {
       WHERE content_subscription_subscription_items LIKE '%UP%'
 
       UNION ALL
-
+/*
       SELECT
       b.report_date,
       b.user_id,
@@ -169,7 +169,7 @@ view: churn_gain {
       a.platform
       FROM (
       SELECT report_date, user_id, billing_period, platform
-      FROM ${UPFF_analytics_Vw_v2.SQL_TABLE_NAME}
+      FROM {UPFF_analytics_Vw_v2.SQL_TABLE_NAME}
       WHERE platform != 'Chargebee'
       ) a
       RIGHT JOIN (
@@ -182,7 +182,28 @@ view: churn_gain {
       WHERE subscription_frequency != 'custom'
       ) b
       ON a.report_date = b.report_date AND a.user_id = b.user_id
-      WHERE b.event_type = 'Direct to Paid'
+      WHERE b.event_type = 'Direct to Paid' */
+      select
+      report_date,
+        user_id,
+        subscription_frequency as billing_period,
+        platform
+    from (
+        select
+            user_id,
+            subscription_frequency,
+            platform,
+            DATE(DATEADD(HOUR, -4, timestamp)) AS report_date,
+            created_at,
+            row_number() over (
+                partition by user_id
+                order by report_date
+            ) as rn
+        from vimeo_ott_webhook.customer_product_created
+        where platform != 'api'
+          --and date(timestamp) = date(created_at)
+    )
+    where rn != 1
       ) reacq_src
       GROUP BY 2, 3, 4
       ) re_acquisition_count
