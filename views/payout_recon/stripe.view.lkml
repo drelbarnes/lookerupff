@@ -16,9 +16,11 @@ customer_email as email
 , fee
 , 'paypal' as payment_gateway
 ,reporting_category as payment_description
-FROM  `up-faith-and-family-216419.customers.stripe_payout_recon_8_24_2026`
+FROM  `up-faith-and-family-216419.customers.stripe-payout-recon-8-2026`
 --FROM  `up-faith-and-family-216419.customers.paypal_payout_recon_3_2026`
-WHERE date(charge_created) <= (SELECT report_date FROM config)),
+WHERE date(charge_created) <= (SELECT report_date FROM config)
+and date(automatic_payout_effective_at) <'2026-08-30'
+),
 
 count_dict as (
   select count(*) as count,
@@ -74,7 +76,7 @@ count_dict as (
   content_invoice_line_items_1_unit_amount as original_amount2,
   content_invoice_line_items_2_unit_amount as original_amount3,
   content_invoice_line_items_3_unit_amount as original_amount4,
-  content_invoice_line_items_0_discount_amount +content_invoice_credits_applied AS discount_amount1,
+  content_invoice_line_items_0_discount_amount +content_invoice_amount_adjusted+content_invoice_credits_applied AS discount_amount1,
   content_invoice_line_items_1_discount_amount  AS discount_amount2,
   content_invoice_line_items_2_discount_amount AS discount_amount3,
   content_invoice_line_items_3_discount_amount AS discount_amount4,
@@ -158,7 +160,7 @@ charges as (SELECT distinct
   content_invoice_line_items_1_unit_amount as original_amount2,
   content_invoice_line_items_2_unit_amount as original_amount3,
   content_invoice_line_items_3_unit_amount as original_amount4,
-  content_invoice_line_items_0_discount_amount +content_invoice_credits_applied AS discount_amount1,
+  content_invoice_line_items_0_discount_amount +content_invoice_credits_applied + content_invoice_amount_adjusted AS discount_amount1,
   content_invoice_line_items_1_discount_amount  AS discount_amount2,
   content_invoice_line_items_2_discount_amount AS discount_amount3,
   content_invoice_line_items_3_discount_amount AS discount_amount4,

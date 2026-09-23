@@ -90,8 +90,8 @@ view: daily_spend {
         from vimeo_ott_webhook.customer_product_created
         where platform != 'api'
           --and date(timestamp) = date(created_at)
+    )where rn = 1
     )
-    where rn = 1)
 
         SELECT
           report_date

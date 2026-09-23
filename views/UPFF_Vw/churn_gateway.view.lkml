@@ -12,7 +12,10 @@ view: churn_gateway {derived_table: {
         END AS billing_period,
         DATE(DATEADD(HOUR, +18, timestamp)) AS report_date,
         'web'::VARCHAR AS platform,
-        content_card_gateway AS gateway,
+        CASE
+          WHEN content_card_gateway is NULL THEN 'paypal'
+          ELSE content_card_gateway
+          END AS gateway,
         content_subscription_cancel_reason_code AS cancel_reason,
         CASE
             WHEN content_subscription_cancelled_at - content_subscription_created_at<2000800 THEN 'trial'

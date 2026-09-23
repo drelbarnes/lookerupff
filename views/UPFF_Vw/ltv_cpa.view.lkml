@@ -45,8 +45,79 @@ view: ltv_cpa {
       ),
 
       trials_converted AS (
+      /*
       SELECT *
-      FROM ${trial_converted.SQL_TABLE_NAME}
+      FROM {trial_converted.SQL_TABLE_NAME}*/
+
+      SELECT
+      DATE(received_at) AS report_date,
+      content_subscription_id::VARCHAR AS user_id,
+      CASE
+      WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'::VARCHAR
+      ELSE 'yearly'::VARCHAR
+      END AS billing_period,
+      'web'::VARCHAR AS platform
+      FROM chargebee_webhook_events.subscription_activated
+      WHERE content_subscription_subscription_items LIKE '%UP%'
+      AND DATE(received_at) >='2025-07-01'
+
+      UNION ALL
+      select
+            DATE(DATEADD(HOUR, -4, timestamp)) AS report_date,
+            user_id,
+            subscription_frequency as billing_period,
+            platform
+        from vimeo_ott_webhook.customer_product_created
+        where date(timestamp) >='2026-09-09' and platform != 'api'
+
+      UNION ALL
+      SELECT
+        DATE(DATEADD(HOUR, -5, event_occurred_at)) AS report_date
+        ,email as user_id
+        ,subscription_frequency as billing_period
+        ,'vimeo' as platform
+      FROM customers.new_customers
+      WHERE event_type = 'Free Trial to Paid'
+
+      UNION ALL
+      SELECT
+          DATE(DATEADD(HOUR, -4, received_at)) AS report_date,
+          content_customer_id AS user_id,
+          CASE
+            WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'
+            ELSE 'yearly'
+          END AS billing_period,
+          'web' AS platform
+        FROM chargebee_webhook_events.subscription_created
+        WHERE content_subscription_subscription_items LIKE '%UP%'
+        and DATE(DATEADD(HOUR, -4, received_at))  >='2026-09-09'
+
+      UNION ALL
+      select
+      DATE(received_at) AS report_date,
+      content_subscription_id::VARCHAR AS user_id,
+      CASE
+      WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'::VARCHAR
+      ELSE 'yearly'::VARCHAR
+      END AS billing_period,
+      'web'::VARCHAR AS platform
+      FROM chargebee_webhook_events.subscription_reactivated
+      WHERE content_subscription_subscription_items LIKE '%UP%'
+      and date(timestamp) >= '2026-09-09'
+
+      UNION ALL
+      select
+      DATE(received_at) AS report_date,
+      content_subscription_id::VARCHAR AS user_id,
+      CASE
+      WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'::VARCHAR
+      ELSE 'yearly'::VARCHAR
+      END AS billing_period,
+      'web'::VARCHAR AS platform
+      FROM chargebee_webhook_events.subscription_resumed
+      WHERE content_subscription_subscription_items LIKE '%UP%'
+      and date(timestamp) >= '2026-09-09'
+
       ),
 
       daily_converted_counts AS (

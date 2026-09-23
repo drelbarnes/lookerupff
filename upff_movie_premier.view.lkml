@@ -1601,7 +1601,8 @@ view: upff_movie_premier {
 
                     UNION ALL
                     select reported_date as date
-                    ,total_paid_subscribers as total from looker.upff_v2_subcounts
+                    ,max(total_paid_subscribers) as total from looker.upff_v2_subcounts
+                    group by 1
 ),
 
                     upff_premier_titles AS

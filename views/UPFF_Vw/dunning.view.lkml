@@ -14,8 +14,28 @@ derived_table: {
         WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'
         ELSE 'yearly'
       END AS billing_frequency
+      ,content_transaction_error_text as error_code
+      ,'failed' as transaction_type
     FROM chargebee_webhook_events.payment_failed
     where content_invoice_linked_payments_1_txn_date is null
+    and content_subscription_subscription_items_0_item_price_id like '%UP%'
+
+
+    UNION ALL
+    SELECT
+    user_id
+    ,'null' as new_user
+    ,date(timestamp) as report_date
+    ,content_customer_payment_method_gateway as payment_gateway
+    ,CASE
+      WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'
+      ELSE 'yearly'
+    END AS billing_frequency
+  ,'NULL' as error_code
+  ,'renewed' as transaction_type
+    FROM chargebee_webhook_events.subscription_renewed
+
+
 
 
 
@@ -42,6 +62,17 @@ dimension: report_date {
     type: string
     sql: ${TABLE}.payment_gateway ;;
   }
+
+  dimension: error_code {
+    type: string
+    sql: ${TABLE}.error_code ;;
+  }
+
+  dimension: transaction_type {
+    type: string
+    sql: ${TABLE}.transaction_type ;;
+  }
+
 
 dimension: new_user {
   type: string

@@ -16,7 +16,7 @@ To_Email_Address as email
 , fee
 , 'paypal' as payment_gateway
 ,type as payment_description
-FROM  `up-faith-and-family-216419.customers.paypal-payout-recon-7-2026`
+FROM  `up-faith-and-family-216419.customers.paypal-payout-recon-8-2026`
 --FROM  `up-faith-and-family-216419.customers.paypal_payout_recon_3_2026`
 WHERE date(_Date_) between (SELECT report_date FROM config) - INTERVAL 31 DAY
   AND (SELECT report_date FROM config)),
@@ -545,6 +545,7 @@ customer_id
   ,gross
   ,CASE
     WHEN payment_description = 'Dispute Fee' THEN -15.00
+    WHEN payment_description in ('Chargeback reversal','Chargeback') THEN 0
     ELSE fee
   end as fee
   FROM result),

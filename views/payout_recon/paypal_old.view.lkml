@@ -8,6 +8,8 @@ view: paypal_old {
       FROM ${config.SQL_TABLE_NAME}),
 
       union_old as (
+
+
        SELECT *
       FROM `up-faith-and-family-216419.customers.paypal_payout_recon_june_2026`
       UNION ALL
@@ -27,6 +29,7 @@ view: paypal_old {
       FROM `up-faith-and-family-216419.customers.paypal_payout_recon_2_2026`
       UNION ALL
       select * from  `up-faith-and-family-216419.customers.paypal-payout-recon-7-2026`
+
       ),
 
       paypal as (
@@ -41,6 +44,18 @@ view: paypal_old {
       , 'paypal' as payment_gateway
       , type as payment_description
       FROM union_old
+
+      UNION ALL
+      SELECT DISTINCT
+      To_Email_Address as email
+      , date(_Date_) as charge_created
+      , 'charge' as reporting_category
+      , Reference_Txn_ID as source_id
+      , Transaction_ID as transaction_id
+      , Gross
+      , fee
+      , 'paypal' as payment_gateway
+      , type as payment_description from `up-faith-and-family-216419.customers.paypal-payout-recon-8-2026`
       ),
 
       paypal_chargebee as (

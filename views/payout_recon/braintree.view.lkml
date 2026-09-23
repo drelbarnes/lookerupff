@@ -17,7 +17,10 @@ view: braintree {
       END as fee
       , 'Braintree' as payment_gateway
       ,Transaction_Type as payment_description
-      FROM`up-faith-and-family-216419.customers.braintree-payout-recon-7-2026`
+      from `up-faith-and-family-216419.customers.braintree-payout-recon-8-2026`
+      where date(Disbursement_Date) <'2026-08-31'
+      --FROM `up-faith-and-family-216419.customers.braintree-payout-recon-8-2026`
+
 
       UNION ALL
       SELECT distinct
@@ -33,13 +36,13 @@ view: braintree {
         WHEN Status != 'Open' THEN 'charge_back_won'
         ELSE 'charge_back'
         END as payment_description
-      FROM  `up-faith-and-family-216419.customers.dispute_report_7_2026_V2`
-      where date(Disbursement_Date) between '2026-07-01' and '2026-07-31'
-/*
+        From `up-faith-and-family-216419.customers.dispute_report_9_22_2026`
+      where date(Disbursement_Date) <'2026-08-31'
+
       UNION ALL
       SELECT distinct
       NULL as email
-      , date(Disbursement_Date) +3 as charge_created
+      , date(Disbursement_Date)  as charge_created
       , 'charge' as reporting_category
       , Original_Transaction_ID as source_id
       , Transaction_ID as transaction_id
@@ -49,12 +52,14 @@ view: braintree {
       END as fee
       , 'Braintree' as payment_gateway
       ,Transaction_Type as payment_description
-      FROM  `up-faith-and-family-216419.customers.braintree_payout_recon_4_29_to_5_31`
-      where date(Disbursement_Date) < '2026-05-30'
+      FROM`up-faith-and-family-216419.customers.braintree-payout-recon-7-2026`
+      where date(Disbursement_Date) >='2026-07-31'
+
+
       UNION ALL
       SELECT distinct
       NULL as email
-      , date(Disbursement_Date) +3 as charge_created
+      , date(Disbursement_Date) as charge_created
       , 'charge' as reporting_category
       , cast(NULL as string) as source_id
       , Transaction_ID as transaction_id
@@ -62,9 +67,10 @@ view: braintree {
       ,15.00 as fee
       , 'Braintree' as payment_gateway
       ,'charge_back' as payment_description
-      FROM `up-faith-and-family-216419.customers.braintree_dispute_report_4_29_5_31`
-      where date(Disbursement_Date) < '2026-05-30'
-      */
+      FROM `up-faith-and-family-216419.customers.dispute_report_7_2026_V2`
+      where date(Disbursement_Date)  ='2026-07-31'
+
+
       ),
       paypal as (
       select * from paypal0
@@ -217,8 +223,8 @@ view: braintree {
   ,content_customer_payment_method_reference_id
   ,content_invoice_credits_applied
   --'charge' AS reporting_category
- from `up-faith-and-family-216419.chargebee_webhook_events.payment_succeeded`  WHERE date(received_at) between (SELECT report_date FROM config) - INTERVAL 234 DAY
-      AND (SELECT report_date FROM config)),
+ from `up-faith-and-family-216419.chargebee_webhook_events.payment_succeeded` WHERE date(received_at) between (SELECT report_date FROM config) - INTERVAL 300 DAY
+      AND (SELECT report_date FROM config) ),
 
       refunds as (SELECT distinct
   content_transaction_customer_id as customer_id,
@@ -277,7 +283,7 @@ view: braintree {
   ,content_invoice_credits_applied
   --'refund' AS reporting_category
 FROM
- `up-faith-and-family-216419.chargebee_webhook_events.payment_refunded` WHERE date(received_at) between (SELECT report_date FROM config) - INTERVAL 31 DAY
+ `up-faith-and-family-216419.chargebee_webhook_events.payment_refunded` WHERE date(received_at) between (SELECT report_date FROM config) - INTERVAL 300 DAY
       AND (SELECT report_date FROM config) and content_invoice_issued_credit_notes_0_cn_reason_code != 'subscription_change'
 
       union all
@@ -339,7 +345,7 @@ FROM
   ,content_invoice_credits_applied
   --'refund' AS reporting_category
 FROM
- `up-faith-and-family-216419.chargebee_webhook_events.payment_refunded`  WHERE date(received_at) between (SELECT report_date FROM config) - INTERVAL 34 DAY
+ `up-faith-and-family-216419.chargebee_webhook_events.payment_refunded`  WHERE date(received_at) between (SELECT report_date FROM config) - INTERVAL 300 DAY
       AND (SELECT report_date FROM config) and content_invoice_issued_credit_notes_0_cn_reason_code = 'subscription_change'
       /*
       UNION ALL
