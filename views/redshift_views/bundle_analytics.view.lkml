@@ -17,7 +17,7 @@ view: bundle_analytics {
         date(timestamp) as report_date
         , 'web' as platform
         , 'gaithertvplus'::VARCHAR as brand
-        , count(case when (event = 'customer_product_free_trial_created') then 1 else null end) as free_trial_created
+        , count(case when (event = 'customer_product_created') then 1 else null end) as free_trial_created
         , count(case when (event = 'customer_product_free_trial_converted') then 1 else null end) as free_trial_converted
         , count(case when (event = 'customer_product_free_trial_expired') then 1 else null end) as free_trial_churn
         , count(case when (event = 'customer_product_created') then 1 else null end) as paying_created

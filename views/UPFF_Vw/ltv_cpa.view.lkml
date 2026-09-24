@@ -39,7 +39,7 @@ view: ltv_cpa {
       report_date,
       SUM(spend) OVER (
       ORDER BY report_date
-      ROWS BETWEEN 29 PRECEDING AND CURRENT ROW
+      ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
       ) AS rolling_spend
       FROM spend
       ),
@@ -47,7 +47,7 @@ view: ltv_cpa {
       trials_converted AS (
       /*
       SELECT *
-      FROM {trial_converted.SQL_TABLE_NAME}*/
+      FROM {trial_converted.SQL_TABLE_NAME}
 
       SELECT
       DATE(received_at) AS report_date,
@@ -61,7 +61,7 @@ view: ltv_cpa {
       WHERE content_subscription_subscription_items LIKE '%UP%'
       AND DATE(received_at) >='2025-07-01'
 
-      UNION ALL
+      UNION ALL*/
       select
             DATE(DATEADD(HOUR, -4, timestamp)) AS report_date,
             user_id,
@@ -69,7 +69,7 @@ view: ltv_cpa {
             platform
         from vimeo_ott_webhook.customer_product_created
         where date(timestamp) >='2026-09-09' and platform != 'api'
-
+/*
       UNION ALL
       SELECT
         DATE(DATEADD(HOUR, -5, event_occurred_at)) AS report_date
@@ -77,7 +77,7 @@ view: ltv_cpa {
         ,subscription_frequency as billing_period
         ,'vimeo' as platform
       FROM customers.new_customers
-      WHERE event_type = 'Free Trial to Paid'
+      WHERE event_type = 'Free Trial to Paid'  */
 
       UNION ALL
       SELECT
@@ -133,7 +133,7 @@ view: ltv_cpa {
       report_date,
       SUM(user_count) OVER (
       ORDER BY report_date
-      ROWS BETWEEN 29 PRECEDING AND CURRENT ROW
+      ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
       ) AS rolling_converted
       FROM daily_converted_counts
       ),
@@ -146,7 +146,7 @@ view: ltv_cpa {
       SUM(user_count) OVER (
       PARTITION BY platform, billing_period
       ORDER BY report_date
-      ROWS BETWEEN 29 PRECEDING AND CURRENT ROW
+      ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
       ) AS rolling_churn_30_days
       FROM cancelled_user
       ),
@@ -166,7 +166,7 @@ view: ltv_cpa {
       report_date,
       platform,
       billing_period,
-      LAG(user_count, 31) OVER (
+      LAG(user_count, 7) OVER (
       PARTITION BY platform, billing_period
       ORDER BY report_date
       ) AS prior_31_days_subs

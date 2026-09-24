@@ -32,6 +32,7 @@ include: "/views/UPFF_Vw/paused_dates.view.lkml"
 include: "/views/UPFF_Vw/churn_gateway.view.lkml"
 include: "/views/UPFF_Vw/dunning.view.lkml"
 include: "/views/UPFF_Vw/watch_rate.view.lkml"
+include: "/views/UPFF_Vw/bundle.view.lkml"
 
 
 explore: UPFF_analytics_Vw {
@@ -148,4 +149,8 @@ explore: dunning {
 
 explore: watch_rate {
   label: "UPFF paid users watching content"
+}
+
+explore: bundle {
+  label: "UPFF Bundles"
 }
