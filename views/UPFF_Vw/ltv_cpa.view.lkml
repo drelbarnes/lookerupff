@@ -146,7 +146,7 @@ view: ltv_cpa {
       SUM(user_count) OVER (
       PARTITION BY platform, billing_period
       ORDER BY report_date
-      ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
+      ROWS BETWEEN 30 PRECEDING AND CURRENT ROW
       ) AS rolling_churn_30_days
       FROM cancelled_user
       ),
@@ -166,7 +166,7 @@ view: ltv_cpa {
       report_date,
       platform,
       billing_period,
-      LAG(user_count, 7) OVER (
+      LAG(user_count, 31) OVER (
       PARTITION BY platform, billing_period
       ORDER BY report_date
       ) AS prior_31_days_subs
