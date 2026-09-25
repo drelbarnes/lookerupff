@@ -1920,9 +1920,9 @@ view: upff_movie_premier {
                     SELECT 'Christmas Roses', DATE '2025-12-09' UNION ALL
                     SELECT 'A Christmas Murder Mystery', DATE '2025-12-09' UNION ALL
                     SELECT 'North by North Pole', DATE '11/25/26' UNION ALL
-                    SELECT 'Music City Mistletoe', DATE '12/16/26' UNION ALL
+                    SELECT 'Music City Mistletoe', DATE '12/16/25' UNION ALL
                     SELECT 'Best Thing about Christmas', DATE '12/16/26' UNION ALL
-                    SELECT 'Secret Santa', DATE '12/23/26' UNION ALL
+                    SELECT 'Secret Santa', DATE '12/23/25' UNION ALL
                     SELECT 'A Country Encore', DATE '1/30/2026' UNION ALL
                     SELECT 'Where the Wind Blows', DATE '2/13/2026' UNION ALL
                     SELECT 'Forgiveness Girl', DATE '3/13/2026' UNION ALL
