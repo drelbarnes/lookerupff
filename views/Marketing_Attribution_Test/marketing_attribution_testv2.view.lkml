@@ -1182,14 +1182,16 @@ view: marketing_attribution_testv2 {
   # Maps context_campaign_brand (utm_brand) to Agorapulse brand_canonical values so the
   # Social Performance dashboard Brand filter can listen here. Heartland and other
   # unknown values pass through but are not added to Agorapulse Brand suggestions.
+  # Web page_visit and conversion rows with no utm_brand are UP Faith & Family:
+  # those events come only from javascript_upff_home and UPFF checkout.
   dimension: brand_canonical {
     type: string
     label: "Brand"
-    description: "UTM brand from context_campaign_brand, aligned with social_daily_snapshot.brand_canonical for dashboard Brand filter listen."
+    description: "UTM brand from context_campaign_brand, aligned with social_daily_snapshot.brand_canonical. Blank utm_brand on web rows is UP Faith & Family."
     sql:
       CASE
         WHEN LOWER(TRIM(${TABLE}.campaign_brand))
-          IN ('upff', 'up faith & family', 'up faith and family')
+          IN ('upff', 'up faith & family', 'up faith and family', 'upfaithandfamily')
           THEN 'UP Faith & Family'
         WHEN LOWER(TRIM(${TABLE}.campaign_brand))
           IN ('uptv', 'up tv')
@@ -1200,6 +1202,12 @@ view: marketing_attribution_testv2 {
         WHEN LOWER(TRIM(${TABLE}.campaign_brand))
           IN ('ovation', 'ovationtv', 'ovation tv')
           THEN 'Ovation TV'
+        WHEN (
+            ${TABLE}.campaign_brand IS NULL
+            OR TRIM(${TABLE}.campaign_brand) = ''
+          )
+          AND ${TABLE}.event_type IN ('page_visit', 'conversion')
+          THEN 'UP Faith & Family'
         ELSE ${TABLE}.campaign_brand
       END ;;
   }
@@ -1207,7 +1215,7 @@ view: marketing_attribution_testv2 {
   dimension: marketing_platform {
     type: string
     label: "Marketing Platform"
-    description: "Normalized platform bucket"
+    description: "Normalized platform bucket. Organic Social is matched on UTM medium and social source aliases before Meta source rules, so instagram/fb/ig plus social or organic is not labeled Meta Ads."
     sql:
       CASE
         WHEN LOWER(${TABLE}.campaign_source) IN ('google','google_ads','adwords')
@@ -1219,18 +1227,20 @@ view: marketing_attribution_testv2 {
                   OR LOWER(${TABLE}.campaign_name) LIKE '%performance max%')    THEN 'Google PMax'
         WHEN LOWER(${TABLE}.campaign_source) IN ('google','google_ads','adwords')
              AND LOWER(${TABLE}.campaign_medium) IN ('cpc','ppc','paid','g')    THEN 'Google Search'
-        WHEN LOWER(${TABLE}.campaign_source) IN ('meta','instagram','ig','fb', 'an', 'campaign.name')
-             OR LOWER(${TABLE}.campaign_source) LIKE 'meta%'                    THEN 'Meta Ads'
+        -- Before Meta Ads. Page visits coalesce a missing medium to 'organic', so ig/fb/meta
+        -- must be in the source list or those rows stay Meta Ads and the Organic Social tiles stay 0.
+        WHEN LOWER(TRIM(${TABLE}.campaign_medium)) IN ('social','organic_social','organic social','organic-social')
+             OR (LOWER(TRIM(${TABLE}.campaign_medium)) = 'organic'
+                 AND LOWER(TRIM(${TABLE}.campaign_source)) IN ('facebook','fb','instagram','ig','meta','tiktok','x','twitter','linkedin'))
+                                                                                THEN 'Organic Social'
+        WHEN LOWER(TRIM(${TABLE}.campaign_source)) IN ('facebook','meta','instagram','ig','fb', 'an', 'campaign.name')
+             OR LOWER(TRIM(${TABLE}.campaign_source)) LIKE 'meta%'              THEN 'Meta Ads'
         WHEN LOWER(${TABLE}.campaign_source) IN ('bing','microsoft','msn')      THEN 'Bing Ads'
         WHEN LOWER(${TABLE}.campaign_source) IN ('hubspot', 'hubspot_upff', 'hubspot_uptv')
              OR LOWER(${TABLE}.campaign_medium) LIKE 'email%'                   THEN 'HubSpot'
         WHEN LOWER(${TABLE}.campaign_source) LIKE '%uptv%'                      THEN 'UPtv Digital'
         WHEN LOWER(${TABLE}.campaign_medium) = 'organic'
              AND LOWER(${TABLE}.campaign_source) IN ('google','bing','duckduckgo','yahoo') THEN 'Organic Search'
-        WHEN LOWER(${TABLE}.campaign_medium) IN ('social','organic_social')
-             OR (LOWER(${TABLE}.campaign_medium) = 'organic'
-                 AND LOWER(${TABLE}.campaign_source) IN ('facebook','instagram','tiktok','x','twitter','linkedin'))
-                                                                                THEN 'Organic Social'
         WHEN ${TABLE}.campaign_source = 'organic'                               THEN 'Others'
         WHEN ${TABLE}.campaign_source = 'direct'                                THEN 'Others'
         WHEN ${TABLE}.campaign_source IS NULL                                   THEN 'Unknown'

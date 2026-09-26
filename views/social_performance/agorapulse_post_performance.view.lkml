@@ -27,15 +27,16 @@ view: agorapulse_post_performance {
     WHERE s._post_row_rank = 1
   ) ;;
 
-  # Warehouse column is publishing_date on social_post_last_30 (UTC from Agorapulse API).
-  # convert_tz: no keeps calendar days on GMT/UTC — EST conversion shifted edge posts across days.
+  # Warehouse stores UTC (Agorapulse API). Shift to EST/EDT for dashboard filters + display.
+  # convert_tz: no avoids a second Looker-side conversion on top of CONVERT_TIMEZONE.
   dimension_group: publishing {
     label: "Publish date"
     type: time
     datatype: timestamp
     convert_tz: no
     timeframes: [raw, time, date, week, month, quarter, year]
-    sql: ${TABLE}.publishing_date ;;
+    sql: CONVERT_TIMEZONE('UTC', 'America/New_York', ${TABLE}.publishing_date::timestamp) ;;
+    description: "Publish time in America/New_York (EST/EDT) to match Agorapulse UI. Warehouse column remains UTC."
   }
 
   dimension: brand {
@@ -109,12 +110,18 @@ view: agorapulse_post_performance {
     description: "Distinct posts for current filters. Explore is already latest-row-per-post; COUNT DISTINCT stays safe if filters expand the grain."
   }
 
+  # Agorapulse content report: IG/TT put reach in viewsCount → impressions_count; FB video
+  # and YT often leave viewsCount at 0 and only populate videoViewsCount. Ranking on
+  # impressions_count alone left FB/YT at 0 and scrambled Top 20 vs Agorapulse.
   measure: post_impressions {
     label: "Post impressions"
     type: sum
-    sql: COALESCE(${TABLE}.impressions_count, 0) ;;
+    sql: GREATEST(
+      COALESCE(${TABLE}.impressions_count, 0),
+      COALESCE(${TABLE}.video_views_count, 0)
+    ) ;;
     value_format_name: decimal_0
-    description: "Latest-snapshot impressions_count per post (view deduped). Group by post_id for Top 20 ranking; sums across posts when rolled up (doc 07 §4 / §7)."
+    description: "Cross-platform post volume for Top 20: GREATEST(impressions_count, video_views_count) on the latest snapshot per post (view deduped). Matches Agorapulse content reach when FB/YT only fill videoViewsCount (doc 07 §4 / §7)."
   }
 
   measure: post_engagements {
