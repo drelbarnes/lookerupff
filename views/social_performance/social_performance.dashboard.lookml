@@ -65,7 +65,7 @@
       height: 4
       measures: [agorapulse_post_performance.total_posts]
       note:
-        text: "Count of distinct post_id from social_post_snapshot where publish date (publishing_date) falls in the date filter. Audience tiles use snapshot reporting date on social_daily_snapshot."
+        text: "Count of distinct post_id from social_post_last_30 where publish date (publishing_date) falls in the date filter. Audience tiles use snapshot reporting date on social_daily_snapshot."
         state: collapsed
         display: hover
       listen:
@@ -297,7 +297,7 @@
         - agorapulse_post_performance.post_impressions desc
       limit: 20
       note:
-        text: "Latest Social Post Snapshot per post_id (deduped in LookML—doc 07 §4). Ranked by that row’s impressions_count for posts whose publishing_date falls in the selected range (brand/platform filters apply). Engagements and video views are from the same latest snapshot. Lifetime metrics match Agorapulse content performance for those posts; not period deltas."
+        text: "Latest Social Post Last 30 row per post_id (deduped in LookML—doc 07 §4). Ranked by that row’s impressions_count for posts whose publishing_date falls in the selected range (brand/platform filters apply). Engagements and video views are from the same latest snapshot. Lifetime metrics match Agorapulse content performance for those posts; not period deltas."
         state: collapsed
         display: hover
       listen:
@@ -386,7 +386,7 @@
       x_axis_gridlines: false
       y_axis_gridlines: false
       note:
-        text: "Distinct post_id per brand from social_post_snapshot for posts whose publishing_date falls in the date filter (same definition as the Total posts KPI). Horizontal bars compare volume across brands."
+        text: "Distinct post_id per brand from social_post_last_30 for posts whose publishing_date falls in the date filter (same definition as the Total posts KPI). Horizontal bars compare volume across brands."
         state: collapsed
         display: hover
       listen:

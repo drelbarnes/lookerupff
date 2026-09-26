@@ -1,7 +1,9 @@
 view: agorapulse_post_performance {
-  label: "Social Post Snapshot"
+  label: "Social Post Last 30"
 
-  # Latest lifetime snapshot per post_id (backfill + rolling last_30 append duplicate rows).
+  # Live Segment event "Social Post Last 30" → social_post_last_30 (not social_post_snapshot,
+  # which stopped receiving rows ~2026-07-14 after the event name split).
+  # Latest lifetime snapshot per post_id (rolling last_30 appends duplicate rows).
   # Without this, SUM(impressions_count) multiplies lifetime metrics by ingest count and
   # scrambles Top 20 rankings vs Agorapulse. Canonical pattern: docs/07 §4 / docs/04 §3.3.
   sql_table_name: (
@@ -18,14 +20,14 @@ view: agorapulse_post_performance {
             ) DESC,
             inner_s."timestamp"::timestamp DESC
         ) AS _post_row_rank
-      FROM agorapulse_webhook.social_post_snapshot AS inner_s
+      FROM agorapulse_webhook.social_post_last_30 AS inner_s
       WHERE inner_s.post_id IS NOT NULL
         AND TRIM(inner_s.post_id::varchar) <> ''
     ) AS s
     WHERE s._post_row_rank = 1
   ) ;;
 
-  # Warehouse column is publishing_date on social_post_snapshot (UTC from Agorapulse API).
+  # Warehouse column is publishing_date on social_post_last_30 (UTC from Agorapulse API).
   # convert_tz: no keeps calendar days on GMT/UTC — EST conversion shifted edge posts across days.
   dimension_group: publishing {
     label: "Publish date"
@@ -95,7 +97,7 @@ view: agorapulse_post_performance {
     label: "Event"
     type: string
     sql: ${TABLE}.event ;;
-    description: "Segment event name (e.g. Social Post Snapshot)."
+    description: "Segment event name (e.g. Social Post Last 30)."
   }
 
   measure: total_posts {
