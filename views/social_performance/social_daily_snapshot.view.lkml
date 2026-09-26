@@ -43,11 +43,22 @@ view: social_daily_snapshot {
   dimension: brand_canonical {
     label: "Brand"
     type: string
+    # Hardcoded so the dashboard Brand filter does not SELECT DISTINCT over the
+    # deduped snapshot subquery (that suggestion query spins and never returns).
+    suggestions: [
+      "Aspire TV",
+      "Heartland on UP Faith & Family",
+      "Ovation TV",
+      "UP Faith & Family",
+      "Uplift Someone",
+      "UPtv"
+    ]
     sql:
       CASE
         WHEN LOWER(TRIM(${TABLE}.brand)) IN ('ovation', 'ovation tv', 'ovationtv') THEN 'Ovation TV'
         WHEN LOWER(TRIM(${TABLE}.brand)) IN ('aspire', 'aspire tv', 'aspiretv') THEN 'Aspire TV'
         WHEN LOWER(TRIM(${TABLE}.brand)) IN ('upff', 'up faith & family', 'up faith and family') THEN 'UP Faith & Family'
+        WHEN LOWER(TRIM(${TABLE}.brand)) IN ('uptv', 'up tv') THEN 'UPtv'
         ELSE ${TABLE}.brand
       END ;;
     description: "Normalized brand for rollup. UPFF and UP Faith & Family warehouse spellings both map to UP Faith & Family. Ovation / Aspire aliases match doc 02 / PROFILE_MAP."
