@@ -135,6 +135,20 @@ FROM (
     billing_period
   FROM ${ios.SQL_TABLE_NAME}
 
+  UNION ALL
+
+  SELECT
+    105981 as user_count
+    ,'2026-09-27' as report_date
+    ,'web' as platform
+    ,'monthly' as billing_period
+  UNION ALL
+  SELECT
+    88784 as user_count
+    ,'2026-09-27' as report_date
+    ,'web' as platform
+    ,'yearly' as billing_period
+
 )
 
       UNION ALL
