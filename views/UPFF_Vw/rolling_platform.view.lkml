@@ -8,6 +8,9 @@ view: rolling_platform {
   FROM ${UPFF_analytics_Vw_v2.SQL_TABLE_NAME}
   WHERE report_date >= '2025-06-30'
 ),
+sub_count as (
+select * from ${sub_count.SQL_TABLE_NAME}
+),
 
       -- 2) Chargebee cancellations -> treat as 'web' platform (adjust if you prefer a different label)
       user_cancelled_counts2 AS (
@@ -119,19 +122,10 @@ view: rolling_platform {
       total_paid_subs AS (
       SELECT
       report_date,
-      CASE
-      WHEN platform = 'Chargebee' THEN 'web'
-      ELSE platform
-      END AS platform,
-      COUNT(DISTINCT CASE
-      WHEN (status LIKE 'non_renewing' OR status IN ('active','enabled'))
-      AND billing_period = 'monthly' THEN user_id END
-      ) AS total_paid_subs_monthly,
-      COUNT(DISTINCT CASE
-      WHEN (status LIKE 'non_renewing' OR status IN ('active','enabled'))
-      AND billing_period = 'yearly'  THEN user_id END
-      ) AS total_paid_subs_yearly
-      FROM v2_table
+      platform,
+      SUM(CASE WHEN billing_period = 'monthly' THEN user_count ELSE 0 END) AS total_paid_subs_monthly,
+      SUM(CASE WHEN billing_period = 'yearly' THEN user_count ELSE 0 END)  AS total_paid_subs_yearly
+      FROM sub_count
       WHERE platform != 'ios'
       GROUP BY report_date, platform
       ),

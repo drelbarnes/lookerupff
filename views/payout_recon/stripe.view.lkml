@@ -227,7 +227,7 @@ charges as (SELECT distinct
   ,content_invoice_credits_applied
   --'refund' AS reporting_category
 FROM
- `up-faith-and-family-216419.chargebee_webhook_events.payment_refunded` WHERE date(received_at) between (SELECT report_date FROM config) - INTERVAL 31 DAY
+ `up-faith-and-family-216419.chargebee_webhook_events.payment_refunded` WHERE date(received_at) between (SELECT report_date FROM config) - INTERVAL 91 DAY
   AND (SELECT report_date FROM config) and content_invoice_issued_credit_notes_0_cn_reason_code != 'subscription_change'
 
   union all
@@ -289,7 +289,7 @@ FROM
   ,content_invoice_credits_applied
   --'refund' AS reporting_category
 FROM
- `up-faith-and-family-216419.chargebee_webhook_events.payment_refunded` WHERE date(received_at) between (SELECT report_date FROM config) - INTERVAL 34 DAY
+ `up-faith-and-family-216419.chargebee_webhook_events.payment_refunded` WHERE date(received_at) between (SELECT report_date FROM config) - INTERVAL 94 DAY
   AND (SELECT report_date FROM config) and content_invoice_issued_credit_notes_0_cn_reason_code = 'subscription_change'
  ),
 
