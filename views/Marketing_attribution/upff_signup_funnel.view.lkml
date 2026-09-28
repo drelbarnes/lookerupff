@@ -64,7 +64,7 @@ view: upff_signup_funnel {
                 UNION ALL
                 SELECT 'Web'     AS platform, anonymous_id, received_at
                 FROM javascript_upff_home.pages
-                WHERE path IN ('/stream/', '/subscribe/')
+                --WHERE path IN ('/stream/', '/subscribe/')
             ),
 
       sign_up_viewed_events AS (
