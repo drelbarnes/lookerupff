@@ -77,6 +77,23 @@ include: "/gaither_segment_consent.view.lkml"
 include: "/views/up_airtable_reports.view.lkml"
 include: "/Vimeo_OTT/vimeo_ott_all_customers.view.lkml"
 include: "/Vimeo_OTT/vimeo_ott_all_customers_workflows.view.lkml"
+include: "/views/Marketing_attribution/upff_signup_funnel.view.lkml"
+
+explore: upff_signup_funnel {
+  label: "UPFF Sign-Up Funnel (iOS, Android, Web)"
+  description: "Entry -> Order funnel across iOS, Android and Web. Choose the Current and Prior periods and the attribution window; filter by Platform or Platform Group."
+
+  # Defaults: this week (last 7 full days) vs last week, 3-day attribution window.
+  # Business users can change these to any date ranges in the filter bar.
+  always_filter: {
+    filters: [
+      upff_signup_funnel.current_period: "7 days ago for 7 days",
+      upff_signup_funnel.prior_period: "14 days ago for 7 days",
+      upff_signup_funnel.attribution_days: "3"
+    ]
+  }
+}
+
 
 explore: vimeo_ott_all_customers_workflows {
   label: "Vimeo OTT – All Customers Workflows"
