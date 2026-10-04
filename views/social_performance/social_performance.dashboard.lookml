@@ -82,7 +82,11 @@
       col: 6
       width: 6
       height: 4
-      measures: [social_daily_snapshot.total_impressions]
+      measures: [social_daily_snapshot.total_impressions_display]
+      note:
+        text: "YouTube is omitted from this total. Agorapulse does not provide YouTube impressions; with Platform set to YouTube the tile shows N/A. Those views stay on Total video views."
+        state: collapsed
+        display: hover
       listen:
         agorapulse_snapshot_date: social_daily_snapshot.snapshot_date_date
         brand: social_daily_snapshot.brand_canonical
@@ -294,11 +298,11 @@
         - agorapulse_post_performance.post_engagements
         - agorapulse_post_performance.post_video_views
       sorts:
-        - agorapulse_post_performance.post_impressions desc
-        - agorapulse_post_performance.publishing_date desc
+        - agorapulse_post_performance.post_impressions_rank desc
+        - agorapulse_post_performance.post_video_views desc
       limit: 20
       note:
-        text: "Latest Social Post Last 30 row per post_id (deduped in LookML—doc 07 §4). Ranked by that row’s impressions_count for posts whose publish date (EST/EDT) falls in the selected range (brand/platform filters apply). Engagements and video views are from the same latest snapshot. Lifetime metrics match Agorapulse content performance for those posts; not period deltas."
+        text: "Latest Social Post Last 30 row per post_id (deduped in LookML). Ranked by non-YouTube impressions for posts whose publish date (EST/EDT) falls in the selected range. YouTube impressions show N/A. Engagements and video views come from the same latest snapshot."
         state: collapsed
         display: hover
       listen:
@@ -321,6 +325,11 @@
       width: 24
       height: 10
       stacking: ""
+      show_null_points: false
+      note:
+        text: "YouTube is omitted. Agorapulse does not provide YouTube impressions; with Platform set to YouTube there is no line. Video views are on the chart below."
+        state: collapsed
+        display: hover
       listen:
         agorapulse_snapshot_date: social_daily_snapshot.snapshot_date_date
         brand: social_daily_snapshot.brand_canonical
@@ -357,7 +366,11 @@
       height: 10
       dimensions: [social_daily_snapshot.brand_canonical]
       measures: [social_daily_snapshot.total_impressions]
-      sorts: [social_daily_snapshot.total_impressions asc]
+      sorts: [social_daily_snapshot.total_impressions_rank asc]
+      note:
+        text: "Brand totals exclude YouTube. Agorapulse does not provide YouTube impressions."
+        state: collapsed
+        display: hover
       stacking: ""
       hide_legend: true
       show_value_labels: true
@@ -406,14 +419,14 @@
       height: 10
       dimensions: [social_daily_snapshot.platform]
       measures: [social_daily_snapshot.total_impressions]
-      sorts: [social_daily_snapshot.total_impressions desc]
+      sorts: [social_daily_snapshot.total_impressions_rank desc]
       stacking: ""
       hide_legend: true
       show_value_labels: true
       x_axis_gridlines: false
       y_axis_gridlines: false
       note:
-        text: "Horizontal bar chart (Looker Bar). One bar per platform, sorted by total impressions for the selected date range and brand/platform filters—ranking headline volume (doc 07 §8)."
+        text: "Horizontal bar chart (Looker Bar). One bar per platform with impressions, sorted descending for the selected date range and brand/platform filters. YouTube is omitted because Agorapulse does not provide YouTube impressions."
         state: collapsed
         display: hover
       listen:
