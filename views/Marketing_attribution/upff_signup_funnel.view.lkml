@@ -8,9 +8,11 @@
 #   - Rates are stored as ratios and formatted as percentages; changes are in
 #     percentage points and say so in the label.
 #   - Web entries carry the UTM campaign fields (source, name, medium, content,
-#     term) from the user's FIRST qualifying page view in each period, so the
-#     funnel can be filtered or grouped by source or campaign. App rows have no
-#     UTMs and show as "Mobile App (no UTM)" in Marketing Platform.
+#     term) and a Marketing Platform bucket from the user's FIRST page view in
+#     each period. The "Web Campaign Filters" apply to Web users only: iOS and
+#     Android users always pass through, so app data stays in every result.
+#     The filters run inside the derived table, so every metric (including the
+#     average daily rates) reflects them. App rows show "Mobile App (no UTM)".
 #
 #   Step | iOS / Android            | Web
 #   -----+--------------------------+-------------------------------------------
@@ -56,6 +58,42 @@ view: upff_signup_funnel {
     default_value: "3"
   }
 
+  # ---------------------------------------------------------------------------
+  # Web campaign filters (apply to Web users only; app users always included)
+  # ---------------------------------------------------------------------------
+
+  filter: marketing_platform_filter {
+    type: string
+    group_label: "Web Campaign Filters (Web only)"
+    label: "Marketing Platform Filter"
+    description: "Limits WEB users to those who arrived from the selected marketing platform(s), e.g. Meta Ads or Google Search. iOS and Android users are not affected and stay in every result. Use this (not the Marketing Platform dimension) to filter by channel."
+    suggestions: ["Google Search", "Google PMax", "Google Display", "YouTube", "Meta Ads", "Bing Ads", "HubSpot", "UPtv Digital", "ChatGPT", "Organic Search", "Organic Social", "Others", "Unknown"]
+  }
+
+  filter: campaign_source_filter {
+    type: string
+    group_label: "Web Campaign Filters (Web only)"
+    label: "Campaign Source Filter"
+    description: "Limits WEB users to those whose arriving visit had the selected utm_source(s). iOS and Android users are not affected. Use this (not the Campaign Source dimension) to filter by source."
+    suggest_dimension: campaign_source
+  }
+
+  filter: campaign_name_filter {
+    type: string
+    group_label: "Web Campaign Filters (Web only)"
+    label: "Campaign Name Filter"
+    description: "Limits WEB users to those whose arriving visit had the selected utm_campaign(s). iOS and Android users are not affected. Use this (not the Campaign Name dimension) to filter by campaign."
+    suggest_dimension: campaign_name
+  }
+
+  filter: campaign_medium_filter {
+    type: string
+    group_label: "Web Campaign Filters (Web only)"
+    label: "Campaign Medium Filter"
+    description: "Limits WEB users to those whose arriving visit had the selected utm_medium(s), e.g. cpc or email. iOS and Android users are not affected."
+    suggest_dimension: campaign_medium
+  }
+
   derived_table: {
     sql:
       WITH
@@ -68,12 +106,14 @@ view: upff_signup_funnel {
                        CAST(NULL AS VARCHAR(512)) AS campaign_name,
                        CAST(NULL AS VARCHAR(512)) AS campaign_medium,
                        CAST(NULL AS VARCHAR(512)) AS campaign_content,
-                       CAST(NULL AS VARCHAR(512)) AS campaign_term
+                       CAST(NULL AS VARCHAR(512)) AS campaign_term,
+                       'Mobile App (no UTM)'::VARCHAR(64) AS marketing_platform
                 FROM ios.app_installed
                 UNION ALL
                 SELECT 'Android', anonymous_id, received_at,
                        CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
-                       CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512))
+                       CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
+                       'Mobile App (no UTM)'::VARCHAR(64)
                 FROM android.app_installed
                 UNION ALL
                 SELECT 'Web', anonymous_id, received_at,
@@ -81,7 +121,36 @@ view: upff_signup_funnel {
                        context_campaign_name::VARCHAR(512),
                        context_campaign_medium::VARCHAR(512),
                        context_campaign_content::VARCHAR(512),
-                       context_campaign_term::VARCHAR(512)
+                       context_campaign_term::VARCHAR(512),
+                       CASE
+                         WHEN LOWER(context_campaign_source) IN ('google','google_ads','adwords')
+                              AND LOWER(context_campaign_medium) IN ('cpc','ppc','paid','g')
+                              AND LOWER(context_campaign_name) LIKE '%display%'                       THEN 'Google Display'
+                         WHEN LOWER(context_campaign_source) = 'youtube'                              THEN 'YouTube'
+                         WHEN LOWER(context_campaign_source) = 'chatgpt.com'                          THEN 'ChatGPT'
+                         WHEN LOWER(context_campaign_source) IN ('google','google_ads','adwords')
+                              AND LOWER(context_campaign_medium) IN ('cpc','ppc','paid','g')
+                              AND (LOWER(context_campaign_name) LIKE '%pmax%'
+                                   OR LOWER(context_campaign_name) LIKE '%performance max%')          THEN 'Google PMax'
+                         WHEN LOWER(context_campaign_source) IN ('google','google_ads','adwords')
+                              AND LOWER(context_campaign_medium) IN ('cpc','ppc','paid','g')          THEN 'Google Search'
+                         WHEN LOWER(context_campaign_source) IN ('facebook','meta','ig','fb','an','fb-sitelink','th','msg',
+                                                                 'site_source_name','site.source.name','campaign.name')
+                              OR LOWER(context_campaign_source) LIKE 'meta%'                          THEN 'Meta Ads'
+                         WHEN LOWER(context_campaign_source) IN ('bing','bing_ads','microsoft','msn') THEN 'Bing Ads'
+                         WHEN LOWER(context_campaign_source) IN ('hubspot','hubspot_upff','hubspot_uptv')
+                              OR LOWER(context_campaign_medium) LIKE 'email%'                         THEN 'HubSpot'
+                         WHEN LOWER(context_campaign_source) IN ('uptv','uptv_movies_app')            THEN 'UPtv Digital'
+                         WHEN LOWER(context_campaign_medium) = 'organic'
+                              AND LOWER(context_campaign_source) IN ('google','bing','duckduckgo','yahoo') THEN 'Organic Search'
+                         WHEN LOWER(context_campaign_medium) IN ('social','organic_social')
+                              OR (LOWER(context_campaign_medium) = 'organic'
+                                  AND LOWER(context_campaign_source) IN ('facebook','instagram','tiktok','x','twitter','linkedin'))
+                                                                                                      THEN 'Organic Social'
+                         WHEN LOWER(context_campaign_source) IN ('organic','direct')                  THEN 'Others'
+                         WHEN context_campaign_source IS NULL                                         THEN 'Unknown'
+                         ELSE 'Others'
+                       END::VARCHAR(64)
                 FROM javascript_upff_home.pages
                 --WHERE path IN ('/stream/', '/subscribe/')
             ),
@@ -121,10 +190,10 @@ view: upff_signup_funnel {
       -- user arrived (first touch within the period).
       entries AS (
       SELECT platform, anonymous_id, entry_at, period,
-      campaign_source, campaign_name, campaign_medium, campaign_content, campaign_term
+      campaign_source, campaign_name, campaign_medium, campaign_content, campaign_term, marketing_platform
       FROM (
       SELECT platform, anonymous_id, received_at AS entry_at, 'Current' AS period,
-      campaign_source, campaign_name, campaign_medium, campaign_content, campaign_term,
+      campaign_source, campaign_name, campaign_medium, campaign_content, campaign_term, marketing_platform,
       ROW_NUMBER() OVER (PARTITION BY platform, anonymous_id ORDER BY received_at) AS rn
       FROM entry_events
       WHERE {% condition current_period %} received_at {% endcondition %}
@@ -132,12 +201,21 @@ view: upff_signup_funnel {
       UNION ALL
 
       SELECT platform, anonymous_id, received_at AS entry_at, 'Prior' AS period,
-      campaign_source, campaign_name, campaign_medium, campaign_content, campaign_term,
+      campaign_source, campaign_name, campaign_medium, campaign_content, campaign_term, marketing_platform,
       ROW_NUMBER() OVER (PARTITION BY platform, anonymous_id ORDER BY received_at) AS rn
       FROM entry_events
       WHERE {% condition prior_period %} received_at {% endcondition %}
       ) ranked
       WHERE rn = 1
+      -- Web Campaign Filters: applied to Web users only; app users always pass
+      AND (
+      platform <> 'Web'
+      OR (    {% condition marketing_platform_filter %} marketing_platform {% endcondition %}
+      AND {% condition campaign_source_filter %}    campaign_source    {% endcondition %}
+      AND {% condition campaign_name_filter %}      campaign_name      {% endcondition %}
+      AND {% condition campaign_medium_filter %}    campaign_medium    {% endcondition %}
+      )
+      )
       ),
 
       -- ---------- Step 2 ----------
@@ -193,6 +271,7 @@ view: upff_signup_funnel {
       , en.campaign_medium
       , en.campaign_content
       , en.campaign_term
+      , en.marketing_platform
       , sv.signup_viewed_at
       , pc.plan_chosen_at
       , oc.order_completed_at
@@ -344,92 +423,64 @@ view: upff_signup_funnel {
   }
 
   # ---------------------------------------------------------------------------
-  # Web campaign (UTM) dimensions
+  # Web campaign (UTM) dimensions - for grouping and breakdowns
   # From the user's first marketing-site page view in the period (first touch).
-  # Web only: app rows are NULL. Filtering on any of these limits the funnel to
-  # Web users. Pooled metrics (Entries, Conversions, Conversion Rate, all
-  # Funnel Step counts and rates) respect these filters; the Average Daily
-  # metrics are calculated on all traffic and should not be used with them.
+  # can_filter: no, so filtering always goes through the Web Campaign Filters
+  # above, which keep iOS and Android users in the results.
   # ---------------------------------------------------------------------------
 
   dimension: campaign_source {
     group_label: "Web Campaign (UTM)"
     label: "Campaign Source"
-    description: "utm_source of the visit that brought the user to the marketing site (Segment context_campaign_source), e.g. google, facebook, hubspot. Web only. Also called: UTM source, traffic source, referrer source."
+    description: "utm_source of the visit that brought the user to the marketing site (Segment context_campaign_source), e.g. google, facebook, hubspot. Web only (app users are blank). Group by this; to filter, use the Web Campaign Filters. Also called: UTM source, traffic source, referrer source."
     type: string
     sql: ${TABLE}.campaign_source ;;
+    can_filter: no
   }
 
   dimension: campaign_name {
     group_label: "Web Campaign (UTM)"
     label: "Campaign Name"
-    description: "utm_campaign of the visit that brought the user to the marketing site (Segment context_campaign_name). Web only. Also called: UTM campaign, campaign, ad campaign."
+    description: "utm_campaign of the visit that brought the user to the marketing site (Segment context_campaign_name). Web only (app users are blank). Group by this; to filter, use the Web Campaign Filters. Also called: UTM campaign, campaign, ad campaign."
     type: string
     sql: ${TABLE}.campaign_name ;;
+    can_filter: no
   }
 
   dimension: campaign_medium {
     group_label: "Web Campaign (UTM)"
     label: "Campaign Medium"
-    description: "utm_medium of the arriving visit (Segment context_campaign_medium), e.g. cpc, email, social. Web only. Also called: UTM medium, channel type."
+    description: "utm_medium of the arriving visit (Segment context_campaign_medium), e.g. cpc, email, social. Web only (app users are blank). Group by this; to filter, use the Web Campaign Filters. Also called: UTM medium, channel type."
     type: string
     sql: ${TABLE}.campaign_medium ;;
+    can_filter: no
   }
 
   dimension: campaign_content {
     group_label: "Web Campaign (UTM)"
     label: "Campaign Content"
-    description: "utm_content of the arriving visit (Segment context_campaign_content), usually the ad or creative variant. Web only. Also called: UTM content, ad variant, creative."
+    description: "utm_content of the arriving visit (Segment context_campaign_content), usually the ad or creative variant. Web only (app users are blank). Group by this; to filter, use the Web Campaign Filters. Also called: UTM content, ad variant, creative."
     type: string
     sql: ${TABLE}.campaign_content ;;
+    can_filter: no
   }
 
   dimension: campaign_term {
     group_label: "Web Campaign (UTM)"
     label: "Campaign Term"
-    description: "utm_term of the arriving visit (Segment context_campaign_term), usually the paid search keyword. Web only. Also called: UTM term, keyword."
+    description: "utm_term of the arriving visit (Segment context_campaign_term), usually the paid search keyword. Web only (app users are blank). Group by this; to filter, use the Web Campaign Filters. Also called: UTM term, keyword."
     type: string
     sql: ${TABLE}.campaign_term ;;
+    can_filter: no
   }
 
   dimension: marketing_platform {
     group_label: "Web Campaign (UTM)"
     label: "Marketing Platform"
-    description: "Normalized marketing platform for the visit that brought the user to the site, based on Campaign Source, Medium and Name: Google Search, Google PMax, Google Display, YouTube, Meta Ads, Bing Ads, HubSpot, UPtv Digital, ChatGPT, Organic Search, Organic Social, Others, Unknown. App users show as Mobile App (no UTM). Also called: channel, ad platform, traffic channel."
+    description: "Normalized marketing platform for the visit that brought a web user to the site, based on Campaign Source, Medium and Name: Google Search, Google PMax, Google Display, YouTube, Meta Ads, Bing Ads, HubSpot, UPtv Digital, ChatGPT, Organic Search, Organic Social, Others, Unknown. iOS and Android users show as Mobile App (no UTM). Group by this; to filter, use the Marketing Platform Filter. Also called: channel, ad platform, traffic channel."
     type: string
-    sql:
-      CASE
-        WHEN ${TABLE}.platform <> 'Web'                                                         THEN 'Mobile App (no UTM)'
-        WHEN LOWER(${TABLE}.campaign_source) IN ('google','google_ads','adwords')
-             AND LOWER(${TABLE}.campaign_medium) IN ('cpc','ppc','paid','g')
-             AND LOWER(${TABLE}.campaign_name) LIKE '%display%'                                 THEN 'Google Display'
-        WHEN LOWER(${TABLE}.campaign_source) = 'youtube'                                        THEN 'YouTube'
-        WHEN LOWER(${TABLE}.campaign_source) = 'chatgpt.com'                                    THEN 'ChatGPT'
-        WHEN LOWER(${TABLE}.campaign_source) IN ('google','google_ads','adwords')
-             AND LOWER(${TABLE}.campaign_medium) IN ('cpc','ppc','paid','g')
-             AND (LOWER(${TABLE}.campaign_name) LIKE '%pmax%'
-                  OR LOWER(${TABLE}.campaign_name) LIKE '%performance max%')                    THEN 'Google PMax'
-        WHEN LOWER(${TABLE}.campaign_source) IN ('google','google_ads','adwords')
-             AND LOWER(${TABLE}.campaign_medium) IN ('cpc','ppc','paid','g')                    THEN 'Google Search'
-        WHEN LOWER(${TABLE}.campaign_source) IN ('facebook','meta','ig','fb','an','fb-sitelink','th','msg',
-                                                 'site_source_name','site.source.name','campaign.name')
-             OR LOWER(${TABLE}.campaign_source) LIKE 'meta%'                                    THEN 'Meta Ads'
-        WHEN LOWER(${TABLE}.campaign_source) IN ('bing','bing_ads','microsoft','msn')           THEN 'Bing Ads'
-        WHEN LOWER(${TABLE}.campaign_source) IN ('hubspot','hubspot_upff','hubspot_uptv')
-             OR LOWER(${TABLE}.campaign_medium) LIKE 'email%'                                   THEN 'HubSpot'
-        WHEN LOWER(${TABLE}.campaign_source) IN ('uptv','uptv_movies_app')                      THEN 'UPtv Digital'
-        WHEN LOWER(${TABLE}.campaign_medium) = 'organic'
-             AND LOWER(${TABLE}.campaign_source) IN ('google','bing','duckduckgo','yahoo')      THEN 'Organic Search'
-        WHEN LOWER(${TABLE}.campaign_medium) IN ('social','organic_social')
-             OR (LOWER(${TABLE}.campaign_medium) = 'organic'
-                 AND LOWER(${TABLE}.campaign_source) IN ('facebook','instagram','tiktok','x','twitter','linkedin'))
-                                                                                                THEN 'Organic Social'
-        WHEN LOWER(${TABLE}.campaign_source) IN ('organic','direct')                            THEN 'Others'
-        WHEN ${TABLE}.campaign_source IS NULL                                                   THEN 'Unknown'
-        ELSE 'Others'
-      END ;;
-    suggestions: ["Google Search", "Google PMax", "Google Display", "YouTube", "Meta Ads", "Bing Ads", "HubSpot",
-      "UPtv Digital", "ChatGPT", "Organic Search", "Organic Social", "Others", "Unknown", "Mobile App (no UTM)"]
+    sql: ${TABLE}.marketing_platform ;;
+    can_filter: no
   }
 
   # ---------------------------------------------------------------------------
@@ -583,7 +634,7 @@ view: upff_signup_funnel {
   measure: avg_daily_effective_conversion_current {
     group_label: "Headline Metrics"
     label: "Average Daily Conversion Rate (Current Period)"
-    description: "Average of each day's entry-to-order conversion rate in the current period, with every day weighted equally. Use when asked for a typical day or the average daily rate; otherwise prefer Conversion Rate (Current Period). Do not use with Web Campaign (UTM) filters."
+    description: "Average of each day's entry-to-order conversion rate in the current period, with every day weighted equally. Use when asked for a typical day or the average daily rate; otherwise prefer Conversion Rate (Current Period)."
     type: number
     sql:
       SUM(CASE WHEN ${TABLE}.step_number = 1 AND ${TABLE}.period = 'Current' AND ${TABLE}.order_completed_at IS NOT NULL
@@ -628,7 +679,7 @@ view: upff_signup_funnel {
   measure: avg_daily_effective_conversion_prior {
     group_label: "Headline Metrics"
     label: "Average Daily Conversion Rate (Prior Period)"
-    description: "Average of each day's entry-to-order conversion rate in the prior period, with every day weighted equally. Use when asked for a typical day or the average daily rate; otherwise prefer Conversion Rate (Prior Period). Do not use with Web Campaign (UTM) filters."
+    description: "Average of each day's entry-to-order conversion rate in the prior period, with every day weighted equally. Use when asked for a typical day or the average daily rate; otherwise prefer Conversion Rate (Prior Period)."
     type: number
     sql:
       SUM(CASE WHEN ${TABLE}.step_number = 1 AND ${TABLE}.period = 'Prior' AND ${TABLE}.order_completed_at IS NOT NULL
