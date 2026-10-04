@@ -226,7 +226,7 @@ view: social_daily_snapshot {
   }
 
   measure: avg_engagement_rate {
-    label: "Engagement rate"
+    label: "Engagement rate per view"
     type: average
     sql:
       COALESCE(
@@ -234,7 +234,7 @@ view: social_daily_snapshot {
         1.0 * ${engagements} / NULLIF(${video_views}, 0)
       ) ;;
     value_format_name: percent_2
-    description: "Mean of Agorapulse engagementRatePerView (percent divided by 100) for Facebook, Instagram, and TikTok. YouTube has no API rate, so those days use engagements divided by video views. Days with neither a rate nor video views are excluded."
+    description: "Engagements per view, averaged across profile-days. Facebook, Instagram, and TikTok use Agorapulse engagementRatePerView. YouTube has no API rate, so those days use engagements divided by video views. This is not total engagements divided by total views for the whole date range."
   }
 
   measure: weighted_engagement_rate {

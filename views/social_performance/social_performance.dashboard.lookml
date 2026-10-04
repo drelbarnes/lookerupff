@@ -108,7 +108,7 @@
         platform: social_daily_snapshot.platform
 
     - name: engagement_rate_kpi
-      title: "Engagement rate"
+      title: "Engagement rate per view"
       model: social_performance
       explore: social_daily_snapshot
       type: single_value
@@ -117,6 +117,10 @@
       width: 6
       height: 4
       measures: [social_daily_snapshot.avg_engagement_rate]
+      note:
+        text: "Engagements per view, averaged across days. Facebook, Instagram, and TikTok use Agorapulse's per-view rate. YouTube has no API rate, so it uses engagements divided by video views. This is not total engagements divided by total views for the whole date range."
+        state: collapsed
+        display: hover
       listen:
         agorapulse_snapshot_date: social_daily_snapshot.snapshot_date_date
         brand: social_daily_snapshot.brand_canonical
