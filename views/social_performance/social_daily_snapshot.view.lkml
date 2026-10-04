@@ -22,12 +22,11 @@ view: social_daily_snapshot {
     WHERE s._snapshot_row_rank = 1
   ) ;;
 
-  # Reporting day (UTC/GMT). Keep convert_tz off so Looker does not shift to EST/EDT.
+  # Reporting day (UTC). Cast if your warehouse column is VARCHAR/TIMESTAMP.
   dimension_group: snapshot_date {
     label: "Snapshot date"
     type: time
     datatype: date
-    convert_tz: no
     timeframes: [raw, date, week, month, quarter, year]
     sql: ${TABLE}.date ;;
   }
@@ -43,25 +42,14 @@ view: social_daily_snapshot {
   dimension: brand_canonical {
     label: "Brand"
     type: string
-    # Hardcoded so the dashboard Brand filter does not SELECT DISTINCT over the
-    # deduped snapshot subquery (that suggestion query spins and never returns).
-    suggestions: [
-      "Aspire TV",
-      "Heartland on UP Faith & Family",
-      "Ovation TV",
-      "UP Faith & Family",
-      "Uplift Someone",
-      "UPtv"
-    ]
     sql:
       CASE
         WHEN LOWER(TRIM(${TABLE}.brand)) IN ('ovation', 'ovation tv', 'ovationtv') THEN 'Ovation TV'
         WHEN LOWER(TRIM(${TABLE}.brand)) IN ('aspire', 'aspire tv', 'aspiretv') THEN 'Aspire TV'
-        WHEN LOWER(TRIM(${TABLE}.brand)) IN ('upff', 'up faith & family', 'up faith and family') THEN 'UP Faith & Family'
-        WHEN LOWER(TRIM(${TABLE}.brand)) IN ('uptv', 'up tv') THEN 'UPtv'
+        WHEN LOWER(TRIM(${TABLE}.brand)) IN ('upff', 'up faith & family', 'up faith and family') THEN 'UPFF'
         ELSE ${TABLE}.brand
       END ;;
-    description: "Normalized brand for rollup. UPFF and UP Faith & Family warehouse spellings both map to UP Faith & Family. Ovation / Aspire aliases match doc 02 / PROFILE_MAP."
+    description: "Normalized brand for rollup. UPFF and UP Faith & Family warehouse spellings both map to UPFF. Ovation / Aspire aliases match doc 02 / PROFILE_MAP."
   }
 
   dimension: platform {
@@ -106,6 +94,13 @@ view: social_daily_snapshot {
     sql: ${TABLE}.engagement_rate ;;
   }
 
+  dimension: engagement_rate_per_view {
+    hidden: yes
+    type: number
+    sql: ${TABLE}.engagement_rate_per_view ;;
+    description: "Raw Agorapulse engagementRatePerView, stored as a percent (2.56 means 2.56%). Null when the API omits the field."
+  }
+
   measure: total_impressions {
     label: "Total impressions"
     type: sum
@@ -114,75 +109,12 @@ view: social_daily_snapshot {
     description: "Sum of impressions at profile-day grain (Agorapulse viewsCount). See docs/06 and docs/07."
   }
 
-  measure: organic_impressions {
-    label: "Organic impressions"
-    type: sum
-    sql:
-      CASE
-        WHEN ${platform} = 'facebook'  THEN COALESCE(${TABLE}.organic_views_count, 0)
-        WHEN ${platform} = 'instagram' THEN COALESCE(${TABLE}.organic_views_count, 0)
-        WHEN ${platform} = 'tiktok'    THEN COALESCE(${impressions}, 0)
-        WHEN ${platform} = 'youtube'   THEN COALESCE(${impressions}, 0)
-        ELSE 0
-      END ;;
-    value_format_name: decimal_0
-    description: "Platform-aware audience grain. FB/IG: organic_views_count; TT/YT: impressions (paid=0). Organic + paid = total_impressions where Agorapulse splits them."
-  }
-
-  measure: paid_impressions {
-    label: "Paid impressions"
-    type: sum
-    sql:
-      CASE
-        WHEN ${platform} = 'facebook'  THEN COALESCE(${TABLE}.paid_views_count, 0)
-        WHEN ${platform} = 'instagram' THEN COALESCE(${TABLE}.paid_views_count, 0)
-        ELSE 0
-      END ;;
-    value_format_name: decimal_0
-    description: "Platform-aware audience grain. FB/IG: paid_views_count; TT/YT: 0. Organic + paid = total_impressions where Agorapulse splits them."
-  }
-
-  measure: organic_video_views {
-    label: "Organic video views"
-    type: sum
-    sql:
-      CASE
-        WHEN ${platform} = 'facebook'  THEN COALESCE(${TABLE}.organic_video_views_count, 0)
-        WHEN ${platform} = 'instagram' THEN COALESCE(${TABLE}.organic_views_count, 0)
-        WHEN ${platform} = 'tiktok'    THEN COALESCE(${TABLE}.views_count, 0)
-        WHEN ${platform} = 'youtube'   THEN COALESCE(${TABLE}.video_views_count, 0)
-        ELSE 0
-      END ;;
-    value_format_name: decimal_0
-    description: "Platform-aware audience grain. FB: organic_video_views_count; IG: organic_views_count; TT/YT: views_count or video_views_count (paid=0). See docs/07 §11."
-  }
-
-  measure: paid_video_views {
-    label: "Paid video views"
-    type: sum
-    sql:
-      CASE
-        WHEN ${platform} = 'facebook'  THEN COALESCE(${TABLE}.paid_video_views_count, 0)
-        WHEN ${platform} = 'instagram' THEN COALESCE(${TABLE}.paid_views_count, 0)
-        ELSE 0
-      END ;;
-    value_format_name: decimal_0
-    description: "Platform-aware audience grain. FB: paid_video_views_count; IG: paid_views_count; TT/YT: 0. See docs/07 §11."
-  }
-
   measure: total_video_views {
     label: "Total video views"
     type: sum
-    sql:
-      CASE
-        WHEN ${platform} = 'facebook'  THEN COALESCE(${TABLE}.video_views_count, 0)
-        WHEN ${platform} = 'instagram' THEN COALESCE(${TABLE}.views_count, 0)
-        WHEN ${platform} = 'tiktok'    THEN COALESCE(${TABLE}.views_count, 0)
-        WHEN ${platform} = 'youtube'   THEN COALESCE(${TABLE}.video_views_count, 0)
-        ELSE 0
-      END ;;
+    sql: ${video_views} ;;
     value_format_name: decimal_0
-    description: "Platform-aware audience grain. FB/YT: video_views_count; IG/TT: views_count. Total = organic + paid per platform. See docs/07 §11."
+    description: "Sum of video_views at profile-day grain (Agorapulse videoViewsCount). Audience snapshot, not per-post video metrics. See docs/06 and docs/07 §5."
   }
 
   measure: total_engagements {
@@ -196,9 +128,13 @@ view: social_daily_snapshot {
   measure: avg_engagement_rate {
     label: "Engagement rate"
     type: average
-    sql: ${engagement_rate} ;;
+    sql:
+      COALESCE(
+        ${engagement_rate_per_view} / 100.0,
+        1.0 * ${engagements} / NULLIF(${impressions}, 0)
+      ) ;;
     value_format_name: percent_2
-    description: "Average of warehouse engagement_rate at profile-day grain (Agorapulse engagementRatePerView; see index.ts). Dashboard KPI uses this measure—simple mean across rows, not weighted by impressions. Compare weighted_engagement_rate for sum(engagements)/sum(impressions) (doc 07 §6)."
+    description: "Mean of Agorapulse engagementRatePerView (percent divided by 100) at profile-day grain. Days with no API rate and no impressions are excluded. When the API rate is missing but impressions exist (YouTube), uses that day's engagements divided by impressions. Not the impression-weighted period ratio; see weighted_engagement_rate."
   }
 
   measure: weighted_engagement_rate {
@@ -206,6 +142,6 @@ view: social_daily_snapshot {
     type: number
     sql: 1.0 * SUM(${engagements}) / NULLIF(SUM(${impressions}), 0) ;;
     value_format_name: percent_2
-    description: "Weighted ratio: total engagements ÷ total impressions (doc 07 §6 Option B). Differs from avg_engagement_rate (mean of Agorapulse engagement_rate per row). Use in Explore when you need impression-weighted engagement."
+    description: "Weighted ratio: total engagements ÷ total impressions (doc 07 §6 Option B). Differs from avg_engagement_rate, which averages daily rates and does not weight by impressions. Use in Explore when you need impression-weighted engagement."
   }
 }
