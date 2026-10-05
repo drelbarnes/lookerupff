@@ -1,5 +1,5 @@
 # =============================================================================
-# UP Faith & Family Sign-Up Funnel (iOS + Android + Web): Current vs Prior
+# UP Faith & Family Sign-Up Funnel (iOS + Android + Connected TV + Web): Current vs Prior
 # Optimized for Looker Conversational Analytics:
 #   - Every visible field has a plain-language label and a description that
 #     defines it, says when to use it, and lists common synonyms.
@@ -9,13 +9,17 @@
 #     percentage points and say so in the label.
 #   - Web entries carry the UTM campaign fields (source, name, medium, content,
 #     term) and a Marketing Platform bucket from the user's FIRST page view in
-#     each period. The "Web Campaign Filters" apply to Web users only: iOS and
-#     Android users always pass through, so app data stays in every result.
+#     each period. The "Web Campaign Filters" apply to Web users only: mobile
+#     (iOS, Android) and Connected TV (Roku, Amazon Fire TV, Tizen TV) users
+#     always pass through, so app data stays in every result.
 #     The filters run inside the derived table, so every metric (including the
-#     average daily rates) reflects them. App rows show "Mobile App (no UTM)".
+#     average daily rates) reflects them. App rows show "Mobile App (no UTM)" or
+#     "Connected TV (no UTM)".
 #
-#   Step | iOS / Android            | Web
+#   Step | iOS / Android / CTV      | Web
 #   -----+--------------------------+-------------------------------------------
+#   CTV  = Roku (roku), Amazon Fire TV (amazon_fire_tv), Tizen TV (tizen_tv);
+#          same Segment app tables as ios and android.
 #   1    | App Installed            | Landing Page Visit (/stream/, /subscribe/)
 #   2    | Sign Up Viewed           | Product Viewed
 #   3    | Subscription Plan Chosen | Signed Up
@@ -66,7 +70,7 @@ view: upff_signup_funnel {
     type: string
     group_label: "Web Campaign Filters (Web only)"
     label: "Marketing Platform Filter"
-    description: "Limits WEB users to those who arrived from the selected marketing platform(s), e.g. Meta Ads or Google Search. iOS and Android users are not affected and stay in every result. Use this (not the Marketing Platform dimension) to filter by channel."
+    description: "Limits WEB users to those who arrived from the selected marketing platform(s), e.g. Meta Ads or Google Search. iOS, Android and Connected TV users are not affected and stay in every result. Use this (not the Marketing Platform dimension) to filter by channel."
     suggestions: ["Google Search", "Google PMax", "Google Display", "YouTube", "Meta Ads", "Bing Ads", "HubSpot", "UPtv Digital", "ChatGPT", "Organic Search", "Organic Social", "Others", "Unknown"]
   }
 
@@ -74,7 +78,7 @@ view: upff_signup_funnel {
     type: string
     group_label: "Web Campaign Filters (Web only)"
     label: "Campaign Source Filter"
-    description: "Limits WEB users to those whose arriving visit had the selected utm_source(s). iOS and Android users are not affected. Use this (not the Campaign Source dimension) to filter by source."
+    description: "Limits WEB users to those whose arriving visit had the selected utm_source(s). iOS, Android and Connected TV users are not affected. Use this (not the Campaign Source dimension) to filter by source."
     suggest_dimension: campaign_source
   }
 
@@ -82,7 +86,7 @@ view: upff_signup_funnel {
     type: string
     group_label: "Web Campaign Filters (Web only)"
     label: "Campaign Name Filter"
-    description: "Limits WEB users to those whose arriving visit had the selected utm_campaign(s). iOS and Android users are not affected. Use this (not the Campaign Name dimension) to filter by campaign."
+    description: "Limits WEB users to those whose arriving visit had the selected utm_campaign(s). iOS, Android and Connected TV users are not affected. Use this (not the Campaign Name dimension) to filter by campaign."
     suggest_dimension: campaign_name
   }
 
@@ -90,7 +94,7 @@ view: upff_signup_funnel {
     type: string
     group_label: "Web Campaign Filters (Web only)"
     label: "Campaign Medium Filter"
-    description: "Limits WEB users to those whose arriving visit had the selected utm_medium(s), e.g. cpc or email. iOS and Android users are not affected."
+    description: "Limits WEB users to those whose arriving visit had the selected utm_medium(s), e.g. cpc or email. iOS, Android and Connected TV users are not affected."
     suggest_dimension: campaign_medium
   }
 
@@ -99,9 +103,9 @@ view: upff_signup_funnel {
       WITH
 
             -- ---------- Unioned event sources ----------
-            -- Web carries Segment UTM fields (context_campaign_*); apps have none.
+            -- Web carries Segment UTM fields (context_campaign_*); mobile and CTV apps have none.
             entry_events AS (
-                SELECT 'iOS' AS platform, anonymous_id, received_at,
+                SELECT 'iOS'::VARCHAR(32) AS platform, anonymous_id, received_at,
                        CAST(NULL AS VARCHAR(512)) AS campaign_source,
                        CAST(NULL AS VARCHAR(512)) AS campaign_name,
                        CAST(NULL AS VARCHAR(512)) AS campaign_medium,
@@ -115,6 +119,24 @@ view: upff_signup_funnel {
                        CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
                        'Mobile App (no UTM)'::VARCHAR(64)
                 FROM android.app_installed
+                UNION ALL
+                SELECT 'Roku', anonymous_id, received_at,
+                       CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
+                       CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
+                       'Connected TV (no UTM)'::VARCHAR(64)
+                FROM roku.app_installed
+                UNION ALL
+                SELECT 'Amazon Fire TV', anonymous_id, received_at,
+                       CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
+                       CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
+                       'Connected TV (no UTM)'::VARCHAR(64)
+                FROM amazon_fire_tv.app_installed
+                UNION ALL
+                SELECT 'Tizen TV', anonymous_id, received_at,
+                       CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
+                       CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
+                       'Connected TV (no UTM)'::VARCHAR(64)
+                FROM tizen_tv.app_installed
                 UNION ALL
                 SELECT 'Web', anonymous_id, received_at,
                        context_campaign_source::VARCHAR(512),
@@ -156,9 +178,15 @@ view: upff_signup_funnel {
             ),
 
       sign_up_viewed_events AS (
-      SELECT 'iOS'     AS platform, anonymous_id, received_at FROM ios.sign_up_viewed
+      SELECT 'iOS'::VARCHAR(32) AS platform, anonymous_id, received_at FROM ios.sign_up_viewed
       UNION ALL
       SELECT 'Android' AS platform, anonymous_id, received_at FROM android.sign_up_viewed
+      UNION ALL
+      SELECT 'Roku'    AS platform, anonymous_id, received_at FROM roku.sign_up_viewed
+      UNION ALL
+      SELECT 'Amazon Fire TV' AS platform, anonymous_id, received_at FROM amazon_fire_tv.sign_up_viewed
+      UNION ALL
+      SELECT 'Tizen TV' AS platform, anonymous_id, received_at FROM tizen_tv.sign_up_viewed
       UNION ALL
       SELECT 'Web'     AS platform, anonymous_id, received_at
       FROM javascript_upentertainment_checkout.product_viewed
@@ -166,9 +194,15 @@ view: upff_signup_funnel {
       ),
 
       plan_chosen_events AS (
-      SELECT 'iOS'     AS platform, anonymous_id, received_at FROM ios.subscription_plan_chosen
+      SELECT 'iOS'::VARCHAR(32) AS platform, anonymous_id, received_at FROM ios.subscription_plan_chosen
       UNION ALL
       SELECT 'Android' AS platform, anonymous_id, received_at FROM android.subscription_plan_chosen
+      UNION ALL
+      SELECT 'Roku'    AS platform, anonymous_id, received_at FROM roku.subscription_plan_chosen
+      UNION ALL
+      SELECT 'Amazon Fire TV' AS platform, anonymous_id, received_at FROM amazon_fire_tv.subscription_plan_chosen
+      UNION ALL
+      SELECT 'Tizen TV' AS platform, anonymous_id, received_at FROM tizen_tv.subscription_plan_chosen
       UNION ALL
       SELECT 'Web'     AS platform, anonymous_id, received_at
       FROM javascript_upentertainment_checkout.signed_up
@@ -176,9 +210,15 @@ view: upff_signup_funnel {
       ),
 
       order_completed_events AS (
-      SELECT 'iOS'     AS platform, anonymous_id, received_at FROM ios.order_completed
+      SELECT 'iOS'::VARCHAR(32) AS platform, anonymous_id, received_at FROM ios.order_completed
       UNION ALL
       SELECT 'Android' AS platform, anonymous_id, received_at FROM android.order_completed
+      UNION ALL
+      SELECT 'Roku'    AS platform, anonymous_id, received_at FROM roku.order_completed
+      UNION ALL
+      SELECT 'Amazon Fire TV' AS platform, anonymous_id, received_at FROM amazon_fire_tv.order_completed
+      UNION ALL
+      SELECT 'Tizen TV' AS platform, anonymous_id, received_at FROM tizen_tv.order_completed
       UNION ALL
       SELECT 'Web'     AS platform, anonymous_id, received_at
       FROM javascript_upentertainment_checkout.order_completed
@@ -261,7 +301,9 @@ view: upff_signup_funnel {
       user_funnel AS (
       SELECT
       en.platform
-      , CASE WHEN en.platform = 'Web' THEN 'Web' ELSE 'Mobile App' END AS platform_group
+      , CASE WHEN en.platform = 'Web'                                   THEN 'Web'
+      WHEN en.platform IN ('Roku', 'Amazon Fire TV', 'Tizen TV')     THEN 'Connected TV'
+      ELSE 'Mobile App' END AS platform_group
       , en.anonymous_id
       , en.period
       , en.entry_at
@@ -292,7 +334,7 @@ view: upff_signup_funnel {
       , DATEDIFF(day, MIN(uf.entry_day) OVER (PARTITION BY uf.period), uf.entry_day) + 1 AS day_of_period
 
       -- Same-day counts for the average daily rates, at three levels:
-      --   _all = all platforms, _group = Mobile App / Web, _platform = iOS / Android / Web
+      --   _all = all platforms, _group = Mobile App / Connected TV / Web, _platform = each platform
       , COUNT(*)                   OVER (PARTITION BY uf.period, uf.entry_day)                    AS day_entries_all
       , COUNT(*)                   OVER (PARTITION BY uf.period, uf.platform_group, uf.entry_day) AS day_entries_group
       , COUNT(*)                   OVER (PARTITION BY uf.period, uf.platform, uf.entry_day)       AS day_entries_platform
@@ -351,18 +393,18 @@ view: upff_signup_funnel {
 
   dimension: platform {
     label: "Platform"
-    description: "Where the user entered the funnel: iOS app, Android app, or Web (upfaithandfamily.com marketing site). Use to filter or break down any metric by platform. Also called: device, channel, app vs web."
+    description: "Where the user entered the funnel: iOS app, Android app, a Connected TV app (Roku, Amazon Fire TV, Tizen TV), or Web (upfaithandfamily.com marketing site). Use to filter or break down any metric by platform. Also called: device, channel, app vs web, CTV."
     type: string
     sql: ${TABLE}.platform ;;
-    suggestions: ["iOS", "Android", "Web"]
+    suggestions: ["iOS", "Android", "Roku", "Amazon Fire TV", "Tizen TV", "Web"]
   }
 
   dimension: platform_group {
     label: "Platform Group"
-    description: "Mobile App (iOS and Android combined) or Web. Use when the question is about apps overall versus the website. Also called: app vs web, mobile vs web."
+    description: "Mobile App (iOS and Android combined), Connected TV (Roku, Amazon Fire TV and Tizen TV combined) or Web. Use when the question is about mobile, TV apps or the website overall. Also called: app vs web, mobile vs TV vs web, CTV, OTT, smart TV."
     type: string
     sql: ${TABLE}.platform_group ;;
-    suggestions: ["Mobile App", "Web"]
+    suggestions: ["Mobile App", "Connected TV", "Web"]
   }
 
   dimension: period {
@@ -394,7 +436,7 @@ view: upff_signup_funnel {
 
   dimension_group: entry {
     label: "Entry"
-    description: "When the user entered the funnel: app install time (iOS/Android) or first landing page visit (Web). Use for daily or weekly trends. Also called: install date, visit date, sign-up start date."
+    description: "When the user entered the funnel: app install time (iOS, Android, Connected TV) or first landing page visit (Web). Use for daily or weekly trends. Also called: install date, visit date, sign-up start date."
     type: time
     timeframes: [raw, time, date, week, month, day_of_week]
     sql: ${TABLE}.entry_at ;;
@@ -426,13 +468,13 @@ view: upff_signup_funnel {
   # Web campaign (UTM) dimensions - for grouping and breakdowns
   # From the user's first marketing-site page view in the period (first touch).
   # can_filter: no, so filtering always goes through the Web Campaign Filters
-  # above, which keep iOS and Android users in the results.
+  # above, which keep iOS, Android and Connected TV users in the results.
   # ---------------------------------------------------------------------------
 
   dimension: campaign_source {
     group_label: "Web Campaign (UTM)"
     label: "Campaign Source"
-    description: "utm_source of the visit that brought the user to the marketing site (Segment context_campaign_source), e.g. google, facebook, hubspot. Web only (app users are blank). Group by this; to filter, use the Web Campaign Filters. Also called: UTM source, traffic source, referrer source."
+    description: "utm_source of the visit that brought the user to the marketing site (Segment context_campaign_source), e.g. google, facebook, hubspot. Web only (mobile and CTV app users are blank). Group by this; to filter, use the Web Campaign Filters. Also called: UTM source, traffic source, referrer source."
     type: string
     sql: ${TABLE}.campaign_source ;;
     can_filter: no
@@ -441,7 +483,7 @@ view: upff_signup_funnel {
   dimension: campaign_name {
     group_label: "Web Campaign (UTM)"
     label: "Campaign Name"
-    description: "utm_campaign of the visit that brought the user to the marketing site (Segment context_campaign_name). Web only (app users are blank). Group by this; to filter, use the Web Campaign Filters. Also called: UTM campaign, campaign, ad campaign."
+    description: "utm_campaign of the visit that brought the user to the marketing site (Segment context_campaign_name). Web only (mobile and CTV app users are blank). Group by this; to filter, use the Web Campaign Filters. Also called: UTM campaign, campaign, ad campaign."
     type: string
     sql: ${TABLE}.campaign_name ;;
     can_filter: no
@@ -450,7 +492,7 @@ view: upff_signup_funnel {
   dimension: campaign_medium {
     group_label: "Web Campaign (UTM)"
     label: "Campaign Medium"
-    description: "utm_medium of the arriving visit (Segment context_campaign_medium), e.g. cpc, email, social. Web only (app users are blank). Group by this; to filter, use the Web Campaign Filters. Also called: UTM medium, channel type."
+    description: "utm_medium of the arriving visit (Segment context_campaign_medium), e.g. cpc, email, social. Web only (mobile and CTV app users are blank). Group by this; to filter, use the Web Campaign Filters. Also called: UTM medium, channel type."
     type: string
     sql: ${TABLE}.campaign_medium ;;
     can_filter: no
@@ -459,7 +501,7 @@ view: upff_signup_funnel {
   dimension: campaign_content {
     group_label: "Web Campaign (UTM)"
     label: "Campaign Content"
-    description: "utm_content of the arriving visit (Segment context_campaign_content), usually the ad or creative variant. Web only (app users are blank). Group by this; to filter, use the Web Campaign Filters. Also called: UTM content, ad variant, creative."
+    description: "utm_content of the arriving visit (Segment context_campaign_content), usually the ad or creative variant. Web only (mobile and CTV app users are blank). Group by this; to filter, use the Web Campaign Filters. Also called: UTM content, ad variant, creative."
     type: string
     sql: ${TABLE}.campaign_content ;;
     can_filter: no
@@ -468,7 +510,7 @@ view: upff_signup_funnel {
   dimension: campaign_term {
     group_label: "Web Campaign (UTM)"
     label: "Campaign Term"
-    description: "utm_term of the arriving visit (Segment context_campaign_term), usually the paid search keyword. Web only (app users are blank). Group by this; to filter, use the Web Campaign Filters. Also called: UTM term, keyword."
+    description: "utm_term of the arriving visit (Segment context_campaign_term), usually the paid search keyword. Web only (mobile and CTV app users are blank). Group by this; to filter, use the Web Campaign Filters. Also called: UTM term, keyword."
     type: string
     sql: ${TABLE}.campaign_term ;;
     can_filter: no
@@ -477,7 +519,7 @@ view: upff_signup_funnel {
   dimension: marketing_platform {
     group_label: "Web Campaign (UTM)"
     label: "Marketing Platform"
-    description: "Normalized marketing platform for the visit that brought a web user to the site, based on Campaign Source, Medium and Name: Google Search, Google PMax, Google Display, YouTube, Meta Ads, Bing Ads, HubSpot, UPtv Digital, ChatGPT, Organic Search, Organic Social, Others, Unknown. iOS and Android users show as Mobile App (no UTM). Group by this; to filter, use the Marketing Platform Filter. Also called: channel, ad platform, traffic channel."
+    description: "Normalized marketing platform for the visit that brought a web user to the site, based on Campaign Source, Medium and Name: Google Search, Google PMax, Google Display, YouTube, Meta Ads, Bing Ads, HubSpot, UPtv Digital, ChatGPT, Organic Search, Organic Social, Others, Unknown. iOS and Android users show as Mobile App (no UTM); Connected TV users show as Connected TV (no UTM). Group by this; to filter, use the Marketing Platform Filter. Also called: channel, ad platform, traffic channel."
     type: string
     sql: ${TABLE}.marketing_platform ;;
     can_filter: no
@@ -605,7 +647,7 @@ view: upff_signup_funnel {
   measure: entries_current {
     group_label: "Headline Metrics"
     label: "Entries (Current Period)"
-    description: "Number of users who entered the funnel in the current period: app installs (iOS/Android) plus landing page visitors (Web). Also called: installs, visitors, traffic, top of funnel."
+    description: "Number of users who entered the funnel in the current period: app installs (iOS, Android, Connected TV) plus landing page visitors (Web). Also called: installs, visitors, traffic, top of funnel."
     type: count_distinct
     sql: ${user_pk} ;;
     filters: [period: "Current"]
@@ -650,7 +692,7 @@ view: upff_signup_funnel {
   measure: entries_prior {
     group_label: "Headline Metrics"
     label: "Entries (Prior Period)"
-    description: "Number of users who entered the funnel in the prior period: app installs (iOS/Android) plus landing page visitors (Web). Also called: installs, visitors, traffic, top of funnel."
+    description: "Number of users who entered the funnel in the prior period: app installs (iOS, Android, Connected TV) plus landing page visitors (Web). Also called: installs, visitors, traffic, top of funnel."
     type: count_distinct
     sql: ${user_pk} ;;
     filters: [period: "Prior"]
@@ -772,6 +814,46 @@ view: upff_signup_funnel {
       / NULLIF(COUNT(DISTINCT CASE WHEN ${platform} = 'Android' THEN ${user_pk} END), 0) ;;
     value_format_name: percent_2
   }
+  measure: effective_conversion_roku {
+    group_label: "Platform Comparison"
+    label: "Conversion Rate - Roku"
+    description: "Entry-to-order conversion rate for the Roku app only."
+    type: number
+    sql: 1.0 * COUNT(DISTINCT CASE WHEN ${platform} = 'Roku' AND ${TABLE}.order_completed_at IS NOT NULL THEN ${user_pk} END)
+      / NULLIF(COUNT(DISTINCT CASE WHEN ${platform} = 'Roku' THEN ${user_pk} END), 0) ;;
+    value_format_name: percent_2
+  }
+
+  measure: effective_conversion_fire_tv {
+    group_label: "Platform Comparison"
+    label: "Conversion Rate - Amazon Fire TV"
+    description: "Entry-to-order conversion rate for the Amazon Fire TV app only."
+    type: number
+    sql: 1.0 * COUNT(DISTINCT CASE WHEN ${platform} = 'Amazon Fire TV' AND ${TABLE}.order_completed_at IS NOT NULL THEN ${user_pk} END)
+      / NULLIF(COUNT(DISTINCT CASE WHEN ${platform} = 'Amazon Fire TV' THEN ${user_pk} END), 0) ;;
+    value_format_name: percent_2
+  }
+
+  measure: effective_conversion_tizen {
+    group_label: "Platform Comparison"
+    label: "Conversion Rate - Tizen TV"
+    description: "Entry-to-order conversion rate for the Tizen TV (Samsung) app only."
+    type: number
+    sql: 1.0 * COUNT(DISTINCT CASE WHEN ${platform} = 'Tizen TV' AND ${TABLE}.order_completed_at IS NOT NULL THEN ${user_pk} END)
+      / NULLIF(COUNT(DISTINCT CASE WHEN ${platform} = 'Tizen TV' THEN ${user_pk} END), 0) ;;
+    value_format_name: percent_2
+  }
+
+  measure: effective_conversion_ctv {
+    group_label: "Platform Comparison"
+    label: "Conversion Rate - Connected TV"
+    description: "Entry-to-order conversion rate for all Connected TV apps combined (Roku, Amazon Fire TV, Tizen TV). Also called: CTV conversion, TV app conversion."
+    type: number
+    sql: 1.0 * COUNT(DISTINCT CASE WHEN ${platform_group} = 'Connected TV' AND ${TABLE}.order_completed_at IS NOT NULL THEN ${user_pk} END)
+      / NULLIF(COUNT(DISTINCT CASE WHEN ${platform_group} = 'Connected TV' THEN ${user_pk} END), 0) ;;
+    value_format_name: percent_2
+  }
+
 
   measure: effective_conversion_web {
     group_label: "Platform Comparison"
@@ -786,7 +868,7 @@ view: upff_signup_funnel {
   measure: web_share_of_conversions {
     group_label: "Platform Comparison"
     label: "Web Share of Conversions"
-    description: "Percent of all conversions that came from Web (vs iOS and Android apps)."
+    description: "Percent of all conversions that came from Web (vs mobile and Connected TV apps)."
     type: number
     sql: 1.0 * COUNT(DISTINCT CASE WHEN ${platform} = 'Web' AND ${TABLE}.order_completed_at IS NOT NULL THEN ${user_pk} END)
       / NULLIF(COUNT(DISTINCT CASE WHEN ${TABLE}.order_completed_at IS NOT NULL THEN ${user_pk} END), 0) ;;
