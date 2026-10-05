@@ -10,7 +10,7 @@
 #   - Web entries carry the UTM campaign fields (source, name, medium, content,
 #     term) and a Marketing Platform bucket from the user's FIRST page view in
 #     each period. The "Web Campaign Filters" apply to Web users only: mobile
-#     (iOS, Android) and Connected TV (Roku, Amazon Fire TV, Tizen TV) users
+#     (iOS, Android) and Connected TV (Roku, Amazon Fire TV, Vizio TV) users
 #     always pass through, so app data stays in every result.
 #     The filters run inside the derived table, so every metric (including the
 #     average daily rates) reflects them. App rows show "Mobile App (no UTM)" or
@@ -18,7 +18,7 @@
 #
 #   Step | iOS / Android / CTV      | Web
 #   -----+--------------------------+-------------------------------------------
-#   CTV  = Roku (roku), Amazon Fire TV (amazon_fire_tv), Tizen TV (tizen_tv);
+#   CTV  = Roku (roku), Amazon Fire TV (amazon_fire_tv), Vizio TV (vizio_tv);
 #          same Segment app tables as ios and android.
 #   1    | App Installed            | Landing Page Visit (/stream/, /subscribe/)
 #   2    | Sign Up Viewed           | Product Viewed
@@ -132,11 +132,11 @@ view: upff_signup_funnel {
                        'Connected TV (no UTM)'::VARCHAR(64)
                 FROM amazon_fire_tv.app_installed
                 UNION ALL
-                SELECT 'Tizen TV', anonymous_id, received_at,
+                SELECT 'Vizio TV', anonymous_id, received_at,
                        CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
                        CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
                        'Connected TV (no UTM)'::VARCHAR(64)
-                FROM tizen_tv.app_installed
+                FROM vizio_tv.app_installed
                 UNION ALL
                 SELECT 'Web', anonymous_id, received_at,
                        context_campaign_source::VARCHAR(512),
@@ -186,7 +186,7 @@ view: upff_signup_funnel {
       UNION ALL
       SELECT 'Amazon Fire TV' AS platform, anonymous_id, received_at FROM amazon_fire_tv.sign_up_viewed
       UNION ALL
-      SELECT 'Tizen TV' AS platform, anonymous_id, received_at FROM tizen_tv.sign_up_viewed
+      SELECT 'Vizio TV' AS platform, anonymous_id, received_at FROM vizio_tv.sign_up_viewed
       UNION ALL
       SELECT 'Web'     AS platform, anonymous_id, received_at
       FROM javascript_upentertainment_checkout.product_viewed
@@ -202,7 +202,7 @@ view: upff_signup_funnel {
       UNION ALL
       SELECT 'Amazon Fire TV' AS platform, anonymous_id, received_at FROM amazon_fire_tv.subscription_plan_chosen
       UNION ALL
-      SELECT 'Tizen TV' AS platform, anonymous_id, received_at FROM tizen_tv.subscription_plan_chosen
+      SELECT 'Vizio TV' AS platform, anonymous_id, received_at FROM vizio_tv.subscription_plan_chosen
       UNION ALL
       SELECT 'Web'     AS platform, anonymous_id, received_at
       FROM javascript_upentertainment_checkout.signed_up
@@ -218,7 +218,7 @@ view: upff_signup_funnel {
       UNION ALL
       SELECT 'Amazon Fire TV' AS platform, anonymous_id, received_at FROM amazon_fire_tv.order_completed
       UNION ALL
-      SELECT 'Tizen TV' AS platform, anonymous_id, received_at FROM tizen_tv.order_completed
+      SELECT 'Vizio TV' AS platform, anonymous_id, received_at FROM vizio_tv.order_completed
       UNION ALL
       SELECT 'Web'     AS platform, anonymous_id, received_at
       FROM javascript_upentertainment_checkout.order_completed
@@ -302,7 +302,7 @@ view: upff_signup_funnel {
       SELECT
       en.platform
       , CASE WHEN en.platform = 'Web'                                   THEN 'Web'
-      WHEN en.platform IN ('Roku', 'Amazon Fire TV', 'Tizen TV')     THEN 'Connected TV'
+      WHEN en.platform IN ('Roku', 'Amazon Fire TV', 'Vizio TV')     THEN 'Connected TV'
       ELSE 'Mobile App' END AS platform_group
       , en.anonymous_id
       , en.period
@@ -393,15 +393,15 @@ view: upff_signup_funnel {
 
   dimension: platform {
     label: "Platform"
-    description: "Where the user entered the funnel: iOS app, Android app, a Connected TV app (Roku, Amazon Fire TV, Tizen TV), or Web (upfaithandfamily.com marketing site). Use to filter or break down any metric by platform. Also called: device, channel, app vs web, CTV."
+    description: "Where the user entered the funnel: iOS app, Android app, a Connected TV app (Roku, Amazon Fire TV, Vizio TV), or Web (upfaithandfamily.com marketing site). Use to filter or break down any metric by platform. Also called: device, channel, app vs web, CTV."
     type: string
     sql: ${TABLE}.platform ;;
-    suggestions: ["iOS", "Android", "Roku", "Amazon Fire TV", "Tizen TV", "Web"]
+    suggestions: ["iOS", "Android", "Roku", "Amazon Fire TV", "Vizio TV", "Web"]
   }
 
   dimension: platform_group {
     label: "Platform Group"
-    description: "Mobile App (iOS and Android combined), Connected TV (Roku, Amazon Fire TV and Tizen TV combined) or Web. Use when the question is about mobile, TV apps or the website overall. Also called: app vs web, mobile vs TV vs web, CTV, OTT, smart TV."
+    description: "Mobile App (iOS and Android combined), Connected TV (Roku, Amazon Fire TV and Vizio TV combined) or Web. Use when the question is about mobile, TV apps or the website overall. Also called: app vs web, mobile vs TV vs web, CTV, OTT, smart TV."
     type: string
     sql: ${TABLE}.platform_group ;;
     suggestions: ["Mobile App", "Connected TV", "Web"]
@@ -834,20 +834,20 @@ view: upff_signup_funnel {
     value_format_name: percent_2
   }
 
-  measure: effective_conversion_tizen {
+  measure: effective_conversion_vizio {
     group_label: "Platform Comparison"
-    label: "Conversion Rate - Tizen TV"
-    description: "Entry-to-order conversion rate for the Tizen TV (Samsung) app only."
+    label: "Conversion Rate - Vizio TV"
+    description: "Entry-to-order conversion rate for the Vizio TV app only."
     type: number
-    sql: 1.0 * COUNT(DISTINCT CASE WHEN ${platform} = 'Tizen TV' AND ${TABLE}.order_completed_at IS NOT NULL THEN ${user_pk} END)
-      / NULLIF(COUNT(DISTINCT CASE WHEN ${platform} = 'Tizen TV' THEN ${user_pk} END), 0) ;;
+    sql: 1.0 * COUNT(DISTINCT CASE WHEN ${platform} = 'Vizio TV' AND ${TABLE}.order_completed_at IS NOT NULL THEN ${user_pk} END)
+      / NULLIF(COUNT(DISTINCT CASE WHEN ${platform} = 'Vizio TV' THEN ${user_pk} END), 0) ;;
     value_format_name: percent_2
   }
 
   measure: effective_conversion_ctv {
     group_label: "Platform Comparison"
     label: "Conversion Rate - Connected TV"
-    description: "Entry-to-order conversion rate for all Connected TV apps combined (Roku, Amazon Fire TV, Tizen TV). Also called: CTV conversion, TV app conversion."
+    description: "Entry-to-order conversion rate for all Connected TV apps combined (Roku, Amazon Fire TV, Vizio TV). Also called: CTV conversion, TV app conversion."
     type: number
     sql: 1.0 * COUNT(DISTINCT CASE WHEN ${platform_group} = 'Connected TV' AND ${TABLE}.order_completed_at IS NOT NULL THEN ${user_pk} END)
       / NULLIF(COUNT(DISTINCT CASE WHEN ${platform_group} = 'Connected TV' THEN ${user_pk} END), 0) ;;
