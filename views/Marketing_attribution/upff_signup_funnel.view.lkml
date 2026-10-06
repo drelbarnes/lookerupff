@@ -32,8 +32,9 @@
 # after payment, so app orders have no email at order time).
 # Offer by order date:
 #   - Before 2026-09-09: 7-day FREE TRIAL. The user became a paying customer
-#     if a matching paid event lands within 10 days of the order (7-day trial
-#     + 3-day billing grace).
+#     if a matching paid event lands in the window: Web within 10 days of the
+#     order (7-day trial + 3-day grace); apps from the period start through
+#     14 days after the period end.
 #   - On/after 2026-09-09: PAID ONLY test (no free trial). The order itself
 #     is the payment, so every order counts as a paying customer.
 #
@@ -333,6 +334,22 @@ view: upff_signup_funnel {
       WHERE rn = 1
       ),
 
+      -- Period start/end from the Current Period and Prior Period filters
+      -- (date_end is the exclusive end). Falls back to the first/last entry
+      -- when a filter has an open start or end.
+      period_bounds AS (
+      SELECT
+      period
+      , COALESCE(CASE WHEN period = 'Current' THEN CAST({% date_start current_period %} AS TIMESTAMP)
+      ELSE CAST({% date_start prior_period %} AS TIMESTAMP) END,
+      MIN(entry_at)) AS period_start
+      , COALESCE(CASE WHEN period = 'Current' THEN CAST({% date_end current_period %} AS TIMESTAMP)
+      ELSE CAST({% date_end prior_period %} AS TIMESTAMP) END,
+      DATEADD(day, 1, MAX(entry_at))) AS period_end
+      FROM entries
+      GROUP BY period
+      ),
+
       -- App user_id can be missing on the first order row (identify happens around
       -- registration), so resolve it from ANY order event for the same user.
       app_user_ids AS (
@@ -341,9 +358,10 @@ view: upff_signup_funnel {
       WHERE platform <> 'Web' AND user_id IS NOT NULL AND user_id <> ''
       ),
 
-      -- First paid event within the window of a free-trial order.
-      -- Web: email -> Chargebee. Apps: any of the user's user_ids -> Vimeo OTT.
-      -- Window starts 1 day before the order to allow for event-arrival lag.
+      -- Paid match for free-trial orders.
+      -- Web: email -> Chargebee, from 1 day before to 10 days after the order.
+      -- Apps: any of the user's user_ids -> Vimeo OTT, from the period start
+      -- through 14 days after the period end.
       paid AS (
       SELECT platform, anonymous_id, period, MIN(paid_at) AS paid_at
       FROM (
@@ -362,14 +380,17 @@ view: upff_signup_funnel {
 
       SELECT oc.platform, oc.anonymous_id, oc.period, pe.paid_at
       FROM order_completed oc
+      JOIN period_bounds pb
+      ON pb.period = oc.period
       JOIN app_user_ids u
       ON  u.platform     = oc.platform
       AND u.anonymous_id = oc.anonymous_id
       JOIN paid_events pe
       ON  pe.paid_source = 'App'
       AND pe.match_key   = u.user_id
-      AND pe.paid_at    >= DATEADD(day, -1, oc.order_completed_at)
-      AND pe.paid_at    <  DATEADD(day, 10, oc.order_completed_at)
+      -- Apps: any trial conversion from the period start through 14 days after the period end
+      AND pe.paid_at    >= pb.period_start
+      AND pe.paid_at    <  DATEADD(day, 14, pb.period_end)
       WHERE oc.platform <> 'Web'
       AND oc.order_completed_at < '2026-09-09'
       ) matched
@@ -587,7 +608,7 @@ view: upff_signup_funnel {
   dimension: became_paying {
     group_label: "Trial to Paid"
     label: "Became Paying Customer"
-    description: "Yes if the user became a paying customer. Free-trial orders: a matching paid event within 10 days of the order (Chargebee payment_succeeded matched by email for Web; Vimeo OTT free_trial_converted matched by user_id for mobile and Connected TV). Paid-only orders (on/after 2026-09-09): always yes, because the order is the payment. Also called: converted to paid, paid subscriber."
+    description: "Yes if the user became a paying customer. Free-trial orders: Web needs a Chargebee payment_succeeded (matched by email) within 10 days of the order; mobile and Connected TV need a Vimeo OTT free_trial_converted (matched by user_id) between the period start and 14 days after the period end. Paid-only orders (on/after 2026-09-09): always yes, because the order is the payment. Also called: converted to paid, paid subscriber."
     type: yesno
     sql: ${TABLE}.paid_at IS NOT NULL ;;
   }
@@ -961,7 +982,7 @@ view: upff_signup_funnel {
   measure: trial_paid_current {
     group_label: "Trial to Paid"
     label: "Trials Converted to Paid (Current Period)"
-    description: "Current-period free-trial sign-ups who became paying customers within 10 days (7-day trial + 3-day grace). Also called: trial conversions."
+    description: "Current-period free-trial sign-ups who became paying customers (Web: within 10 days of the order; apps: by 14 days after the period end). Also called: trial conversions."
     type: count_distinct
     sql: ${user_pk} ;;
     filters: [period: "Current", converted: "yes", free_trial_order: "yes", became_paying: "yes"]
@@ -990,7 +1011,7 @@ view: upff_signup_funnel {
   measure: trial_paid_prior {
     group_label: "Trial to Paid"
     label: "Trials Converted to Paid (Prior Period)"
-    description: "Prior-period free-trial sign-ups who became paying customers within 10 days (7-day trial + 3-day grace). Also called: trial conversions."
+    description: "Prior-period free-trial sign-ups who became paying customers (Web: within 10 days of the order; apps: by 14 days after the period end). Also called: trial conversions."
     type: count_distinct
     sql: ${user_pk} ;;
     filters: [period: "Prior", converted: "yes", free_trial_order: "yes", became_paying: "yes"]
