@@ -25,6 +25,17 @@
 #   3    | Subscription Plan Chosen | Signed Up
 #   4    | Order Completed          | Order Completed
 #
+# Trial to paid: each order carries the customer's email (user_email on the
+# order_completed tables). Web orders are matched by email to Chargebee
+# payment_succeeded; mobile and CTV orders to Vimeo OTT
+# customer_product_free_trial_converted.
+# Offer by order date:
+#   - Before 2026-09-09: 7-day FREE TRIAL. The user became a paying customer
+#     if a matching paid event lands within 10 days of the order (7-day trial
+#     + 3-day billing grace).
+#   - On/after 2026-09-09: PAID ONLY test (no free trial). The order itself
+#     is the payment, so every order counts as a paying customer.
+#
 # Grain: one row per user per funnel step. A "user" is an anonymous_id per
 # platform per period (first entry on that platform in the period's date range);
 # steps are 1-4 plus an OVERALL row. User counts are distinct, so step rows
@@ -209,20 +220,30 @@ view: upff_signup_funnel {
       WHERE brand = 'upfaithandfamily'
       ),
 
+      -- Each order carries the customer's email for the trial-to-paid match
       order_completed_events AS (
-      SELECT 'iOS'::VARCHAR(32) AS platform, anonymous_id, received_at FROM ios.order_completed
+      SELECT 'iOS'::VARCHAR(32) AS platform, anonymous_id, received_at, LOWER(TRIM(user_email))::VARCHAR(320) AS customer_email FROM ios.order_completed
       UNION ALL
-      SELECT 'Android' AS platform, anonymous_id, received_at FROM android.order_completed
+      SELECT 'Android',        anonymous_id, received_at, LOWER(TRIM(user_email)) FROM android.order_completed
       UNION ALL
-      SELECT 'Roku'    AS platform, anonymous_id, received_at FROM roku.order_completed
+      SELECT 'Roku',           anonymous_id, received_at, LOWER(TRIM(user_email)) FROM roku.order_completed
       UNION ALL
-      SELECT 'Amazon Fire TV' AS platform, anonymous_id, received_at FROM amazon_fire_tv.order_completed
+      SELECT 'Amazon Fire TV', anonymous_id, received_at, LOWER(TRIM(user_email)) FROM amazon_fire_tv.order_completed
       UNION ALL
-      SELECT 'Vizio TV' AS platform, anonymous_id, received_at FROM vizio_tv.order_completed
+      SELECT 'Vizio TV',       anonymous_id, received_at, LOWER(TRIM(user_email)) FROM vizio_tv.order_completed
       UNION ALL
-      SELECT 'Web'     AS platform, anonymous_id, received_at
+      SELECT 'Web',            anonymous_id, received_at, LOWER(TRIM(user_email))
       FROM javascript_upentertainment_checkout.order_completed
       WHERE brand = 'upfaithandfamily'
+      ),
+
+      -- Paying-customer events: Chargebee for Web, Vimeo OTT for mobile and CTV apps
+      paid_events AS (
+      SELECT 'Web'::VARCHAR(8) AS paid_source, LOWER(TRIM(content_customer_email))::VARCHAR(320) AS customer_email, received_at AS paid_at
+      FROM chargebee_webhook_events.payment_succeeded
+      UNION ALL
+      SELECT 'App', LOWER(TRIM(email)), received_at
+      FROM vimeo_ott_webhook.customer_product_free_trial_converted
       ),
 
       -- ---------- Step 1: first entry per user per platform in each period ----------
@@ -286,7 +307,12 @@ view: upff_signup_funnel {
 
       -- ---------- Step 4 ----------
       order_completed AS (
-      SELECT pc.platform, pc.anonymous_id, pc.period, MIN(e.received_at) AS order_completed_at
+      SELECT platform, anonymous_id, period, order_completed_at, customer_email
+      FROM (
+      SELECT pc.platform, pc.anonymous_id, pc.period,
+      e.received_at AS order_completed_at, e.customer_email,
+      ROW_NUMBER() OVER (PARTITION BY pc.platform, pc.anonymous_id, pc.period
+      ORDER BY e.received_at) AS rn
       FROM plan_chosen pc
       JOIN entries en
       ON en.anonymous_id = pc.anonymous_id AND en.platform = pc.platform AND en.period = pc.period
@@ -295,7 +321,22 @@ view: upff_signup_funnel {
       AND e.platform     = pc.platform
       AND e.received_at >= pc.plan_chosen_at
       AND e.received_at <  DATEADD(day, {% parameter attribution_days %}, en.entry_at)
-      GROUP BY pc.platform, pc.anonymous_id, pc.period
+      ) first_order
+      WHERE rn = 1
+      ),
+
+      -- ---------- Trial to paid: first paid event within 10 days of a free-trial order, matched by email ----------
+      paid AS (
+      SELECT oc.platform, oc.anonymous_id, oc.period, MIN(pe.paid_at) AS paid_at
+      FROM order_completed oc
+      JOIN paid_events pe
+      ON  pe.customer_email = oc.customer_email
+      AND pe.paid_source    = CASE WHEN oc.platform = 'Web' THEN 'Web' ELSE 'App' END
+      AND pe.paid_at       >= oc.order_completed_at
+      AND pe.paid_at       <  DATEADD(day, 10, oc.order_completed_at)   -- 7-day trial + 3-day grace
+      WHERE oc.customer_email IS NOT NULL AND oc.customer_email <> ''
+      AND oc.order_completed_at < '2026-09-09'                            -- free-trial orders only
+      GROUP BY oc.platform, oc.anonymous_id, oc.period
       ),
 
       user_funnel AS (
@@ -317,6 +358,10 @@ view: upff_signup_funnel {
       , sv.signup_viewed_at
       , pc.plan_chosen_at
       , oc.order_completed_at
+      , oc.customer_email
+      -- Paid-only orders (on/after 2026-09-09) are paid at the order itself
+      , CASE WHEN oc.order_completed_at >= '2026-09-09' THEN oc.order_completed_at
+      ELSE pd.paid_at END AS paid_at
       FROM entries en
       LEFT JOIN signup_viewed sv
       ON sv.anonymous_id = en.anonymous_id AND sv.platform = en.platform AND sv.period = en.period
@@ -324,6 +369,8 @@ view: upff_signup_funnel {
       ON pc.anonymous_id = en.anonymous_id AND pc.platform = en.platform AND pc.period = en.period
       LEFT JOIN order_completed oc
       ON oc.anonymous_id = en.anonymous_id AND oc.platform = en.platform AND oc.period = en.period
+      LEFT JOIN paid pd
+      ON pd.anonymous_id = en.anonymous_id AND pd.platform = en.platform AND pd.period = en.period
       ),
 
       user_days AS (
@@ -456,6 +503,63 @@ view: upff_signup_funnel {
     type: yesno
     sql: ${TABLE}.order_completed_at IS NOT NULL ;;
   }
+  # ---------------------------------------------------------------------------
+  # Trial to paid
+  # ---------------------------------------------------------------------------
+
+  dimension: customer_email {
+    group_label: "Trial to Paid"
+    label: "Customer Email"
+    description: "Email on the user's first Order Completed event (lowercased). Used to match orders to paying-customer events. Personal data: use only for user-level drill-downs."
+    type: string
+    sql: ${TABLE}.customer_email ;;
+    tags: ["pii", "email"]
+  }
+
+  dimension: free_trial_order {
+    group_label: "Trial to Paid"
+    label: "Free Trial Order"
+    description: "Yes if the order was completed before 2026-09-09, when sign-ups started with a 7-day free trial. Use with Became Paying Customer to see how many free-trial sign-ups converted to paid. Also called: trial sign-up, trial start."
+    type: yesno
+    sql: ${TABLE}.order_completed_at < '2026-09-09' ;;
+  }
+
+  dimension: signup_offer {
+    group_label: "Trial to Paid"
+    label: "Sign-Up Offer"
+    description: "Offer in place when the user ordered: Free Trial (7-day trial, orders before 2026-09-09) or Paid Only (no-trial test, orders on/after 2026-09-09). Blank if the user did not order. Use to compare the trial and paid-only tests. Also called: offer, trial vs paid, test group."
+    type: string
+    sql: CASE WHEN ${TABLE}.order_completed_at IS NULL THEN NULL
+              WHEN ${TABLE}.order_completed_at < '2026-09-09' THEN 'Free Trial'
+              ELSE 'Paid Only' END ;;
+    suggestions: ["Free Trial", "Paid Only"]
+  }
+
+  dimension: became_paying {
+    group_label: "Trial to Paid"
+    label: "Became Paying Customer"
+    description: "Yes if the user became a paying customer. Free-trial orders: a matching paid event within 10 days of the order (Chargebee payment_succeeded for Web, Vimeo OTT free_trial_converted for mobile and Connected TV). Paid-only orders (on/after 2026-09-09): always yes, because the order is the payment. Also called: converted to paid, paid subscriber."
+    type: yesno
+    sql: ${TABLE}.paid_at IS NOT NULL ;;
+  }
+
+  dimension_group: paid {
+    group_label: "Trial to Paid"
+    label: "Paid"
+    description: "When the user became a paying customer: the first matching paid event after a free-trial order, or the order itself for paid-only orders."
+    type: time
+    timeframes: [raw, date, week, month]
+    sql: ${TABLE}.paid_at ;;
+  }
+
+  dimension: days_order_to_paid {
+    group_label: "Trial to Paid"
+    label: "Days from Order to Paid"
+    description: "Days between a free-trial order (trial start) and the first paid event. 0 for paid-only orders."
+    type: number
+    sql: DATEDIFF(day, ${TABLE}.order_completed_at, ${TABLE}.paid_at) ;;
+  }
+
 
   dimension: anonymous_id {
     label: "Anonymous ID"
@@ -792,6 +896,181 @@ view: upff_signup_funnel {
   }
 
   # ---------------------------------------------------------------------------
+  # Trial to paid (orders before 2026-09-09)
+  # ---------------------------------------------------------------------------
+
+  measure: trial_orders_current {
+    group_label: "Trial to Paid"
+    label: "Free Trial Sign-Ups (Current Period)"
+    description: "Current-period users whose order was a free-trial sign-up (completed before 2026-09-09). Also called: trial starts, trials."
+    type: count_distinct
+    sql: ${user_pk} ;;
+    filters: [period: "Current", converted: "yes", free_trial_order: "yes"]
+    value_format_name: decimal_0
+  }
+
+  measure: trial_paid_current {
+    group_label: "Trial to Paid"
+    label: "Trials Converted to Paid (Current Period)"
+    description: "Current-period free-trial sign-ups who became paying customers within 10 days (7-day trial + 3-day grace). Also called: trial conversions."
+    type: count_distinct
+    sql: ${user_pk} ;;
+    filters: [period: "Current", converted: "yes", free_trial_order: "yes", became_paying: "yes"]
+    value_format_name: decimal_0
+  }
+
+  measure: trial_to_paid_rate_current {
+    group_label: "Trial to Paid"
+    label: "Trial to Paid Rate (Current Period)"
+    description: "Share of current-period free-trial sign-ups who became paying customers. Also called: trial conversion rate, trial-to-paid conversion."
+    type: number
+    sql: 1.0 * ${trial_paid_current} / NULLIF(${trial_orders_current}, 0) ;;
+    value_format_name: percent_2
+  }
+
+  measure: trial_orders_prior {
+    group_label: "Trial to Paid"
+    label: "Free Trial Sign-Ups (Prior Period)"
+    description: "Prior-period users whose order was a free-trial sign-up (completed before 2026-09-09). Also called: trial starts, trials."
+    type: count_distinct
+    sql: ${user_pk} ;;
+    filters: [period: "Prior", converted: "yes", free_trial_order: "yes"]
+    value_format_name: decimal_0
+  }
+
+  measure: trial_paid_prior {
+    group_label: "Trial to Paid"
+    label: "Trials Converted to Paid (Prior Period)"
+    description: "Prior-period free-trial sign-ups who became paying customers within 10 days (7-day trial + 3-day grace). Also called: trial conversions."
+    type: count_distinct
+    sql: ${user_pk} ;;
+    filters: [period: "Prior", converted: "yes", free_trial_order: "yes", became_paying: "yes"]
+    value_format_name: decimal_0
+  }
+
+  measure: trial_to_paid_rate_prior {
+    group_label: "Trial to Paid"
+    label: "Trial to Paid Rate (Prior Period)"
+    description: "Share of prior-period free-trial sign-ups who became paying customers. Also called: trial conversion rate, trial-to-paid conversion."
+    type: number
+    sql: 1.0 * ${trial_paid_prior} / NULLIF(${trial_orders_prior}, 0) ;;
+    value_format_name: percent_2
+  }
+
+  measure: paying_customers_current {
+    group_label: "Trial to Paid"
+    label: "Paying Customers (Current Period)"
+    description: "Current-period users who became paying customers: free-trial sign-ups who converted, plus paid-only orders (on/after 2026-09-09). Comparable across the trial and paid-only tests. Also called: paid subscribers, paid conversions."
+    type: count_distinct
+    sql: ${user_pk} ;;
+    filters: [period: "Current", became_paying: "yes"]
+    value_format_name: decimal_0
+  }
+
+  measure: entry_to_paid_rate_current {
+    group_label: "Trial to Paid"
+    label: "Entry to Paid Rate (Current Period)"
+    description: "Paying Customers / Entries for the current period. The fair way to compare the free-trial period with the paid-only test, since both end in a paying customer. Also called: paid conversion rate, visit-to-paid, install-to-paid."
+    type: number
+    sql: 1.0 * ${paying_customers_current} / NULLIF(${entries_current}, 0) ;;
+    value_format_name: percent_2
+  }
+
+  measure: paying_customers_prior {
+    group_label: "Trial to Paid"
+    label: "Paying Customers (Prior Period)"
+    description: "Prior-period users who became paying customers: free-trial sign-ups who converted, plus paid-only orders (on/after 2026-09-09). Comparable across the trial and paid-only tests. Also called: paid subscribers, paid conversions."
+    type: count_distinct
+    sql: ${user_pk} ;;
+    filters: [period: "Prior", became_paying: "yes"]
+    value_format_name: decimal_0
+  }
+
+  measure: entry_to_paid_rate_prior {
+    group_label: "Trial to Paid"
+    label: "Entry to Paid Rate (Prior Period)"
+    description: "Paying Customers / Entries for the prior period. The fair way to compare the free-trial period with the paid-only test, since both end in a paying customer. Also called: paid conversion rate, visit-to-paid, install-to-paid."
+    type: number
+    sql: 1.0 * ${paying_customers_prior} / NULLIF(${entries_prior}, 0) ;;
+    value_format_name: percent_2
+  }
+
+  measure: entry_to_paid_rate_change_pp {
+    group_label: "Trial to Paid"
+    label: "Entry to Paid Rate Change in Percentage Points"
+    description: "Current minus prior Entry to Paid Rate, in percentage points. Set Prior to a week before 2026-09-09 and Current to a week after to compare the free trial with the paid-only test."
+    type: number
+    sql: 100.0 * (${entry_to_paid_rate_current} - ${entry_to_paid_rate_prior}) ;;
+    value_format_name: decimal_2
+  }
+
+  measure: paying_customers {
+    group_label: "Trial to Paid"
+    label: "Paying Customers"
+    description: "Users who became paying customers (converted trials plus paid-only orders), for any grouping such as Sign-Up Offer, Platform or Entry Week."
+    type: count_distinct
+    sql: ${user_pk} ;;
+    filters: [became_paying: "yes"]
+    value_format_name: decimal_0
+  }
+
+  measure: entry_to_paid_rate {
+    group_label: "Trial to Paid"
+    label: "Entry to Paid Rate"
+    description: "Paying Customers / Entries, for any grouping. Group by Entry Week across 2026-09-09 to see the free trial vs the paid-only test."
+    type: number
+    sql: 1.0 * ${paying_customers} / NULLIF(${entries}, 0) ;;
+    value_format_name: percent_2
+  }
+
+  measure: trial_to_paid_rate_change_pp {
+    group_label: "Trial to Paid"
+    label: "Trial to Paid Rate Change in Percentage Points"
+    description: "Current minus prior Trial to Paid Rate, in percentage points."
+    type: number
+    sql: 100.0 * (${trial_to_paid_rate_current} - ${trial_to_paid_rate_prior}) ;;
+    value_format_name: decimal_2
+  }
+
+  measure: trial_orders {
+    group_label: "Trial to Paid"
+    label: "Free Trial Sign-Ups"
+    description: "Users whose order was a free-trial sign-up (before 2026-09-09), for any grouping such as Platform or Entry Week."
+    type: count_distinct
+    sql: ${user_pk} ;;
+    filters: [converted: "yes", free_trial_order: "yes"]
+    value_format_name: decimal_0
+  }
+
+  measure: trial_paid {
+    group_label: "Trial to Paid"
+    label: "Trials Converted to Paid"
+    description: "Free-trial sign-ups who became paying customers, for any grouping."
+    type: count_distinct
+    sql: ${user_pk} ;;
+    filters: [converted: "yes", free_trial_order: "yes", became_paying: "yes"]
+    value_format_name: decimal_0
+  }
+
+  measure: trial_to_paid_rate {
+    group_label: "Trial to Paid"
+    label: "Trial to Paid Rate"
+    description: "Trials Converted to Paid / Free Trial Sign-Ups, for any grouping (e.g. by Platform or Entry Week)."
+    type: number
+    sql: 1.0 * ${trial_paid} / NULLIF(${trial_orders}, 0) ;;
+    value_format_name: percent_2
+  }
+
+  measure: avg_days_order_to_paid {
+    group_label: "Trial to Paid"
+    label: "Average Days from Trial Start to Paid"
+    description: "Average days between a free-trial order and becoming a paying customer."
+    type: average
+    sql: CASE WHEN ${TABLE}.step_number = 1 AND ${TABLE}.order_completed_at < '2026-09-09' THEN ${days_order_to_paid} END ;;
+    value_format_name: decimal_1
+  }
+
+  # ---------------------------------------------------------------------------
   # Platform comparison (respects the period filters)
   # ---------------------------------------------------------------------------
 
@@ -1100,6 +1379,6 @@ view: upff_signup_funnel {
   }
 
   set: detail {
-    fields: [platform, anonymous_id, period, entry_time, marketing_platform, campaign_source, campaign_name, converted]
+    fields: [platform, anonymous_id, period, entry_time, marketing_platform, campaign_source, campaign_name, converted, signup_offer, became_paying, paid_date, customer_email]
   }
 }
