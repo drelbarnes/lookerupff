@@ -333,18 +333,47 @@ view: upff_signup_funnel {
       WHERE rn = 1
       ),
 
-      -- ---------- Trial to paid: first paid event within 10 days of a free-trial order, matched by email (Web) or user_id (apps) ----------
+      -- App user_id can be missing on the first order row (identify happens around
+      -- registration), so resolve it from ANY order event for the same user.
+      app_user_ids AS (
+      SELECT DISTINCT platform, anonymous_id, user_id
+      FROM order_completed_events
+      WHERE platform <> 'Web' AND user_id IS NOT NULL AND user_id <> ''
+      ),
+
+      -- First paid event within the window of a free-trial order.
+      -- Web: email -> Chargebee. Apps: any of the user's user_ids -> Vimeo OTT.
+      -- Window starts 1 day before the order to allow for event-arrival lag.
       paid AS (
-      SELECT oc.platform, oc.anonymous_id, oc.period, MIN(pe.paid_at) AS paid_at
+      SELECT platform, anonymous_id, period, MIN(paid_at) AS paid_at
+      FROM (
+      SELECT oc.platform, oc.anonymous_id, oc.period, pe.paid_at
       FROM order_completed oc
       JOIN paid_events pe
-      ON  pe.match_key    = oc.match_key
-      AND pe.paid_source    = CASE WHEN oc.platform = 'Web' THEN 'Web' ELSE 'App' END
-      AND pe.paid_at       >= oc.order_completed_at
-      AND pe.paid_at       <  DATEADD(day, 10, oc.order_completed_at)   -- 7-day trial + 3-day grace
-      WHERE oc.match_key IS NOT NULL AND oc.match_key <> ''
-      AND oc.order_completed_at < '2026-09-09'                            -- free-trial orders only
-      GROUP BY oc.platform, oc.anonymous_id, oc.period
+      ON  pe.paid_source = 'Web'
+      AND pe.match_key   = oc.customer_email
+      AND pe.paid_at    >= DATEADD(day, -1, oc.order_completed_at)
+      AND pe.paid_at    <  DATEADD(day, 10, oc.order_completed_at)
+      WHERE oc.platform = 'Web'
+      AND oc.customer_email IS NOT NULL AND oc.customer_email <> ''
+      AND oc.order_completed_at < '2026-09-09'
+
+      UNION ALL
+
+      SELECT oc.platform, oc.anonymous_id, oc.period, pe.paid_at
+      FROM order_completed oc
+      JOIN app_user_ids u
+      ON  u.platform     = oc.platform
+      AND u.anonymous_id = oc.anonymous_id
+      JOIN paid_events pe
+      ON  pe.paid_source = 'App'
+      AND pe.match_key   = u.user_id
+      AND pe.paid_at    >= DATEADD(day, -1, oc.order_completed_at)
+      AND pe.paid_at    <  DATEADD(day, 10, oc.order_completed_at)
+      WHERE oc.platform <> 'Web'
+      AND oc.order_completed_at < '2026-09-09'
+      ) matched
+      GROUP BY platform, anonymous_id, period
       ),
 
       user_funnel AS (
@@ -367,7 +396,7 @@ view: upff_signup_funnel {
       , pc.plan_chosen_at
       , oc.order_completed_at
       , oc.customer_email
-      , oc.user_id
+      , COALESCE(oc.user_id, uid.user_id) AS user_id
       -- Paid-only orders (on/after 2026-09-09) are paid at the order itself
       , CASE WHEN oc.order_completed_at >= '2026-09-09' THEN oc.order_completed_at
       ELSE pd.paid_at END AS paid_at
@@ -380,6 +409,8 @@ view: upff_signup_funnel {
       ON oc.anonymous_id = en.anonymous_id AND oc.platform = en.platform AND oc.period = en.period
       LEFT JOIN paid pd
       ON pd.anonymous_id = en.anonymous_id AND pd.platform = en.platform AND pd.period = en.period
+      LEFT JOIN (SELECT platform, anonymous_id, MAX(user_id) AS user_id FROM app_user_ids GROUP BY platform, anonymous_id) uid
+      ON uid.anonymous_id = oc.anonymous_id AND uid.platform = oc.platform
       ),
 
       user_days AS (
