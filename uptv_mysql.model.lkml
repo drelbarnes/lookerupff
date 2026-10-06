@@ -1,4 +1,4 @@
-connection: "gilmore_the_merrier"
+connection: "upff"
 
 include: "/views/*.view.lkml"
 # include all views in the views/ folder in this project

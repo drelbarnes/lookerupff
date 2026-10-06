@@ -226,7 +226,7 @@ view: braintree {
  from `up-faith-and-family-216419.chargebee_webhook_events.payment_succeeded` WHERE date(received_at) between (SELECT report_date FROM config) - INTERVAL 300 DAY
       AND (SELECT report_date FROM config) ),
 
-      refunds as (SELECT distinct
+      refunds as  (SELECT distinct
   content_transaction_customer_id as customer_id,
   content_customer_email as email,
   content_transaction_id_at_gateway as transaction_id,
@@ -266,29 +266,29 @@ view: braintree {
     ELSE NULL
   END AS product_3_period,
   cast(NULL as string) AS product_4_period,
-  content_invoice_line_items_0_tax_amount as tax_1,
+  content_credit_note_line_items_0_tax_amount as tax_1,
   content_invoice_line_items_1_tax_amount as tax_2,
   content_invoice_line_items_2_tax_amount as tax_3,
   NULL as tax_4,
-  content_invoice_line_items_0_unit_amount as original_amount1,
-  content_invoice_line_items_1_unit_amount as original_amount2,
+ content_credit_note_sub_total as original_amount1,
+  NULL as original_amount2,
   content_invoice_line_items_2_unit_amount as original_amount3,
   NULL as original_amount4,
-  content_invoice_line_items_0_discount_amount +content_invoice_credits_applied AS discount_amount1,
+  content_credit_note_line_items_0_discount_amount AS discount_amount1,
   content_invoice_line_items_1_discount_amount  AS discount_amount2,
   content_invoice_line_items_2_discount_amount AS discount_amount3,
   NULL AS discount_amount4,
-  content_invoice_amount_paid as total_amount,
+  content_credit_note_amount_refunded as total_amount,
   content_customer_payment_method_reference_id
   ,content_invoice_credits_applied
   --'refund' AS reporting_category
 FROM
- `up-faith-and-family-216419.chargebee_webhook_events.payment_refunded` WHERE date(received_at) between (SELECT report_date FROM config) - INTERVAL 300 DAY
-      AND (SELECT report_date FROM config) and content_invoice_issued_credit_notes_0_cn_reason_code != 'subscription_change'
+ `up-faith-and-family-216419.chargebee_webhook_events.payment_refunded` WHERE date(received_at) between (SELECT report_date FROM config) - INTERVAL 91 DAY
+  AND (SELECT report_date FROM config) and content_invoice_issued_credit_notes_0_cn_reason_code != 'subscription_change'
 
-      union all
+  union all
 
-      SELECT distinct
+  SELECT distinct
   content_transaction_customer_id as customer_id,
   content_customer_email as email,
   content_transaction_id_at_gateway as transaction_id,
@@ -328,43 +328,26 @@ FROM
     ELSE NULL
   END AS product_3_period,
   cast(NULL as string) AS product_4_period,
-  content_invoice_line_items_0_tax_amount as tax_1,
+  content_credit_note_line_items_0_tax_amount as tax_1,
   content_invoice_line_items_1_tax_amount as tax_2,
   content_invoice_line_items_2_tax_amount as tax_3,
   NULL as tax_4,
-  content_invoice_line_items_0_unit_amount as original_amount1,
+  content_credit_note_line_items_0_unit_amount as original_amount1,
   content_invoice_line_items_1_unit_amount as original_amount2,
   content_invoice_line_items_2_unit_amount as original_amount3,
   NULL as original_amount4,
-  content_invoice_line_items_0_discount_amount +content_invoice_credits_applied AS discount_amount1,
+  content_credit_note_line_items_0_discount_amount AS discount_amount1,
   content_invoice_line_items_1_discount_amount  AS discount_amount2,
   content_invoice_line_items_2_discount_amount AS discount_amount3,
   NULL AS discount_amount4,
-  content_invoice_amount_paid as total_amount,
+  content_credit_note_amount_refunded as total_amount,
   content_customer_payment_method_reference_id
   ,content_invoice_credits_applied
   --'refund' AS reporting_category
 FROM
- `up-faith-and-family-216419.chargebee_webhook_events.payment_refunded`  WHERE date(received_at) between (SELECT report_date FROM config) - INTERVAL 300 DAY
-      AND (SELECT report_date FROM config) and content_invoice_issued_credit_notes_0_cn_reason_code = 'subscription_change'
-      /*
-      UNION ALL
-
-      SELECT
-      upper(SUBSTR(content_credit_note_billing_address_first_name, 1, 1)) as first_initial, -- First Name
-      upper(SUBSTR(content_credit_note_billing_address_last_name, 1, 1)) as last_initial, -- Last Name
-      content_credit_note_customer_id as content_transaction_customer_id,
-      NULL as content_customer_email,
-      content_transaction_id_at_gateway,
-      received_at,
-      content_credit_note_status,
-      content_credit_note_line_items_0_entity_id AS entity_id,
-
-
-      FROM
-      `up-faith-and-family-216419.chargebee_webhook_events.credit_note_created` WHERE date(received_at) between start_date AND end_date
-      */
-      ),
+ `up-faith-and-family-216419.chargebee_webhook_events.payment_refunded` WHERE date(received_at) between (SELECT report_date FROM config) - INTERVAL 94 DAY
+  AND (SELECT report_date FROM config) and content_invoice_issued_credit_notes_0_cn_reason_code = 'subscription_change'
+ ),
 
 
       chargebee_transactions as (

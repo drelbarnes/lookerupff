@@ -210,19 +210,19 @@ charges as (SELECT distinct
     ELSE NULL
   END AS product_3_period,
   cast(NULL as string) AS product_4_period,
-  content_invoice_line_items_0_tax_amount as tax_1,
+  content_credit_note_line_items_0_tax_amount as tax_1,
   content_invoice_line_items_1_tax_amount as tax_2,
   content_invoice_line_items_2_tax_amount as tax_3,
   NULL as tax_4,
-  content_invoice_line_items_0_unit_amount as original_amount1,
+  content_credit_note_line_items_0_unit_amount as original_amount1,
   content_invoice_line_items_1_unit_amount as original_amount2,
   content_invoice_line_items_2_unit_amount as original_amount3,
   NULL as original_amount4,
-  content_invoice_line_items_0_discount_amount +content_invoice_credits_applied AS discount_amount1,
+  content_credit_note_line_items_0_discount_amount AS discount_amount1,
   content_invoice_line_items_1_discount_amount  AS discount_amount2,
   content_invoice_line_items_2_discount_amount AS discount_amount3,
   NULL AS discount_amount4,
-  content_invoice_amount_paid as total_amount,
+  content_credit_note_amount_refunded as total_amount,
   content_customer_payment_method_reference_id
   ,content_invoice_credits_applied
   --'refund' AS reporting_category
@@ -272,19 +272,19 @@ FROM
     ELSE NULL
   END AS product_3_period,
   cast(NULL as string) AS product_4_period,
-  content_invoice_line_items_0_tax_amount as tax_1,
+  content_credit_note_line_items_0_tax_amount as tax_1,
   content_invoice_line_items_1_tax_amount as tax_2,
   content_invoice_line_items_2_tax_amount as tax_3,
   NULL as tax_4,
-  content_invoice_line_items_0_unit_amount as original_amount1,
+  content_credit_note_line_items_0_unit_amount as original_amount1,
   content_invoice_line_items_1_unit_amount as original_amount2,
   content_invoice_line_items_2_unit_amount as original_amount3,
   NULL as original_amount4,
-  content_invoice_line_items_0_discount_amount +content_invoice_credits_applied AS discount_amount1,
+  content_credit_note_line_items_0_discount_amount AS discount_amount1,
   content_invoice_line_items_1_discount_amount  AS discount_amount2,
   content_invoice_line_items_2_discount_amount AS discount_amount3,
   NULL AS discount_amount4,
-  content_invoice_amount_paid as total_amount,
+  content_credit_note_amount_refunded as total_amount,
   content_customer_payment_method_reference_id
   ,content_invoice_credits_applied
   --'refund' AS reporting_category
@@ -428,7 +428,7 @@ SELECT
 
 refund_not_filled as (
 select * from fill_non_chargebee
-where total_amount is NULL or( cast(total_amount/100.0 * -1.0 as string) != cast(gross as string))
+where total_amount is NULL OR CAST(ABS(total_amount / 100.0) AS STRING) != CAST(abs(gross) AS STRING)
 ),
 
 fill_not_filled as (
@@ -475,7 +475,7 @@ where total_amount is not NULL and ( cast(total_amount/100.0 * 1.0 as string) = 
 UNION ALL
 SELECT * FROM fill_non_chargebee
 WHERE total_amount is not NULL
-and cast(total_amount/100.0 * -1.0 as string) = cast(gross as string)
+and CAST(ABS(total_amount / 100.0) AS STRING) = CAST(abs(gross) AS STRING)
 
 UNION ALL
 SELECT * FROM fill_not_filled

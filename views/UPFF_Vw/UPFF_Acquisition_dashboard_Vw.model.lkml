@@ -33,6 +33,7 @@ include: "/views/UPFF_Vw/churn_gateway.view.lkml"
 include: "/views/UPFF_Vw/dunning.view.lkml"
 include: "/views/UPFF_Vw/watch_rate.view.lkml"
 include: "/views/UPFF_Vw/bundle.view.lkml"
+include: "/views/UPFF_Vw/bundle_conversion.view.lkml"
 
 
 explore: UPFF_analytics_Vw {
@@ -153,4 +154,8 @@ explore: watch_rate {
 
 explore: bundle {
   label: "UPFF Bundles"
+}
+
+explore: bundle_conversion {
+  label: "UPFF Bundle Conversion"
 }
