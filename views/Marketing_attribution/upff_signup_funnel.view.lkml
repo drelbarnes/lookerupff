@@ -25,10 +25,11 @@
 #   3    | Subscription Plan Chosen | Signed Up
 #   4    | Order Completed          | Order Completed
 #
-# Trial to paid: each order carries the customer's email (user_email on the
-# order_completed tables). Web orders are matched by email to Chargebee
-# payment_succeeded; mobile and CTV orders to Vimeo OTT
-# customer_product_free_trial_converted.
+# Trial to paid: each order carries the customer's email (user_email) and
+# user_id from the order_completed tables. Web orders are matched by email to
+# Chargebee payment_succeeded. Mobile and CTV orders are matched by user_id to
+# Vimeo OTT customer_product_free_trial_converted (app registration happens
+# after payment, so app orders have no email at order time).
 # Offer by order date:
 #   - Before 2026-09-09: 7-day FREE TRIAL. The user became a paying customer
 #     if a matching paid event lands within 10 days of the order (7-day trial
@@ -220,29 +221,35 @@ view: upff_signup_funnel {
       WHERE brand = 'upfaithandfamily'
       ),
 
-      -- Each order carries the customer's email for the trial-to-paid match
+      -- Each order carries the customer's email (Web match) and user_id (app match)
       order_completed_events AS (
-      SELECT 'iOS'::VARCHAR(32) AS platform, anonymous_id, received_at, LOWER(TRIM(user_email))::VARCHAR(320) AS customer_email FROM ios.order_completed
+      SELECT 'iOS'::VARCHAR(32) AS platform, anonymous_id, received_at,
+      LOWER(TRIM(user_email))::VARCHAR(320) AS customer_email,
+      TRIM(user_id::VARCHAR(256))::VARCHAR(256) AS user_id
+      FROM ios.order_completed
       UNION ALL
-      SELECT 'Android',        anonymous_id, received_at, LOWER(TRIM(user_email)) FROM android.order_completed
+      SELECT 'Android',        anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(user_id::VARCHAR(256)) FROM android.order_completed
       UNION ALL
-      SELECT 'Roku',           anonymous_id, received_at, LOWER(TRIM(user_email)) FROM roku.order_completed
+      SELECT 'Roku',           anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(user_id::VARCHAR(256)) FROM roku.order_completed
       UNION ALL
-      SELECT 'Amazon Fire TV', anonymous_id, received_at, LOWER(TRIM(user_email)) FROM amazon_fire_tv.order_completed
+      SELECT 'Amazon Fire TV', anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(user_id::VARCHAR(256)) FROM amazon_fire_tv.order_completed
       UNION ALL
-      SELECT 'Vizio TV',       anonymous_id, received_at, LOWER(TRIM(user_email)) FROM vizio_tv.order_completed
+      SELECT 'Vizio TV',       anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(user_id::VARCHAR(256)) FROM vizio_tv.order_completed
       UNION ALL
-      SELECT 'Web',            anonymous_id, received_at, LOWER(TRIM(user_email))
+      SELECT 'Web',            anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(user_id::VARCHAR(256))
       FROM javascript_upentertainment_checkout.order_completed
       WHERE brand = 'upfaithandfamily'
       ),
 
-      -- Paying-customer events: Chargebee for Web, Vimeo OTT for mobile and CTV apps
+      -- Match key: email for Web (Chargebee), user_id for mobile and CTV apps (Vimeo OTT).
+      -- App email is collected after payment, so it is not on app orders; user_id is.
       paid_events AS (
-      SELECT 'Web'::VARCHAR(8) AS paid_source, LOWER(TRIM(content_customer_email))::VARCHAR(320) AS customer_email, received_at AS paid_at
+      SELECT 'Web'::VARCHAR(8) AS paid_source,
+      LOWER(TRIM(content_customer_email))::VARCHAR(320) AS match_key,
+      received_at AS paid_at
       FROM chargebee_webhook_events.payment_succeeded
       UNION ALL
-      SELECT 'App', LOWER(TRIM(email)), received_at
+      SELECT 'App', TRIM(user_id::VARCHAR(256)), received_at
       FROM vimeo_ott_webhook.customer_product_free_trial_converted
       ),
 
@@ -307,10 +314,11 @@ view: upff_signup_funnel {
 
       -- ---------- Step 4 ----------
       order_completed AS (
-      SELECT platform, anonymous_id, period, order_completed_at, customer_email
+      SELECT platform, anonymous_id, period, order_completed_at, customer_email, user_id,
+      CASE WHEN platform = 'Web' THEN customer_email ELSE user_id END AS match_key
       FROM (
       SELECT pc.platform, pc.anonymous_id, pc.period,
-      e.received_at AS order_completed_at, e.customer_email,
+      e.received_at AS order_completed_at, e.customer_email, e.user_id,
       ROW_NUMBER() OVER (PARTITION BY pc.platform, pc.anonymous_id, pc.period
       ORDER BY e.received_at) AS rn
       FROM plan_chosen pc
@@ -325,16 +333,16 @@ view: upff_signup_funnel {
       WHERE rn = 1
       ),
 
-      -- ---------- Trial to paid: first paid event within 10 days of a free-trial order, matched by email ----------
+      -- ---------- Trial to paid: first paid event within 10 days of a free-trial order, matched by email (Web) or user_id (apps) ----------
       paid AS (
       SELECT oc.platform, oc.anonymous_id, oc.period, MIN(pe.paid_at) AS paid_at
       FROM order_completed oc
       JOIN paid_events pe
-      ON  pe.customer_email = oc.customer_email
+      ON  pe.match_key    = oc.match_key
       AND pe.paid_source    = CASE WHEN oc.platform = 'Web' THEN 'Web' ELSE 'App' END
       AND pe.paid_at       >= oc.order_completed_at
       AND pe.paid_at       <  DATEADD(day, 10, oc.order_completed_at)   -- 7-day trial + 3-day grace
-      WHERE oc.customer_email IS NOT NULL AND oc.customer_email <> ''
+      WHERE oc.match_key IS NOT NULL AND oc.match_key <> ''
       AND oc.order_completed_at < '2026-09-09'                            -- free-trial orders only
       GROUP BY oc.platform, oc.anonymous_id, oc.period
       ),
@@ -359,6 +367,7 @@ view: upff_signup_funnel {
       , pc.plan_chosen_at
       , oc.order_completed_at
       , oc.customer_email
+      , oc.user_id
       -- Paid-only orders (on/after 2026-09-09) are paid at the order itself
       , CASE WHEN oc.order_completed_at >= '2026-09-09' THEN oc.order_completed_at
       ELSE pd.paid_at END AS paid_at
@@ -510,10 +519,19 @@ view: upff_signup_funnel {
   dimension: customer_email {
     group_label: "Trial to Paid"
     label: "Customer Email"
-    description: "Email on the user's first Order Completed event (lowercased). Used to match orders to paying-customer events. Personal data: use only for user-level drill-downs."
+    description: "Email on the user's first Order Completed event (lowercased). Used to match Web orders to Chargebee payments; app orders usually have no email because registration happens after payment. Personal data: use only for user-level drill-downs."
     type: string
     sql: ${TABLE}.customer_email ;;
     tags: ["pii", "email"]
+  }
+
+  dimension: user_id {
+    group_label: "Trial to Paid"
+    label: "Customer User ID"
+    description: "Segment user_id on the user's first Order Completed event. Used to match mobile and Connected TV orders to Vimeo OTT trial-converted events. Use only for user-level drill-downs."
+    type: string
+    sql: ${TABLE}.user_id ;;
+    tags: ["pii"]
   }
 
   dimension: free_trial_order {
@@ -538,7 +556,7 @@ view: upff_signup_funnel {
   dimension: became_paying {
     group_label: "Trial to Paid"
     label: "Became Paying Customer"
-    description: "Yes if the user became a paying customer. Free-trial orders: a matching paid event within 10 days of the order (Chargebee payment_succeeded for Web, Vimeo OTT free_trial_converted for mobile and Connected TV). Paid-only orders (on/after 2026-09-09): always yes, because the order is the payment. Also called: converted to paid, paid subscriber."
+    description: "Yes if the user became a paying customer. Free-trial orders: a matching paid event within 10 days of the order (Chargebee payment_succeeded matched by email for Web; Vimeo OTT free_trial_converted matched by user_id for mobile and Connected TV). Paid-only orders (on/after 2026-09-09): always yes, because the order is the payment. Also called: converted to paid, paid subscriber."
     type: yesno
     sql: ${TABLE}.paid_at IS NOT NULL ;;
   }
