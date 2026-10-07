@@ -25,16 +25,16 @@
 #   3    | Subscription Plan Chosen | Signed Up
 #   4    | Order Completed          | Order Completed
 #
-# Trial to paid: each order carries the customer's email (user_email) and
-# user_id from the order_completed tables. Web orders are matched by email to
-# Chargebee payment_succeeded. Mobile and CTV orders are matched by user_id to
-# Vimeo OTT customer_product_free_trial_converted (app registration happens
-# after payment, so app orders have no email at order time).
+# Trial to paid. WEB: user-level, email -> Chargebee payment_succeeded.
+# MOBILE + CTV: aggregate. Vimeo OTT trial conversions are counted by the day
+# they were received and aligned to the period and platform (ios+tvos -> iOS,
+# android+android_tv -> Android, amazon_fire_tv+amazon_fire_tablet -> Amazon
+# Fire TV), because app orders lack an identifier to match them user by user.
+# Each order also carries user_email and user_id (Customer Email / User ID).
 # Offer by order date:
-#   - Before 2026-09-09: 7-day FREE TRIAL. The user became a paying customer
-#     if a matching paid event lands in the window: Web within 10 days of the
-#     order (7-day trial + 3-day grace); apps from the period start through
-#     14 days after the period end.
+#   - Before 2026-09-09: 7-day FREE TRIAL. Web trials convert if a matching
+#     Chargebee payment lands within 10 days of the order (7-day trial + 3-day
+#     grace); app trials are counted in aggregate (see above).
 #   - On/after 2026-09-09: PAID ONLY test (no free trial). The order itself
 #     is the payment, so every order counts as a paying customer.
 #
@@ -358,6 +358,37 @@ view: upff_signup_funnel {
       GROUP BY period
       ),
 
+      -- Vimeo OTT trial conversions in aggregate: counted by the day they were
+      -- received (received_at), mapped to funnel platforms, and assigned to the
+      -- Current or Prior Period whose date range contains that day.
+      --   ios + tvos -> iOS | android + android_tv -> Android
+      --   amazon_fire_tv + amazon_fire_tablet -> Amazon Fire TV
+      --   roku -> Roku | vizio_tv -> Vizio TV | web -> Web
+      vimeo_daily AS (
+      SELECT pb.period, v.platform, v.conv_day, COUNT(DISTINCT v.user_id) AS trial_conversions
+      FROM (
+      SELECT CASE LOWER(TRIM(platform))
+      WHEN 'ios'                THEN 'iOS'
+      WHEN 'tvos'               THEN 'iOS'
+      WHEN 'android'            THEN 'Android'
+      WHEN 'android_tv'         THEN 'Android'
+      WHEN 'amazon_fire_tv'     THEN 'Amazon Fire TV'
+      WHEN 'amazon_fire_tablet' THEN 'Amazon Fire TV'
+      WHEN 'roku'               THEN 'Roku'
+      WHEN 'vizio_tv'           THEN 'Vizio TV'
+      WHEN 'web'                THEN 'Web'
+      ELSE 'Other'
+      END AS platform,
+      DATE_TRUNC('day', received_at) AS conv_day,
+      TRIM(user_id::VARCHAR(256))    AS user_id
+      FROM vimeo_ott_webhook.customer_product_free_trial_converted
+      ) v
+      JOIN period_bounds pb
+      ON  v.conv_day >= DATE_TRUNC('day', pb.period_start)
+      AND v.conv_day <  pb.period_end
+      GROUP BY pb.period, v.platform, v.conv_day
+      ),
+
       -- App user_id can be missing on the first order row (identify happens around
       -- registration), so resolve it from ANY order event for the same user.
       app_user_ids AS (
@@ -366,10 +397,10 @@ view: upff_signup_funnel {
       WHERE platform <> 'Web' AND user_id IS NOT NULL AND user_id <> ''
       ),
 
-      -- Paid match for free-trial orders.
-      -- Web: email -> Chargebee, from 1 day before to 10 days after the order.
-      -- Apps: any of the user's user_ids -> Vimeo OTT, from the period start
-      -- through 14 days after the period end.
+      -- User-level paid match for WEB free-trial orders: email -> Chargebee,
+      -- from 1 day before to 10 days after the order. Mobile and CTV trials are
+      -- measured in aggregate instead (see vimeo_daily), because app orders
+      -- lack a reliable identifier to tie them to Vimeo trial conversions.
       paid AS (
       SELECT platform, anonymous_id, period, MIN(paid_at) AS paid_at
       FROM (
@@ -384,23 +415,6 @@ view: upff_signup_funnel {
       AND oc.customer_email IS NOT NULL AND oc.customer_email <> ''
       AND oc.order_completed_at < '2026-09-09'
 
-      UNION ALL
-
-      SELECT oc.platform, oc.anonymous_id, oc.period, pe.paid_at
-      FROM order_completed oc
-      JOIN period_bounds pb
-      ON pb.period = oc.period
-      JOIN app_user_ids u
-      ON  u.platform     = oc.platform
-      AND u.anonymous_id = oc.anonymous_id
-      JOIN paid_events pe
-      ON  pe.paid_source = 'App'
-      AND pe.match_key   = u.user_id
-      -- Apps: any trial conversion from the period start through 14 days after the period end
-      AND pe.paid_at    >= pb.period_start
-      AND pe.paid_at    <  DATEADD(day, 14, pb.period_end)
-      WHERE oc.platform <> 'Web'
-      AND oc.order_completed_at < '2026-09-09'
       ) matched
       GROUP BY platform, anonymous_id, period
       ),
@@ -460,7 +474,18 @@ view: upff_signup_funnel {
       , COUNT(uf.plan_chosen_at)   OVER (PARTITION BY uf.period, uf.entry_day)                    AS day_plan_chosen_all
       , COUNT(uf.plan_chosen_at)   OVER (PARTITION BY uf.period, uf.platform_group, uf.entry_day) AS day_plan_chosen_group
       , COUNT(uf.plan_chosen_at)   OVER (PARTITION BY uf.period, uf.platform, uf.entry_day)       AS day_plan_chosen_platform
-      FROM user_funnel uf
+      -- Aggregate Vimeo trial conversions for this period/platform/day, carried on
+      -- exactly one user row so SUM() never double counts
+      , CASE WHEN uf.platform_day_rn = 1 THEN COALESCE(vd.trial_conversions, 0) ELSE 0 END AS vimeo_trial_conversions
+      FROM (
+      SELECT f.*,
+      ROW_NUMBER() OVER (PARTITION BY f.period, f.platform, f.entry_day ORDER BY f.anonymous_id) AS platform_day_rn
+      FROM user_funnel f
+      ) uf
+      LEFT JOIN vimeo_daily vd
+      ON  vd.period   = uf.period
+      AND vd.platform = uf.platform
+      AND vd.conv_day = uf.entry_day
       ),
 
       -- One row per funnel step + OVERALL, so steps can be rows in a table or chart
@@ -477,6 +502,7 @@ view: upff_signup_funnel {
       , ud.*
       , s.step_number
       , s.step_name
+      , CASE WHEN s.step_number = 1 THEN ud.vimeo_trial_conversions ELSE 0 END AS vimeo_trial_conversions_s1
       -- Did this user reach this step?
       , CASE s.step_number
       WHEN 1 THEN 1
@@ -616,7 +642,7 @@ view: upff_signup_funnel {
   dimension: became_paying {
     group_label: "Trial to Paid"
     label: "Became Paying Customer"
-    description: "Yes if the user became a paying customer. Free-trial orders: Web needs a Chargebee payment_succeeded (matched by email) within 10 days of the order; mobile and Connected TV need a Vimeo OTT free_trial_converted (matched by user_id) between the period start and 14 days after the period end. Paid-only orders (on/after 2026-09-09): always yes, because the order is the payment. Also called: converted to paid, paid subscriber."
+    description: "Yes if the user became a paying customer. Free-trial orders: Web only, a Chargebee payment_succeeded (matched by email) within 10 days of the order. Mobile and Connected TV trial conversions can't be tied to individual users and are counted in aggregate in the Trial to Paid measures instead, so this is No for app trial orders. Paid-only orders (on/after 2026-09-09): always yes, because the order is the payment. Also called: converted to paid, paid subscriber."
     type: yesno
     sql: ${TABLE}.paid_at IS NOT NULL ;;
   }
@@ -990,12 +1016,15 @@ view: upff_signup_funnel {
   measure: trial_paid_current {
     group_label: "Trial to Paid"
     label: "Trials Converted to Paid (Current Period)"
-    description: "Current-period free-trial sign-ups who became paying customers (Web: within 10 days of the order; apps: by 14 days after the period end). Also called: trial conversions."
-    type: count_distinct
-    sql: ${user_pk} ;;
-    filters: [period: "Current", converted: "yes", free_trial_order: "yes", became_paying: "yes"]
+    description: "Current-period free-trial conversions. Web: user-level (Chargebee payment within 10 days of the order). Mobile and Connected TV: aggregate Vimeo OTT trial conversions received during the period dates, by platform. Also called: trial conversions."
+    type: number
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Current' AND ${TABLE}.platform = 'Web'
+                              AND ${TABLE}.order_completed_at < '2026-09-09'
+                              AND ${TABLE}.paid_at IS NOT NULL THEN ${user_pk} END)
+         + SUM(CASE WHEN ${TABLE}.period = 'Current' AND ${TABLE}.platform <> 'Web' THEN ${TABLE}.vimeo_trial_conversions_s1 ELSE 0 END) ;;
     value_format_name: decimal_0
   }
+
 
   measure: trial_to_paid_rate_current {
     group_label: "Trial to Paid"
@@ -1019,12 +1048,15 @@ view: upff_signup_funnel {
   measure: trial_paid_prior {
     group_label: "Trial to Paid"
     label: "Trials Converted to Paid (Prior Period)"
-    description: "Prior-period free-trial sign-ups who became paying customers (Web: within 10 days of the order; apps: by 14 days after the period end). Also called: trial conversions."
-    type: count_distinct
-    sql: ${user_pk} ;;
-    filters: [period: "Prior", converted: "yes", free_trial_order: "yes", became_paying: "yes"]
+    description: "Prior-period free-trial conversions. Web: user-level (Chargebee payment within 10 days of the order). Mobile and Connected TV: aggregate Vimeo OTT trial conversions received during the period dates, by platform. Also called: trial conversions."
+    type: number
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Prior' AND ${TABLE}.platform = 'Web'
+                              AND ${TABLE}.order_completed_at < '2026-09-09'
+                              AND ${TABLE}.paid_at IS NOT NULL THEN ${user_pk} END)
+         + SUM(CASE WHEN ${TABLE}.period = 'Prior' AND ${TABLE}.platform <> 'Web' THEN ${TABLE}.vimeo_trial_conversions_s1 ELSE 0 END) ;;
     value_format_name: decimal_0
   }
+
 
   measure: trial_to_paid_rate_prior {
     group_label: "Trial to Paid"
@@ -1038,12 +1070,13 @@ view: upff_signup_funnel {
   measure: paying_customers_current {
     group_label: "Trial to Paid"
     label: "Paying Customers (Current Period)"
-    description: "Current-period users who became paying customers: free-trial sign-ups who converted, plus paid-only orders (on/after 2026-09-09). Comparable across the trial and paid-only tests. Also called: paid subscribers, paid conversions."
-    type: count_distinct
-    sql: ${user_pk} ;;
-    filters: [period: "Current", became_paying: "yes"]
+    description: "Current-period paying customers: paid-only orders (on/after 2026-09-09) plus converted free trials (Web user-level; mobile and Connected TV from aggregate Vimeo OTT trial conversions received during the period). Also called: paid subscribers, paid conversions."
+    type: number
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Current' AND ${TABLE}.paid_at IS NOT NULL THEN ${user_pk} END)
+      + SUM(CASE WHEN ${TABLE}.period = 'Current' AND ${TABLE}.platform <> 'Web' THEN ${TABLE}.vimeo_trial_conversions_s1 ELSE 0 END) ;;
     value_format_name: decimal_0
   }
+
 
   measure: entry_to_paid_rate_current {
     group_label: "Trial to Paid"
@@ -1057,12 +1090,13 @@ view: upff_signup_funnel {
   measure: paying_customers_prior {
     group_label: "Trial to Paid"
     label: "Paying Customers (Prior Period)"
-    description: "Prior-period users who became paying customers: free-trial sign-ups who converted, plus paid-only orders (on/after 2026-09-09). Comparable across the trial and paid-only tests. Also called: paid subscribers, paid conversions."
-    type: count_distinct
-    sql: ${user_pk} ;;
-    filters: [period: "Prior", became_paying: "yes"]
+    description: "Prior-period paying customers: paid-only orders (on/after 2026-09-09) plus converted free trials (Web user-level; mobile and Connected TV from aggregate Vimeo OTT trial conversions received during the period). Also called: paid subscribers, paid conversions."
+    type: number
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Prior' AND ${TABLE}.paid_at IS NOT NULL THEN ${user_pk} END)
+      + SUM(CASE WHEN ${TABLE}.period = 'Prior' AND ${TABLE}.platform <> 'Web' THEN ${TABLE}.vimeo_trial_conversions_s1 ELSE 0 END) ;;
     value_format_name: decimal_0
   }
+
 
   measure: entry_to_paid_rate_prior {
     group_label: "Trial to Paid"
@@ -1085,12 +1119,13 @@ view: upff_signup_funnel {
   measure: paying_customers {
     group_label: "Trial to Paid"
     label: "Paying Customers"
-    description: "Users who became paying customers (converted trials plus paid-only orders), for any grouping such as Sign-Up Offer, Platform or Entry Week."
-    type: count_distinct
-    sql: ${user_pk} ;;
-    filters: [became_paying: "yes"]
+    description: "Paid-only orders plus converted free trials (Web user-level; mobile and Connected TV from aggregate Vimeo OTT trial conversions), for any grouping such as Platform or Period."
+    type: number
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.paid_at IS NOT NULL THEN ${user_pk} END)
+      + SUM(CASE WHEN ${TABLE}.platform <> 'Web' THEN ${TABLE}.vimeo_trial_conversions_s1 ELSE 0 END) ;;
     value_format_name: decimal_0
   }
+
 
   measure: entry_to_paid_rate {
     group_label: "Trial to Paid"
@@ -1099,6 +1134,24 @@ view: upff_signup_funnel {
     type: number
     sql: 1.0 * ${paying_customers} / NULLIF(${entries}, 0) ;;
     value_format_name: percent_2
+  }
+
+  measure: vimeo_trial_conversions_current {
+    group_label: "Trial to Paid"
+    label: "Vimeo Trial Conversions (Current Period)"
+    description: "Count of Vimeo OTT free-trial-converted events received during the current period dates, by platform (ios+tvos as iOS, android+android_tv as Android, amazon_fire_tv+amazon_fire_tablet as Amazon Fire TV, plus Roku, Vizio TV and Web). Aggregate, not tied to individual funnel users."
+    type: number
+    sql: SUM(CASE WHEN ${TABLE}.period = 'Current' THEN ${TABLE}.vimeo_trial_conversions_s1 ELSE 0 END) ;;
+    value_format_name: decimal_0
+  }
+
+  measure: vimeo_trial_conversions_prior {
+    group_label: "Trial to Paid"
+    label: "Vimeo Trial Conversions (Prior Period)"
+    description: "Count of Vimeo OTT free-trial-converted events received during the prior period dates, by platform (ios+tvos as iOS, android+android_tv as Android, amazon_fire_tv+amazon_fire_tablet as Amazon Fire TV, plus Roku, Vizio TV and Web). Aggregate, not tied to individual funnel users."
+    type: number
+    sql: SUM(CASE WHEN ${TABLE}.period = 'Prior' THEN ${TABLE}.vimeo_trial_conversions_s1 ELSE 0 END) ;;
+    value_format_name: decimal_0
   }
 
   measure: trial_to_paid_rate_change_pp {
@@ -1123,12 +1176,14 @@ view: upff_signup_funnel {
   measure: trial_paid {
     group_label: "Trial to Paid"
     label: "Trials Converted to Paid"
-    description: "Free-trial sign-ups who became paying customers, for any grouping."
-    type: count_distinct
-    sql: ${user_pk} ;;
-    filters: [converted: "yes", free_trial_order: "yes", became_paying: "yes"]
+    description: "Free-trial conversions for any grouping. Web: user-level. Mobile and Connected TV: aggregate Vimeo OTT trial conversions received during the period dates."
+    type: number
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.platform = 'Web' AND ${TABLE}.order_completed_at < '2026-09-09'
+                              AND ${TABLE}.paid_at IS NOT NULL THEN ${user_pk} END)
+         + SUM(CASE WHEN ${TABLE}.platform <> 'Web' THEN ${TABLE}.vimeo_trial_conversions_s1 ELSE 0 END) ;;
     value_format_name: decimal_0
   }
+
 
   measure: trial_to_paid_rate {
     group_label: "Trial to Paid"
