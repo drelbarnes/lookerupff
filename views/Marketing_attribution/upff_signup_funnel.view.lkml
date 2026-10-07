@@ -38,9 +38,11 @@
 #   - On/after 2026-09-09: PAID ONLY test (no free trial). The order itself
 #     is the payment, so every order counts as a paying customer.
 #
-# User key: Segment anonymous_id; when it is empty or NULL, the event's
-# context_ip is used instead (prefixed 'ip:'), on every funnel step and
-# platform. The Vimeo trial-converted match is unchanged (user_id).
+# User key: Segment anonymous_id; when it is empty or NULL, a fallback is
+# used on every funnel step: context_ip (prefixed 'ip:') for iOS, Android,
+# Amazon Fire TV and Web; device_id (prefixed 'device:') for Roku and Vizio TV,
+# whose tables have no context_ip. The Vimeo trial-converted match is
+# unchanged (user_id).
 #
 # Grain: one row per user per funnel step. A "user" is an anonymous_id per
 # platform per period (first entry on that platform in the period's date range);
@@ -137,7 +139,7 @@ view: upff_signup_funnel {
                        'Mobile App (no UTM)'::VARCHAR(64)
                 FROM android.app_installed
                 UNION ALL
-                SELECT 'Roku', COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at,
+                SELECT 'Roku', COALESCE(NULLIF(TRIM(anonymous_id), ''), 'device:' || NULLIF(TRIM(device_id::VARCHAR(256)), '')) AS anonymous_id, received_at,
                        CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
                        CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
                        'Connected TV (no UTM)'::VARCHAR(64)
@@ -149,7 +151,7 @@ view: upff_signup_funnel {
                        'Connected TV (no UTM)'::VARCHAR(64)
                 FROM amazon_fire_tv.app_installed
                 UNION ALL
-                SELECT 'Vizio TV', COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at,
+                SELECT 'Vizio TV', COALESCE(NULLIF(TRIM(anonymous_id), ''), 'device:' || NULLIF(TRIM(device_id::VARCHAR(256)), '')) AS anonymous_id, received_at,
                        CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
                        CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
                        'Connected TV (no UTM)'::VARCHAR(64)
@@ -199,11 +201,11 @@ view: upff_signup_funnel {
       UNION ALL
       SELECT 'Android' AS platform, COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at FROM android.sign_up_viewed
       UNION ALL
-      SELECT 'Roku'    AS platform, COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at FROM roku.sign_up_viewed
+      SELECT 'Roku'    AS platform, COALESCE(NULLIF(TRIM(anonymous_id), ''), 'device:' || NULLIF(TRIM(device_id::VARCHAR(256)), '')) AS anonymous_id, received_at FROM roku.sign_up_viewed
       UNION ALL
       SELECT 'Amazon Fire TV' AS platform, COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at FROM amazon_fire_tv.sign_up_viewed
       UNION ALL
-      SELECT 'Vizio TV' AS platform, COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at FROM vizio_tv.sign_up_viewed
+      SELECT 'Vizio TV' AS platform, COALESCE(NULLIF(TRIM(anonymous_id), ''), 'device:' || NULLIF(TRIM(device_id::VARCHAR(256)), '')) AS anonymous_id, received_at FROM vizio_tv.sign_up_viewed
       UNION ALL
       SELECT 'Web'     AS platform, COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at
       FROM javascript_upentertainment_checkout.product_viewed
@@ -215,11 +217,11 @@ view: upff_signup_funnel {
       UNION ALL
       SELECT 'Android' AS platform, COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at FROM android.subscription_plan_chosen
       UNION ALL
-      SELECT 'Roku'    AS platform, COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at FROM roku.subscription_plan_chosen
+      SELECT 'Roku'    AS platform, COALESCE(NULLIF(TRIM(anonymous_id), ''), 'device:' || NULLIF(TRIM(device_id::VARCHAR(256)), '')) AS anonymous_id, received_at FROM roku.subscription_plan_chosen
       UNION ALL
       SELECT 'Amazon Fire TV' AS platform, COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at FROM amazon_fire_tv.subscription_plan_chosen
       UNION ALL
-      SELECT 'Vizio TV' AS platform, COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at FROM vizio_tv.subscription_plan_chosen
+      SELECT 'Vizio TV' AS platform, COALESCE(NULLIF(TRIM(anonymous_id), ''), 'device:' || NULLIF(TRIM(device_id::VARCHAR(256)), '')) AS anonymous_id, received_at FROM vizio_tv.subscription_plan_chosen
       UNION ALL
       SELECT 'Web'     AS platform, COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at
       FROM javascript_upentertainment_checkout.signed_up
@@ -235,11 +237,11 @@ view: upff_signup_funnel {
       UNION ALL
       SELECT 'Android',        COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(user_id::VARCHAR(256)) FROM android.order_completed
       UNION ALL
-      SELECT 'Roku',           COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(user_id::VARCHAR(256)) FROM roku.order_completed
+      SELECT 'Roku',           COALESCE(NULLIF(TRIM(anonymous_id), ''), 'device:' || NULLIF(TRIM(device_id::VARCHAR(256)), '')) AS anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(user_id::VARCHAR(256)) FROM roku.order_completed
       UNION ALL
       SELECT 'Amazon Fire TV', COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(user_id::VARCHAR(256)) FROM amazon_fire_tv.order_completed
       UNION ALL
-      SELECT 'Vizio TV',       COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(user_id::VARCHAR(256)) FROM vizio_tv.order_completed
+      SELECT 'Vizio TV',       COALESCE(NULLIF(TRIM(anonymous_id), ''), 'device:' || NULLIF(TRIM(device_id::VARCHAR(256)), '')) AS anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(user_id::VARCHAR(256)) FROM vizio_tv.order_completed
       UNION ALL
       SELECT 'Web',            COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(user_id::VARCHAR(256))
       FROM javascript_upentertainment_checkout.order_completed
