@@ -106,12 +106,44 @@ view: social_daily_snapshot {
     sql: ${TABLE}.engagement_rate ;;
   }
 
+  dimension: engagement_rate_per_view {
+    hidden: yes
+    type: number
+    sql: ${TABLE}.engagement_rate_per_view ;;
+    description: "Raw Agorapulse engagementRatePerView, stored as a percent (2.56 means 2.56%). Null when the API omits the field."
+  }
+
   measure: total_impressions {
     label: "Total impressions"
     type: sum
-    sql: ${impressions} ;;
+    sql: CASE WHEN LOWER(${platform}) = 'youtube' THEN NULL ELSE ${impressions} END ;;
     value_format_name: decimal_0
-    description: "Sum of impressions at profile-day grain (Agorapulse viewsCount). See docs/06 and docs/07."
+    description: "Sum of impressions at profile-day grain, excluding YouTube. Agorapulse does not provide YouTube impressions (the stored YouTube value is video views). YouTube rows contribute NULL."
+  }
+
+  # Single-value tile only. Charts keep total_impressions so a null YouTube series is not plotted as text.
+  measure: total_impressions_display {
+    label: "Total impressions"
+    type: string
+    sql:
+      CASE
+        WHEN COUNT(CASE WHEN LOWER(${platform}) <> 'youtube' THEN 1 END) = 0
+         AND COUNT(CASE WHEN LOWER(${platform}) = 'youtube' THEN 1 END) > 0
+        THEN 'N/A'
+        ELSE TO_CHAR(
+          SUM(CASE WHEN LOWER(${platform}) = 'youtube' THEN NULL ELSE ${impressions} END),
+          'FM999,999,999,999,999'
+        )
+      END ;;
+    description: "Total impressions for the KPI tile. N/A when the result is YouTube only; otherwise the non-YouTube sum. Blank when no rows match."
+  }
+
+  measure: total_impressions_rank {
+    hidden: yes
+    label: "Total impressions (rank)"
+    type: number
+    sql: COALESCE(SUM(CASE WHEN LOWER(${platform}) = 'youtube' THEN NULL ELSE ${impressions} END), -1) ;;
+    description: "Sort key. YouTube impression totals are unavailable and rank last."
   }
 
   measure: organic_impressions {
@@ -196,16 +228,20 @@ view: social_daily_snapshot {
   measure: avg_engagement_rate {
     label: "Engagement rate"
     type: average
-    sql: ${engagement_rate} ;;
+    sql:
+      COALESCE(
+        ${engagement_rate_per_view} / 100.0,
+        1.0 * ${engagements} / NULLIF(${video_views}, 0)
+      ) ;;
     value_format_name: percent_2
-    description: "Average of warehouse engagement_rate at profile-day grain (Agorapulse engagementRatePerView; see index.ts). Dashboard KPI uses this measure—simple mean across rows, not weighted by impressions. Compare weighted_engagement_rate for sum(engagements)/sum(impressions) (doc 07 §6)."
+    description: "Mean of Agorapulse engagementRatePerView (percent divided by 100) for Facebook, Instagram, and TikTok. YouTube has no API rate, so those days use engagements divided by video views. Days with neither a rate nor video views are excluded."
   }
 
   measure: weighted_engagement_rate {
     label: "Engagement rate (weighted)"
     type: number
-    sql: 1.0 * SUM(${engagements}) / NULLIF(SUM(${impressions}), 0) ;;
+    sql: 1.0 * SUM(${engagements}) / NULLIF(SUM(CASE WHEN LOWER(${platform}) = 'youtube' THEN NULL ELSE ${impressions} END), 0) ;;
     value_format_name: percent_2
-    description: "Weighted ratio: total engagements ÷ total impressions (doc 07 §6 Option B). Differs from avg_engagement_rate (mean of Agorapulse engagement_rate per row). Use in Explore when you need impression-weighted engagement."
+    description: "Weighted ratio: total engagements ÷ total non-YouTube impressions (doc 07 §6 Option B). YouTube impressions are excluded, so a YouTube-only result is null. Differs from avg_engagement_rate, which averages daily Agorapulse rates and uses engagements ÷ video views for YouTube."
   }
 }

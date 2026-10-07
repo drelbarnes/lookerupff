@@ -116,12 +116,34 @@ view: agorapulse_post_performance {
   measure: post_impressions {
     label: "Post impressions"
     type: sum
-    sql: GREATEST(
-      COALESCE(${TABLE}.impressions_count, 0),
-      COALESCE(${TABLE}.video_views_count, 0)
-    ) ;;
+    sql:
+      CASE
+        WHEN LOWER(${platform}) = 'youtube' THEN NULL
+        ELSE GREATEST(
+          COALESCE(${TABLE}.impressions_count, 0),
+          COALESCE(${TABLE}.video_views_count, 0)
+        )
+      END ;;
     value_format_name: decimal_0
-    description: "Cross-platform post volume for Top 20: GREATEST(impressions_count, video_views_count) on the latest snapshot per post (view deduped). Matches Agorapulse content reach when FB/YT only fill videoViewsCount (doc 07 §4 / §7)."
+    html: {% if value == nil %}N/A{% else %}{{ rendered_value }}{% endif %} ;;
+    description: "Latest-snapshot post volume, excluding YouTube. Non-YouTube posts use GREATEST(impressions_count, video_views_count) so Facebook video posts that only fill videoViewsCount still rank. YouTube cells render N/A."
+  }
+
+  measure: post_impressions_rank {
+    hidden: yes
+    label: "Post impressions (rank)"
+    type: number
+    sql:
+      COALESCE(SUM(
+        CASE
+          WHEN LOWER(${platform}) = 'youtube' THEN NULL
+          ELSE GREATEST(
+            COALESCE(${TABLE}.impressions_count, 0),
+            COALESCE(${TABLE}.video_views_count, 0)
+          )
+        END
+      ), -1) ;;
+    description: "Sort key. YouTube posts have no impression metric and rank last."
   }
 
   measure: post_engagements {

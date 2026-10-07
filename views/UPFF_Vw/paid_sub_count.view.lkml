@@ -23,7 +23,7 @@ view: paid_sub_count {
         ,amazon_fire_tablet_monthly as amazon_fire_tablet
         ,amazon_fire_tv_monthly as amazon_fire_tv
         ,web_monthly as web
-        ,vizio_monthly as vizio
+        ,vizio_monthly as vizio_tv
         ,android_monthly as android
         ,android_tv_monthly as android_tv
         FROM sub_count
@@ -38,7 +38,7 @@ view: paid_sub_count {
         ,amazon_fire_tablet_yearly as amazon_fire_tablet
         ,amazon_fire_tv_yearly as amazon_fire_tv
         ,web_yearly as web
-        ,vizio_yearly as vizio
+        ,vizio_yearly as vizio_tv
         ,android_yearly as android
         ,android_tv_yearly as android_tv
       FROM sub_count)
@@ -67,7 +67,7 @@ view: paid_sub_count {
     FROM sub_count2
 
     UNION ALL
-    SELECT report_date, billing_period, 'vizio', vizio
+    SELECT report_date, billing_period, 'vizio_tv', vizio_tv
     FROM sub_count2
 
     UNION ALL

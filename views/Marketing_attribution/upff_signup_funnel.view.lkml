@@ -1,5 +1,5 @@
 # =============================================================================
-# UP Faith & Family Sign-Up Funnel (iOS + Android + Web): Current vs Prior
+# UP Faith & Family Sign-Up Funnel (iOS + Android + Connected TV + Web): Current vs Prior
 # Optimized for Looker Conversational Analytics:
 #   - Every visible field has a plain-language label and a description that
 #     defines it, says when to use it, and lists common synonyms.
@@ -7,13 +7,36 @@
 #   - Filterable dimensions list their valid values (suggestions).
 #   - Rates are stored as ratios and formatted as percentages; changes are in
 #     percentage points and say so in the label.
+#   - Web entries carry the UTM campaign fields (source, name, medium, content,
+#     term) and a Marketing Platform bucket from the user's FIRST page view in
+#     each period. The "Web Campaign Filters" apply to Web users only: mobile
+#     (iOS, Android) and Connected TV (Roku, Amazon Fire TV, Vizio TV) users
+#     always pass through, so app data stays in every result.
+#     The filters run inside the derived table, so every metric (including the
+#     average daily rates) reflects them. App rows show "Mobile App (no UTM)" or
+#     "Connected TV (no UTM)".
 #
-#   Step | iOS / Android            | Web
+#   Step | iOS / Android / CTV      | Web
 #   -----+--------------------------+-------------------------------------------
+#   CTV  = Roku (roku), Amazon Fire TV (amazon_fire_tv), Vizio TV (vizio_tv);
+#          same Segment app tables as ios and android.
 #   1    | App Installed            | Landing Page Visit (/stream/, /subscribe/)
 #   2    | Sign Up Viewed           | Product Viewed
 #   3    | Subscription Plan Chosen | Signed Up
 #   4    | Order Completed          | Order Completed
+#
+# Trial to paid: each order carries the customer's email (user_email) and
+# user_id from the order_completed tables. Web orders are matched by email to
+# Chargebee payment_succeeded. Mobile and CTV orders are matched by user_id to
+# Vimeo OTT customer_product_free_trial_converted (app registration happens
+# after payment, so app orders have no email at order time).
+# Offer by order date:
+#   - Before 2026-09-09: 7-day FREE TRIAL. The user became a paying customer
+#     if a matching paid event lands in the window: Web within 10 days of the
+#     order (7-day trial + 3-day grace); apps from the period start through
+#     14 days after the period end.
+#   - On/after 2026-09-09: PAID ONLY test (no free trial). The order itself
+#     is the payment, so every order counts as a paying customer.
 #
 # Grain: one row per user per funnel step. A "user" is an anonymous_id per
 # platform per period (first entry on that platform in the period's date range);
@@ -52,25 +75,131 @@ view: upff_signup_funnel {
     default_value: "3"
   }
 
+  # ---------------------------------------------------------------------------
+  # Web campaign filters (apply to Web users only; app users always included)
+  # ---------------------------------------------------------------------------
+
+  filter: marketing_platform_filter {
+    type: string
+    group_label: "Web Campaign Filters (Web only)"
+    label: "Marketing Platform Filter"
+    description: "Limits WEB users to those who arrived from the selected marketing platform(s), e.g. Meta Ads or Google Search. iOS, Android and Connected TV users are not affected and stay in every result. Use this (not the Marketing Platform dimension) to filter by channel."
+    suggestions: ["Google Search", "Google PMax", "Google Display", "YouTube", "Meta Ads", "Bing Ads", "HubSpot", "UPtv Digital", "ChatGPT", "Organic Search", "Organic Social", "Others", "Unknown"]
+  }
+
+  filter: campaign_source_filter {
+    type: string
+    group_label: "Web Campaign Filters (Web only)"
+    label: "Campaign Source Filter"
+    description: "Limits WEB users to those whose arriving visit had the selected utm_source(s). iOS, Android and Connected TV users are not affected. Use this (not the Campaign Source dimension) to filter by source."
+    suggest_dimension: campaign_source
+  }
+
+  filter: campaign_name_filter {
+    type: string
+    group_label: "Web Campaign Filters (Web only)"
+    label: "Campaign Name Filter"
+    description: "Limits WEB users to those whose arriving visit had the selected utm_campaign(s). iOS, Android and Connected TV users are not affected. Use this (not the Campaign Name dimension) to filter by campaign."
+    suggest_dimension: campaign_name
+  }
+
+  filter: campaign_medium_filter {
+    type: string
+    group_label: "Web Campaign Filters (Web only)"
+    label: "Campaign Medium Filter"
+    description: "Limits WEB users to those whose arriving visit had the selected utm_medium(s), e.g. cpc or email. iOS, Android and Connected TV users are not affected."
+    suggest_dimension: campaign_medium
+  }
+
   derived_table: {
     sql:
       WITH
 
             -- ---------- Unioned event sources ----------
+            -- Web carries Segment UTM fields (context_campaign_*); mobile and CTV apps have none.
             entry_events AS (
-                SELECT 'iOS'     AS platform, anonymous_id, received_at FROM ios.app_installed
+                SELECT 'iOS'::VARCHAR(32) AS platform, anonymous_id, received_at,
+                       CAST(NULL AS VARCHAR(512)) AS campaign_source,
+                       CAST(NULL AS VARCHAR(512)) AS campaign_name,
+                       CAST(NULL AS VARCHAR(512)) AS campaign_medium,
+                       CAST(NULL AS VARCHAR(512)) AS campaign_content,
+                       CAST(NULL AS VARCHAR(512)) AS campaign_term,
+                       'Mobile App (no UTM)'::VARCHAR(64) AS marketing_platform
+                FROM ios.app_installed
                 UNION ALL
-                SELECT 'Android' AS platform, anonymous_id, received_at FROM android.app_installed
+                SELECT 'Android', anonymous_id, received_at,
+                       CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
+                       CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
+                       'Mobile App (no UTM)'::VARCHAR(64)
+                FROM android.app_installed
                 UNION ALL
-                SELECT 'Web'     AS platform, anonymous_id, received_at
+                SELECT 'Roku', anonymous_id, received_at,
+                       CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
+                       CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
+                       'Connected TV (no UTM)'::VARCHAR(64)
+                FROM roku.app_installed
+                UNION ALL
+                SELECT 'Amazon Fire TV', anonymous_id, received_at,
+                       CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
+                       CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
+                       'Connected TV (no UTM)'::VARCHAR(64)
+                FROM amazon_fire_tv.app_installed
+                UNION ALL
+                SELECT 'Vizio TV', anonymous_id, received_at,
+                       CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
+                       CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
+                       'Connected TV (no UTM)'::VARCHAR(64)
+                FROM vizio_tv.app_installed
+                UNION ALL
+                SELECT 'Web', anonymous_id, received_at,
+                       context_campaign_source::VARCHAR(512),
+                       context_campaign_name::VARCHAR(512),
+                       context_campaign_medium::VARCHAR(512),
+                       context_campaign_content::VARCHAR(512),
+                       context_campaign_term::VARCHAR(512),
+                       CASE
+                         WHEN LOWER(context_campaign_source) IN ('google','google_ads','adwords')
+                              AND LOWER(context_campaign_medium) IN ('cpc','ppc','paid','g')
+                              AND LOWER(context_campaign_name) LIKE '%display%'                       THEN 'Google Display'
+                         WHEN LOWER(context_campaign_source) = 'youtube'                              THEN 'YouTube'
+                         WHEN LOWER(context_campaign_source) = 'chatgpt.com'                          THEN 'ChatGPT'
+                         WHEN LOWER(context_campaign_source) IN ('google','google_ads','adwords')
+                              AND LOWER(context_campaign_medium) IN ('cpc','ppc','paid','g')
+                              AND (LOWER(context_campaign_name) LIKE '%pmax%'
+                                   OR LOWER(context_campaign_name) LIKE '%performance max%')          THEN 'Google PMax'
+                         WHEN LOWER(context_campaign_source) IN ('google','google_ads','adwords')
+                              AND LOWER(context_campaign_medium) IN ('cpc','ppc','paid','g')          THEN 'Google Search'
+                         WHEN LOWER(context_campaign_source) IN ('facebook','meta','ig','fb','an','fb-sitelink','th','msg',
+                                                                 'site_source_name','site.source.name','campaign.name')
+                              OR LOWER(context_campaign_source) LIKE 'meta%'                          THEN 'Meta Ads'
+                         WHEN LOWER(context_campaign_source) IN ('bing','bing_ads','microsoft','msn') THEN 'Bing Ads'
+                         WHEN LOWER(context_campaign_source) IN ('hubspot','hubspot_upff','hubspot_uptv')
+                              OR LOWER(context_campaign_medium) LIKE 'email%'                         THEN 'HubSpot'
+                         WHEN LOWER(context_campaign_source) IN ('uptv','uptv_movies_app')            THEN 'UPtv Digital'
+                         WHEN LOWER(context_campaign_medium) = 'organic'
+                              AND LOWER(context_campaign_source) IN ('google','bing','duckduckgo','yahoo') THEN 'Organic Search'
+                         WHEN LOWER(context_campaign_medium) IN ('social','organic_social')
+                              OR (LOWER(context_campaign_medium) = 'organic'
+                                  AND LOWER(context_campaign_source) IN ('facebook','instagram','tiktok','x','twitter','linkedin'))
+                                                                                                      THEN 'Organic Social'
+                         WHEN LOWER(context_campaign_source) IN ('organic','direct')                  THEN 'Others'
+                         WHEN context_campaign_source IS NULL                                         THEN 'Unknown'
+                         ELSE 'Others'
+                       END::VARCHAR(64)
                 FROM javascript_upff_home.pages
                 --WHERE path IN ('/stream/', '/subscribe/')
             ),
 
       sign_up_viewed_events AS (
-      SELECT 'iOS'     AS platform, anonymous_id, received_at FROM ios.sign_up_viewed
+      SELECT 'iOS'::VARCHAR(32) AS platform, anonymous_id, received_at FROM ios.sign_up_viewed
       UNION ALL
       SELECT 'Android' AS platform, anonymous_id, received_at FROM android.sign_up_viewed
+      UNION ALL
+      SELECT 'Roku'    AS platform, anonymous_id, received_at FROM roku.sign_up_viewed
+      UNION ALL
+      SELECT 'Amazon Fire TV' AS platform, anonymous_id, received_at FROM amazon_fire_tv.sign_up_viewed
+      UNION ALL
+      SELECT 'Vizio TV' AS platform, anonymous_id, received_at FROM vizio_tv.sign_up_viewed
       UNION ALL
       SELECT 'Web'     AS platform, anonymous_id, received_at
       FROM javascript_upentertainment_checkout.product_viewed
@@ -78,38 +207,84 @@ view: upff_signup_funnel {
       ),
 
       plan_chosen_events AS (
-      SELECT 'iOS'     AS platform, anonymous_id, received_at FROM ios.subscription_plan_chosen
+      SELECT 'iOS'::VARCHAR(32) AS platform, anonymous_id, received_at FROM ios.subscription_plan_chosen
       UNION ALL
       SELECT 'Android' AS platform, anonymous_id, received_at FROM android.subscription_plan_chosen
+      UNION ALL
+      SELECT 'Roku'    AS platform, anonymous_id, received_at FROM roku.subscription_plan_chosen
+      UNION ALL
+      SELECT 'Amazon Fire TV' AS platform, anonymous_id, received_at FROM amazon_fire_tv.subscription_plan_chosen
+      UNION ALL
+      SELECT 'Vizio TV' AS platform, anonymous_id, received_at FROM vizio_tv.subscription_plan_chosen
       UNION ALL
       SELECT 'Web'     AS platform, anonymous_id, received_at
       FROM javascript_upentertainment_checkout.signed_up
       WHERE brand = 'upfaithandfamily'
       ),
 
+      -- Each order carries the customer's email (Web match) and user_id (app match)
       order_completed_events AS (
-      SELECT 'iOS'     AS platform, anonymous_id, received_at FROM ios.order_completed
+      SELECT 'iOS'::VARCHAR(32) AS platform, anonymous_id, received_at,
+      LOWER(TRIM(user_email))::VARCHAR(320) AS customer_email,
+      TRIM(user_id::VARCHAR(256))::VARCHAR(256) AS user_id
+      FROM ios.order_completed
       UNION ALL
-      SELECT 'Android' AS platform, anonymous_id, received_at FROM android.order_completed
+      SELECT 'Android',        anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(user_id::VARCHAR(256)) FROM android.order_completed
       UNION ALL
-      SELECT 'Web'     AS platform, anonymous_id, received_at
+      SELECT 'Roku',           anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(user_id::VARCHAR(256)) FROM roku.order_completed
+      UNION ALL
+      SELECT 'Amazon Fire TV', anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(user_id::VARCHAR(256)) FROM amazon_fire_tv.order_completed
+      UNION ALL
+      SELECT 'Vizio TV',       anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(user_id::VARCHAR(256)) FROM vizio_tv.order_completed
+      UNION ALL
+      SELECT 'Web',            anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(user_id::VARCHAR(256))
       FROM javascript_upentertainment_checkout.order_completed
       WHERE brand = 'upfaithandfamily'
       ),
 
+      -- Match key: email for Web (Chargebee), user_id for mobile and CTV apps (Vimeo OTT).
+      -- App email is collected after payment, so it is not on app orders; user_id is.
+      paid_events AS (
+      SELECT 'Web'::VARCHAR(8) AS paid_source,
+      LOWER(TRIM(content_customer_email))::VARCHAR(320) AS match_key,
+      received_at AS paid_at
+      FROM chargebee_webhook_events.payment_succeeded
+      UNION ALL
+      SELECT 'App', TRIM(user_id::VARCHAR(256)), received_at
+      FROM vimeo_ott_webhook.customer_product_free_trial_converted
+      ),
+
       -- ---------- Step 1: first entry per user per platform in each period ----------
+      -- The first entry row is kept whole so its UTM fields describe how the
+      -- user arrived (first touch within the period).
       entries AS (
-      SELECT platform, anonymous_id, MIN(received_at) AS entry_at, 'Current' AS period
+      SELECT platform, anonymous_id, entry_at, period,
+      campaign_source, campaign_name, campaign_medium, campaign_content, campaign_term, marketing_platform
+      FROM (
+      SELECT platform, anonymous_id, received_at AS entry_at, 'Current' AS period,
+      campaign_source, campaign_name, campaign_medium, campaign_content, campaign_term, marketing_platform,
+      ROW_NUMBER() OVER (PARTITION BY platform, anonymous_id ORDER BY received_at) AS rn
       FROM entry_events
       WHERE {% condition current_period %} received_at {% endcondition %}
-      GROUP BY platform, anonymous_id
 
       UNION ALL
 
-      SELECT platform, anonymous_id, MIN(received_at) AS entry_at, 'Prior' AS period
+      SELECT platform, anonymous_id, received_at AS entry_at, 'Prior' AS period,
+      campaign_source, campaign_name, campaign_medium, campaign_content, campaign_term, marketing_platform,
+      ROW_NUMBER() OVER (PARTITION BY platform, anonymous_id ORDER BY received_at) AS rn
       FROM entry_events
       WHERE {% condition prior_period %} received_at {% endcondition %}
-      GROUP BY platform, anonymous_id
+      ) ranked
+      WHERE rn = 1
+      -- Web Campaign Filters: applied to Web users only; app users always pass
+      AND (
+      platform <> 'Web'
+      OR (    {% condition marketing_platform_filter %} marketing_platform {% endcondition %}
+      AND {% condition campaign_source_filter %}    campaign_source    {% endcondition %}
+      AND {% condition campaign_name_filter %}      campaign_name      {% endcondition %}
+      AND {% condition campaign_medium_filter %}    campaign_medium    {% endcondition %}
+      )
+      )
       ),
 
       -- ---------- Step 2 ----------
@@ -140,7 +315,13 @@ view: upff_signup_funnel {
 
       -- ---------- Step 4 ----------
       order_completed AS (
-      SELECT pc.platform, pc.anonymous_id, pc.period, MIN(e.received_at) AS order_completed_at
+      SELECT platform, anonymous_id, period, order_completed_at, customer_email, user_id,
+      CASE WHEN platform = 'Web' THEN customer_email ELSE user_id END AS match_key
+      FROM (
+      SELECT pc.platform, pc.anonymous_id, pc.period,
+      e.received_at AS order_completed_at, e.customer_email, e.user_id,
+      ROW_NUMBER() OVER (PARTITION BY pc.platform, pc.anonymous_id, pc.period
+      ORDER BY e.received_at) AS rn
       FROM plan_chosen pc
       JOIN entries en
       ON en.anonymous_id = pc.anonymous_id AND en.platform = pc.platform AND en.period = pc.period
@@ -149,20 +330,97 @@ view: upff_signup_funnel {
       AND e.platform     = pc.platform
       AND e.received_at >= pc.plan_chosen_at
       AND e.received_at <  DATEADD(day, {% parameter attribution_days %}, en.entry_at)
-      GROUP BY pc.platform, pc.anonymous_id, pc.period
+      ) first_order
+      WHERE rn = 1
+      ),
+
+      -- Period start/end from the Current Period and Prior Period filters
+      -- (date_end is the exclusive end). Falls back to the first/last entry
+      -- when a filter has an open start or end.
+      period_bounds AS (
+      SELECT
+      period
+      , COALESCE(CASE WHEN period = 'Current' THEN CAST({% date_start current_period %} AS TIMESTAMP)
+      ELSE CAST({% date_start prior_period %} AS TIMESTAMP) END,
+      MIN(entry_at)) AS period_start
+      , COALESCE(CASE WHEN period = 'Current' THEN CAST({% date_end current_period %} AS TIMESTAMP)
+      ELSE CAST({% date_end prior_period %} AS TIMESTAMP) END,
+      DATEADD(day, 1, MAX(entry_at))) AS period_end
+      FROM entries
+      GROUP BY period
+      ),
+
+      -- App user_id can be missing on the first order row (identify happens around
+      -- registration), so resolve it from ANY order event for the same user.
+      app_user_ids AS (
+      SELECT DISTINCT platform, anonymous_id, user_id
+      FROM order_completed_events
+      WHERE platform <> 'Web' AND user_id IS NOT NULL AND user_id <> ''
+      ),
+
+      -- Paid match for free-trial orders.
+      -- Web: email -> Chargebee, from 1 day before to 10 days after the order.
+      -- Apps: any of the user's user_ids -> Vimeo OTT, from the period start
+      -- through 14 days after the period end.
+      paid AS (
+      SELECT platform, anonymous_id, period, MIN(paid_at) AS paid_at
+      FROM (
+      SELECT oc.platform, oc.anonymous_id, oc.period, pe.paid_at
+      FROM order_completed oc
+      JOIN paid_events pe
+      ON  pe.paid_source = 'Web'
+      AND pe.match_key   = oc.customer_email
+      AND pe.paid_at    >= DATEADD(day, -1, oc.order_completed_at)
+      AND pe.paid_at    <  DATEADD(day, 10, oc.order_completed_at)
+      WHERE oc.platform = 'Web'
+      AND oc.customer_email IS NOT NULL AND oc.customer_email <> ''
+      AND oc.order_completed_at < '2026-09-09'
+
+      UNION ALL
+
+      SELECT oc.platform, oc.anonymous_id, oc.period, pe.paid_at
+      FROM order_completed oc
+      JOIN period_bounds pb
+      ON pb.period = oc.period
+      JOIN app_user_ids u
+      ON  u.platform     = oc.platform
+      AND u.anonymous_id = oc.anonymous_id
+      JOIN paid_events pe
+      ON  pe.paid_source = 'App'
+      AND pe.match_key   = u.user_id
+      -- Apps: any trial conversion from the period start through 14 days after the period end
+      AND pe.paid_at    >= pb.period_start
+      AND pe.paid_at    <  DATEADD(day, 14, pb.period_end)
+      WHERE oc.platform <> 'Web'
+      AND oc.order_completed_at < '2026-09-09'
+      ) matched
+      GROUP BY platform, anonymous_id, period
       ),
 
       user_funnel AS (
       SELECT
       en.platform
-      , CASE WHEN en.platform = 'Web' THEN 'Web' ELSE 'Mobile App' END AS platform_group
+      , CASE WHEN en.platform = 'Web'                                   THEN 'Web'
+      WHEN en.platform IN ('Roku', 'Amazon Fire TV', 'Vizio TV')     THEN 'Connected TV'
+      ELSE 'Mobile App' END AS platform_group
       , en.anonymous_id
       , en.period
       , en.entry_at
       , DATE_TRUNC('day', en.entry_at) AS entry_day
+      , en.campaign_source
+      , en.campaign_name
+      , en.campaign_medium
+      , en.campaign_content
+      , en.campaign_term
+      , en.marketing_platform
       , sv.signup_viewed_at
       , pc.plan_chosen_at
       , oc.order_completed_at
+      , oc.customer_email
+      , COALESCE(oc.user_id, uid.user_id) AS user_id
+      -- Paid-only orders (on/after 2026-09-09) are paid at the order itself
+      , CASE WHEN oc.order_completed_at >= '2026-09-09' THEN oc.order_completed_at
+      ELSE pd.paid_at END AS paid_at
       FROM entries en
       LEFT JOIN signup_viewed sv
       ON sv.anonymous_id = en.anonymous_id AND sv.platform = en.platform AND sv.period = en.period
@@ -170,6 +428,10 @@ view: upff_signup_funnel {
       ON pc.anonymous_id = en.anonymous_id AND pc.platform = en.platform AND pc.period = en.period
       LEFT JOIN order_completed oc
       ON oc.anonymous_id = en.anonymous_id AND oc.platform = en.platform AND oc.period = en.period
+      LEFT JOIN paid pd
+      ON pd.anonymous_id = en.anonymous_id AND pd.platform = en.platform AND pd.period = en.period
+      LEFT JOIN (SELECT platform, anonymous_id, MAX(user_id) AS user_id FROM app_user_ids GROUP BY platform, anonymous_id) uid
+      ON uid.anonymous_id = oc.anonymous_id AND uid.platform = oc.platform
       ),
 
       user_days AS (
@@ -180,7 +442,7 @@ view: upff_signup_funnel {
       , DATEDIFF(day, MIN(uf.entry_day) OVER (PARTITION BY uf.period), uf.entry_day) + 1 AS day_of_period
 
       -- Same-day counts for the average daily rates, at three levels:
-      --   _all = all platforms, _group = Mobile App / Web, _platform = iOS / Android / Web
+      --   _all = all platforms, _group = Mobile App / Connected TV / Web, _platform = each platform
       , COUNT(*)                   OVER (PARTITION BY uf.period, uf.entry_day)                    AS day_entries_all
       , COUNT(*)                   OVER (PARTITION BY uf.period, uf.platform_group, uf.entry_day) AS day_entries_group
       , COUNT(*)                   OVER (PARTITION BY uf.period, uf.platform, uf.entry_day)       AS day_entries_platform
@@ -239,18 +501,18 @@ view: upff_signup_funnel {
 
   dimension: platform {
     label: "Platform"
-    description: "Where the user entered the funnel: iOS app, Android app, or Web (upfaithandfamily.com marketing site). Use to filter or break down any metric by platform. Also called: device, channel, app vs web."
+    description: "Where the user entered the funnel: iOS app, Android app, a Connected TV app (Roku, Amazon Fire TV, Vizio TV), or Web (upfaithandfamily.com marketing site). Use to filter or break down any metric by platform. Also called: device, channel, app vs web, CTV."
     type: string
     sql: ${TABLE}.platform ;;
-    suggestions: ["iOS", "Android", "Web"]
+    suggestions: ["iOS", "Android", "Roku", "Amazon Fire TV", "Vizio TV", "Web"]
   }
 
   dimension: platform_group {
     label: "Platform Group"
-    description: "Mobile App (iOS and Android combined) or Web. Use when the question is about apps overall versus the website. Also called: app vs web, mobile vs web."
+    description: "Mobile App (iOS and Android combined), Connected TV (Roku, Amazon Fire TV and Vizio TV combined) or Web. Use when the question is about mobile, TV apps or the website overall. Also called: app vs web, mobile vs TV vs web, CTV, OTT, smart TV."
     type: string
     sql: ${TABLE}.platform_group ;;
-    suggestions: ["Mobile App", "Web"]
+    suggestions: ["Mobile App", "Connected TV", "Web"]
   }
 
   dimension: period {
@@ -282,7 +544,7 @@ view: upff_signup_funnel {
 
   dimension_group: entry {
     label: "Entry"
-    description: "When the user entered the funnel: app install time (iOS/Android) or first landing page visit (Web). Use for daily or weekly trends. Also called: install date, visit date, sign-up start date."
+    description: "When the user entered the funnel: app install time (iOS, Android, Connected TV) or first landing page visit (Web). Use for daily or weekly trends. Also called: install date, visit date, sign-up start date."
     type: time
     timeframes: [raw, time, date, week, month, day_of_week]
     sql: ${TABLE}.entry_at ;;
@@ -302,12 +564,139 @@ view: upff_signup_funnel {
     type: yesno
     sql: ${TABLE}.order_completed_at IS NOT NULL ;;
   }
+  # ---------------------------------------------------------------------------
+  # Trial to paid
+  # ---------------------------------------------------------------------------
+
+  dimension: customer_email {
+    group_label: "Trial to Paid"
+    label: "Customer Email"
+    description: "Email on the user's first Order Completed event (lowercased). Used to match Web orders to Chargebee payments; app orders usually have no email because registration happens after payment. Personal data: use only for user-level drill-downs."
+    type: string
+    sql: ${TABLE}.customer_email ;;
+    tags: ["pii", "email"]
+  }
+
+  dimension: user_id {
+    group_label: "Trial to Paid"
+    label: "Customer User ID"
+    description: "Segment user_id on the user's first Order Completed event. Used to match mobile and Connected TV orders to Vimeo OTT trial-converted events. Use only for user-level drill-downs."
+    type: string
+    sql: ${TABLE}.user_id ;;
+    tags: ["pii"]
+  }
+
+  dimension: free_trial_order {
+    group_label: "Trial to Paid"
+    label: "Free Trial Order"
+    description: "Yes if the order was completed before 2026-09-09, when sign-ups started with a 7-day free trial. Use with Became Paying Customer to see how many free-trial sign-ups converted to paid. Also called: trial sign-up, trial start."
+    type: yesno
+    sql: ${TABLE}.order_completed_at < '2026-09-09' ;;
+  }
+
+  dimension: signup_offer {
+    group_label: "Trial to Paid"
+    label: "Sign-Up Offer"
+    description: "Offer in place when the user ordered: Free Trial (7-day trial, orders before 2026-09-09) or Paid Only (no-trial test, orders on/after 2026-09-09). Blank if the user did not order. Use to compare the trial and paid-only tests. Also called: offer, trial vs paid, test group."
+    type: string
+    sql: CASE WHEN ${TABLE}.order_completed_at IS NULL THEN NULL
+              WHEN ${TABLE}.order_completed_at < '2026-09-09' THEN 'Free Trial'
+              ELSE 'Paid Only' END ;;
+    suggestions: ["Free Trial", "Paid Only"]
+  }
+
+  dimension: became_paying {
+    group_label: "Trial to Paid"
+    label: "Became Paying Customer"
+    description: "Yes if the user became a paying customer. Free-trial orders: Web needs a Chargebee payment_succeeded (matched by email) within 10 days of the order; mobile and Connected TV need a Vimeo OTT free_trial_converted (matched by user_id) between the period start and 14 days after the period end. Paid-only orders (on/after 2026-09-09): always yes, because the order is the payment. Also called: converted to paid, paid subscriber."
+    type: yesno
+    sql: ${TABLE}.paid_at IS NOT NULL ;;
+  }
+
+  dimension_group: paid {
+    group_label: "Trial to Paid"
+    label: "Paid"
+    description: "When the user became a paying customer: the first matching paid event after a free-trial order, or the order itself for paid-only orders."
+    type: time
+    timeframes: [raw, date, week, month]
+    sql: ${TABLE}.paid_at ;;
+  }
+
+  dimension: days_order_to_paid {
+    group_label: "Trial to Paid"
+    label: "Days from Order to Paid"
+    description: "Days between a free-trial order (trial start) and the first paid event. 0 for paid-only orders."
+    type: number
+    sql: DATEDIFF(day, ${TABLE}.order_completed_at, ${TABLE}.paid_at) ;;
+  }
+
 
   dimension: anonymous_id {
     label: "Anonymous ID"
     description: "Segment anonymous ID of the user. Use only for user-level drill-downs."
     type: string
     sql: ${TABLE}.anonymous_id ;;
+  }
+
+  # ---------------------------------------------------------------------------
+  # Web campaign (UTM) dimensions - for grouping and breakdowns
+  # From the user's first marketing-site page view in the period (first touch).
+  # can_filter: no, so filtering always goes through the Web Campaign Filters
+  # above, which keep iOS, Android and Connected TV users in the results.
+  # ---------------------------------------------------------------------------
+
+  dimension: campaign_source {
+    group_label: "Web Campaign (UTM)"
+    label: "Campaign Source"
+    description: "utm_source of the visit that brought the user to the marketing site (Segment context_campaign_source), e.g. google, facebook, hubspot. Web only (mobile and CTV app users are blank). Group by this; to filter, use the Web Campaign Filters. Also called: UTM source, traffic source, referrer source."
+    type: string
+    sql: ${TABLE}.campaign_source ;;
+    can_filter: no
+  }
+
+  dimension: campaign_name {
+    group_label: "Web Campaign (UTM)"
+    label: "Campaign Name"
+    description: "utm_campaign of the visit that brought the user to the marketing site (Segment context_campaign_name). Web only (mobile and CTV app users are blank). Group by this; to filter, use the Web Campaign Filters. Also called: UTM campaign, campaign, ad campaign."
+    type: string
+    sql: ${TABLE}.campaign_name ;;
+    can_filter: no
+  }
+
+  dimension: campaign_medium {
+    group_label: "Web Campaign (UTM)"
+    label: "Campaign Medium"
+    description: "utm_medium of the arriving visit (Segment context_campaign_medium), e.g. cpc, email, social. Web only (mobile and CTV app users are blank). Group by this; to filter, use the Web Campaign Filters. Also called: UTM medium, channel type."
+    type: string
+    sql: ${TABLE}.campaign_medium ;;
+    can_filter: no
+  }
+
+  dimension: campaign_content {
+    group_label: "Web Campaign (UTM)"
+    label: "Campaign Content"
+    description: "utm_content of the arriving visit (Segment context_campaign_content), usually the ad or creative variant. Web only (mobile and CTV app users are blank). Group by this; to filter, use the Web Campaign Filters. Also called: UTM content, ad variant, creative."
+    type: string
+    sql: ${TABLE}.campaign_content ;;
+    can_filter: no
+  }
+
+  dimension: campaign_term {
+    group_label: "Web Campaign (UTM)"
+    label: "Campaign Term"
+    description: "utm_term of the arriving visit (Segment context_campaign_term), usually the paid search keyword. Web only (mobile and CTV app users are blank). Group by this; to filter, use the Web Campaign Filters. Also called: UTM term, keyword."
+    type: string
+    sql: ${TABLE}.campaign_term ;;
+    can_filter: no
+  }
+
+  dimension: marketing_platform {
+    group_label: "Web Campaign (UTM)"
+    label: "Marketing Platform"
+    description: "Normalized marketing platform for the visit that brought a web user to the site, based on Campaign Source, Medium and Name: Google Search, Google PMax, Google Display, YouTube, Meta Ads, Bing Ads, HubSpot, UPtv Digital, ChatGPT, Organic Search, Organic Social, Others, Unknown. iOS and Android users show as Mobile App (no UTM); Connected TV users show as Connected TV (no UTM). Group by this; to filter, use the Marketing Platform Filter. Also called: channel, ad platform, traffic channel."
+    type: string
+    sql: ${TABLE}.marketing_platform ;;
+    can_filter: no
   }
 
   # ---------------------------------------------------------------------------
@@ -432,7 +821,7 @@ view: upff_signup_funnel {
   measure: entries_current {
     group_label: "Headline Metrics"
     label: "Entries (Current Period)"
-    description: "Number of users who entered the funnel in the current period: app installs (iOS/Android) plus landing page visitors (Web). Also called: installs, visitors, traffic, top of funnel."
+    description: "Number of users who entered the funnel in the current period: app installs (iOS, Android, Connected TV) plus landing page visitors (Web). Also called: installs, visitors, traffic, top of funnel."
     type: count_distinct
     sql: ${user_pk} ;;
     filters: [period: "Current"]
@@ -477,7 +866,7 @@ view: upff_signup_funnel {
   measure: entries_prior {
     group_label: "Headline Metrics"
     label: "Entries (Prior Period)"
-    description: "Number of users who entered the funnel in the prior period: app installs (iOS/Android) plus landing page visitors (Web). Also called: installs, visitors, traffic, top of funnel."
+    description: "Number of users who entered the funnel in the prior period: app installs (iOS, Android, Connected TV) plus landing page visitors (Web). Also called: installs, visitors, traffic, top of funnel."
     type: count_distinct
     sql: ${user_pk} ;;
     filters: [period: "Prior"]
@@ -577,6 +966,181 @@ view: upff_signup_funnel {
   }
 
   # ---------------------------------------------------------------------------
+  # Trial to paid (orders before 2026-09-09)
+  # ---------------------------------------------------------------------------
+
+  measure: trial_orders_current {
+    group_label: "Trial to Paid"
+    label: "Free Trial Sign-Ups (Current Period)"
+    description: "Current-period users whose order was a free-trial sign-up (completed before 2026-09-09). Also called: trial starts, trials."
+    type: count_distinct
+    sql: ${user_pk} ;;
+    filters: [period: "Current", converted: "yes", free_trial_order: "yes"]
+    value_format_name: decimal_0
+  }
+
+  measure: trial_paid_current {
+    group_label: "Trial to Paid"
+    label: "Trials Converted to Paid (Current Period)"
+    description: "Current-period free-trial sign-ups who became paying customers (Web: within 10 days of the order; apps: by 14 days after the period end). Also called: trial conversions."
+    type: count_distinct
+    sql: ${user_pk} ;;
+    filters: [period: "Current", converted: "yes", free_trial_order: "yes", became_paying: "yes"]
+    value_format_name: decimal_0
+  }
+
+  measure: trial_to_paid_rate_current {
+    group_label: "Trial to Paid"
+    label: "Trial to Paid Rate (Current Period)"
+    description: "Share of current-period free-trial sign-ups who became paying customers. Also called: trial conversion rate, trial-to-paid conversion."
+    type: number
+    sql: 1.0 * ${trial_paid_current} / NULLIF(${trial_orders_current}, 0) ;;
+    value_format_name: percent_2
+  }
+
+  measure: trial_orders_prior {
+    group_label: "Trial to Paid"
+    label: "Free Trial Sign-Ups (Prior Period)"
+    description: "Prior-period users whose order was a free-trial sign-up (completed before 2026-09-09). Also called: trial starts, trials."
+    type: count_distinct
+    sql: ${user_pk} ;;
+    filters: [period: "Prior", converted: "yes", free_trial_order: "yes"]
+    value_format_name: decimal_0
+  }
+
+  measure: trial_paid_prior {
+    group_label: "Trial to Paid"
+    label: "Trials Converted to Paid (Prior Period)"
+    description: "Prior-period free-trial sign-ups who became paying customers (Web: within 10 days of the order; apps: by 14 days after the period end). Also called: trial conversions."
+    type: count_distinct
+    sql: ${user_pk} ;;
+    filters: [period: "Prior", converted: "yes", free_trial_order: "yes", became_paying: "yes"]
+    value_format_name: decimal_0
+  }
+
+  measure: trial_to_paid_rate_prior {
+    group_label: "Trial to Paid"
+    label: "Trial to Paid Rate (Prior Period)"
+    description: "Share of prior-period free-trial sign-ups who became paying customers. Also called: trial conversion rate, trial-to-paid conversion."
+    type: number
+    sql: 1.0 * ${trial_paid_prior} / NULLIF(${trial_orders_prior}, 0) ;;
+    value_format_name: percent_2
+  }
+
+  measure: paying_customers_current {
+    group_label: "Trial to Paid"
+    label: "Paying Customers (Current Period)"
+    description: "Current-period users who became paying customers: free-trial sign-ups who converted, plus paid-only orders (on/after 2026-09-09). Comparable across the trial and paid-only tests. Also called: paid subscribers, paid conversions."
+    type: count_distinct
+    sql: ${user_pk} ;;
+    filters: [period: "Current", became_paying: "yes"]
+    value_format_name: decimal_0
+  }
+
+  measure: entry_to_paid_rate_current {
+    group_label: "Trial to Paid"
+    label: "Entry to Paid Rate (Current Period)"
+    description: "Paying Customers / Entries for the current period. The fair way to compare the free-trial period with the paid-only test, since both end in a paying customer. Also called: paid conversion rate, visit-to-paid, install-to-paid."
+    type: number
+    sql: 1.0 * ${paying_customers_current} / NULLIF(${entries_current}, 0) ;;
+    value_format_name: percent_2
+  }
+
+  measure: paying_customers_prior {
+    group_label: "Trial to Paid"
+    label: "Paying Customers (Prior Period)"
+    description: "Prior-period users who became paying customers: free-trial sign-ups who converted, plus paid-only orders (on/after 2026-09-09). Comparable across the trial and paid-only tests. Also called: paid subscribers, paid conversions."
+    type: count_distinct
+    sql: ${user_pk} ;;
+    filters: [period: "Prior", became_paying: "yes"]
+    value_format_name: decimal_0
+  }
+
+  measure: entry_to_paid_rate_prior {
+    group_label: "Trial to Paid"
+    label: "Entry to Paid Rate (Prior Period)"
+    description: "Paying Customers / Entries for the prior period. The fair way to compare the free-trial period with the paid-only test, since both end in a paying customer. Also called: paid conversion rate, visit-to-paid, install-to-paid."
+    type: number
+    sql: 1.0 * ${paying_customers_prior} / NULLIF(${entries_prior}, 0) ;;
+    value_format_name: percent_2
+  }
+
+  measure: entry_to_paid_rate_change_pp {
+    group_label: "Trial to Paid"
+    label: "Entry to Paid Rate Change in Percentage Points"
+    description: "Current minus prior Entry to Paid Rate, in percentage points. Set Prior to a week before 2026-09-09 and Current to a week after to compare the free trial with the paid-only test."
+    type: number
+    sql: 100.0 * (${entry_to_paid_rate_current} - ${entry_to_paid_rate_prior}) ;;
+    value_format_name: decimal_2
+  }
+
+  measure: paying_customers {
+    group_label: "Trial to Paid"
+    label: "Paying Customers"
+    description: "Users who became paying customers (converted trials plus paid-only orders), for any grouping such as Sign-Up Offer, Platform or Entry Week."
+    type: count_distinct
+    sql: ${user_pk} ;;
+    filters: [became_paying: "yes"]
+    value_format_name: decimal_0
+  }
+
+  measure: entry_to_paid_rate {
+    group_label: "Trial to Paid"
+    label: "Entry to Paid Rate"
+    description: "Paying Customers / Entries, for any grouping. Group by Entry Week across 2026-09-09 to see the free trial vs the paid-only test."
+    type: number
+    sql: 1.0 * ${paying_customers} / NULLIF(${entries}, 0) ;;
+    value_format_name: percent_2
+  }
+
+  measure: trial_to_paid_rate_change_pp {
+    group_label: "Trial to Paid"
+    label: "Trial to Paid Rate Change in Percentage Points"
+    description: "Current minus prior Trial to Paid Rate, in percentage points."
+    type: number
+    sql: 100.0 * (${trial_to_paid_rate_current} - ${trial_to_paid_rate_prior}) ;;
+    value_format_name: decimal_2
+  }
+
+  measure: trial_orders {
+    group_label: "Trial to Paid"
+    label: "Free Trial Sign-Ups"
+    description: "Users whose order was a free-trial sign-up (before 2026-09-09), for any grouping such as Platform or Entry Week."
+    type: count_distinct
+    sql: ${user_pk} ;;
+    filters: [converted: "yes", free_trial_order: "yes"]
+    value_format_name: decimal_0
+  }
+
+  measure: trial_paid {
+    group_label: "Trial to Paid"
+    label: "Trials Converted to Paid"
+    description: "Free-trial sign-ups who became paying customers, for any grouping."
+    type: count_distinct
+    sql: ${user_pk} ;;
+    filters: [converted: "yes", free_trial_order: "yes", became_paying: "yes"]
+    value_format_name: decimal_0
+  }
+
+  measure: trial_to_paid_rate {
+    group_label: "Trial to Paid"
+    label: "Trial to Paid Rate"
+    description: "Trials Converted to Paid / Free Trial Sign-Ups, for any grouping (e.g. by Platform or Entry Week)."
+    type: number
+    sql: 1.0 * ${trial_paid} / NULLIF(${trial_orders}, 0) ;;
+    value_format_name: percent_2
+  }
+
+  measure: avg_days_order_to_paid {
+    group_label: "Trial to Paid"
+    label: "Average Days from Trial Start to Paid"
+    description: "Average days between a free-trial order and becoming a paying customer."
+    type: average
+    sql: CASE WHEN ${TABLE}.step_number = 1 AND ${TABLE}.order_completed_at < '2026-09-09' THEN ${days_order_to_paid} END ;;
+    value_format_name: decimal_1
+  }
+
+  # ---------------------------------------------------------------------------
   # Platform comparison (respects the period filters)
   # ---------------------------------------------------------------------------
 
@@ -599,6 +1163,46 @@ view: upff_signup_funnel {
       / NULLIF(COUNT(DISTINCT CASE WHEN ${platform} = 'Android' THEN ${user_pk} END), 0) ;;
     value_format_name: percent_2
   }
+  measure: effective_conversion_roku {
+    group_label: "Platform Comparison"
+    label: "Conversion Rate - Roku"
+    description: "Entry-to-order conversion rate for the Roku app only."
+    type: number
+    sql: 1.0 * COUNT(DISTINCT CASE WHEN ${platform} = 'Roku' AND ${TABLE}.order_completed_at IS NOT NULL THEN ${user_pk} END)
+      / NULLIF(COUNT(DISTINCT CASE WHEN ${platform} = 'Roku' THEN ${user_pk} END), 0) ;;
+    value_format_name: percent_2
+  }
+
+  measure: effective_conversion_fire_tv {
+    group_label: "Platform Comparison"
+    label: "Conversion Rate - Amazon Fire TV"
+    description: "Entry-to-order conversion rate for the Amazon Fire TV app only."
+    type: number
+    sql: 1.0 * COUNT(DISTINCT CASE WHEN ${platform} = 'Amazon Fire TV' AND ${TABLE}.order_completed_at IS NOT NULL THEN ${user_pk} END)
+      / NULLIF(COUNT(DISTINCT CASE WHEN ${platform} = 'Amazon Fire TV' THEN ${user_pk} END), 0) ;;
+    value_format_name: percent_2
+  }
+
+  measure: effective_conversion_vizio {
+    group_label: "Platform Comparison"
+    label: "Conversion Rate - Vizio TV"
+    description: "Entry-to-order conversion rate for the Vizio TV app only."
+    type: number
+    sql: 1.0 * COUNT(DISTINCT CASE WHEN ${platform} = 'Vizio TV' AND ${TABLE}.order_completed_at IS NOT NULL THEN ${user_pk} END)
+      / NULLIF(COUNT(DISTINCT CASE WHEN ${platform} = 'Vizio TV' THEN ${user_pk} END), 0) ;;
+    value_format_name: percent_2
+  }
+
+  measure: effective_conversion_ctv {
+    group_label: "Platform Comparison"
+    label: "Conversion Rate - Connected TV"
+    description: "Entry-to-order conversion rate for all Connected TV apps combined (Roku, Amazon Fire TV, Vizio TV). Also called: CTV conversion, TV app conversion."
+    type: number
+    sql: 1.0 * COUNT(DISTINCT CASE WHEN ${platform_group} = 'Connected TV' AND ${TABLE}.order_completed_at IS NOT NULL THEN ${user_pk} END)
+      / NULLIF(COUNT(DISTINCT CASE WHEN ${platform_group} = 'Connected TV' THEN ${user_pk} END), 0) ;;
+    value_format_name: percent_2
+  }
+
 
   measure: effective_conversion_web {
     group_label: "Platform Comparison"
@@ -613,7 +1217,7 @@ view: upff_signup_funnel {
   measure: web_share_of_conversions {
     group_label: "Platform Comparison"
     label: "Web Share of Conversions"
-    description: "Percent of all conversions that came from Web (vs iOS and Android apps)."
+    description: "Percent of all conversions that came from Web (vs mobile and Connected TV apps)."
     type: number
     sql: 1.0 * COUNT(DISTINCT CASE WHEN ${platform} = 'Web' AND ${TABLE}.order_completed_at IS NOT NULL THEN ${user_pk} END)
       / NULLIF(COUNT(DISTINCT CASE WHEN ${TABLE}.order_completed_at IS NOT NULL THEN ${user_pk} END), 0) ;;
@@ -845,6 +1449,6 @@ view: upff_signup_funnel {
   }
 
   set: detail {
-    fields: [platform, anonymous_id, period, entry_time, converted]
+    fields: [platform, anonymous_id, period, entry_time, marketing_platform, campaign_source, campaign_name, converted, signup_offer, became_paying, paid_date, customer_email]
   }
 }
