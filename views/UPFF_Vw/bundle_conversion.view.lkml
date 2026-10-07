@@ -28,7 +28,7 @@ view: bundle_conversion {
       ,m.billing_period
     FROM conversion_m as m
     LEFT JOIN conversion_g g
-    ON m.email = g.email and m.activation_date = g.activation_date and m.billing_period = g.billing_period
+    ON m.email = g.email and m.activation_date = g.activation_date and m.billing_period = g.billing_period),
 
   bundles as (
     SELECT
@@ -52,9 +52,9 @@ view: bundle_conversion {
     ;;
   }
 
-  dimension: date {
+  dimension: activation_date {
     type: date
-    sql: ${TABLE}.report_date ;;
+    sql: ${TABLE}.activation_date ;;
   }
 
   dimension:email  {

@@ -123,6 +123,7 @@ FROM (
     billing_period
   FROM ${UPFF_analytics_Vw_v2.SQL_TABLE_NAME}
   WHERE status IN ('active', 'non_renewing', 'enabled')
+  and report_date >= CURRENT_DATE - 10
     AND platform != 'ios'
   GROUP BY 2, 3, 4
 
@@ -134,7 +135,8 @@ FROM (
     'ios' AS platform,
     billing_period
   FROM ${ios.SQL_TABLE_NAME}
-
+  where report_date >= CURRENT_DATE - 10
+/*
   UNION ALL
 
   SELECT
@@ -148,8 +150,17 @@ FROM (
     ,'2026-09-27' as report_date
     ,'web' as platform
     ,'yearly' as billing_period
-
+*/
 )
+UNION ALL
+SELECT
+  user_count
+  ,report_date
+  ,platform
+  ,billing_period
+  ,'active'::VARCHAR AS status
+FROM ${paid_sub_count.SQL_TABLE_NAME}
+where report_date < CURRENT_DATE - 10
 
       UNION ALL
 

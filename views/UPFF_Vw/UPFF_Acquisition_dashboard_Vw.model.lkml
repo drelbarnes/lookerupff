@@ -1,5 +1,5 @@
 connection: "upff"
-
+include: "/views/UPFF_Vw/paid_sub_count.view.lkml"
 include: "/views/UPFF_Vw/UPFF_analytics_Vw.view.lkml"
 include: "/views/UPFF_Vw/UPFF_analytics_Vw_v2.view.lkml"
 include: "/views/UPFF_Vw/rolling.view.lkml"

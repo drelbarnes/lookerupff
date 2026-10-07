@@ -13,6 +13,7 @@ view: ios {
             END AS billing_period,
             paying_subscribers
         FROM http_api.subscription_summary_daily
+        WHERE date("date") >= '2026-09-20'
       ),
           new_apple AS (
         SELECT
@@ -38,7 +39,7 @@ view: ios {
             select
             report_date
             from generate_dates
-            where report_date >= '2022-06-18'),
+            where report_date >= '2026-09-20'),
         new_apple2 as(
             SELECT
               rd.report_date
