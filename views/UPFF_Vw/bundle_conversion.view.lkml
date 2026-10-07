@@ -35,6 +35,7 @@ view: bundle_conversion {
       email
       ,report_date as trial_start_date
       ,bundle_type
+      ,billing_period
     FROM  ${bundle.SQL_TABLE_NAME}
     WHERE bundle_type = 'UP Entertainment Bundle'
   )
@@ -46,6 +47,11 @@ view: bundle_conversion {
     ,c.activation_date
     ,c.minno_product
     ,c.gaither_product
+    ,CASE
+      WHEN b.billing_period = 'year' THEN trial_start_date + 8
+      WHEN b.billing_period = 'month' and b.trial_start_date >= '2026-09-22' THEN trial_start_date + 30
+      ELSE trial_start_date + 8
+    END AS expected_conversion_date
   FROM bundles b
   LEFT JOIN conversion c
   ON b.email = c.email
@@ -56,6 +62,17 @@ view: bundle_conversion {
     type: date
     sql: ${TABLE}.activation_date ;;
   }
+
+  dimension: trial_start_date {
+    type: date
+    sql: ${TABLE}.trial_start_date ;;
+  }
+
+  dimension: expected_conversion_date {
+    type: date
+    sql: ${TABLE}.expected_conversion_date ;;
+  }
+
 
   dimension:email  {
     type: string
