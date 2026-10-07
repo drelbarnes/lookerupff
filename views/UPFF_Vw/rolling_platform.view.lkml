@@ -2,8 +2,8 @@ view: rolling_platform {
   derived_table: {
     sql:
 
--- 1) Base filtered table
-,v2_table AS (
+
+with v2_table AS (
   SELECT *
   FROM ${UPFF_analytics_Vw_v2.SQL_TABLE_NAME}
   WHERE report_date >= '2025-06-30'
@@ -101,24 +101,7 @@ select * from ${sub_count.SQL_TABLE_NAME}
       GROUP BY t1.report_date, t1.platform
       ),
 
-      -- 8) iOS paid subs (source of truth for iOS only)
-      new_apple0 AS (
-      SELECT *
-      FROM ${ios.SQL_TABLE_NAME}
-      ),
 
-      -- 9) Pivot iOS paid subs into monthly/yearly columns
-      new_apple2 AS (
-      SELECT
-      a.report_date,
-      a.paid_subscribers AS total_paid_subs_monthly,
-      b.paid_subscribers AS total_paid_subs_yearly
-      FROM (SELECT * FROM new_apple0 WHERE billing_period = 'monthly') a
-      LEFT JOIN (SELECT * FROM new_apple0 WHERE billing_period = 'yearly') b
-      ON a.report_date = b.report_date
-      ),
-
-      -- 10) Paid subs by platform for non-iOS, then union iOS
       total_paid_subs AS (
       SELECT
       report_date,
@@ -126,7 +109,6 @@ select * from ${sub_count.SQL_TABLE_NAME}
       SUM(CASE WHEN billing_period = 'monthly' THEN user_count ELSE 0 END) AS total_paid_subs_monthly,
       SUM(CASE WHEN billing_period = 'yearly' THEN user_count ELSE 0 END)  AS total_paid_subs_yearly
       FROM sub_count
-      WHERE platform != 'ios'
       GROUP BY report_date, platform
       ),
 
@@ -137,13 +119,7 @@ select * from ${sub_count.SQL_TABLE_NAME}
       t.total_paid_subs_monthly::bigint AS total_paid_subs_monthly,
       t.total_paid_subs_yearly::bigint  AS total_paid_subs_yearly
       FROM total_paid_subs t
-      UNION ALL
-      SELECT
-      na.report_date::date,
-      CAST('ios' AS varchar)           AS platform,
-      na.total_paid_subs_monthly::bigint,
-      na.total_paid_subs_yearly::bigint
-      FROM new_apple2 na
+
       ),
 
       -- 11) Collapse to one row per date × platform (if duplicates exist)
