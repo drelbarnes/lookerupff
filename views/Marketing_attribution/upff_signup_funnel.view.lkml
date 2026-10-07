@@ -39,7 +39,8 @@
 #     is the payment, so every order counts as a paying customer.
 #
 # User key: Segment anonymous_id; when it is empty or NULL, the event's
-# context_ip is used instead (prefixed 'ip:'), on every funnel step. The Vimeo
+# context_ip is used instead (prefixed 'ip:'), on every funnel step except
+# app installs (the app_installed tables have no context_ip column). The Vimeo
 # trial-converted match is unchanged (user_id).
 #
 # Grain: one row per user per funnel step. A "user" is an anonymous_id per
@@ -122,7 +123,7 @@ view: upff_signup_funnel {
             -- ---------- Unioned event sources ----------
             -- Web carries Segment UTM fields (context_campaign_*); mobile and CTV apps have none.
             entry_events AS (
-                SELECT 'iOS'::VARCHAR(32) AS platform, COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at,
+                SELECT 'iOS'::VARCHAR(32) AS platform, NULLIF(TRIM(anonymous_id), '') AS anonymous_id, received_at,
                        CAST(NULL AS VARCHAR(512)) AS campaign_source,
                        CAST(NULL AS VARCHAR(512)) AS campaign_name,
                        CAST(NULL AS VARCHAR(512)) AS campaign_medium,
@@ -131,25 +132,25 @@ view: upff_signup_funnel {
                        'Mobile App (no UTM)'::VARCHAR(64) AS marketing_platform
                 FROM ios.app_installed
                 UNION ALL
-                SELECT 'Android', COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at,
+                SELECT 'Android', NULLIF(TRIM(anonymous_id), '') AS anonymous_id, received_at,
                        CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
                        CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
                        'Mobile App (no UTM)'::VARCHAR(64)
                 FROM android.app_installed
                 UNION ALL
-                SELECT 'Roku', COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at,
+                SELECT 'Roku', NULLIF(TRIM(anonymous_id), '') AS anonymous_id, received_at,
                        CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
                        CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
                        'Connected TV (no UTM)'::VARCHAR(64)
                 FROM roku.app_installed
                 UNION ALL
-                SELECT 'Amazon Fire TV', COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at,
+                SELECT 'Amazon Fire TV', NULLIF(TRIM(anonymous_id), '') AS anonymous_id, received_at,
                        CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
                        CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
                        'Connected TV (no UTM)'::VARCHAR(64)
                 FROM amazon_fire_tv.app_installed
                 UNION ALL
-                SELECT 'Vizio TV', COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at,
+                SELECT 'Vizio TV', NULLIF(TRIM(anonymous_id), '') AS anonymous_id, received_at,
                        CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
                        CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
                        'Connected TV (no UTM)'::VARCHAR(64)
