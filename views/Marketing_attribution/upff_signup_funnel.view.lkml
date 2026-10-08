@@ -38,6 +38,11 @@
 #   - On/after 2026-09-09: PAID ONLY test (no free trial). The order itself
 #     is the payment, so every order counts as a paying customer.
 #
+# Marketing spend: daily paid media spend (Google Ads, Facebook, and channels
+# entered in looker.get_channel_spend) is appended as separate spend rows with
+# no user, assigned to the Current/Prior Period by spend date. Spend is not
+# split by platform; CPA = spend / Order Completed or / Paying Customers.
+#
 # User key: Segment anonymous_id; when it is empty or NULL, a fallback is
 # used on every funnel step: context_ip (prefixed 'ip:') for iOS, Android,
 # Amazon Fire TV and Web; device_id (prefixed 'device:') for Roku and Vizio TV,
@@ -389,6 +394,61 @@ view: upff_signup_funnel {
       GROUP BY pb.period, v.platform, v.conv_day
       ),
 
+      -- ---------- Daily marketing spend (from the daily_spend view logic) ----------
+      -- Google Ads: ad-level cost by campaign (channel = campaign name, as in daily_spend)
+      spend_google AS (
+      SELECT DATE_TRUNC('day', ads.date_start::TIMESTAMP)  AS spend_date
+      , c.name::VARCHAR(256)                          AS spend_channel
+      , c.name::VARCHAR(512)                          AS spend_campaign
+      , SUM(COALESCE(ads.cost, 0) / 1000000.0)        AS spend
+      FROM adwords.ad_performance_reports ads
+      JOIN adwords.ad_groups g ON ads.ad_group_id = g.id
+      JOIN adwords.campaigns c ON g.campaign_id  = c.id
+      GROUP BY 1, 2, 3
+      ),
+
+      -- Facebook / Meta: insights spend by campaign
+      spend_facebook AS (
+      SELECT DATE_TRUNC('day', i.date_start::TIMESTAMP) AS spend_date
+      , 'Facebook'::VARCHAR(256)                   AS spend_channel
+      , b.name::VARCHAR(512)                       AS spend_campaign
+      , SUM(COALESCE(i.spend, 0))                  AS spend
+      FROM facebook_ads.insights i
+      LEFT JOIN facebook_ads.ads a       ON i.ad_id      = a.id
+      LEFT JOIN facebook_ads.campaigns b ON a.campaign_id = b.id
+      GROUP BY 1, 2, 3
+      ),
+
+      -- Other channels entered in Looker (latest entry per date and channel)
+      spend_other AS (
+      SELECT DATE_TRUNC('day', other_marketing_spend_date::TIMESTAMP) AS spend_date
+      , other_marketing_spend_channel::VARCHAR(256)              AS spend_channel
+      , CAST(NULL AS VARCHAR(512))                                AS spend_campaign
+      , other_marketing_spend_spend                               AS spend
+      FROM (
+      SELECT other_marketing_spend_date, other_marketing_spend_channel, other_marketing_spend_spend,
+      ROW_NUMBER() OVER (PARTITION BY other_marketing_spend_date, other_marketing_spend_channel
+      ORDER BY original_timestamp DESC) AS rn
+      FROM looker.get_channel_spend
+      ) latest
+      WHERE rn = 1 AND other_marketing_spend_date IS NOT NULL
+      ),
+
+      -- Spend by day, channel and campaign, assigned to the Current or Prior Period
+      -- whose dates contain the day
+      spend_rows AS (
+      SELECT pb.period, pb.period_start, sd.spend_date, sd.spend_channel, sd.spend_campaign, SUM(sd.spend) AS spend
+      FROM (
+      SELECT * FROM spend_google
+      UNION ALL SELECT * FROM spend_facebook
+      UNION ALL SELECT * FROM spend_other
+      ) sd
+      JOIN period_bounds pb
+      ON  sd.spend_date >= DATE_TRUNC('day', pb.period_start)
+      AND sd.spend_date <  pb.period_end
+      GROUP BY 1, 2, 3, 4, 5
+      ),
+
       -- App user_id can be missing on the first order row (identify happens around
       -- registration), so resolve it from ANY order event for the same user.
       app_user_ids AS (
@@ -495,8 +555,10 @@ view: upff_signup_funnel {
       SELECT 3, 'Plan Chosen / Signed Up'                                       UNION ALL
       SELECT 4, 'Order Completed'                                               UNION ALL
       SELECT 5, 'OVERALL: Entry -> Order'
-      )
+      ),
 
+      -- Funnel rows (one per user per step)
+      funnel_rows AS (
       SELECT
       ud.user_pk || '|' || CAST(s.step_number AS VARCHAR) AS pk
       , ud.*
@@ -526,6 +588,47 @@ view: upff_signup_funnel {
       END AS hours_from_prev
       FROM user_days ud
       CROSS JOIN steps s
+      )
+
+      SELECT fr.*
+      , CAST(NULL AS VARCHAR(256)) AS spend_channel
+      , CAST(NULL AS VARCHAR(512)) AS spend_campaign
+      , CAST(NULL AS FLOAT)        AS spend
+      FROM funnel_rows fr
+
+      UNION ALL
+
+      -- Marketing spend rows: one per period, day, channel and campaign. They carry
+      -- no user, so every user count ignores them; Entry Date and Day of Period are
+      -- set to the spend day so spend lines up with the funnel by day.
+      SELECT
+      'spend|' || sr.period || '|' || TO_CHAR(sr.spend_date, 'YYYY-MM-DD') || '|'
+      || COALESCE(sr.spend_channel, '') || '|' || COALESCE(sr.spend_campaign, '') AS pk
+      , CAST(NULL AS VARCHAR(512)) AS user_pk
+      , CAST(NULL AS VARCHAR(32))  AS platform
+      , CAST(NULL AS VARCHAR(32))  AS platform_group
+      , CAST(NULL AS VARCHAR(512)) AS anonymous_id
+      , sr.period           AS period
+      , sr.spend_date       AS entry_at
+      , CAST(NULL AS TIMESTAMP) AS entry_day   -- keeps spend rows out of daily-average day counts
+      , CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512))
+      , CAST(NULL AS VARCHAR(64))
+      , CAST(NULL AS TIMESTAMP), CAST(NULL AS TIMESTAMP), CAST(NULL AS TIMESTAMP)
+      , CAST(NULL AS VARCHAR(320)), CAST(NULL AS VARCHAR(256)), CAST(NULL AS TIMESTAMP)
+      , CAST(NULL AS BIGINT)                                                         -- platform_day_rn
+      , DATEDIFF(day, DATE_TRUNC('day', sr.period_start), sr.spend_date) + 1   -- day_of_period
+      , CAST(NULL AS BIGINT), CAST(NULL AS BIGINT), CAST(NULL AS BIGINT)
+      , CAST(NULL AS BIGINT), CAST(NULL AS BIGINT), CAST(NULL AS BIGINT)
+      , CAST(NULL AS BIGINT), CAST(NULL AS BIGINT), CAST(NULL AS BIGINT)
+      , CAST(NULL AS BIGINT)                                                         -- vimeo_trial_conversions
+      , 1                                                                     -- step_number (kept on step 1)
+      , 'App Installed / Landing Page Visit'                                  -- step_name
+      , CAST(NULL AS BIGINT)                                                         -- vimeo_trial_conversions_s1
+      , CAST(NULL AS INTEGER), CAST(NULL AS INTEGER), CAST(NULL AS FLOAT)                          -- reached_flag, prev_flag, hours_from_prev
+      , sr.spend_channel
+      , sr.spend_campaign
+      , sr.spend::FLOAT
+      FROM spend_rows sr
       ;;
   }
 
@@ -731,6 +834,26 @@ view: upff_signup_funnel {
     type: string
     sql: ${TABLE}.marketing_platform ;;
     can_filter: no
+  }
+
+  # ---------------------------------------------------------------------------
+  # Marketing spend dimensions (spend rows only; blank on funnel rows)
+  # ---------------------------------------------------------------------------
+
+  dimension: spend_channel {
+    group_label: "Marketing Spend"
+    label: "Marketing Channel"
+    description: "Paid media channel the spend belongs to: Facebook, Google Ads campaigns, and channels entered in Looker (e.g. TikTok, Pinterest, Apple Search Ads, Fox). Use only with spend measures; funnel users have no channel here. Also called: media source, ad channel."
+    type: string
+    sql: ${TABLE}.spend_channel ;;
+  }
+
+  dimension: spend_campaign {
+    group_label: "Marketing Spend"
+    label: "Marketing Campaign"
+    description: "Ad campaign the spend belongs to (Facebook and Google Ads). Use only with spend measures."
+    type: string
+    sql: ${TABLE}.spend_campaign ;;
   }
 
   # ---------------------------------------------------------------------------
@@ -1509,6 +1632,121 @@ view: upff_signup_funnel {
     sql: 100.0 * (${avg_daily_effective_conversion_step_current} - ${avg_daily_effective_conversion_step_prior}) ;;
     value_format_name: decimal_2
     required_fields: [step_name]
+  }
+
+  # ---------------------------------------------------------------------------
+  # Marketing spend and cost per acquisition (CPA)
+  # Spend is daily paid media spend by channel, assigned to the Current or Prior
+  # Period by spend date. It is not split by platform, so these measures are for
+  # totals, Period, Entry Date, Day of Period or Marketing Channel.
+  # ---------------------------------------------------------------------------
+
+  measure: spend_current {
+    group_label: "Marketing Spend and CPA"
+    label: "Marketing Spend (Current Period)"
+    description: "Total paid media spend on days in the current period. Also called: ad spend, media spend, marketing cost."
+    type: number
+    sql: SUM(CASE WHEN ${TABLE}.period = 'Current' THEN ${TABLE}.spend END) ;;
+    value_format_name: usd
+  }
+
+  measure: cost_per_order_current {
+    group_label: "Marketing Spend and CPA"
+    label: "Cost per Order (Current Period)"
+    description: "Marketing Spend divided by Conversions (Order Completed) for the current period. Before 2026-09-09, app orders include free-trial sign-ups and rejoins. Also called: CPA, cost per acquisition, cost per sign-up. Blank when a Web Campaign Filter is applied (spend can't be split by campaign) or when Platform is filtered (spend isn't split by platform)."
+    type: number
+    sql: {% if upff_signup_funnel.marketing_platform_filter._is_filtered or upff_signup_funnel.campaign_source_filter._is_filtered or upff_signup_funnel.campaign_name_filter._is_filtered or upff_signup_funnel.campaign_medium_filter._is_filtered %} NULL {% else %} ${spend_current} / NULLIF(${conversions_current}, 0) {% endif %} ;;
+    value_format_name: usd
+  }
+
+  measure: cost_per_paid_current {
+    group_label: "Marketing Spend and CPA"
+    label: "Cost per Paying Customer (Current Period)"
+    description: "Marketing Spend divided by Paying Customers for the current period (paid-only orders plus converted trials). Also called: cost per paid subscriber, CAC. Blank when a Web Campaign Filter is applied (spend can't be split by campaign) or when Platform is filtered (spend isn't split by platform)."
+    type: number
+    sql: {% if upff_signup_funnel.marketing_platform_filter._is_filtered or upff_signup_funnel.campaign_source_filter._is_filtered or upff_signup_funnel.campaign_name_filter._is_filtered or upff_signup_funnel.campaign_medium_filter._is_filtered %} NULL {% else %} ${spend_current} / NULLIF(${paying_customers_current}, 0) {% endif %} ;;
+    value_format_name: usd
+  }
+
+  measure: spend_prior {
+    group_label: "Marketing Spend and CPA"
+    label: "Marketing Spend (Prior Period)"
+    description: "Total paid media spend on days in the prior period. Also called: ad spend, media spend, marketing cost."
+    type: number
+    sql: SUM(CASE WHEN ${TABLE}.period = 'Prior' THEN ${TABLE}.spend END) ;;
+    value_format_name: usd
+  }
+
+  measure: cost_per_order_prior {
+    group_label: "Marketing Spend and CPA"
+    label: "Cost per Order (Prior Period)"
+    description: "Marketing Spend divided by Conversions (Order Completed) for the prior period. Before 2026-09-09, app orders include free-trial sign-ups and rejoins. Also called: CPA, cost per acquisition, cost per sign-up. Blank when a Web Campaign Filter is applied (spend can't be split by campaign) or when Platform is filtered (spend isn't split by platform)."
+    type: number
+    sql: {% if upff_signup_funnel.marketing_platform_filter._is_filtered or upff_signup_funnel.campaign_source_filter._is_filtered or upff_signup_funnel.campaign_name_filter._is_filtered or upff_signup_funnel.campaign_medium_filter._is_filtered %} NULL {% else %} ${spend_prior} / NULLIF(${conversions_prior}, 0) {% endif %} ;;
+    value_format_name: usd
+  }
+
+  measure: cost_per_paid_prior {
+    group_label: "Marketing Spend and CPA"
+    label: "Cost per Paying Customer (Prior Period)"
+    description: "Marketing Spend divided by Paying Customers for the prior period (paid-only orders plus converted trials). Also called: cost per paid subscriber, CAC. Blank when a Web Campaign Filter is applied (spend can't be split by campaign) or when Platform is filtered (spend isn't split by platform)."
+    type: number
+    sql: {% if upff_signup_funnel.marketing_platform_filter._is_filtered or upff_signup_funnel.campaign_source_filter._is_filtered or upff_signup_funnel.campaign_name_filter._is_filtered or upff_signup_funnel.campaign_medium_filter._is_filtered %} NULL {% else %} ${spend_prior} / NULLIF(${paying_customers_prior}, 0) {% endif %} ;;
+    value_format_name: usd
+  }
+
+  measure: spend_pct_change {
+    group_label: "Marketing Spend and CPA"
+    label: "Marketing Spend Percent Change (Current vs Prior)"
+    description: "Percent change in marketing spend from the prior to the current period."
+    type: number
+    sql: (${spend_current} - ${spend_prior}) / NULLIF(${spend_prior}, 0) ;;
+    value_format_name: percent_1
+  }
+
+  measure: cost_per_order_pct_change {
+    group_label: "Marketing Spend and CPA"
+    label: "Cost per Order Percent Change (Current vs Prior)"
+    description: "Percent change in Cost per Order (CPA) from the prior to the current period. Negative means cheaper. Blank when a Web Campaign Filter is applied (spend can't be split by campaign) or when Platform is filtered (spend isn't split by platform)."
+    type: number
+    sql: {% if upff_signup_funnel.marketing_platform_filter._is_filtered or upff_signup_funnel.campaign_source_filter._is_filtered or upff_signup_funnel.campaign_name_filter._is_filtered or upff_signup_funnel.campaign_medium_filter._is_filtered %} NULL {% else %} (${cost_per_order_current} - ${cost_per_order_prior}) / NULLIF(${cost_per_order_prior}, 0) {% endif %} ;;
+    value_format_name: percent_1
+  }
+
+  measure: cost_per_paid_pct_change {
+    group_label: "Marketing Spend and CPA"
+    label: "Cost per Paying Customer Percent Change (Current vs Prior)"
+    description: "Percent change in Cost per Paying Customer from the prior to the current period. Negative means cheaper. Blank when a Web Campaign Filter is applied (spend can't be split by campaign) or when Platform is filtered (spend isn't split by platform)."
+    type: number
+    sql: {% if upff_signup_funnel.marketing_platform_filter._is_filtered or upff_signup_funnel.campaign_source_filter._is_filtered or upff_signup_funnel.campaign_name_filter._is_filtered or upff_signup_funnel.campaign_medium_filter._is_filtered %} NULL {% else %} (${cost_per_paid_current} - ${cost_per_paid_prior}) / NULLIF(${cost_per_paid_prior}, 0) {% endif %} ;;
+    value_format_name: percent_1
+  }
+
+  measure: spend {
+    group_label: "Marketing Spend and CPA"
+    label: "Marketing Spend"
+    description: "Paid media spend for any grouping (Entry Date, Day of Period, Period, Marketing Channel). Use Entry Date as the day axis for daily spend."
+    type: number
+    sql: SUM(${TABLE}.spend) ;;
+    value_format_name: usd
+  }
+
+  measure: cost_per_order {
+    group_label: "Marketing Spend and CPA"
+    label: "Cost per Order (CPA)"
+    description: "Marketing Spend / Conversions (Order Completed) for any grouping, e.g. by Entry Date or Day of Period with Period pivoted. Do not group by Marketing Channel (orders are not tied to channels). Blank when a Web Campaign Filter is applied (spend can't be split by campaign) or when Platform is filtered (spend isn't split by platform)."
+    type: number
+    sql: {% if upff_signup_funnel.marketing_platform_filter._is_filtered or upff_signup_funnel.campaign_source_filter._is_filtered or upff_signup_funnel.campaign_name_filter._is_filtered or upff_signup_funnel.campaign_medium_filter._is_filtered %} NULL {% else %} ${spend} / NULLIF(${conversions}, 0) {% endif %} ;;
+    value_format_name: usd
+  }
+
+  measure: cost_per_paid {
+    group_label: "Marketing Spend and CPA"
+    label: "Cost per Paying Customer"
+    description: "Marketing Spend / Paying Customers for any grouping, e.g. by Entry Date or Day of Period with Period pivoted. Blank when a Web Campaign Filter is applied (spend can't be split by campaign) or when Platform is filtered (spend isn't split by platform)."
+    type: number
+    sql: {% if upff_signup_funnel.marketing_platform_filter._is_filtered or upff_signup_funnel.campaign_source_filter._is_filtered or upff_signup_funnel.campaign_name_filter._is_filtered or upff_signup_funnel.campaign_medium_filter._is_filtered %} NULL {% else %} ${spend} / NULLIF(${paying_customers}, 0) {% endif %} ;;
+    value_format_name: usd
   }
 
   set: detail {
