@@ -398,6 +398,7 @@ view: upff_signup_funnel {
       -- Google Ads: ad-level cost by campaign (channel = campaign name, as in daily_spend)
       spend_google AS (
       SELECT DATE_TRUNC('day', ads.date_start::TIMESTAMP)  AS spend_date
+      , 'Google Ads'::VARCHAR(256)                    AS spend_source
       , c.name::VARCHAR(256)                          AS spend_channel
       , c.name::VARCHAR(512)                          AS spend_campaign
       , SUM(COALESCE(ads.cost, 0) / 1000000.0)        AS spend
@@ -410,6 +411,7 @@ view: upff_signup_funnel {
       -- Facebook / Meta: insights spend by campaign
       spend_facebook AS (
       SELECT DATE_TRUNC('day', i.date_start::TIMESTAMP) AS spend_date
+      , 'Meta Ads'::VARCHAR(256)                   AS spend_source
       , 'Facebook'::VARCHAR(256)                   AS spend_channel
       , b.name::VARCHAR(512)                       AS spend_campaign
       , SUM(COALESCE(i.spend, 0))                  AS spend
@@ -422,6 +424,7 @@ view: upff_signup_funnel {
       -- Other channels entered in Looker (latest entry per date and channel)
       spend_other AS (
       SELECT DATE_TRUNC('day', other_marketing_spend_date::TIMESTAMP) AS spend_date
+      , other_marketing_spend_channel::VARCHAR(256)              AS spend_source
       , other_marketing_spend_channel::VARCHAR(256)              AS spend_channel
       , CAST(NULL AS VARCHAR(512))                                AS spend_campaign
       , other_marketing_spend_spend                               AS spend
@@ -437,7 +440,7 @@ view: upff_signup_funnel {
       -- Spend by day, channel and campaign, assigned to the Current or Prior Period
       -- whose dates contain the day
       spend_rows AS (
-      SELECT pb.period, pb.period_start, sd.spend_date, sd.spend_channel, sd.spend_campaign, SUM(sd.spend) AS spend
+      SELECT pb.period, pb.period_start, sd.spend_date, sd.spend_source, sd.spend_channel, sd.spend_campaign, SUM(sd.spend) AS spend
       FROM (
       SELECT * FROM spend_google
       UNION ALL SELECT * FROM spend_facebook
@@ -446,7 +449,7 @@ view: upff_signup_funnel {
       JOIN period_bounds pb
       ON  sd.spend_date >= DATE_TRUNC('day', pb.period_start)
       AND sd.spend_date <  pb.period_end
-      GROUP BY 1, 2, 3, 4, 5
+      GROUP BY 1, 2, 3, 4, 5, 6
       ),
 
       -- App user_id can be missing on the first order row (identify happens around
@@ -591,6 +594,7 @@ view: upff_signup_funnel {
       )
 
       SELECT fr.*
+      , CAST(NULL AS VARCHAR(256)) AS spend_source
       , CAST(NULL AS VARCHAR(256)) AS spend_channel
       , CAST(NULL AS VARCHAR(512)) AS spend_campaign
       , CAST(NULL AS FLOAT)        AS spend
@@ -603,7 +607,7 @@ view: upff_signup_funnel {
       -- set to the spend day so spend lines up with the funnel by day.
       SELECT
       'spend|' || sr.period || '|' || TO_CHAR(sr.spend_date, 'YYYY-MM-DD') || '|'
-      || COALESCE(sr.spend_channel, '') || '|' || COALESCE(sr.spend_campaign, '') AS pk
+      || COALESCE(sr.spend_source, '') || '|' || COALESCE(sr.spend_channel, '') || '|' || COALESCE(sr.spend_campaign, '') AS pk
       , CAST(NULL AS VARCHAR(512)) AS user_pk
       , CAST(NULL AS VARCHAR(32))  AS platform
       , CAST(NULL AS VARCHAR(32))  AS platform_group
@@ -625,6 +629,7 @@ view: upff_signup_funnel {
       , 'App Installed / Landing Page Visit'                                  -- step_name
       , CAST(NULL AS BIGINT)                                                         -- vimeo_trial_conversions_s1
       , CAST(NULL AS INTEGER), CAST(NULL AS INTEGER), CAST(NULL AS FLOAT)                          -- reached_flag, prev_flag, hours_from_prev
+      , sr.spend_source
       , sr.spend_channel
       , sr.spend_campaign
       , sr.spend::FLOAT
@@ -840,10 +845,18 @@ view: upff_signup_funnel {
   # Marketing spend dimensions (spend rows only; blank on funnel rows)
   # ---------------------------------------------------------------------------
 
+  dimension: spend_source {
+    group_label: "Marketing Spend"
+    label: "Marketing Source"
+    description: "Platform or site the spend was bought on: Google Ads, Meta Ads, or the channel entered in Looker (e.g. TikTok, Pinterest, Apple Search Ads, Banner | Fox, CTV | Fox, iHeart). Use to stack or break down Marketing Spend. Use only with spend measures; funnel users have no source here. Also called: ad platform, media platform, spend source, site."
+    type: string
+    sql: ${TABLE}.spend_source ;;
+  }
+
   dimension: spend_channel {
     group_label: "Marketing Spend"
     label: "Marketing Channel"
-    description: "Paid media channel the spend belongs to: Facebook, Google Ads campaigns, and channels entered in Looker (e.g. TikTok, Pinterest, Apple Search Ads, Fox). Use only with spend measures; funnel users have no channel here. Also called: media source, ad channel."
+    description: "Detailed channel the spend belongs to: Facebook, each Google Ads campaign (as in the daily_spend view), and channels entered in Looker. For a cleaner platform-level view use Marketing Source. Use only with spend measures; funnel users have no channel here."
     type: string
     sql: ${TABLE}.spend_channel ;;
   }
