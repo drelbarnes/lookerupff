@@ -405,7 +405,7 @@ view: upff_signup_funnel {
       FROM adwords.ad_performance_reports ads
       JOIN adwords.ad_groups g ON ads.ad_group_id = g.id
       JOIN adwords.campaigns c ON g.campaign_id  = c.id
-      GROUP BY 1, 2, 3
+      GROUP BY 1, 2, 3, 4
       ),
 
       -- Facebook / Meta: insights spend by campaign
@@ -418,7 +418,7 @@ view: upff_signup_funnel {
       FROM facebook_ads.insights i
       LEFT JOIN facebook_ads.ads a       ON i.ad_id      = a.id
       LEFT JOIN facebook_ads.campaigns b ON a.campaign_id = b.id
-      GROUP BY 1, 2, 3
+      GROUP BY 1, 2, 3, 4
       ),
 
       -- Other channels entered in Looker (latest entry per date and channel)
