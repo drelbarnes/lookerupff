@@ -31,6 +31,8 @@
 # android+android_tv -> Android, amazon_fire_tv+amazon_fire_tablet -> Amazon
 # Fire TV), because app orders lack an identifier to match them user by user.
 # Each order also carries user_email and user_id (Customer Email / User ID).
+# Web rejoins (javascript_upentertainment_checkout.order_resubscribed) count as
+# Web orders (Order Type = Rejoin) and as paying customers at the order.
 # Offer by order date:
 #   - Before 2026-09-09: 7-day FREE TRIAL. Web trials convert if a matching
 #     Chargebee payment lands within 10 days of the order (7-day trial + 3-day
@@ -237,20 +239,27 @@ view: upff_signup_funnel {
       order_completed_events AS (
       SELECT 'iOS'::VARCHAR(32) AS platform, COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at,
       LOWER(TRIM(user_email))::VARCHAR(320) AS customer_email,
-      TRIM(user_id::VARCHAR(256))::VARCHAR(256) AS user_id
+      TRIM(user_id::VARCHAR(256))::VARCHAR(256) AS user_id,
+      'New Order'::VARCHAR(16) AS order_type
       FROM ios.order_completed
       UNION ALL
-      SELECT 'Android',        COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(user_id::VARCHAR(256)) FROM android.order_completed
+      SELECT 'Android',        COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(user_id::VARCHAR(256)), 'New Order' FROM android.order_completed
       UNION ALL
-      SELECT 'Roku',           COALESCE(NULLIF(TRIM(anonymous_id), ''), 'device:' || NULLIF(TRIM(device_id::VARCHAR(256)), '')) AS anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(user_id::VARCHAR(256)) FROM roku.order_completed
+      SELECT 'Roku',           COALESCE(NULLIF(TRIM(anonymous_id), ''), 'device:' || NULLIF(TRIM(device_id::VARCHAR(256)), '')) AS anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(user_id::VARCHAR(256)), 'New Order' FROM roku.order_completed
       UNION ALL
-      SELECT 'Amazon Fire TV', COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(user_id::VARCHAR(256)) FROM amazon_fire_tv.order_completed
+      SELECT 'Amazon Fire TV', COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(user_id::VARCHAR(256)), 'New Order' FROM amazon_fire_tv.order_completed
       UNION ALL
-      SELECT 'Vizio TV',       COALESCE(NULLIF(TRIM(anonymous_id), ''), 'device:' || NULLIF(TRIM(device_id::VARCHAR(256)), '')) AS anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(user_id::VARCHAR(256)) FROM vizio_tv.order_completed
+      SELECT 'Vizio TV',       COALESCE(NULLIF(TRIM(anonymous_id), ''), 'device:' || NULLIF(TRIM(device_id::VARCHAR(256)), '')) AS anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(user_id::VARCHAR(256)), 'New Order' FROM vizio_tv.order_completed
       UNION ALL
-      SELECT 'Web',            COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(user_id::VARCHAR(256))
+      SELECT 'Web',            COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(user_id::VARCHAR(256)), 'New Order'
       FROM javascript_upentertainment_checkout.order_completed
       WHERE brand = 'upfaithandfamily'
+      UNION ALL
+      -- Web rejoins (re-subscribed customers). customer_id stands in for user_id.
+      -- If this table also has a brand column, uncomment the filter so only UPFF rejoins count.
+      SELECT 'Web',            COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(customer_id::VARCHAR(256)), 'Rejoin'
+      FROM javascript_upentertainment_checkout.order_resubscribed
+      -- WHERE brand = 'upfaithandfamily'
       ),
 
       -- Match key: email for Web (Chargebee), user_id for mobile and CTV apps (Vimeo OTT).
@@ -328,11 +337,11 @@ view: upff_signup_funnel {
 
       -- ---------- Step 4 ----------
       order_completed AS (
-      SELECT platform, anonymous_id, period, order_completed_at, customer_email, user_id,
+      SELECT platform, anonymous_id, period, order_completed_at, customer_email, user_id, order_type,
       CASE WHEN platform = 'Web' THEN customer_email ELSE user_id END AS match_key
       FROM (
       SELECT pc.platform, pc.anonymous_id, pc.period,
-      e.received_at AS order_completed_at, e.customer_email, e.user_id,
+      e.received_at AS order_completed_at, e.customer_email, e.user_id, e.order_type,
       ROW_NUMBER() OVER (PARTITION BY pc.platform, pc.anonymous_id, pc.period
       ORDER BY e.received_at) AS rn
       FROM plan_chosen pc
@@ -475,6 +484,7 @@ view: upff_signup_funnel {
       AND pe.paid_at    >= DATEADD(day, -1, oc.order_completed_at)
       AND pe.paid_at    <  DATEADD(day, 10, oc.order_completed_at)
       WHERE oc.platform = 'Web'
+      AND oc.order_type <> 'Rejoin'
       AND oc.customer_email IS NOT NULL AND oc.customer_email <> ''
       AND oc.order_completed_at < '2026-09-09'
 
@@ -503,9 +513,10 @@ view: upff_signup_funnel {
       , oc.order_completed_at
       , oc.customer_email
       , COALESCE(oc.user_id, uid.user_id) AS user_id
-      -- Paid-only orders (on/after 2026-09-09) are paid at the order itself
-      , CASE WHEN oc.order_completed_at >= '2026-09-09' THEN oc.order_completed_at
+      -- Paid-only orders (on/after 2026-09-09) and web rejoins are paid at the order itself
+      , CASE WHEN oc.order_completed_at >= '2026-09-09' OR oc.order_type = 'Rejoin' THEN oc.order_completed_at
       ELSE pd.paid_at END AS paid_at
+      , oc.order_type
       FROM entries en
       LEFT JOIN signup_viewed sv
       ON sv.anonymous_id = en.anonymous_id AND sv.platform = en.platform AND sv.period = en.period
@@ -619,6 +630,7 @@ view: upff_signup_funnel {
       , CAST(NULL AS VARCHAR(64))
       , CAST(NULL AS TIMESTAMP), CAST(NULL AS TIMESTAMP), CAST(NULL AS TIMESTAMP)
       , CAST(NULL AS VARCHAR(320)), CAST(NULL AS VARCHAR(256)), CAST(NULL AS TIMESTAMP)
+      , CAST(NULL AS VARCHAR(16))                                             -- order_type
       , CAST(NULL AS BIGINT)                                                         -- platform_day_rn
       , DATEDIFF(day, DATE_TRUNC('day', sr.period_start), sr.spend_date) + 1   -- day_of_period
       , CAST(NULL AS BIGINT), CAST(NULL AS BIGINT), CAST(NULL AS BIGINT)
@@ -733,18 +745,28 @@ view: upff_signup_funnel {
     label: "Free Trial Order"
     description: "Yes if the order was completed before 2026-09-09, when sign-ups started with a 7-day free trial. Use with Became Paying Customer to see how many free-trial sign-ups converted to paid. Also called: trial sign-up, trial start."
     type: yesno
-    sql: ${TABLE}.order_completed_at < '2026-09-09' ;;
+    sql: ${TABLE}.order_completed_at < '2026-09-09' AND COALESCE(${TABLE}.order_type, '') <> 'Rejoin' ;;
+  }
+
+  dimension: order_type {
+    group_label: "Trial to Paid"
+    label: "Order Type"
+    description: "New Order or Rejoin. Rejoin = a returning customer re-subscribing on the web (order_resubscribed). Rejoins pay at the order, so they count as paying customers and never as free trials. App rejoins cannot be told apart from new orders and show as New Order. Also called: resubscribe, reactivation, win-back."
+    type: string
+    sql: ${TABLE}.order_type ;;
+    suggestions: ["New Order", "Rejoin"]
   }
 
   dimension: signup_offer {
     group_label: "Trial to Paid"
     label: "Sign-Up Offer"
-    description: "Offer in place when the user ordered: Free Trial (7-day trial, orders before 2026-09-09) or Paid Only (no-trial test, orders on/after 2026-09-09). Blank if the user did not order. Use to compare the trial and paid-only tests. Also called: offer, trial vs paid, test group."
+    description: "Offer in place when the user ordered: Free Trial (7-day trial, orders before 2026-09-09), Paid Only (no-trial test, orders on/after 2026-09-09), or Rejoin (web re-subscriber, paid at the order). Blank if the user did not order. Use to compare the trial and paid-only tests. Also called: offer, trial vs paid, test group."
     type: string
     sql: CASE WHEN ${TABLE}.order_completed_at IS NULL THEN NULL
+              WHEN ${TABLE}.order_type = 'Rejoin' THEN 'Rejoin'
               WHEN ${TABLE}.order_completed_at < '2026-09-09' THEN 'Free Trial'
               ELSE 'Paid Only' END ;;
-    suggestions: ["Free Trial", "Paid Only"]
+    suggestions: ["Free Trial", "Paid Only", "Rejoin"]
   }
 
   dimension: became_paying {
@@ -1156,6 +1178,7 @@ view: upff_signup_funnel {
     type: number
     sql: COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Current' AND ${TABLE}.platform = 'Web'
                               AND ${TABLE}.order_completed_at < '2026-09-09'
+                              AND COALESCE(${TABLE}.order_type, '') <> 'Rejoin'
                               AND ${TABLE}.paid_at IS NOT NULL THEN ${user_pk} END)
          + SUM(CASE WHEN ${TABLE}.period = 'Current' AND ${TABLE}.platform <> 'Web' THEN ${TABLE}.vimeo_trial_conversions_s1 ELSE 0 END) ;;
     value_format_name: decimal_0
@@ -1188,6 +1211,7 @@ view: upff_signup_funnel {
     type: number
     sql: COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Prior' AND ${TABLE}.platform = 'Web'
                               AND ${TABLE}.order_completed_at < '2026-09-09'
+                              AND COALESCE(${TABLE}.order_type, '') <> 'Rejoin'
                               AND ${TABLE}.paid_at IS NOT NULL THEN ${user_pk} END)
          + SUM(CASE WHEN ${TABLE}.period = 'Prior' AND ${TABLE}.platform <> 'Web' THEN ${TABLE}.vimeo_trial_conversions_s1 ELSE 0 END) ;;
     value_format_name: decimal_0
@@ -1315,6 +1339,7 @@ view: upff_signup_funnel {
     description: "Free-trial conversions for any grouping. Web: user-level. Mobile and Connected TV: aggregate Vimeo OTT trial conversions received during the period dates."
     type: number
     sql: COUNT(DISTINCT CASE WHEN ${TABLE}.platform = 'Web' AND ${TABLE}.order_completed_at < '2026-09-09'
+                              AND COALESCE(${TABLE}.order_type, '') <> 'Rejoin'
                               AND ${TABLE}.paid_at IS NOT NULL THEN ${user_pk} END)
          + SUM(CASE WHEN ${TABLE}.platform <> 'Web' THEN ${TABLE}.vimeo_trial_conversions_s1 ELSE 0 END) ;;
     value_format_name: decimal_0
@@ -1335,7 +1360,7 @@ view: upff_signup_funnel {
     label: "Average Days from Trial Start to Paid"
     description: "Average days between a free-trial order and becoming a paying customer."
     type: average
-    sql: CASE WHEN ${TABLE}.step_number = 1 AND ${TABLE}.order_completed_at < '2026-09-09' THEN ${days_order_to_paid} END ;;
+    sql: CASE WHEN ${TABLE}.step_number = 1 AND ${TABLE}.order_completed_at < '2026-09-09' AND COALESCE(${TABLE}.order_type, '') <> 'Rejoin' THEN ${days_order_to_paid} END ;;
     value_format_name: decimal_1
   }
 
