@@ -42,6 +42,8 @@ view: churn_gain {
       )
       AND content_subscription_activated_at IS NOT NULL
       AND content_subscription_subscription_items LIKE '%UP%'
+      AND date(timestamp) = current_date - 1
+
 
       UNION ALL
 
@@ -53,11 +55,13 @@ view: churn_gain {
       FROM (
       SELECT DATE("timestamp") AS report_date, CAST(user_id AS VARCHAR) AS user_id
       FROM vimeo_ott_webhook.customer_product_expired
+      where date(timestamp) = current_date - 1
       ) a
       LEFT JOIN (
       SELECT report_date, user_id, billing_period, platform
       FROM ${UPFF_analytics_Vw_v2.SQL_TABLE_NAME}
       WHERE platform != 'Chargebee'
+      and report_date = current_date - 1
       ) b
       ON a.report_date = b.report_date AND a.user_id = b.user_id
       ) churn_src
@@ -80,6 +84,7 @@ view: churn_gain {
       'web'::VARCHAR                           AS platform
       FROM chargebee_webhook_events.subscription_paused
       WHERE content_subscription_subscription_items LIKE '%UP%'
+      AND date(timestamp) = current_date - 1
       ) paused_pre
       GROUP BY 2, 3, 4
       ) paused_count
@@ -101,6 +106,7 @@ view: churn_gain {
       FROM chargebee_webhook_events.subscription_activated
       WHERE content_subscription_subscription_items LIKE '%UP%'
       and (content_subscription_activated_at-content_subscription_created_at)<864000
+      AND date(timestamp) = current_date - 1
 
       UNION ALL
 
@@ -113,6 +119,7 @@ view: churn_gain {
       SELECT report_date, user_id, billing_period, platform
       FROM ${UPFF_analytics_Vw_v2.SQL_TABLE_NAME}
       WHERE platform != 'Chargebee'
+      and report_date = current_date - 1
       ) a
       RIGHT JOIN (
       SELECT DISTINCT
@@ -122,6 +129,7 @@ view: churn_gain {
       DATE(event_occurred_at)          AS report_date
       FROM customers.new_customers
       WHERE subscription_frequency != 'custom'
+      AND date(event_occurred_at) = current_date - 1
       ) b
       ON a.report_date = b.report_date AND a.user_id = b.user_id
       WHERE b.event_type = 'Free Trial to Paid'
@@ -146,6 +154,7 @@ view: churn_gain {
       FROM chargebee_webhook_events.subscription_reactivated
       WHERE content_subscription_subscription_items LIKE '%UP%'
       and content_subscription_status != 'in_trial'
+      AND date(timestamp) = current_date - 1
 
       UNION ALL
 
@@ -159,6 +168,7 @@ view: churn_gain {
       'web'::VARCHAR                           AS platform
       FROM chargebee_webhook_events.subscription_resumed
       WHERE content_subscription_subscription_items LIKE '%UP%'
+      AND date(timestamp) = current_date - 1
 
       UNION ALL
 /*
@@ -201,6 +211,7 @@ view: churn_gain {
             ) as rn
         from vimeo_ott_webhook.customer_product_created
         where platform != 'api'
+        AND date(timestamp) = current_date - 1
           --and date(timestamp) = date(created_at)
     )
     where rn != 1
@@ -230,6 +241,7 @@ view: churn_gain {
       )
       AND (content_subscription_cancelled_at - content_subscription_activated_at) > 10000
       AND content_subscription_subscription_items LIKE '%UP%'
+      AND date(timestamp) = current_date - 1
       ) dunning_pre
       GROUP BY 2, 3, 4
       ) dunning_count
@@ -250,6 +262,7 @@ view: churn_gain {
         ,date(DATEADD(HOUR, -4, received_at)) as report_date
         FROM chargebee_webhook_events.subscription_created
         WHERE content_subscription_subscription_items like '%UP%'
+        AND date(timestamp) = current_date - 1
 
 UNION ALL
     select
@@ -270,6 +283,7 @@ UNION ALL
             ) as rn
         from vimeo_ott_webhook.customer_product_created
         where platform != 'api'
+        AND date(timestamp) = current_date - 1
           --and date(timestamp) = date(created_at)
     )
     where rn = 1
@@ -322,8 +336,16 @@ UNION ALL
       FROM ${rolling_platform.SQL_TABLE_NAME}
 
       ) all_rows
-      WHERE 1=1
-      --{% incrementcondition %} report_date {% endincrementcondition %}
+
+      UNION ALL
+      SELECT
+        user_count,
+        churn_gain_report_date_date as report_date,
+        billing_period,
+        status,
+        platform
+      FROM ${churn_gain_historical.SQL_TABLE_NAME}
+      WHERE report_date < current_date - 1
       ;;
     sql_trigger_value:
     SELECT TO_CHAR(

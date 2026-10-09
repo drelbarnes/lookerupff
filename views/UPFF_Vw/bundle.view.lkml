@@ -32,6 +32,7 @@ view: bundle {
         WHEN has_upff = 1 and has_gaither = 1 and has_minno = 1 THEN 'UP Entertainment Bundle'
         WHEN has_upff = 1 and has_gaither = 1 and has_minno = 0 THEN 'GaitherTV+ Bundle'
         WHEN has_upff = 1 and has_gaither = 0 and has_minno = 1 THEN 'Minno Bundle'
+        WHEN has_upff = 0 and has_gaither = 1 and has_minno = 1 THEN 'GaitherTV+ Minno Bundle'
         ELSE 'No Bundle'
       END AS bundle_type
     FROM classify_bundle
@@ -46,7 +47,10 @@ view: bundle {
     type: string
     sql: ${TABLE}.email ;;
   }
-
+  dimension: billing_period  {
+    type: string
+    sql: ${TABLE}.billing_period ;;
+  }
 
   dimension: date {
     type: date

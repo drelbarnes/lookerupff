@@ -34,6 +34,8 @@ include: "/views/UPFF_Vw/dunning.view.lkml"
 include: "/views/UPFF_Vw/watch_rate.view.lkml"
 include: "/views/UPFF_Vw/bundle.view.lkml"
 include: "/views/UPFF_Vw/bundle_conversion.view.lkml"
+include: "/views/UPFF_Vw/churn_gain_historical.view.lkml"
+
 
 
 explore: UPFF_analytics_Vw {

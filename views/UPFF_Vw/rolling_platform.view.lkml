@@ -3,13 +3,17 @@ view: rolling_platform {
     sql:
 
 
-with v2_table AS (
+,v2_table AS (
   SELECT *
   FROM ${UPFF_analytics_Vw_v2.SQL_TABLE_NAME}
   WHERE report_date >= '2025-06-30'
 ),
 sub_count as (
 select * from ${sub_count.SQL_TABLE_NAME}
+),
+cfg AS (
+  SELECT report_date
+  FROM ${configg.SQL_TABLE_NAME}
 ),
 
       -- 2) Chargebee cancellations -> treat as 'web' platform (adjust if you prefer a different label)
@@ -32,6 +36,7 @@ select * from ${sub_count.SQL_TABLE_NAME}
         (content_subscription_cancelled_at - content_subscription_activated_at) > 10000)
         --or content_subscription_cancel_reason_code is null)
         AND content_subscription_subscription_items LIKE '%UP%'
+        AND date(timestamp) >= (SELECT max(report_date) - 31 FROM cfg)
       ),
 
       -- 33) Non-Chargebee users with platform/billing info (to enrich VM webhook expirations)
@@ -52,7 +57,7 @@ select * from ${sub_count.SQL_TABLE_NAME}
       CAST(user_id AS VARCHAR)           AS user_id,
       DATE_TRUNC('month', timestamp)     AS month_start
       FROM vimeo_ott_webhook.customer_product_expired
-      WHERE DATE(timestamp) >= '2025-07-01'
+      WHERE date(timestamp) >= (SELECT max(report_date) - 31 FROM cfg)
 
       UNION ALL
 
@@ -61,7 +66,7 @@ select * from ${sub_count.SQL_TABLE_NAME}
       CAST(user_id AS VARCHAR)           AS user_id,
       DATE_TRUNC('month', timestamp)     AS month_start
       FROM vimeo_ott_webhook.customer_product_disabled
-      WHERE DATE(timestamp) >= '2025-07-01'
+      WHERE date(timestamp) >= (SELECT max(report_date) - 31 FROM cfg)
       ),
 
       -- 5) Map VM expirations to user metadata; avoid NULL platform buckets
