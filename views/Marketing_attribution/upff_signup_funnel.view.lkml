@@ -25,22 +25,29 @@
 #   3    | Subscription Plan Chosen | Signed Up
 #   4    | Order Completed          | Order Completed
 #
-# Trial to paid: each order carries the customer's email (user_email) and
-# user_id from the order_completed tables. Web orders are matched by email to
-# Chargebee payment_succeeded. Mobile and CTV orders are matched by user_id to
-# Vimeo OTT customer_product_free_trial_converted (app registration happens
-# after payment, so app orders have no email at order time).
+# Trial to paid. WEB: user-level, email -> Chargebee payment_succeeded.
+# MOBILE + CTV: aggregate. Vimeo OTT trial conversions are counted by the day
+# they were received and aligned to the period and platform (ios+tvos -> iOS,
+# android+android_tv -> Android, amazon_fire_tv+amazon_fire_tablet -> Amazon
+# Fire TV), because app orders lack an identifier to match them user by user.
+# Each order also carries user_email and user_id (Customer Email / User ID).
 # Offer by order date:
-#   - Before 2026-09-09: 7-day FREE TRIAL. The user became a paying customer
-#     if a matching paid event lands in the window: Web within 10 days of the
-#     order (7-day trial + 3-day grace); apps from the period start through
-#     14 days after the period end.
+#   - Before 2026-09-09: 7-day FREE TRIAL. Web trials convert if a matching
+#     Chargebee payment lands within 10 days of the order (7-day trial + 3-day
+#     grace); app trials are counted in aggregate (see above).
 #   - On/after 2026-09-09: PAID ONLY test (no free trial). The order itself
 #     is the payment, so every order counts as a paying customer.
 #
-# User key: Segment anonymous_id; when it is empty or NULL, the event's
-# context_ip is used instead (prefixed 'ip:'), on every funnel step and
-# platform. The Vimeo trial-converted match is unchanged (user_id).
+# Marketing spend: daily paid media spend (Google Ads, Facebook, and channels
+# entered in looker.get_channel_spend) is appended as separate spend rows with
+# no user, assigned to the Current/Prior Period by spend date. Spend is not
+# split by platform; CPA = spend / Order Completed or / Paying Customers.
+#
+# User key: Segment anonymous_id; when it is empty or NULL, a fallback is
+# used on every funnel step: context_ip (prefixed 'ip:') for iOS, Android,
+# Amazon Fire TV and Web; device_id (prefixed 'device:') for Roku and Vizio TV,
+# whose tables have no context_ip. The Vimeo trial-converted match is
+# unchanged (user_id).
 #
 # Grain: one row per user per funnel step. A "user" is an anonymous_id per
 # platform per period (first entry on that platform in the period's date range);
@@ -137,7 +144,7 @@ view: upff_signup_funnel {
                        'Mobile App (no UTM)'::VARCHAR(64)
                 FROM android.app_installed
                 UNION ALL
-                SELECT 'Roku', COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at,
+                SELECT 'Roku', COALESCE(NULLIF(TRIM(anonymous_id), ''), 'device:' || NULLIF(TRIM(device_id::VARCHAR(256)), '')) AS anonymous_id, received_at,
                        CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
                        CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
                        'Connected TV (no UTM)'::VARCHAR(64)
@@ -149,7 +156,7 @@ view: upff_signup_funnel {
                        'Connected TV (no UTM)'::VARCHAR(64)
                 FROM amazon_fire_tv.app_installed
                 UNION ALL
-                SELECT 'Vizio TV', COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at,
+                SELECT 'Vizio TV', COALESCE(NULLIF(TRIM(anonymous_id), ''), 'device:' || NULLIF(TRIM(device_id::VARCHAR(256)), '')) AS anonymous_id, received_at,
                        CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
                        CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
                        'Connected TV (no UTM)'::VARCHAR(64)
@@ -199,11 +206,11 @@ view: upff_signup_funnel {
       UNION ALL
       SELECT 'Android' AS platform, COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at FROM android.sign_up_viewed
       UNION ALL
-      SELECT 'Roku'    AS platform, COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at FROM roku.sign_up_viewed
+      SELECT 'Roku'    AS platform, COALESCE(NULLIF(TRIM(anonymous_id), ''), 'device:' || NULLIF(TRIM(device_id::VARCHAR(256)), '')) AS anonymous_id, received_at FROM roku.sign_up_viewed
       UNION ALL
       SELECT 'Amazon Fire TV' AS platform, COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at FROM amazon_fire_tv.sign_up_viewed
       UNION ALL
-      SELECT 'Vizio TV' AS platform, COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at FROM vizio_tv.sign_up_viewed
+      SELECT 'Vizio TV' AS platform, COALESCE(NULLIF(TRIM(anonymous_id), ''), 'device:' || NULLIF(TRIM(device_id::VARCHAR(256)), '')) AS anonymous_id, received_at FROM vizio_tv.sign_up_viewed
       UNION ALL
       SELECT 'Web'     AS platform, COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at
       FROM javascript_upentertainment_checkout.product_viewed
@@ -215,11 +222,11 @@ view: upff_signup_funnel {
       UNION ALL
       SELECT 'Android' AS platform, COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at FROM android.subscription_plan_chosen
       UNION ALL
-      SELECT 'Roku'    AS platform, COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at FROM roku.subscription_plan_chosen
+      SELECT 'Roku'    AS platform, COALESCE(NULLIF(TRIM(anonymous_id), ''), 'device:' || NULLIF(TRIM(device_id::VARCHAR(256)), '')) AS anonymous_id, received_at FROM roku.subscription_plan_chosen
       UNION ALL
       SELECT 'Amazon Fire TV' AS platform, COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at FROM amazon_fire_tv.subscription_plan_chosen
       UNION ALL
-      SELECT 'Vizio TV' AS platform, COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at FROM vizio_tv.subscription_plan_chosen
+      SELECT 'Vizio TV' AS platform, COALESCE(NULLIF(TRIM(anonymous_id), ''), 'device:' || NULLIF(TRIM(device_id::VARCHAR(256)), '')) AS anonymous_id, received_at FROM vizio_tv.subscription_plan_chosen
       UNION ALL
       SELECT 'Web'     AS platform, COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at
       FROM javascript_upentertainment_checkout.signed_up
@@ -235,11 +242,11 @@ view: upff_signup_funnel {
       UNION ALL
       SELECT 'Android',        COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(user_id::VARCHAR(256)) FROM android.order_completed
       UNION ALL
-      SELECT 'Roku',           COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(user_id::VARCHAR(256)) FROM roku.order_completed
+      SELECT 'Roku',           COALESCE(NULLIF(TRIM(anonymous_id), ''), 'device:' || NULLIF(TRIM(device_id::VARCHAR(256)), '')) AS anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(user_id::VARCHAR(256)) FROM roku.order_completed
       UNION ALL
       SELECT 'Amazon Fire TV', COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(user_id::VARCHAR(256)) FROM amazon_fire_tv.order_completed
       UNION ALL
-      SELECT 'Vizio TV',       COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(user_id::VARCHAR(256)) FROM vizio_tv.order_completed
+      SELECT 'Vizio TV',       COALESCE(NULLIF(TRIM(anonymous_id), ''), 'device:' || NULLIF(TRIM(device_id::VARCHAR(256)), '')) AS anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(user_id::VARCHAR(256)) FROM vizio_tv.order_completed
       UNION ALL
       SELECT 'Web',            COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(user_id::VARCHAR(256))
       FROM javascript_upentertainment_checkout.order_completed
@@ -356,6 +363,95 @@ view: upff_signup_funnel {
       GROUP BY period
       ),
 
+      -- Vimeo OTT trial conversions in aggregate: counted by the day they were
+      -- received (received_at), mapped to funnel platforms, and assigned to the
+      -- Current or Prior Period whose date range contains that day.
+      --   ios + tvos -> iOS | android + android_tv -> Android
+      --   amazon_fire_tv + amazon_fire_tablet -> Amazon Fire TV
+      --   roku -> Roku | vizio_tv -> Vizio TV | web -> Web
+      vimeo_daily AS (
+      SELECT pb.period, v.platform, v.conv_day, COUNT(DISTINCT v.user_id) AS trial_conversions
+      FROM (
+      SELECT CASE LOWER(TRIM(platform))
+      WHEN 'ios'                THEN 'iOS'
+      WHEN 'tvos'               THEN 'iOS'
+      WHEN 'android'            THEN 'Android'
+      WHEN 'android_tv'         THEN 'Android'
+      WHEN 'amazon_fire_tv'     THEN 'Amazon Fire TV'
+      WHEN 'amazon_fire_tablet' THEN 'Amazon Fire TV'
+      WHEN 'roku'               THEN 'Roku'
+      WHEN 'vizio_tv'           THEN 'Vizio TV'
+      WHEN 'web'                THEN 'Web'
+      ELSE 'Other'
+      END AS platform,
+      DATE_TRUNC('day', received_at) AS conv_day,
+      TRIM(user_id::VARCHAR(256))    AS user_id
+      FROM vimeo_ott_webhook.customer_product_free_trial_converted
+      ) v
+      JOIN period_bounds pb
+      ON  v.conv_day >= DATE_TRUNC('day', pb.period_start)
+      AND v.conv_day <  pb.period_end
+      GROUP BY pb.period, v.platform, v.conv_day
+      ),
+
+      -- ---------- Daily marketing spend (from the daily_spend view logic) ----------
+      -- Google Ads: ad-level cost by campaign (channel = campaign name, as in daily_spend)
+      spend_google AS (
+      SELECT DATE_TRUNC('day', ads.date_start::TIMESTAMP)  AS spend_date
+      , 'Google Ads'::VARCHAR(256)                    AS spend_source
+      , c.name::VARCHAR(256)                          AS spend_channel
+      , c.name::VARCHAR(512)                          AS spend_campaign
+      , SUM(COALESCE(ads.cost, 0) / 1000000.0)        AS spend
+      FROM adwords.ad_performance_reports ads
+      JOIN adwords.ad_groups g ON ads.ad_group_id = g.id
+      JOIN adwords.campaigns c ON g.campaign_id  = c.id
+      GROUP BY 1, 2, 3, 4
+      ),
+
+      -- Facebook / Meta: insights spend by campaign
+      spend_facebook AS (
+      SELECT DATE_TRUNC('day', i.date_start::TIMESTAMP) AS spend_date
+      , 'Meta Ads'::VARCHAR(256)                   AS spend_source
+      , 'Facebook'::VARCHAR(256)                   AS spend_channel
+      , b.name::VARCHAR(512)                       AS spend_campaign
+      , SUM(COALESCE(i.spend, 0))                  AS spend
+      FROM facebook_ads.insights i
+      LEFT JOIN facebook_ads.ads a       ON i.ad_id      = a.id
+      LEFT JOIN facebook_ads.campaigns b ON a.campaign_id = b.id
+      GROUP BY 1, 2, 3, 4
+      ),
+
+      -- Other channels entered in Looker (latest entry per date and channel)
+      spend_other AS (
+      SELECT DATE_TRUNC('day', other_marketing_spend_date::TIMESTAMP) AS spend_date
+      , other_marketing_spend_channel::VARCHAR(256)              AS spend_source
+      , other_marketing_spend_channel::VARCHAR(256)              AS spend_channel
+      , CAST(NULL AS VARCHAR(512))                                AS spend_campaign
+      , other_marketing_spend_spend                               AS spend
+      FROM (
+      SELECT other_marketing_spend_date, other_marketing_spend_channel, other_marketing_spend_spend,
+      ROW_NUMBER() OVER (PARTITION BY other_marketing_spend_date, other_marketing_spend_channel
+      ORDER BY original_timestamp DESC) AS rn
+      FROM looker.get_channel_spend
+      ) latest
+      WHERE rn = 1 AND other_marketing_spend_date IS NOT NULL
+      ),
+
+      -- Spend by day, channel and campaign, assigned to the Current or Prior Period
+      -- whose dates contain the day
+      spend_rows AS (
+      SELECT pb.period, pb.period_start, sd.spend_date, sd.spend_source, sd.spend_channel, sd.spend_campaign, SUM(sd.spend) AS spend
+      FROM (
+      SELECT * FROM spend_google
+      UNION ALL SELECT * FROM spend_facebook
+      UNION ALL SELECT * FROM spend_other
+      ) sd
+      JOIN period_bounds pb
+      ON  sd.spend_date >= DATE_TRUNC('day', pb.period_start)
+      AND sd.spend_date <  pb.period_end
+      GROUP BY 1, 2, 3, 4, 5, 6
+      ),
+
       -- App user_id can be missing on the first order row (identify happens around
       -- registration), so resolve it from ANY order event for the same user.
       app_user_ids AS (
@@ -364,10 +460,10 @@ view: upff_signup_funnel {
       WHERE platform <> 'Web' AND user_id IS NOT NULL AND user_id <> ''
       ),
 
-      -- Paid match for free-trial orders.
-      -- Web: email -> Chargebee, from 1 day before to 10 days after the order.
-      -- Apps: any of the user's user_ids -> Vimeo OTT, from the period start
-      -- through 14 days after the period end.
+      -- User-level paid match for WEB free-trial orders: email -> Chargebee,
+      -- from 1 day before to 10 days after the order. Mobile and CTV trials are
+      -- measured in aggregate instead (see vimeo_daily), because app orders
+      -- lack a reliable identifier to tie them to Vimeo trial conversions.
       paid AS (
       SELECT platform, anonymous_id, period, MIN(paid_at) AS paid_at
       FROM (
@@ -382,23 +478,6 @@ view: upff_signup_funnel {
       AND oc.customer_email IS NOT NULL AND oc.customer_email <> ''
       AND oc.order_completed_at < '2026-09-09'
 
-      UNION ALL
-
-      SELECT oc.platform, oc.anonymous_id, oc.period, pe.paid_at
-      FROM order_completed oc
-      JOIN period_bounds pb
-      ON pb.period = oc.period
-      JOIN app_user_ids u
-      ON  u.platform     = oc.platform
-      AND u.anonymous_id = oc.anonymous_id
-      JOIN paid_events pe
-      ON  pe.paid_source = 'App'
-      AND pe.match_key   = u.user_id
-      -- Apps: any trial conversion from the period start through 14 days after the period end
-      AND pe.paid_at    >= pb.period_start
-      AND pe.paid_at    <  DATEADD(day, 14, pb.period_end)
-      WHERE oc.platform <> 'Web'
-      AND oc.order_completed_at < '2026-09-09'
       ) matched
       GROUP BY platform, anonymous_id, period
       ),
@@ -458,7 +537,18 @@ view: upff_signup_funnel {
       , COUNT(uf.plan_chosen_at)   OVER (PARTITION BY uf.period, uf.entry_day)                    AS day_plan_chosen_all
       , COUNT(uf.plan_chosen_at)   OVER (PARTITION BY uf.period, uf.platform_group, uf.entry_day) AS day_plan_chosen_group
       , COUNT(uf.plan_chosen_at)   OVER (PARTITION BY uf.period, uf.platform, uf.entry_day)       AS day_plan_chosen_platform
-      FROM user_funnel uf
+      -- Aggregate Vimeo trial conversions for this period/platform/day, carried on
+      -- exactly one user row so SUM() never double counts
+      , CASE WHEN uf.platform_day_rn = 1 THEN COALESCE(vd.trial_conversions, 0) ELSE 0 END AS vimeo_trial_conversions
+      FROM (
+      SELECT f.*,
+      ROW_NUMBER() OVER (PARTITION BY f.period, f.platform, f.entry_day ORDER BY f.anonymous_id) AS platform_day_rn
+      FROM user_funnel f
+      ) uf
+      LEFT JOIN vimeo_daily vd
+      ON  vd.period   = uf.period
+      AND vd.platform = uf.platform
+      AND vd.conv_day = uf.entry_day
       ),
 
       -- One row per funnel step + OVERALL, so steps can be rows in a table or chart
@@ -468,13 +558,16 @@ view: upff_signup_funnel {
       SELECT 3, 'Plan Chosen / Signed Up'                                       UNION ALL
       SELECT 4, 'Order Completed'                                               UNION ALL
       SELECT 5, 'OVERALL: Entry -> Order'
-      )
+      ),
 
+      -- Funnel rows (one per user per step)
+      funnel_rows AS (
       SELECT
       ud.user_pk || '|' || CAST(s.step_number AS VARCHAR) AS pk
       , ud.*
       , s.step_number
       , s.step_name
+      , CASE WHEN s.step_number = 1 THEN ud.vimeo_trial_conversions ELSE 0 END AS vimeo_trial_conversions_s1
       -- Did this user reach this step?
       , CASE s.step_number
       WHEN 1 THEN 1
@@ -498,6 +591,49 @@ view: upff_signup_funnel {
       END AS hours_from_prev
       FROM user_days ud
       CROSS JOIN steps s
+      )
+
+      SELECT fr.*
+      , CAST(NULL AS VARCHAR(256)) AS spend_source
+      , CAST(NULL AS VARCHAR(256)) AS spend_channel
+      , CAST(NULL AS VARCHAR(512)) AS spend_campaign
+      , CAST(NULL AS FLOAT)        AS spend
+      FROM funnel_rows fr
+
+      UNION ALL
+
+      -- Marketing spend rows: one per period, day, channel and campaign. They carry
+      -- no user, so every user count ignores them; Entry Date and Day of Period are
+      -- set to the spend day so spend lines up with the funnel by day.
+      SELECT
+      'spend|' || sr.period || '|' || TO_CHAR(sr.spend_date, 'YYYY-MM-DD') || '|'
+      || COALESCE(sr.spend_source, '') || '|' || COALESCE(sr.spend_channel, '') || '|' || COALESCE(sr.spend_campaign, '') AS pk
+      , CAST(NULL AS VARCHAR(512)) AS user_pk
+      , CAST(NULL AS VARCHAR(32))  AS platform
+      , CAST(NULL AS VARCHAR(32))  AS platform_group
+      , CAST(NULL AS VARCHAR(512)) AS anonymous_id
+      , sr.period           AS period
+      , sr.spend_date       AS entry_at
+      , CAST(NULL AS TIMESTAMP) AS entry_day   -- keeps spend rows out of daily-average day counts
+      , CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512))
+      , CAST(NULL AS VARCHAR(64))
+      , CAST(NULL AS TIMESTAMP), CAST(NULL AS TIMESTAMP), CAST(NULL AS TIMESTAMP)
+      , CAST(NULL AS VARCHAR(320)), CAST(NULL AS VARCHAR(256)), CAST(NULL AS TIMESTAMP)
+      , CAST(NULL AS BIGINT)                                                         -- platform_day_rn
+      , DATEDIFF(day, DATE_TRUNC('day', sr.period_start), sr.spend_date) + 1   -- day_of_period
+      , CAST(NULL AS BIGINT), CAST(NULL AS BIGINT), CAST(NULL AS BIGINT)
+      , CAST(NULL AS BIGINT), CAST(NULL AS BIGINT), CAST(NULL AS BIGINT)
+      , CAST(NULL AS BIGINT), CAST(NULL AS BIGINT), CAST(NULL AS BIGINT)
+      , CAST(NULL AS BIGINT)                                                         -- vimeo_trial_conversions
+      , 1                                                                     -- step_number (kept on step 1)
+      , 'App Installed / Landing Page Visit'                                  -- step_name
+      , CAST(NULL AS BIGINT)                                                         -- vimeo_trial_conversions_s1
+      , CAST(NULL AS INTEGER), CAST(NULL AS INTEGER), CAST(NULL AS FLOAT)                          -- reached_flag, prev_flag, hours_from_prev
+      , sr.spend_source
+      , sr.spend_channel
+      , sr.spend_campaign
+      , sr.spend::FLOAT
+      FROM spend_rows sr
       ;;
   }
 
@@ -614,7 +750,7 @@ view: upff_signup_funnel {
   dimension: became_paying {
     group_label: "Trial to Paid"
     label: "Became Paying Customer"
-    description: "Yes if the user became a paying customer. Free-trial orders: Web needs a Chargebee payment_succeeded (matched by email) within 10 days of the order; mobile and Connected TV need a Vimeo OTT free_trial_converted (matched by user_id) between the period start and 14 days after the period end. Paid-only orders (on/after 2026-09-09): always yes, because the order is the payment. Also called: converted to paid, paid subscriber."
+    description: "Yes if the user became a paying customer. Free-trial orders: Web only, a Chargebee payment_succeeded (matched by email) within 10 days of the order. Mobile and Connected TV trial conversions can't be tied to individual users and are counted in aggregate in the Trial to Paid measures instead, so this is No for app trial orders. Paid-only orders (on/after 2026-09-09): always yes, because the order is the payment. Also called: converted to paid, paid subscriber."
     type: yesno
     sql: ${TABLE}.paid_at IS NOT NULL ;;
   }
@@ -703,6 +839,34 @@ view: upff_signup_funnel {
     type: string
     sql: ${TABLE}.marketing_platform ;;
     can_filter: no
+  }
+
+  # ---------------------------------------------------------------------------
+  # Marketing spend dimensions (spend rows only; blank on funnel rows)
+  # ---------------------------------------------------------------------------
+
+  dimension: spend_source {
+    group_label: "Marketing Spend"
+    label: "Marketing Source"
+    description: "Platform or site the spend was bought on: Google Ads, Meta Ads, or the channel entered in Looker (e.g. TikTok, Pinterest, Apple Search Ads, Banner | Fox, CTV | Fox, iHeart). Use to stack or break down Marketing Spend. Use only with spend measures; funnel users have no source here. Also called: ad platform, media platform, spend source, site."
+    type: string
+    sql: ${TABLE}.spend_source ;;
+  }
+
+  dimension: spend_channel {
+    group_label: "Marketing Spend"
+    label: "Marketing Channel"
+    description: "Detailed channel the spend belongs to: Facebook, each Google Ads campaign (as in the daily_spend view), and channels entered in Looker. For a cleaner platform-level view use Marketing Source. Use only with spend measures; funnel users have no channel here."
+    type: string
+    sql: ${TABLE}.spend_channel ;;
+  }
+
+  dimension: spend_campaign {
+    group_label: "Marketing Spend"
+    label: "Marketing Campaign"
+    description: "Ad campaign the spend belongs to (Facebook and Google Ads). Use only with spend measures."
+    type: string
+    sql: ${TABLE}.spend_campaign ;;
   }
 
   # ---------------------------------------------------------------------------
@@ -988,12 +1152,15 @@ view: upff_signup_funnel {
   measure: trial_paid_current {
     group_label: "Trial to Paid"
     label: "Trials Converted to Paid (Current Period)"
-    description: "Current-period free-trial sign-ups who became paying customers (Web: within 10 days of the order; apps: by 14 days after the period end). Also called: trial conversions."
-    type: count_distinct
-    sql: ${user_pk} ;;
-    filters: [period: "Current", converted: "yes", free_trial_order: "yes", became_paying: "yes"]
+    description: "Current-period free-trial conversions. Web: user-level (Chargebee payment within 10 days of the order). Mobile and Connected TV: aggregate Vimeo OTT trial conversions received during the period dates, by platform. Also called: trial conversions."
+    type: number
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Current' AND ${TABLE}.platform = 'Web'
+                              AND ${TABLE}.order_completed_at < '2026-09-09'
+                              AND ${TABLE}.paid_at IS NOT NULL THEN ${user_pk} END)
+         + SUM(CASE WHEN ${TABLE}.period = 'Current' AND ${TABLE}.platform <> 'Web' THEN ${TABLE}.vimeo_trial_conversions_s1 ELSE 0 END) ;;
     value_format_name: decimal_0
   }
+
 
   measure: trial_to_paid_rate_current {
     group_label: "Trial to Paid"
@@ -1017,12 +1184,15 @@ view: upff_signup_funnel {
   measure: trial_paid_prior {
     group_label: "Trial to Paid"
     label: "Trials Converted to Paid (Prior Period)"
-    description: "Prior-period free-trial sign-ups who became paying customers (Web: within 10 days of the order; apps: by 14 days after the period end). Also called: trial conversions."
-    type: count_distinct
-    sql: ${user_pk} ;;
-    filters: [period: "Prior", converted: "yes", free_trial_order: "yes", became_paying: "yes"]
+    description: "Prior-period free-trial conversions. Web: user-level (Chargebee payment within 10 days of the order). Mobile and Connected TV: aggregate Vimeo OTT trial conversions received during the period dates, by platform. Also called: trial conversions."
+    type: number
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Prior' AND ${TABLE}.platform = 'Web'
+                              AND ${TABLE}.order_completed_at < '2026-09-09'
+                              AND ${TABLE}.paid_at IS NOT NULL THEN ${user_pk} END)
+         + SUM(CASE WHEN ${TABLE}.period = 'Prior' AND ${TABLE}.platform <> 'Web' THEN ${TABLE}.vimeo_trial_conversions_s1 ELSE 0 END) ;;
     value_format_name: decimal_0
   }
+
 
   measure: trial_to_paid_rate_prior {
     group_label: "Trial to Paid"
@@ -1036,12 +1206,13 @@ view: upff_signup_funnel {
   measure: paying_customers_current {
     group_label: "Trial to Paid"
     label: "Paying Customers (Current Period)"
-    description: "Current-period users who became paying customers: free-trial sign-ups who converted, plus paid-only orders (on/after 2026-09-09). Comparable across the trial and paid-only tests. Also called: paid subscribers, paid conversions."
-    type: count_distinct
-    sql: ${user_pk} ;;
-    filters: [period: "Current", became_paying: "yes"]
+    description: "Current-period paying customers: paid-only orders (on/after 2026-09-09) plus converted free trials (Web user-level; mobile and Connected TV from aggregate Vimeo OTT trial conversions received during the period). Also called: paid subscribers, paid conversions."
+    type: number
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Current' AND ${TABLE}.paid_at IS NOT NULL THEN ${user_pk} END)
+      + SUM(CASE WHEN ${TABLE}.period = 'Current' AND ${TABLE}.platform <> 'Web' THEN ${TABLE}.vimeo_trial_conversions_s1 ELSE 0 END) ;;
     value_format_name: decimal_0
   }
+
 
   measure: entry_to_paid_rate_current {
     group_label: "Trial to Paid"
@@ -1055,12 +1226,13 @@ view: upff_signup_funnel {
   measure: paying_customers_prior {
     group_label: "Trial to Paid"
     label: "Paying Customers (Prior Period)"
-    description: "Prior-period users who became paying customers: free-trial sign-ups who converted, plus paid-only orders (on/after 2026-09-09). Comparable across the trial and paid-only tests. Also called: paid subscribers, paid conversions."
-    type: count_distinct
-    sql: ${user_pk} ;;
-    filters: [period: "Prior", became_paying: "yes"]
+    description: "Prior-period paying customers: paid-only orders (on/after 2026-09-09) plus converted free trials (Web user-level; mobile and Connected TV from aggregate Vimeo OTT trial conversions received during the period). Also called: paid subscribers, paid conversions."
+    type: number
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Prior' AND ${TABLE}.paid_at IS NOT NULL THEN ${user_pk} END)
+      + SUM(CASE WHEN ${TABLE}.period = 'Prior' AND ${TABLE}.platform <> 'Web' THEN ${TABLE}.vimeo_trial_conversions_s1 ELSE 0 END) ;;
     value_format_name: decimal_0
   }
+
 
   measure: entry_to_paid_rate_prior {
     group_label: "Trial to Paid"
@@ -1083,12 +1255,13 @@ view: upff_signup_funnel {
   measure: paying_customers {
     group_label: "Trial to Paid"
     label: "Paying Customers"
-    description: "Users who became paying customers (converted trials plus paid-only orders), for any grouping such as Sign-Up Offer, Platform or Entry Week."
-    type: count_distinct
-    sql: ${user_pk} ;;
-    filters: [became_paying: "yes"]
+    description: "Paid-only orders plus converted free trials (Web user-level; mobile and Connected TV from aggregate Vimeo OTT trial conversions), for any grouping such as Platform or Period."
+    type: number
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.paid_at IS NOT NULL THEN ${user_pk} END)
+      + SUM(CASE WHEN ${TABLE}.platform <> 'Web' THEN ${TABLE}.vimeo_trial_conversions_s1 ELSE 0 END) ;;
     value_format_name: decimal_0
   }
+
 
   measure: entry_to_paid_rate {
     group_label: "Trial to Paid"
@@ -1097,6 +1270,24 @@ view: upff_signup_funnel {
     type: number
     sql: 1.0 * ${paying_customers} / NULLIF(${entries}, 0) ;;
     value_format_name: percent_2
+  }
+
+  measure: vimeo_trial_conversions_current {
+    group_label: "Trial to Paid"
+    label: "Vimeo Trial Conversions (Current Period)"
+    description: "Count of Vimeo OTT free-trial-converted events received during the current period dates, by platform (ios+tvos as iOS, android+android_tv as Android, amazon_fire_tv+amazon_fire_tablet as Amazon Fire TV, plus Roku, Vizio TV and Web). Aggregate, not tied to individual funnel users."
+    type: number
+    sql: SUM(CASE WHEN ${TABLE}.period = 'Current' THEN ${TABLE}.vimeo_trial_conversions_s1 ELSE 0 END) ;;
+    value_format_name: decimal_0
+  }
+
+  measure: vimeo_trial_conversions_prior {
+    group_label: "Trial to Paid"
+    label: "Vimeo Trial Conversions (Prior Period)"
+    description: "Count of Vimeo OTT free-trial-converted events received during the prior period dates, by platform (ios+tvos as iOS, android+android_tv as Android, amazon_fire_tv+amazon_fire_tablet as Amazon Fire TV, plus Roku, Vizio TV and Web). Aggregate, not tied to individual funnel users."
+    type: number
+    sql: SUM(CASE WHEN ${TABLE}.period = 'Prior' THEN ${TABLE}.vimeo_trial_conversions_s1 ELSE 0 END) ;;
+    value_format_name: decimal_0
   }
 
   measure: trial_to_paid_rate_change_pp {
@@ -1121,12 +1312,14 @@ view: upff_signup_funnel {
   measure: trial_paid {
     group_label: "Trial to Paid"
     label: "Trials Converted to Paid"
-    description: "Free-trial sign-ups who became paying customers, for any grouping."
-    type: count_distinct
-    sql: ${user_pk} ;;
-    filters: [converted: "yes", free_trial_order: "yes", became_paying: "yes"]
+    description: "Free-trial conversions for any grouping. Web: user-level. Mobile and Connected TV: aggregate Vimeo OTT trial conversions received during the period dates."
+    type: number
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.platform = 'Web' AND ${TABLE}.order_completed_at < '2026-09-09'
+                              AND ${TABLE}.paid_at IS NOT NULL THEN ${user_pk} END)
+         + SUM(CASE WHEN ${TABLE}.platform <> 'Web' THEN ${TABLE}.vimeo_trial_conversions_s1 ELSE 0 END) ;;
     value_format_name: decimal_0
   }
+
 
   measure: trial_to_paid_rate {
     group_label: "Trial to Paid"
@@ -1452,6 +1645,121 @@ view: upff_signup_funnel {
     sql: 100.0 * (${avg_daily_effective_conversion_step_current} - ${avg_daily_effective_conversion_step_prior}) ;;
     value_format_name: decimal_2
     required_fields: [step_name]
+  }
+
+  # ---------------------------------------------------------------------------
+  # Marketing spend and cost per acquisition (CPA)
+  # Spend is daily paid media spend by channel, assigned to the Current or Prior
+  # Period by spend date. It is not split by platform, so these measures are for
+  # totals, Period, Entry Date, Day of Period or Marketing Channel.
+  # ---------------------------------------------------------------------------
+
+  measure: spend_current {
+    group_label: "Marketing Spend and CPA"
+    label: "Marketing Spend (Current Period)"
+    description: "Total paid media spend on days in the current period. Also called: ad spend, media spend, marketing cost."
+    type: number
+    sql: SUM(CASE WHEN ${TABLE}.period = 'Current' THEN ${TABLE}.spend END) ;;
+    value_format_name: usd
+  }
+
+  measure: cost_per_order_current {
+    group_label: "Marketing Spend and CPA"
+    label: "Cost per Order (Current Period)"
+    description: "Marketing Spend divided by Conversions (Order Completed) for the current period. Before 2026-09-09, app orders include free-trial sign-ups and rejoins. Also called: CPA, cost per acquisition, cost per sign-up. Blank when a Web Campaign Filter is applied (spend can't be split by campaign) or when Platform is filtered (spend isn't split by platform)."
+    type: number
+    sql: {% if upff_signup_funnel.marketing_platform_filter._is_filtered or upff_signup_funnel.campaign_source_filter._is_filtered or upff_signup_funnel.campaign_name_filter._is_filtered or upff_signup_funnel.campaign_medium_filter._is_filtered %} NULL {% else %} ${spend_current} / NULLIF(${conversions_current}, 0) {% endif %} ;;
+    value_format_name: usd
+  }
+
+  measure: cost_per_paid_current {
+    group_label: "Marketing Spend and CPA"
+    label: "Cost per Paying Customer (Current Period)"
+    description: "Marketing Spend divided by Paying Customers for the current period (paid-only orders plus converted trials). Also called: cost per paid subscriber, CAC. Blank when a Web Campaign Filter is applied (spend can't be split by campaign) or when Platform is filtered (spend isn't split by platform)."
+    type: number
+    sql: {% if upff_signup_funnel.marketing_platform_filter._is_filtered or upff_signup_funnel.campaign_source_filter._is_filtered or upff_signup_funnel.campaign_name_filter._is_filtered or upff_signup_funnel.campaign_medium_filter._is_filtered %} NULL {% else %} ${spend_current} / NULLIF(${paying_customers_current}, 0) {% endif %} ;;
+    value_format_name: usd
+  }
+
+  measure: spend_prior {
+    group_label: "Marketing Spend and CPA"
+    label: "Marketing Spend (Prior Period)"
+    description: "Total paid media spend on days in the prior period. Also called: ad spend, media spend, marketing cost."
+    type: number
+    sql: SUM(CASE WHEN ${TABLE}.period = 'Prior' THEN ${TABLE}.spend END) ;;
+    value_format_name: usd
+  }
+
+  measure: cost_per_order_prior {
+    group_label: "Marketing Spend and CPA"
+    label: "Cost per Order (Prior Period)"
+    description: "Marketing Spend divided by Conversions (Order Completed) for the prior period. Before 2026-09-09, app orders include free-trial sign-ups and rejoins. Also called: CPA, cost per acquisition, cost per sign-up. Blank when a Web Campaign Filter is applied (spend can't be split by campaign) or when Platform is filtered (spend isn't split by platform)."
+    type: number
+    sql: {% if upff_signup_funnel.marketing_platform_filter._is_filtered or upff_signup_funnel.campaign_source_filter._is_filtered or upff_signup_funnel.campaign_name_filter._is_filtered or upff_signup_funnel.campaign_medium_filter._is_filtered %} NULL {% else %} ${spend_prior} / NULLIF(${conversions_prior}, 0) {% endif %} ;;
+    value_format_name: usd
+  }
+
+  measure: cost_per_paid_prior {
+    group_label: "Marketing Spend and CPA"
+    label: "Cost per Paying Customer (Prior Period)"
+    description: "Marketing Spend divided by Paying Customers for the prior period (paid-only orders plus converted trials). Also called: cost per paid subscriber, CAC. Blank when a Web Campaign Filter is applied (spend can't be split by campaign) or when Platform is filtered (spend isn't split by platform)."
+    type: number
+    sql: {% if upff_signup_funnel.marketing_platform_filter._is_filtered or upff_signup_funnel.campaign_source_filter._is_filtered or upff_signup_funnel.campaign_name_filter._is_filtered or upff_signup_funnel.campaign_medium_filter._is_filtered %} NULL {% else %} ${spend_prior} / NULLIF(${paying_customers_prior}, 0) {% endif %} ;;
+    value_format_name: usd
+  }
+
+  measure: spend_pct_change {
+    group_label: "Marketing Spend and CPA"
+    label: "Marketing Spend Percent Change (Current vs Prior)"
+    description: "Percent change in marketing spend from the prior to the current period."
+    type: number
+    sql: (${spend_current} - ${spend_prior}) / NULLIF(${spend_prior}, 0) ;;
+    value_format_name: percent_1
+  }
+
+  measure: cost_per_order_pct_change {
+    group_label: "Marketing Spend and CPA"
+    label: "Cost per Order Percent Change (Current vs Prior)"
+    description: "Percent change in Cost per Order (CPA) from the prior to the current period. Negative means cheaper. Blank when a Web Campaign Filter is applied (spend can't be split by campaign) or when Platform is filtered (spend isn't split by platform)."
+    type: number
+    sql: {% if upff_signup_funnel.marketing_platform_filter._is_filtered or upff_signup_funnel.campaign_source_filter._is_filtered or upff_signup_funnel.campaign_name_filter._is_filtered or upff_signup_funnel.campaign_medium_filter._is_filtered %} NULL {% else %} (${cost_per_order_current} - ${cost_per_order_prior}) / NULLIF(${cost_per_order_prior}, 0) {% endif %} ;;
+    value_format_name: percent_1
+  }
+
+  measure: cost_per_paid_pct_change {
+    group_label: "Marketing Spend and CPA"
+    label: "Cost per Paying Customer Percent Change (Current vs Prior)"
+    description: "Percent change in Cost per Paying Customer from the prior to the current period. Negative means cheaper. Blank when a Web Campaign Filter is applied (spend can't be split by campaign) or when Platform is filtered (spend isn't split by platform)."
+    type: number
+    sql: {% if upff_signup_funnel.marketing_platform_filter._is_filtered or upff_signup_funnel.campaign_source_filter._is_filtered or upff_signup_funnel.campaign_name_filter._is_filtered or upff_signup_funnel.campaign_medium_filter._is_filtered %} NULL {% else %} (${cost_per_paid_current} - ${cost_per_paid_prior}) / NULLIF(${cost_per_paid_prior}, 0) {% endif %} ;;
+    value_format_name: percent_1
+  }
+
+  measure: spend {
+    group_label: "Marketing Spend and CPA"
+    label: "Marketing Spend"
+    description: "Paid media spend for any grouping (Entry Date, Day of Period, Period, Marketing Channel). Use Entry Date as the day axis for daily spend."
+    type: number
+    sql: SUM(${TABLE}.spend) ;;
+    value_format_name: usd
+  }
+
+  measure: cost_per_order {
+    group_label: "Marketing Spend and CPA"
+    label: "Cost per Order (CPA)"
+    description: "Marketing Spend / Conversions (Order Completed) for any grouping, e.g. by Entry Date or Day of Period with Period pivoted. Do not group by Marketing Channel (orders are not tied to channels). Blank when a Web Campaign Filter is applied (spend can't be split by campaign) or when Platform is filtered (spend isn't split by platform)."
+    type: number
+    sql: {% if upff_signup_funnel.marketing_platform_filter._is_filtered or upff_signup_funnel.campaign_source_filter._is_filtered or upff_signup_funnel.campaign_name_filter._is_filtered or upff_signup_funnel.campaign_medium_filter._is_filtered %} NULL {% else %} ${spend} / NULLIF(${conversions}, 0) {% endif %} ;;
+    value_format_name: usd
+  }
+
+  measure: cost_per_paid {
+    group_label: "Marketing Spend and CPA"
+    label: "Cost per Paying Customer"
+    description: "Marketing Spend / Paying Customers for any grouping, e.g. by Entry Date or Day of Period with Period pivoted. Blank when a Web Campaign Filter is applied (spend can't be split by campaign) or when Platform is filtered (spend isn't split by platform)."
+    type: number
+    sql: {% if upff_signup_funnel.marketing_platform_filter._is_filtered or upff_signup_funnel.campaign_source_filter._is_filtered or upff_signup_funnel.campaign_name_filter._is_filtered or upff_signup_funnel.campaign_medium_filter._is_filtered %} NULL {% else %} ${spend} / NULLIF(${paying_customers}, 0) {% endif %} ;;
+    value_format_name: usd
   }
 
   set: detail {
