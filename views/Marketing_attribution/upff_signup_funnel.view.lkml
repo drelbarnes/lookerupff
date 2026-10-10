@@ -31,7 +31,8 @@
 # android+android_tv -> Android, amazon_fire_tv+amazon_fire_tablet -> Amazon
 # Fire TV), because app orders lack an identifier to match them user by user.
 # Each order also carries user_email and user_id (Customer Email / User ID).
-# Customer Type: Net New vs Rejoin (apps: context_transaction_purchase_context;
+# Customer Type: Net New vs Rejoin (iOS/Android/Fire TV: context_transaction_purchase_context;
+# Roku/Vizio TV: "view";
 # web: order_completed vs order_resubscribed). Rejoins are paid at the order.
 # Plan Frequency: Monthly / Yearly (apps: context_transaction_product_sku;
 # web: value 5.99 / 59.99). Plan Frequency Filter narrows orders only.
@@ -245,36 +246,40 @@ view: upff_signup_funnel {
       ),
 
       -- Each order carries email (Web match), user_id, customer type and plan frequency.
-      --   Customer type, apps: context_transaction_purchase_context ('subscription' = Net New,
-      --     'reactivation' = Rejoin). Web: order_completed = Net New, order_resubscribed = Rejoin.
-      --   Plan frequency, apps: context_transaction_product_sku ('monthly' / 'yearly').
+      --   Customer type: iOS, Android, Fire TV use context_transaction_purchase_context
+      --     ('subscription' = Net New, 'reactivation' = Rejoin). Roku and Vizio TV use "view"
+      --     (Roku: account_creation = Net New; Vizio: plan_selection = Net New; both:
+      --     renewal_gate = Rejoin). Web: order_completed = Net New, order_resubscribed = Rejoin.
+      --   Plan frequency, apps: context_transaction_product_sku contains 'monthly' or 'yearly'
+      --     (e.g. monthly, upfaithmonthly, com.upfaithandfamily.monthly). Vizio TV has no
+      --     product SKU field yet, so its plan frequency is Unknown.
       --     Web: value (5.99 = Monthly, 59.99 = Yearly; under 30 = Monthly, 30+ = Yearly).
       order_completed_events AS (
       SELECT 'iOS'::VARCHAR(32) AS platform, COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at,
       LOWER(TRIM(user_email))::VARCHAR(320) AS customer_email,
       TRIM(user_id::VARCHAR(256))::VARCHAR(256) AS user_id,
       (CASE LOWER(TRIM(context_transaction_purchase_context)) WHEN 'reactivation' THEN 'Rejoin' WHEN 'subscription' THEN 'Net New' ELSE 'Unknown' END)::VARCHAR(16) AS order_type,
-      (CASE LOWER(TRIM(context_transaction_product_sku)) WHEN 'monthly' THEN 'Monthly' WHEN 'yearly' THEN 'Yearly' ELSE 'Unknown' END)::VARCHAR(16) AS plan_frequency
+      (CASE WHEN LOWER(TRIM(context_transaction_product_sku)) LIKE '%monthly%' THEN 'Monthly' WHEN LOWER(TRIM(context_transaction_product_sku)) LIKE '%yearly%' THEN 'Yearly' ELSE 'Unknown' END)::VARCHAR(16) AS plan_frequency
       FROM ios.order_completed
       UNION ALL
       SELECT 'Android', COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(user_id::VARCHAR(256)),
       CASE LOWER(TRIM(context_transaction_purchase_context)) WHEN 'reactivation' THEN 'Rejoin' WHEN 'subscription' THEN 'Net New' ELSE 'Unknown' END,
-      CASE LOWER(TRIM(context_transaction_product_sku)) WHEN 'monthly' THEN 'Monthly' WHEN 'yearly' THEN 'Yearly' ELSE 'Unknown' END
+      CASE WHEN LOWER(TRIM(context_transaction_product_sku)) LIKE '%monthly%' THEN 'Monthly' WHEN LOWER(TRIM(context_transaction_product_sku)) LIKE '%yearly%' THEN 'Yearly' ELSE 'Unknown' END
       FROM android.order_completed
       UNION ALL
       SELECT 'Roku', COALESCE(NULLIF(TRIM(anonymous_id), ''), 'device:' || NULLIF(TRIM(device_id::VARCHAR(256)), '')) AS anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(user_id::VARCHAR(256)),
-      CASE LOWER(TRIM(context_transaction_purchase_context)) WHEN 'reactivation' THEN 'Rejoin' WHEN 'subscription' THEN 'Net New' ELSE 'Unknown' END,
-      CASE LOWER(TRIM(context_transaction_product_sku)) WHEN 'monthly' THEN 'Monthly' WHEN 'yearly' THEN 'Yearly' ELSE 'Unknown' END
+      CASE LOWER(TRIM("view")) WHEN 'renewal_gate' THEN 'Rejoin' WHEN 'account_creation' THEN 'Net New' ELSE 'Unknown' END,
+      CASE WHEN LOWER(TRIM(context_transaction_product_sku)) LIKE '%monthly%' THEN 'Monthly' WHEN LOWER(TRIM(context_transaction_product_sku)) LIKE '%yearly%' THEN 'Yearly' ELSE 'Unknown' END
       FROM roku.order_completed
       UNION ALL
       SELECT 'Amazon Fire TV', COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(user_id::VARCHAR(256)),
       CASE LOWER(TRIM(context_transaction_purchase_context)) WHEN 'reactivation' THEN 'Rejoin' WHEN 'subscription' THEN 'Net New' ELSE 'Unknown' END,
-      CASE LOWER(TRIM(context_transaction_product_sku)) WHEN 'monthly' THEN 'Monthly' WHEN 'yearly' THEN 'Yearly' ELSE 'Unknown' END
+      CASE WHEN LOWER(TRIM(context_transaction_product_sku)) LIKE '%monthly%' THEN 'Monthly' WHEN LOWER(TRIM(context_transaction_product_sku)) LIKE '%yearly%' THEN 'Yearly' ELSE 'Unknown' END
       FROM amazon_fire_tv.order_completed
       UNION ALL
       SELECT 'Vizio TV', COALESCE(NULLIF(TRIM(anonymous_id), ''), 'device:' || NULLIF(TRIM(device_id::VARCHAR(256)), '')) AS anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(user_id::VARCHAR(256)),
-      CASE LOWER(TRIM(context_transaction_purchase_context)) WHEN 'reactivation' THEN 'Rejoin' WHEN 'subscription' THEN 'Net New' ELSE 'Unknown' END,
-      CASE LOWER(TRIM(context_transaction_product_sku)) WHEN 'monthly' THEN 'Monthly' WHEN 'yearly' THEN 'Yearly' ELSE 'Unknown' END
+      CASE LOWER(TRIM("view")) WHEN 'renewal_gate' THEN 'Rejoin' WHEN 'plan_selection' THEN 'Net New' ELSE 'Unknown' END,
+      'Unknown'  -- Vizio TV has no product SKU field yet
       FROM vizio_tv.order_completed
       UNION ALL
       SELECT 'Web', COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(user_id::VARCHAR(256)),
@@ -800,7 +805,7 @@ view: upff_signup_funnel {
   dimension: order_type {
     group_label: "Trial to Paid"
     label: "Customer Type"
-    description: "Net New or Rejoin for users who ordered. Net New = first-time subscriber; Rejoin = a returning customer re-subscribing. Apps: from the order's purchase context (subscription = Net New, reactivation = Rejoin). Web: Order Completed = Net New, Order Resubscribed = Rejoin. Unknown = app order with no purchase context. Rejoins pay at the order and never count as free trials. Group by this, or use the Net New Conversions and Rejoin Conversions measures; filtering on it removes users who did not order, which changes rates. Also called: new vs returning, net new customers, rejoins, reactivations, win-backs."
+    description: "Net New or Rejoin for users who ordered. Net New = first-time subscriber; Rejoin = a returning customer re-subscribing. Apps: iOS, Android and Fire TV from the order's purchase context (subscription = Net New, reactivation = Rejoin); Roku and Vizio TV from the order's view (Roku account_creation / Vizio plan_selection = Net New, renewal_gate = Rejoin). Web: Order Completed = Net New, Order Resubscribed = Rejoin. Unknown = app order with no purchase context. Rejoins pay at the order and never count as free trials. Group by this, or use the Net New Conversions and Rejoin Conversions measures; filtering on it removes users who did not order, which changes rates. Also called: new vs returning, net new customers, rejoins, reactivations, win-backs."
     type: string
     sql: ${TABLE}.order_type ;;
     suggestions: ["Net New", "Rejoin", "Unknown"]
@@ -809,7 +814,7 @@ view: upff_signup_funnel {
   dimension: plan_frequency {
     group_label: "Trial to Paid"
     label: "Plan Frequency"
-    description: "Billing plan of the user's order: Monthly or Yearly. Apps: from the product SKU. Web: from the order value (5.99 = Monthly, 59.99 = Yearly). Unknown when the plan is not recorded (including web rejoins). Group by this to split conversions; to filter while keeping all entries, use Plan Frequency Filter. When grouped by this field, the aggregate app trial conversions are left out of Paying Customers and Trials Converted to Paid (they can't be placed on individual users); use Plan Frequency Filter instead to see them by plan. Also called: plan, billing period, monthly vs annual."
+    description: "Billing plan of the user's order: Monthly or Yearly. Apps: from the product SKU (any SKU containing monthly or yearly, e.g. upfaithmonthly or com.upfaithandfamily.yearly). Web: from the order value (5.99 = Monthly, 59.99 = Yearly). Unknown when the plan is not recorded (web rejoins and all Vizio TV orders, which have no product SKU yet). Group by this to split conversions; to filter while keeping all entries, use Plan Frequency Filter. When grouped by this field, the aggregate app trial conversions are left out of Paying Customers and Trials Converted to Paid (they can't be placed on individual users); use Plan Frequency Filter instead to see them by plan. Also called: plan, billing period, monthly vs annual."
     type: string
     sql: ${TABLE}.plan_frequency ;;
     suggestions: ["Monthly", "Yearly", "Unknown"]
