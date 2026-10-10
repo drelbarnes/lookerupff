@@ -31,8 +31,10 @@
 # android+android_tv -> Android, amazon_fire_tv+amazon_fire_tablet -> Amazon
 # Fire TV), because app orders lack an identifier to match them user by user.
 # Each order also carries user_email and user_id (Customer Email / User ID).
-# Web rejoins (javascript_upentertainment_checkout.order_resubscribed) count as
-# Web orders (Order Type = Rejoin) and as paying customers at the order.
+# Customer Type: Net New vs Rejoin (apps: context_transaction_purchase_context;
+# web: order_completed vs order_resubscribed). Rejoins are paid at the order.
+# Plan Frequency: Monthly / Yearly (apps: context_transaction_product_sku;
+# web: value 5.99 / 59.99). Plan Frequency Filter narrows orders only.
 # Offer by order date:
 #   - Before 2026-09-09: 7-day FREE TRIAL. Web trials convert if a matching
 #     Chargebee payment lands within 10 days of the order (7-day trial + 3-day
@@ -91,6 +93,13 @@ view: upff_signup_funnel {
   # ---------------------------------------------------------------------------
   # Web campaign filters (apply to Web users only; app users always included)
   # ---------------------------------------------------------------------------
+
+  filter: plan_frequency_filter {
+    type: string
+    label: "Plan Frequency Filter"
+    description: "Limits conversions and paying customers to orders on the selected plan (Monthly or Yearly). Entries and earlier funnel steps are not affected, so conversion rates stay correct (e.g. monthly conversion rate = monthly orders / all entries). Use this, not the Plan Frequency dimension, to filter. App free-trial conversions (counted in aggregate from Vimeo) are filtered by their subscription_frequency."
+    suggestions: ["Monthly", "Yearly", "Unknown"]
+  }
 
   filter: marketing_platform_filter {
     type: string
@@ -235,29 +244,50 @@ view: upff_signup_funnel {
       WHERE brand = 'upfaithandfamily'
       ),
 
-      -- Each order carries the customer's email (Web match) and user_id (app match)
+      -- Each order carries email (Web match), user_id, customer type and plan frequency.
+      --   Customer type, apps: context_transaction_purchase_context ('subscription' = Net New,
+      --     'reactivation' = Rejoin). Web: order_completed = Net New, order_resubscribed = Rejoin.
+      --   Plan frequency, apps: context_transaction_product_sku ('monthly' / 'yearly').
+      --     Web: value (5.99 = Monthly, 59.99 = Yearly; under 30 = Monthly, 30+ = Yearly).
       order_completed_events AS (
       SELECT 'iOS'::VARCHAR(32) AS platform, COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at,
       LOWER(TRIM(user_email))::VARCHAR(320) AS customer_email,
       TRIM(user_id::VARCHAR(256))::VARCHAR(256) AS user_id,
-      'New Order'::VARCHAR(16) AS order_type
+      (CASE LOWER(TRIM(context_transaction_purchase_context)) WHEN 'reactivation' THEN 'Rejoin' WHEN 'subscription' THEN 'Net New' ELSE 'Unknown' END)::VARCHAR(16) AS order_type,
+      (CASE LOWER(TRIM(context_transaction_product_sku)) WHEN 'monthly' THEN 'Monthly' WHEN 'yearly' THEN 'Yearly' ELSE 'Unknown' END)::VARCHAR(16) AS plan_frequency
       FROM ios.order_completed
       UNION ALL
-      SELECT 'Android',        COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(user_id::VARCHAR(256)), 'New Order' FROM android.order_completed
+      SELECT 'Android', COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(user_id::VARCHAR(256)),
+      CASE LOWER(TRIM(context_transaction_purchase_context)) WHEN 'reactivation' THEN 'Rejoin' WHEN 'subscription' THEN 'Net New' ELSE 'Unknown' END,
+      CASE LOWER(TRIM(context_transaction_product_sku)) WHEN 'monthly' THEN 'Monthly' WHEN 'yearly' THEN 'Yearly' ELSE 'Unknown' END
+      FROM android.order_completed
       UNION ALL
-      SELECT 'Roku',           COALESCE(NULLIF(TRIM(anonymous_id), ''), 'device:' || NULLIF(TRIM(device_id::VARCHAR(256)), '')) AS anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(user_id::VARCHAR(256)), 'New Order' FROM roku.order_completed
+      SELECT 'Roku', COALESCE(NULLIF(TRIM(anonymous_id), ''), 'device:' || NULLIF(TRIM(device_id::VARCHAR(256)), '')) AS anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(user_id::VARCHAR(256)),
+      CASE LOWER(TRIM(context_transaction_purchase_context)) WHEN 'reactivation' THEN 'Rejoin' WHEN 'subscription' THEN 'Net New' ELSE 'Unknown' END,
+      CASE LOWER(TRIM(context_transaction_product_sku)) WHEN 'monthly' THEN 'Monthly' WHEN 'yearly' THEN 'Yearly' ELSE 'Unknown' END
+      FROM roku.order_completed
       UNION ALL
-      SELECT 'Amazon Fire TV', COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(user_id::VARCHAR(256)), 'New Order' FROM amazon_fire_tv.order_completed
+      SELECT 'Amazon Fire TV', COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(user_id::VARCHAR(256)),
+      CASE LOWER(TRIM(context_transaction_purchase_context)) WHEN 'reactivation' THEN 'Rejoin' WHEN 'subscription' THEN 'Net New' ELSE 'Unknown' END,
+      CASE LOWER(TRIM(context_transaction_product_sku)) WHEN 'monthly' THEN 'Monthly' WHEN 'yearly' THEN 'Yearly' ELSE 'Unknown' END
+      FROM amazon_fire_tv.order_completed
       UNION ALL
-      SELECT 'Vizio TV',       COALESCE(NULLIF(TRIM(anonymous_id), ''), 'device:' || NULLIF(TRIM(device_id::VARCHAR(256)), '')) AS anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(user_id::VARCHAR(256)), 'New Order' FROM vizio_tv.order_completed
+      SELECT 'Vizio TV', COALESCE(NULLIF(TRIM(anonymous_id), ''), 'device:' || NULLIF(TRIM(device_id::VARCHAR(256)), '')) AS anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(user_id::VARCHAR(256)),
+      CASE LOWER(TRIM(context_transaction_purchase_context)) WHEN 'reactivation' THEN 'Rejoin' WHEN 'subscription' THEN 'Net New' ELSE 'Unknown' END,
+      CASE LOWER(TRIM(context_transaction_product_sku)) WHEN 'monthly' THEN 'Monthly' WHEN 'yearly' THEN 'Yearly' ELSE 'Unknown' END
+      FROM vizio_tv.order_completed
       UNION ALL
-      SELECT 'Web',            COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(user_id::VARCHAR(256)), 'New Order'
+      SELECT 'Web', COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(user_id::VARCHAR(256)),
+      'Net New',
+      CASE WHEN value IS NULL THEN 'Unknown' WHEN value < 30 THEN 'Monthly' ELSE 'Yearly' END
       FROM javascript_upentertainment_checkout.order_completed
       WHERE brand = 'upfaithandfamily'
       UNION ALL
       -- Web rejoins (re-subscribed customers). customer_id stands in for user_id.
       -- If this table also has a brand column, uncomment the filter so only UPFF rejoins count.
-      SELECT 'Web',            COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(customer_id::VARCHAR(256)), 'Rejoin'
+      SELECT 'Web', COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at, LOWER(TRIM(user_email)), TRIM(customer_id::VARCHAR(256)),
+      'Rejoin',
+      'Unknown'
       FROM javascript_upentertainment_checkout.order_resubscribed
       -- WHERE brand = 'upfaithandfamily'
       ),
@@ -337,11 +367,11 @@ view: upff_signup_funnel {
 
       -- ---------- Step 4 ----------
       order_completed AS (
-      SELECT platform, anonymous_id, period, order_completed_at, customer_email, user_id, order_type,
+      SELECT platform, anonymous_id, period, order_completed_at, customer_email, user_id, order_type, plan_frequency,
       CASE WHEN platform = 'Web' THEN customer_email ELSE user_id END AS match_key
       FROM (
       SELECT pc.platform, pc.anonymous_id, pc.period,
-      e.received_at AS order_completed_at, e.customer_email, e.user_id, e.order_type,
+      e.received_at AS order_completed_at, e.customer_email, e.user_id, e.order_type, e.plan_frequency,
       ROW_NUMBER() OVER (PARTITION BY pc.platform, pc.anonymous_id, pc.period
       ORDER BY e.received_at) AS rn
       FROM plan_chosen pc
@@ -379,7 +409,11 @@ view: upff_signup_funnel {
       --   amazon_fire_tv + amazon_fire_tablet -> Amazon Fire TV
       --   roku -> Roku | vizio_tv -> Vizio TV | web -> Web
       vimeo_daily AS (
-      SELECT pb.period, v.platform, v.conv_day, COUNT(DISTINCT v.user_id) AS trial_conversions
+      SELECT pb.period, v.platform, v.conv_day
+      , COUNT(DISTINCT v.user_id)                                                AS trial_conversions
+      , COUNT(DISTINCT CASE WHEN v.plan_frequency = 'Monthly' THEN v.user_id END) AS trial_conversions_monthly
+      , COUNT(DISTINCT CASE WHEN v.plan_frequency = 'Yearly'  THEN v.user_id END) AS trial_conversions_yearly
+      , COUNT(DISTINCT CASE WHEN v.plan_frequency = 'Unknown' THEN v.user_id END) AS trial_conversions_unknown
       FROM (
       SELECT CASE LOWER(TRIM(platform))
       WHEN 'ios'                THEN 'iOS'
@@ -394,7 +428,12 @@ view: upff_signup_funnel {
       ELSE 'Other'
       END AS platform,
       DATE_TRUNC('day', received_at) AS conv_day,
-      TRIM(user_id::VARCHAR(256))    AS user_id
+      TRIM(user_id::VARCHAR(256))    AS user_id,
+      CASE LOWER(TRIM(subscription_frequency))
+      WHEN 'monthly' THEN 'Monthly'
+      WHEN 'yearly'  THEN 'Yearly'
+      ELSE 'Unknown'
+      END AS plan_frequency
       FROM vimeo_ott_webhook.customer_product_free_trial_converted
       ) v
       JOIN period_bounds pb
@@ -513,10 +552,11 @@ view: upff_signup_funnel {
       , oc.order_completed_at
       , oc.customer_email
       , COALESCE(oc.user_id, uid.user_id) AS user_id
-      -- Paid-only orders (on/after 2026-09-09) and web rejoins are paid at the order itself
+      -- Paid-only orders (on/after 2026-09-09) and rejoins are paid at the order itself
       , CASE WHEN oc.order_completed_at >= '2026-09-09' OR oc.order_type = 'Rejoin' THEN oc.order_completed_at
       ELSE pd.paid_at END AS paid_at
       , oc.order_type
+      , oc.plan_frequency
       FROM entries en
       LEFT JOIN signup_viewed sv
       ON sv.anonymous_id = en.anonymous_id AND sv.platform = en.platform AND sv.period = en.period
@@ -550,7 +590,10 @@ view: upff_signup_funnel {
       , COUNT(uf.plan_chosen_at)   OVER (PARTITION BY uf.period, uf.platform, uf.entry_day)       AS day_plan_chosen_platform
       -- Aggregate Vimeo trial conversions for this period/platform/day, carried on
       -- exactly one user row so SUM() never double counts
-      , CASE WHEN uf.platform_day_rn = 1 THEN COALESCE(vd.trial_conversions, 0) ELSE 0 END AS vimeo_trial_conversions
+      , CASE WHEN uf.platform_day_rn = 1 THEN COALESCE(vd.trial_conversions, 0) ELSE 0 END         AS vimeo_trial_conversions
+      , CASE WHEN uf.platform_day_rn = 1 THEN COALESCE(vd.trial_conversions_monthly, 0) ELSE 0 END AS vimeo_trial_monthly
+      , CASE WHEN uf.platform_day_rn = 1 THEN COALESCE(vd.trial_conversions_yearly, 0) ELSE 0 END  AS vimeo_trial_yearly
+      , CASE WHEN uf.platform_day_rn = 1 THEN COALESCE(vd.trial_conversions_unknown, 0) ELSE 0 END AS vimeo_trial_unknown
       FROM (
       SELECT f.*,
       ROW_NUMBER() OVER (PARTITION BY f.period, f.platform, f.entry_day ORDER BY f.anonymous_id) AS platform_day_rn
@@ -579,6 +622,9 @@ view: upff_signup_funnel {
       , s.step_number
       , s.step_name
       , CASE WHEN s.step_number = 1 THEN ud.vimeo_trial_conversions ELSE 0 END AS vimeo_trial_conversions_s1
+      , CASE WHEN s.step_number = 1 THEN ud.vimeo_trial_monthly ELSE 0 END     AS vimeo_trial_monthly_s1
+      , CASE WHEN s.step_number = 1 THEN ud.vimeo_trial_yearly ELSE 0 END      AS vimeo_trial_yearly_s1
+      , CASE WHEN s.step_number = 1 THEN ud.vimeo_trial_unknown ELSE 0 END     AS vimeo_trial_unknown_s1
       -- Did this user reach this step?
       , CASE s.step_number
       WHEN 1 THEN 1
@@ -631,15 +677,18 @@ view: upff_signup_funnel {
       , CAST(NULL AS TIMESTAMP), CAST(NULL AS TIMESTAMP), CAST(NULL AS TIMESTAMP)
       , CAST(NULL AS VARCHAR(320)), CAST(NULL AS VARCHAR(256)), CAST(NULL AS TIMESTAMP)
       , CAST(NULL AS VARCHAR(16))                                             -- order_type
+      , CAST(NULL AS VARCHAR(16))                                             -- plan_frequency
       , CAST(NULL AS BIGINT)                                                         -- platform_day_rn
       , DATEDIFF(day, DATE_TRUNC('day', sr.period_start), sr.spend_date) + 1   -- day_of_period
       , CAST(NULL AS BIGINT), CAST(NULL AS BIGINT), CAST(NULL AS BIGINT)
       , CAST(NULL AS BIGINT), CAST(NULL AS BIGINT), CAST(NULL AS BIGINT)
       , CAST(NULL AS BIGINT), CAST(NULL AS BIGINT), CAST(NULL AS BIGINT)
       , CAST(NULL AS BIGINT)                                                         -- vimeo_trial_conversions
+      , CAST(NULL AS BIGINT), CAST(NULL AS BIGINT), CAST(NULL AS BIGINT)            -- vimeo_trial_monthly / yearly / unknown
       , 1                                                                     -- step_number (kept on step 1)
       , 'App Installed / Landing Page Visit'                                  -- step_name
       , CAST(NULL AS BIGINT)                                                         -- vimeo_trial_conversions_s1
+      , CAST(NULL AS BIGINT), CAST(NULL AS BIGINT), CAST(NULL AS BIGINT)            -- vimeo_trial_*_s1
       , CAST(NULL AS INTEGER), CAST(NULL AS INTEGER), CAST(NULL AS FLOAT)                          -- reached_flag, prev_flag, hours_from_prev
       , sr.spend_source
       , sr.spend_channel
@@ -750,17 +799,27 @@ view: upff_signup_funnel {
 
   dimension: order_type {
     group_label: "Trial to Paid"
-    label: "Order Type"
-    description: "New Order or Rejoin. Rejoin = a returning customer re-subscribing on the web (order_resubscribed). Rejoins pay at the order, so they count as paying customers and never as free trials. App rejoins cannot be told apart from new orders and show as New Order. Also called: resubscribe, reactivation, win-back."
+    label: "Customer Type"
+    description: "Net New or Rejoin for users who ordered. Net New = first-time subscriber; Rejoin = a returning customer re-subscribing. Apps: from the order's purchase context (subscription = Net New, reactivation = Rejoin). Web: Order Completed = Net New, Order Resubscribed = Rejoin. Unknown = app order with no purchase context. Rejoins pay at the order and never count as free trials. Group by this, or use the Net New Conversions and Rejoin Conversions measures; filtering on it removes users who did not order, which changes rates. Also called: new vs returning, net new customers, rejoins, reactivations, win-backs."
     type: string
     sql: ${TABLE}.order_type ;;
-    suggestions: ["New Order", "Rejoin"]
+    suggestions: ["Net New", "Rejoin", "Unknown"]
   }
+
+  dimension: plan_frequency {
+    group_label: "Trial to Paid"
+    label: "Plan Frequency"
+    description: "Billing plan of the user's order: Monthly or Yearly. Apps: from the product SKU. Web: from the order value (5.99 = Monthly, 59.99 = Yearly). Unknown when the plan is not recorded (including web rejoins). Group by this to split conversions; to filter while keeping all entries, use Plan Frequency Filter. When grouped by this field, the aggregate app trial conversions are left out of Paying Customers and Trials Converted to Paid (they can't be placed on individual users); use Plan Frequency Filter instead to see them by plan. Also called: plan, billing period, monthly vs annual."
+    type: string
+    sql: ${TABLE}.plan_frequency ;;
+    suggestions: ["Monthly", "Yearly", "Unknown"]
+  }
+
 
   dimension: signup_offer {
     group_label: "Trial to Paid"
     label: "Sign-Up Offer"
-    description: "Offer in place when the user ordered: Free Trial (7-day trial, orders before 2026-09-09), Paid Only (no-trial test, orders on/after 2026-09-09), or Rejoin (web re-subscriber, paid at the order). Blank if the user did not order. Use to compare the trial and paid-only tests. Also called: offer, trial vs paid, test group."
+    description: "Offer in place when the user ordered: Free Trial (7-day trial, orders before 2026-09-09), Paid Only (no-trial test, orders on/after 2026-09-09), or Rejoin (returning customer, paid at the order). Blank if the user did not order. Use to compare the trial and paid-only tests. Also called: offer, trial vs paid, test group."
     type: string
     sql: CASE WHEN ${TABLE}.order_completed_at IS NULL THEN NULL
               WHEN ${TABLE}.order_type = 'Rejoin' THEN 'Rejoin'
@@ -1025,7 +1084,7 @@ view: upff_signup_funnel {
     label: "Conversions (Current Period)"
     description: "Number of users from the current period who completed an order within the attribution window. Also called: sign-ups, subscriptions, orders, purchases, new subscribers."
     type: count_distinct
-    sql: ${user_pk} ;;
+    sql: CASE WHEN {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END ;;
     filters: [period: "Current", converted: "yes"]
     value_format_name: decimal_0
   }
@@ -1070,7 +1129,7 @@ view: upff_signup_funnel {
     label: "Conversions (Prior Period)"
     description: "Number of users from the prior period who completed an order within the attribution window. Also called: sign-ups, subscriptions, orders, purchases, new subscribers."
     type: count_distinct
-    sql: ${user_pk} ;;
+    sql: CASE WHEN {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END ;;
     filters: [period: "Prior", converted: "yes"]
     value_format_name: decimal_0
   }
@@ -1094,6 +1153,46 @@ view: upff_signup_funnel {
                THEN 1.0 / ${day_entries} ELSE 0 END)
       / NULLIF(COUNT(DISTINCT CASE WHEN ${TABLE}.step_number = 1 AND ${TABLE}.period = 'Prior' THEN ${day_key} END), 0) ;;
     value_format_name: percent_2
+  }
+
+  measure: net_new_conversions_current {
+    group_label: "Headline Metrics"
+    label: "Net New Conversions (Current Period)"
+    description: "Current-period conversions where Customer Type = Net New. Also called: new customers, first-time subscribers."
+    type: count_distinct
+    sql: CASE WHEN {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END ;;
+    filters: [period: "Current", converted: "yes", order_type: "Net New"]
+    value_format_name: decimal_0
+  }
+
+  measure: rejoin_conversions_current {
+    group_label: "Headline Metrics"
+    label: "Rejoin Conversions (Current Period)"
+    description: "Current-period conversions where Customer Type = Rejoin. Also called: rejoins, returning customers, reactivations, win-backs."
+    type: count_distinct
+    sql: CASE WHEN {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END ;;
+    filters: [period: "Current", converted: "yes", order_type: "Rejoin"]
+    value_format_name: decimal_0
+  }
+
+  measure: net_new_conversions_prior {
+    group_label: "Headline Metrics"
+    label: "Net New Conversions (Prior Period)"
+    description: "Prior-period conversions where Customer Type = Net New. Also called: new customers, first-time subscribers."
+    type: count_distinct
+    sql: CASE WHEN {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END ;;
+    filters: [period: "Prior", converted: "yes", order_type: "Net New"]
+    value_format_name: decimal_0
+  }
+
+  measure: rejoin_conversions_prior {
+    group_label: "Headline Metrics"
+    label: "Rejoin Conversions (Prior Period)"
+    description: "Prior-period conversions where Customer Type = Rejoin. Also called: rejoins, returning customers, reactivations, win-backs."
+    type: count_distinct
+    sql: CASE WHEN {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END ;;
+    filters: [period: "Prior", converted: "yes", order_type: "Rejoin"]
+    value_format_name: decimal_0
   }
 
   measure: conversions_pct_change {
@@ -1142,7 +1241,7 @@ view: upff_signup_funnel {
     label: "Conversions"
     description: "Number of users who completed an order within the attribution window. Group by Period, Entry Date or Day of Period for trends. Also called: sign-ups, subscriptions, orders."
     type: count_distinct
-    sql: ${user_pk} ;;
+    sql: CASE WHEN {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END ;;
     filters: [converted: "yes"]
     value_format_name: decimal_0
     drill_fields: [detail*]
@@ -1166,7 +1265,7 @@ view: upff_signup_funnel {
     label: "Free Trial Sign-Ups (Current Period)"
     description: "Current-period users whose order was a free-trial sign-up (completed before 2026-09-09). Also called: trial starts, trials."
     type: count_distinct
-    sql: ${user_pk} ;;
+    sql: CASE WHEN {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END ;;
     filters: [period: "Current", converted: "yes", free_trial_order: "yes"]
     value_format_name: decimal_0
   }
@@ -1179,8 +1278,8 @@ view: upff_signup_funnel {
     sql: COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Current' AND ${TABLE}.platform = 'Web'
                               AND ${TABLE}.order_completed_at < '2026-09-09'
                               AND COALESCE(${TABLE}.order_type, '') <> 'Rejoin'
-                              AND ${TABLE}.paid_at IS NOT NULL THEN ${user_pk} END)
-         + SUM(CASE WHEN ${TABLE}.period = 'Current' AND ${TABLE}.platform <> 'Web' THEN ${TABLE}.vimeo_trial_conversions_s1 ELSE 0 END) ;;
+                              AND ${TABLE}.paid_at IS NOT NULL AND {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END)
+         + {% if upff_signup_funnel.plan_frequency._is_selected %} 0 {% else %} SUM(CASE WHEN ${TABLE}.period = 'Current' AND ${TABLE}.platform <> 'Web' THEN (CASE WHEN {% condition plan_frequency_filter %} 'Monthly' {% endcondition %} THEN COALESCE(${TABLE}.vimeo_trial_monthly_s1, 0) ELSE 0 END + CASE WHEN {% condition plan_frequency_filter %} 'Yearly' {% endcondition %} THEN COALESCE(${TABLE}.vimeo_trial_yearly_s1, 0) ELSE 0 END + CASE WHEN {% condition plan_frequency_filter %} 'Unknown' {% endcondition %} THEN COALESCE(${TABLE}.vimeo_trial_unknown_s1, 0) ELSE 0 END) ELSE 0 END) {% endif %} ;;
     value_format_name: decimal_0
   }
 
@@ -1199,7 +1298,7 @@ view: upff_signup_funnel {
     label: "Free Trial Sign-Ups (Prior Period)"
     description: "Prior-period users whose order was a free-trial sign-up (completed before 2026-09-09). Also called: trial starts, trials."
     type: count_distinct
-    sql: ${user_pk} ;;
+    sql: CASE WHEN {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END ;;
     filters: [period: "Prior", converted: "yes", free_trial_order: "yes"]
     value_format_name: decimal_0
   }
@@ -1212,8 +1311,8 @@ view: upff_signup_funnel {
     sql: COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Prior' AND ${TABLE}.platform = 'Web'
                               AND ${TABLE}.order_completed_at < '2026-09-09'
                               AND COALESCE(${TABLE}.order_type, '') <> 'Rejoin'
-                              AND ${TABLE}.paid_at IS NOT NULL THEN ${user_pk} END)
-         + SUM(CASE WHEN ${TABLE}.period = 'Prior' AND ${TABLE}.platform <> 'Web' THEN ${TABLE}.vimeo_trial_conversions_s1 ELSE 0 END) ;;
+                              AND ${TABLE}.paid_at IS NOT NULL AND {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END)
+         + {% if upff_signup_funnel.plan_frequency._is_selected %} 0 {% else %} SUM(CASE WHEN ${TABLE}.period = 'Prior' AND ${TABLE}.platform <> 'Web' THEN (CASE WHEN {% condition plan_frequency_filter %} 'Monthly' {% endcondition %} THEN COALESCE(${TABLE}.vimeo_trial_monthly_s1, 0) ELSE 0 END + CASE WHEN {% condition plan_frequency_filter %} 'Yearly' {% endcondition %} THEN COALESCE(${TABLE}.vimeo_trial_yearly_s1, 0) ELSE 0 END + CASE WHEN {% condition plan_frequency_filter %} 'Unknown' {% endcondition %} THEN COALESCE(${TABLE}.vimeo_trial_unknown_s1, 0) ELSE 0 END) ELSE 0 END) {% endif %} ;;
     value_format_name: decimal_0
   }
 
@@ -1232,8 +1331,8 @@ view: upff_signup_funnel {
     label: "Paying Customers (Current Period)"
     description: "Current-period paying customers: paid-only orders (on/after 2026-09-09) plus converted free trials (Web user-level; mobile and Connected TV from aggregate Vimeo OTT trial conversions received during the period). Also called: paid subscribers, paid conversions."
     type: number
-    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Current' AND ${TABLE}.paid_at IS NOT NULL THEN ${user_pk} END)
-      + SUM(CASE WHEN ${TABLE}.period = 'Current' AND ${TABLE}.platform <> 'Web' THEN ${TABLE}.vimeo_trial_conversions_s1 ELSE 0 END) ;;
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Current' AND ${TABLE}.paid_at IS NOT NULL AND {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END)
+      + {% if upff_signup_funnel.plan_frequency._is_selected %} 0 {% else %} SUM(CASE WHEN ${TABLE}.period = 'Current' AND ${TABLE}.platform <> 'Web' THEN (CASE WHEN {% condition plan_frequency_filter %} 'Monthly' {% endcondition %} THEN COALESCE(${TABLE}.vimeo_trial_monthly_s1, 0) ELSE 0 END + CASE WHEN {% condition plan_frequency_filter %} 'Yearly' {% endcondition %} THEN COALESCE(${TABLE}.vimeo_trial_yearly_s1, 0) ELSE 0 END + CASE WHEN {% condition plan_frequency_filter %} 'Unknown' {% endcondition %} THEN COALESCE(${TABLE}.vimeo_trial_unknown_s1, 0) ELSE 0 END) ELSE 0 END) {% endif %} ;;
     value_format_name: decimal_0
   }
 
@@ -1252,8 +1351,8 @@ view: upff_signup_funnel {
     label: "Paying Customers (Prior Period)"
     description: "Prior-period paying customers: paid-only orders (on/after 2026-09-09) plus converted free trials (Web user-level; mobile and Connected TV from aggregate Vimeo OTT trial conversions received during the period). Also called: paid subscribers, paid conversions."
     type: number
-    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Prior' AND ${TABLE}.paid_at IS NOT NULL THEN ${user_pk} END)
-      + SUM(CASE WHEN ${TABLE}.period = 'Prior' AND ${TABLE}.platform <> 'Web' THEN ${TABLE}.vimeo_trial_conversions_s1 ELSE 0 END) ;;
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Prior' AND ${TABLE}.paid_at IS NOT NULL AND {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END)
+      + {% if upff_signup_funnel.plan_frequency._is_selected %} 0 {% else %} SUM(CASE WHEN ${TABLE}.period = 'Prior' AND ${TABLE}.platform <> 'Web' THEN (CASE WHEN {% condition plan_frequency_filter %} 'Monthly' {% endcondition %} THEN COALESCE(${TABLE}.vimeo_trial_monthly_s1, 0) ELSE 0 END + CASE WHEN {% condition plan_frequency_filter %} 'Yearly' {% endcondition %} THEN COALESCE(${TABLE}.vimeo_trial_yearly_s1, 0) ELSE 0 END + CASE WHEN {% condition plan_frequency_filter %} 'Unknown' {% endcondition %} THEN COALESCE(${TABLE}.vimeo_trial_unknown_s1, 0) ELSE 0 END) ELSE 0 END) {% endif %} ;;
     value_format_name: decimal_0
   }
 
@@ -1282,7 +1381,7 @@ view: upff_signup_funnel {
     description: "Paid-only orders plus converted free trials (Web user-level; mobile and Connected TV from aggregate Vimeo OTT trial conversions), for any grouping such as Platform or Period."
     type: number
     sql: COUNT(DISTINCT CASE WHEN ${TABLE}.paid_at IS NOT NULL THEN ${user_pk} END)
-      + SUM(CASE WHEN ${TABLE}.platform <> 'Web' THEN ${TABLE}.vimeo_trial_conversions_s1 ELSE 0 END) ;;
+      + {% if upff_signup_funnel.plan_frequency._is_selected %} 0 {% else %} SUM(CASE WHEN ${TABLE}.platform <> 'Web' THEN (CASE WHEN {% condition plan_frequency_filter %} 'Monthly' {% endcondition %} THEN COALESCE(${TABLE}.vimeo_trial_monthly_s1, 0) ELSE 0 END + CASE WHEN {% condition plan_frequency_filter %} 'Yearly' {% endcondition %} THEN COALESCE(${TABLE}.vimeo_trial_yearly_s1, 0) ELSE 0 END + CASE WHEN {% condition plan_frequency_filter %} 'Unknown' {% endcondition %} THEN COALESCE(${TABLE}.vimeo_trial_unknown_s1, 0) ELSE 0 END) ELSE 0 END) {% endif %} ;;
     value_format_name: decimal_0
   }
 
@@ -1301,7 +1400,7 @@ view: upff_signup_funnel {
     label: "Vimeo Trial Conversions (Current Period)"
     description: "Count of Vimeo OTT free-trial-converted events received during the current period dates, by platform (ios+tvos as iOS, android+android_tv as Android, amazon_fire_tv+amazon_fire_tablet as Amazon Fire TV, plus Roku, Vizio TV and Web). Aggregate, not tied to individual funnel users."
     type: number
-    sql: SUM(CASE WHEN ${TABLE}.period = 'Current' THEN ${TABLE}.vimeo_trial_conversions_s1 ELSE 0 END) ;;
+    sql: SUM(CASE WHEN ${TABLE}.period = 'Current' THEN (CASE WHEN {% condition plan_frequency_filter %} 'Monthly' {% endcondition %} THEN COALESCE(${TABLE}.vimeo_trial_monthly_s1, 0) ELSE 0 END + CASE WHEN {% condition plan_frequency_filter %} 'Yearly' {% endcondition %} THEN COALESCE(${TABLE}.vimeo_trial_yearly_s1, 0) ELSE 0 END + CASE WHEN {% condition plan_frequency_filter %} 'Unknown' {% endcondition %} THEN COALESCE(${TABLE}.vimeo_trial_unknown_s1, 0) ELSE 0 END) ELSE 0 END) ;;
     value_format_name: decimal_0
   }
 
@@ -1310,7 +1409,7 @@ view: upff_signup_funnel {
     label: "Vimeo Trial Conversions (Prior Period)"
     description: "Count of Vimeo OTT free-trial-converted events received during the prior period dates, by platform (ios+tvos as iOS, android+android_tv as Android, amazon_fire_tv+amazon_fire_tablet as Amazon Fire TV, plus Roku, Vizio TV and Web). Aggregate, not tied to individual funnel users."
     type: number
-    sql: SUM(CASE WHEN ${TABLE}.period = 'Prior' THEN ${TABLE}.vimeo_trial_conversions_s1 ELSE 0 END) ;;
+    sql: SUM(CASE WHEN ${TABLE}.period = 'Prior' THEN (CASE WHEN {% condition plan_frequency_filter %} 'Monthly' {% endcondition %} THEN COALESCE(${TABLE}.vimeo_trial_monthly_s1, 0) ELSE 0 END + CASE WHEN {% condition plan_frequency_filter %} 'Yearly' {% endcondition %} THEN COALESCE(${TABLE}.vimeo_trial_yearly_s1, 0) ELSE 0 END + CASE WHEN {% condition plan_frequency_filter %} 'Unknown' {% endcondition %} THEN COALESCE(${TABLE}.vimeo_trial_unknown_s1, 0) ELSE 0 END) ELSE 0 END) ;;
     value_format_name: decimal_0
   }
 
@@ -1328,7 +1427,7 @@ view: upff_signup_funnel {
     label: "Free Trial Sign-Ups"
     description: "Users whose order was a free-trial sign-up (before 2026-09-09), for any grouping such as Platform or Entry Week."
     type: count_distinct
-    sql: ${user_pk} ;;
+    sql: CASE WHEN {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END ;;
     filters: [converted: "yes", free_trial_order: "yes"]
     value_format_name: decimal_0
   }
@@ -1340,8 +1439,8 @@ view: upff_signup_funnel {
     type: number
     sql: COUNT(DISTINCT CASE WHEN ${TABLE}.platform = 'Web' AND ${TABLE}.order_completed_at < '2026-09-09'
                               AND COALESCE(${TABLE}.order_type, '') <> 'Rejoin'
-                              AND ${TABLE}.paid_at IS NOT NULL THEN ${user_pk} END)
-         + SUM(CASE WHEN ${TABLE}.platform <> 'Web' THEN ${TABLE}.vimeo_trial_conversions_s1 ELSE 0 END) ;;
+                              AND ${TABLE}.paid_at IS NOT NULL AND {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END)
+         + {% if upff_signup_funnel.plan_frequency._is_selected %} 0 {% else %} SUM(CASE WHEN ${TABLE}.platform <> 'Web' THEN (CASE WHEN {% condition plan_frequency_filter %} 'Monthly' {% endcondition %} THEN COALESCE(${TABLE}.vimeo_trial_monthly_s1, 0) ELSE 0 END + CASE WHEN {% condition plan_frequency_filter %} 'Yearly' {% endcondition %} THEN COALESCE(${TABLE}.vimeo_trial_yearly_s1, 0) ELSE 0 END + CASE WHEN {% condition plan_frequency_filter %} 'Unknown' {% endcondition %} THEN COALESCE(${TABLE}.vimeo_trial_unknown_s1, 0) ELSE 0 END) ELSE 0 END) {% endif %} ;;
     value_format_name: decimal_0
   }
 
@@ -1457,7 +1556,8 @@ view: upff_signup_funnel {
     label: "Users at Step (Prior Period)"
     description: "Number of prior-period users who reached each funnel step. Use with Funnel Step. Also called: step volume, users per stage."
     type: number
-    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Prior' AND ${reached_flag} = 1 THEN ${user_pk} END) ;;
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Prior' AND ${reached_flag} = 1
+      AND (${TABLE}.step_number < 4 OR {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %}) THEN ${user_pk} END) ;;
     value_format_name: decimal_0
     required_fields: [step_name]
   }
@@ -1542,7 +1642,8 @@ view: upff_signup_funnel {
     label: "Users at Step (Current Period)"
     description: "Number of current-period users who reached each funnel step. Use with Funnel Step. Also called: step volume, users per stage."
     type: number
-    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Current' AND ${reached_flag} = 1 THEN ${user_pk} END) ;;
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Current' AND ${reached_flag} = 1
+      AND (${TABLE}.step_number < 4 OR {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %}) THEN ${user_pk} END) ;;
     value_format_name: decimal_0
     required_fields: [step_name]
   }
@@ -1788,6 +1889,6 @@ view: upff_signup_funnel {
   }
 
   set: detail {
-    fields: [platform, anonymous_id, period, entry_time, marketing_platform, campaign_source, campaign_name, converted, signup_offer, became_paying, paid_date, customer_email]
+    fields: [platform, anonymous_id, period, entry_time, marketing_platform, campaign_source, campaign_name, converted, order_type, plan_frequency, signup_offer, became_paying, paid_date, customer_email]
   }
 }
