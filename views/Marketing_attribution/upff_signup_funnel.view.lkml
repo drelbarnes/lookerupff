@@ -98,7 +98,7 @@ view: upff_signup_funnel {
   filter: plan_frequency_filter {
     type: string
     label: "Plan Frequency Filter"
-    description: "Limits conversions and paying customers to orders on the selected plan (Monthly or Yearly). Entries and earlier funnel steps are not affected, so conversion rates stay correct (e.g. monthly conversion rate = monthly orders / all entries). Use this, not the Plan Frequency dimension, to filter. App free-trial conversions (counted in aggregate from Vimeo) are filtered by their subscription_frequency."
+    description: "Limits conversions and paying customers to orders on the selected plan (Monthly or Yearly). Entries and earlier funnel steps are not affected, so conversion rates stay correct (e.g. monthly conversion rate = monthly orders / all entries). Vizio TV records no plan, so its orders are estimated: each Vizio order counts toward Monthly and Yearly in the same proportion as all other platforms' orders in that period (counts may show as estimates). Use this, not the Plan Frequency dimension, to filter. App free-trial conversions (counted in aggregate from Vimeo) are filtered by their subscription_frequency."
     suggestions: ["Monthly", "Yearly", "Unknown"]
   }
 
@@ -391,6 +391,17 @@ view: upff_signup_funnel {
       WHERE rn = 1
       ),
 
+      -- Plan mix of every platform except Vizio TV (which has no plan field), per period.
+      -- Used to estimate Vizio TV's monthly / yearly split when the Plan Frequency Filter is set.
+      plan_mix AS (
+      SELECT period
+      , SUM(CASE WHEN plan_frequency = 'Monthly' THEN 1 ELSE 0 END)::FLOAT
+      / NULLIF(SUM(CASE WHEN plan_frequency IN ('Monthly', 'Yearly') THEN 1 ELSE 0 END), 0) AS monthly_share
+      FROM order_completed
+      WHERE platform <> 'Vizio TV'
+      GROUP BY period
+      ),
+
       -- Period start/end from the Current Period and Prior Period filters
       -- (date_end is the exclusive end). Falls back to the first/last entry
       -- when a filter has an open start or end.
@@ -562,6 +573,8 @@ view: upff_signup_funnel {
       ELSE pd.paid_at END AS paid_at
       , oc.order_type
       , oc.plan_frequency
+      -- Vizio TV only: estimated share of its orders that are monthly (all other platforms' mix)
+      , CASE WHEN en.platform = 'Vizio TV' THEN pm.monthly_share END AS est_monthly_share
       FROM entries en
       LEFT JOIN signup_viewed sv
       ON sv.anonymous_id = en.anonymous_id AND sv.platform = en.platform AND sv.period = en.period
@@ -571,6 +584,8 @@ view: upff_signup_funnel {
       ON oc.anonymous_id = en.anonymous_id AND oc.platform = en.platform AND oc.period = en.period
       LEFT JOIN paid pd
       ON pd.anonymous_id = en.anonymous_id AND pd.platform = en.platform AND pd.period = en.period
+      LEFT JOIN plan_mix pm
+      ON pm.period = en.period
       LEFT JOIN (SELECT platform, anonymous_id, MAX(user_id) AS user_id FROM app_user_ids GROUP BY platform, anonymous_id) uid
       ON uid.anonymous_id = oc.anonymous_id AND uid.platform = oc.platform
       ),
@@ -683,6 +698,7 @@ view: upff_signup_funnel {
       , CAST(NULL AS VARCHAR(320)), CAST(NULL AS VARCHAR(256)), CAST(NULL AS TIMESTAMP)
       , CAST(NULL AS VARCHAR(16))                                             -- order_type
       , CAST(NULL AS VARCHAR(16))                                             -- plan_frequency
+      , CAST(NULL AS FLOAT)                                                   -- est_monthly_share
       , CAST(NULL AS BIGINT)                                                         -- platform_day_rn
       , DATEDIFF(day, DATE_TRUNC('day', sr.period_start), sr.spend_date) + 1   -- day_of_period
       , CAST(NULL AS BIGINT), CAST(NULL AS BIGINT), CAST(NULL AS BIGINT)
@@ -811,10 +827,23 @@ view: upff_signup_funnel {
     suggestions: ["Net New", "Rejoin", "Unknown"]
   }
 
+  dimension: vizio_plan_weight {
+    hidden: yes
+    type: number
+    description: "Vizio TV only: the share of a Vizio order counted toward the plan(s) selected in Plan Frequency Filter, using the monthly/yearly mix of all other platforms in the same period."
+    sql:
+      CASE WHEN ${TABLE}.platform = 'Vizio TV' THEN
+        COALESCE(
+            CASE WHEN {% condition plan_frequency_filter %} 'Monthly' {% endcondition %} THEN ${TABLE}.est_monthly_share ELSE 0 END
+          + CASE WHEN {% condition plan_frequency_filter %} 'Yearly'  {% endcondition %} THEN 1 - ${TABLE}.est_monthly_share ELSE 0 END
+        , 0)
+      END ;;
+  }
+
   dimension: plan_frequency {
     group_label: "Trial to Paid"
     label: "Plan Frequency"
-    description: "Billing plan of the user's order: Monthly or Yearly. Apps: from the product SKU (any SKU containing monthly or yearly, e.g. upfaithmonthly or com.upfaithandfamily.yearly). Web: from the order value (5.99 = Monthly, 59.99 = Yearly). Unknown when the plan is not recorded (web rejoins and all Vizio TV orders, which have no product SKU yet). Group by this to split conversions; to filter while keeping all entries, use Plan Frequency Filter. When grouped by this field, the aggregate app trial conversions are left out of Paying Customers and Trials Converted to Paid (they can't be placed on individual users); use Plan Frequency Filter instead to see them by plan. Also called: plan, billing period, monthly vs annual."
+    description: "Billing plan of the user's order: Monthly or Yearly. Apps: from the product SKU (any SKU containing monthly or yearly, e.g. upfaithmonthly or com.upfaithandfamily.yearly). Web: from the order value (5.99 = Monthly, 59.99 = Yearly). Unknown when the plan is not recorded (web rejoins and all Vizio TV orders, which have no product SKU yet). With Plan Frequency Filter set, Vizio TV orders are estimated from the other platforms' monthly/yearly mix. Group by this to split conversions; to filter while keeping all entries, use Plan Frequency Filter. When grouped by this field, the aggregate app trial conversions are left out of Paying Customers and Trials Converted to Paid (they can't be placed on individual users); use Plan Frequency Filter instead to see them by plan. Also called: plan, billing period, monthly vs annual."
     type: string
     sql: ${TABLE}.plan_frequency ;;
     suggestions: ["Monthly", "Yearly", "Unknown"]
@@ -1088,9 +1117,9 @@ view: upff_signup_funnel {
     group_label: "Headline Metrics"
     label: "Conversions (Current Period)"
     description: "Number of users from the current period who completed an order within the attribution window. Also called: sign-ups, subscriptions, orders, purchases, new subscribers."
-    type: count_distinct
-    sql: CASE WHEN {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END ;;
-    filters: [period: "Current", converted: "yes"]
+    type: number
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Current' AND ${TABLE}.order_completed_at IS NOT NULL AND {% if upff_signup_funnel.plan_frequency_filter._is_filtered %} ${TABLE}.platform <> 'Vizio TV' AND {% endif %} {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END)
+      {% if upff_signup_funnel.plan_frequency_filter._is_filtered %} + COALESCE(SUM(CASE WHEN ${TABLE}.period = 'Current' AND ${TABLE}.order_completed_at IS NOT NULL AND ${TABLE}.step_number = 1 AND ${TABLE}.platform = 'Vizio TV' THEN ${vizio_plan_weight} END), 0) {% endif %} ;;
     value_format_name: decimal_0
   }
 
@@ -1133,9 +1162,9 @@ view: upff_signup_funnel {
     group_label: "Headline Metrics"
     label: "Conversions (Prior Period)"
     description: "Number of users from the prior period who completed an order within the attribution window. Also called: sign-ups, subscriptions, orders, purchases, new subscribers."
-    type: count_distinct
-    sql: CASE WHEN {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END ;;
-    filters: [period: "Prior", converted: "yes"]
+    type: number
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Prior' AND ${TABLE}.order_completed_at IS NOT NULL AND {% if upff_signup_funnel.plan_frequency_filter._is_filtered %} ${TABLE}.platform <> 'Vizio TV' AND {% endif %} {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END)
+      {% if upff_signup_funnel.plan_frequency_filter._is_filtered %} + COALESCE(SUM(CASE WHEN ${TABLE}.period = 'Prior' AND ${TABLE}.order_completed_at IS NOT NULL AND ${TABLE}.step_number = 1 AND ${TABLE}.platform = 'Vizio TV' THEN ${vizio_plan_weight} END), 0) {% endif %} ;;
     value_format_name: decimal_0
   }
 
@@ -1164,9 +1193,9 @@ view: upff_signup_funnel {
     group_label: "Headline Metrics"
     label: "Net New Conversions (Current Period)"
     description: "Current-period conversions where Customer Type = Net New. Also called: new customers, first-time subscribers."
-    type: count_distinct
-    sql: CASE WHEN {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END ;;
-    filters: [period: "Current", converted: "yes", order_type: "Net New"]
+    type: number
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Current' AND ${TABLE}.order_completed_at IS NOT NULL AND ${TABLE}.order_type = 'Net New' AND {% if upff_signup_funnel.plan_frequency_filter._is_filtered %} ${TABLE}.platform <> 'Vizio TV' AND {% endif %} {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END)
+      {% if upff_signup_funnel.plan_frequency_filter._is_filtered %} + COALESCE(SUM(CASE WHEN ${TABLE}.period = 'Current' AND ${TABLE}.order_completed_at IS NOT NULL AND ${TABLE}.order_type = 'Net New' AND ${TABLE}.step_number = 1 AND ${TABLE}.platform = 'Vizio TV' THEN ${vizio_plan_weight} END), 0) {% endif %} ;;
     value_format_name: decimal_0
   }
 
@@ -1174,9 +1203,9 @@ view: upff_signup_funnel {
     group_label: "Headline Metrics"
     label: "Rejoin Conversions (Current Period)"
     description: "Current-period conversions where Customer Type = Rejoin. Also called: rejoins, returning customers, reactivations, win-backs."
-    type: count_distinct
-    sql: CASE WHEN {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END ;;
-    filters: [period: "Current", converted: "yes", order_type: "Rejoin"]
+    type: number
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Current' AND ${TABLE}.order_completed_at IS NOT NULL AND ${TABLE}.order_type = 'Rejoin' AND {% if upff_signup_funnel.plan_frequency_filter._is_filtered %} ${TABLE}.platform <> 'Vizio TV' AND {% endif %} {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END)
+      {% if upff_signup_funnel.plan_frequency_filter._is_filtered %} + COALESCE(SUM(CASE WHEN ${TABLE}.period = 'Current' AND ${TABLE}.order_completed_at IS NOT NULL AND ${TABLE}.order_type = 'Rejoin' AND ${TABLE}.step_number = 1 AND ${TABLE}.platform = 'Vizio TV' THEN ${vizio_plan_weight} END), 0) {% endif %} ;;
     value_format_name: decimal_0
   }
 
@@ -1184,9 +1213,9 @@ view: upff_signup_funnel {
     group_label: "Headline Metrics"
     label: "Net New Conversions (Prior Period)"
     description: "Prior-period conversions where Customer Type = Net New. Also called: new customers, first-time subscribers."
-    type: count_distinct
-    sql: CASE WHEN {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END ;;
-    filters: [period: "Prior", converted: "yes", order_type: "Net New"]
+    type: number
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Prior' AND ${TABLE}.order_completed_at IS NOT NULL AND ${TABLE}.order_type = 'Net New' AND {% if upff_signup_funnel.plan_frequency_filter._is_filtered %} ${TABLE}.platform <> 'Vizio TV' AND {% endif %} {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END)
+      {% if upff_signup_funnel.plan_frequency_filter._is_filtered %} + COALESCE(SUM(CASE WHEN ${TABLE}.period = 'Prior' AND ${TABLE}.order_completed_at IS NOT NULL AND ${TABLE}.order_type = 'Net New' AND ${TABLE}.step_number = 1 AND ${TABLE}.platform = 'Vizio TV' THEN ${vizio_plan_weight} END), 0) {% endif %} ;;
     value_format_name: decimal_0
   }
 
@@ -1194,9 +1223,9 @@ view: upff_signup_funnel {
     group_label: "Headline Metrics"
     label: "Rejoin Conversions (Prior Period)"
     description: "Prior-period conversions where Customer Type = Rejoin. Also called: rejoins, returning customers, reactivations, win-backs."
-    type: count_distinct
-    sql: CASE WHEN {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END ;;
-    filters: [period: "Prior", converted: "yes", order_type: "Rejoin"]
+    type: number
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Prior' AND ${TABLE}.order_completed_at IS NOT NULL AND ${TABLE}.order_type = 'Rejoin' AND {% if upff_signup_funnel.plan_frequency_filter._is_filtered %} ${TABLE}.platform <> 'Vizio TV' AND {% endif %} {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END)
+      {% if upff_signup_funnel.plan_frequency_filter._is_filtered %} + COALESCE(SUM(CASE WHEN ${TABLE}.period = 'Prior' AND ${TABLE}.order_completed_at IS NOT NULL AND ${TABLE}.order_type = 'Rejoin' AND ${TABLE}.step_number = 1 AND ${TABLE}.platform = 'Vizio TV' THEN ${vizio_plan_weight} END), 0) {% endif %} ;;
     value_format_name: decimal_0
   }
 
@@ -1245,9 +1274,9 @@ view: upff_signup_funnel {
     group_label: "Trend Metrics"
     label: "Conversions"
     description: "Number of users who completed an order within the attribution window. Group by Period, Entry Date or Day of Period for trends. Also called: sign-ups, subscriptions, orders."
-    type: count_distinct
-    sql: CASE WHEN {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END ;;
-    filters: [converted: "yes"]
+    type: number
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.order_completed_at IS NOT NULL AND {% if upff_signup_funnel.plan_frequency_filter._is_filtered %} ${TABLE}.platform <> 'Vizio TV' AND {% endif %} {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END)
+      {% if upff_signup_funnel.plan_frequency_filter._is_filtered %} + COALESCE(SUM(CASE WHEN ${TABLE}.order_completed_at IS NOT NULL AND ${TABLE}.step_number = 1 AND ${TABLE}.platform = 'Vizio TV' THEN ${vizio_plan_weight} END), 0) {% endif %} ;;
     value_format_name: decimal_0
     drill_fields: [detail*]
   }
@@ -1269,9 +1298,9 @@ view: upff_signup_funnel {
     group_label: "Trial to Paid"
     label: "Free Trial Sign-Ups (Current Period)"
     description: "Current-period users whose order was a free-trial sign-up (completed before 2026-09-09). Also called: trial starts, trials."
-    type: count_distinct
-    sql: CASE WHEN {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END ;;
-    filters: [period: "Current", converted: "yes", free_trial_order: "yes"]
+    type: number
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Current' AND ${TABLE}.order_completed_at IS NOT NULL AND ${TABLE}.order_completed_at < '2026-09-09' AND COALESCE(${TABLE}.order_type, '') <> 'Rejoin' AND {% if upff_signup_funnel.plan_frequency_filter._is_filtered %} ${TABLE}.platform <> 'Vizio TV' AND {% endif %} {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END)
+      {% if upff_signup_funnel.plan_frequency_filter._is_filtered %} + COALESCE(SUM(CASE WHEN ${TABLE}.period = 'Current' AND ${TABLE}.order_completed_at IS NOT NULL AND ${TABLE}.order_completed_at < '2026-09-09' AND COALESCE(${TABLE}.order_type, '') <> 'Rejoin' AND ${TABLE}.step_number = 1 AND ${TABLE}.platform = 'Vizio TV' THEN ${vizio_plan_weight} END), 0) {% endif %} ;;
     value_format_name: decimal_0
   }
 
@@ -1302,9 +1331,9 @@ view: upff_signup_funnel {
     group_label: "Trial to Paid"
     label: "Free Trial Sign-Ups (Prior Period)"
     description: "Prior-period users whose order was a free-trial sign-up (completed before 2026-09-09). Also called: trial starts, trials."
-    type: count_distinct
-    sql: CASE WHEN {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END ;;
-    filters: [period: "Prior", converted: "yes", free_trial_order: "yes"]
+    type: number
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Prior' AND ${TABLE}.order_completed_at IS NOT NULL AND ${TABLE}.order_completed_at < '2026-09-09' AND COALESCE(${TABLE}.order_type, '') <> 'Rejoin' AND {% if upff_signup_funnel.plan_frequency_filter._is_filtered %} ${TABLE}.platform <> 'Vizio TV' AND {% endif %} {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END)
+      {% if upff_signup_funnel.plan_frequency_filter._is_filtered %} + COALESCE(SUM(CASE WHEN ${TABLE}.period = 'Prior' AND ${TABLE}.order_completed_at IS NOT NULL AND ${TABLE}.order_completed_at < '2026-09-09' AND COALESCE(${TABLE}.order_type, '') <> 'Rejoin' AND ${TABLE}.step_number = 1 AND ${TABLE}.platform = 'Vizio TV' THEN ${vizio_plan_weight} END), 0) {% endif %} ;;
     value_format_name: decimal_0
   }
 
@@ -1336,8 +1365,9 @@ view: upff_signup_funnel {
     label: "Paying Customers (Current Period)"
     description: "Current-period paying customers: paid-only orders (on/after 2026-09-09) plus converted free trials (Web user-level; mobile and Connected TV from aggregate Vimeo OTT trial conversions received during the period). Also called: paid subscribers, paid conversions."
     type: number
-    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Current' AND ${TABLE}.paid_at IS NOT NULL AND {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END)
-      + {% if upff_signup_funnel.plan_frequency._is_selected %} 0 {% else %} SUM(CASE WHEN ${TABLE}.period = 'Current' AND ${TABLE}.platform <> 'Web' THEN (CASE WHEN {% condition plan_frequency_filter %} 'Monthly' {% endcondition %} THEN COALESCE(${TABLE}.vimeo_trial_monthly_s1, 0) ELSE 0 END + CASE WHEN {% condition plan_frequency_filter %} 'Yearly' {% endcondition %} THEN COALESCE(${TABLE}.vimeo_trial_yearly_s1, 0) ELSE 0 END + CASE WHEN {% condition plan_frequency_filter %} 'Unknown' {% endcondition %} THEN COALESCE(${TABLE}.vimeo_trial_unknown_s1, 0) ELSE 0 END) ELSE 0 END) {% endif %} ;;
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Current' AND ${TABLE}.paid_at IS NOT NULL AND {% if upff_signup_funnel.plan_frequency_filter._is_filtered %} ${TABLE}.platform <> 'Vizio TV' AND {% endif %} {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END)
+         + {% if upff_signup_funnel.plan_frequency._is_selected %} 0 {% else %} SUM(CASE WHEN ${TABLE}.period = 'Current' AND ${TABLE}.platform <> 'Web' THEN (CASE WHEN {% condition plan_frequency_filter %} 'Monthly' {% endcondition %} THEN COALESCE(${TABLE}.vimeo_trial_monthly_s1, 0) ELSE 0 END + CASE WHEN {% condition plan_frequency_filter %} 'Yearly' {% endcondition %} THEN COALESCE(${TABLE}.vimeo_trial_yearly_s1, 0) ELSE 0 END + CASE WHEN {% condition plan_frequency_filter %} 'Unknown' {% endcondition %} THEN COALESCE(${TABLE}.vimeo_trial_unknown_s1, 0) ELSE 0 END) ELSE 0 END) {% endif %}
+         {% if upff_signup_funnel.plan_frequency_filter._is_filtered %} + COALESCE(SUM(CASE WHEN ${TABLE}.period = 'Current' AND ${TABLE}.paid_at IS NOT NULL AND ${TABLE}.step_number = 1 AND ${TABLE}.platform = 'Vizio TV' THEN ${vizio_plan_weight} END), 0) {% endif %} ;;
     value_format_name: decimal_0
   }
 
@@ -1356,8 +1386,9 @@ view: upff_signup_funnel {
     label: "Paying Customers (Prior Period)"
     description: "Prior-period paying customers: paid-only orders (on/after 2026-09-09) plus converted free trials (Web user-level; mobile and Connected TV from aggregate Vimeo OTT trial conversions received during the period). Also called: paid subscribers, paid conversions."
     type: number
-    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Prior' AND ${TABLE}.paid_at IS NOT NULL AND {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END)
-      + {% if upff_signup_funnel.plan_frequency._is_selected %} 0 {% else %} SUM(CASE WHEN ${TABLE}.period = 'Prior' AND ${TABLE}.platform <> 'Web' THEN (CASE WHEN {% condition plan_frequency_filter %} 'Monthly' {% endcondition %} THEN COALESCE(${TABLE}.vimeo_trial_monthly_s1, 0) ELSE 0 END + CASE WHEN {% condition plan_frequency_filter %} 'Yearly' {% endcondition %} THEN COALESCE(${TABLE}.vimeo_trial_yearly_s1, 0) ELSE 0 END + CASE WHEN {% condition plan_frequency_filter %} 'Unknown' {% endcondition %} THEN COALESCE(${TABLE}.vimeo_trial_unknown_s1, 0) ELSE 0 END) ELSE 0 END) {% endif %} ;;
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Prior' AND ${TABLE}.paid_at IS NOT NULL AND {% if upff_signup_funnel.plan_frequency_filter._is_filtered %} ${TABLE}.platform <> 'Vizio TV' AND {% endif %} {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END)
+         + {% if upff_signup_funnel.plan_frequency._is_selected %} 0 {% else %} SUM(CASE WHEN ${TABLE}.period = 'Prior' AND ${TABLE}.platform <> 'Web' THEN (CASE WHEN {% condition plan_frequency_filter %} 'Monthly' {% endcondition %} THEN COALESCE(${TABLE}.vimeo_trial_monthly_s1, 0) ELSE 0 END + CASE WHEN {% condition plan_frequency_filter %} 'Yearly' {% endcondition %} THEN COALESCE(${TABLE}.vimeo_trial_yearly_s1, 0) ELSE 0 END + CASE WHEN {% condition plan_frequency_filter %} 'Unknown' {% endcondition %} THEN COALESCE(${TABLE}.vimeo_trial_unknown_s1, 0) ELSE 0 END) ELSE 0 END) {% endif %}
+         {% if upff_signup_funnel.plan_frequency_filter._is_filtered %} + COALESCE(SUM(CASE WHEN ${TABLE}.period = 'Prior' AND ${TABLE}.paid_at IS NOT NULL AND ${TABLE}.step_number = 1 AND ${TABLE}.platform = 'Vizio TV' THEN ${vizio_plan_weight} END), 0) {% endif %} ;;
     value_format_name: decimal_0
   }
 
@@ -1385,8 +1416,9 @@ view: upff_signup_funnel {
     label: "Paying Customers"
     description: "Paid-only orders plus converted free trials (Web user-level; mobile and Connected TV from aggregate Vimeo OTT trial conversions), for any grouping such as Platform or Period."
     type: number
-    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.paid_at IS NOT NULL THEN ${user_pk} END)
-      + {% if upff_signup_funnel.plan_frequency._is_selected %} 0 {% else %} SUM(CASE WHEN ${TABLE}.platform <> 'Web' THEN (CASE WHEN {% condition plan_frequency_filter %} 'Monthly' {% endcondition %} THEN COALESCE(${TABLE}.vimeo_trial_monthly_s1, 0) ELSE 0 END + CASE WHEN {% condition plan_frequency_filter %} 'Yearly' {% endcondition %} THEN COALESCE(${TABLE}.vimeo_trial_yearly_s1, 0) ELSE 0 END + CASE WHEN {% condition plan_frequency_filter %} 'Unknown' {% endcondition %} THEN COALESCE(${TABLE}.vimeo_trial_unknown_s1, 0) ELSE 0 END) ELSE 0 END) {% endif %} ;;
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.paid_at IS NOT NULL AND {% if upff_signup_funnel.plan_frequency_filter._is_filtered %} ${TABLE}.platform <> 'Vizio TV' AND {% endif %} {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END)
+         + {% if upff_signup_funnel.plan_frequency._is_selected %} 0 {% else %} SUM(CASE WHEN ${TABLE}.platform <> 'Web' THEN (CASE WHEN {% condition plan_frequency_filter %} 'Monthly' {% endcondition %} THEN COALESCE(${TABLE}.vimeo_trial_monthly_s1, 0) ELSE 0 END + CASE WHEN {% condition plan_frequency_filter %} 'Yearly' {% endcondition %} THEN COALESCE(${TABLE}.vimeo_trial_yearly_s1, 0) ELSE 0 END + CASE WHEN {% condition plan_frequency_filter %} 'Unknown' {% endcondition %} THEN COALESCE(${TABLE}.vimeo_trial_unknown_s1, 0) ELSE 0 END) ELSE 0 END) {% endif %}
+         {% if upff_signup_funnel.plan_frequency_filter._is_filtered %} + COALESCE(SUM(CASE WHEN ${TABLE}.paid_at IS NOT NULL AND ${TABLE}.step_number = 1 AND ${TABLE}.platform = 'Vizio TV' THEN ${vizio_plan_weight} END), 0) {% endif %} ;;
     value_format_name: decimal_0
   }
 
@@ -1431,9 +1463,9 @@ view: upff_signup_funnel {
     group_label: "Trial to Paid"
     label: "Free Trial Sign-Ups"
     description: "Users whose order was a free-trial sign-up (before 2026-09-09), for any grouping such as Platform or Entry Week."
-    type: count_distinct
-    sql: CASE WHEN {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END ;;
-    filters: [converted: "yes", free_trial_order: "yes"]
+    type: number
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.order_completed_at IS NOT NULL AND ${TABLE}.order_completed_at < '2026-09-09' AND COALESCE(${TABLE}.order_type, '') <> 'Rejoin' AND {% if upff_signup_funnel.plan_frequency_filter._is_filtered %} ${TABLE}.platform <> 'Vizio TV' AND {% endif %} {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END)
+      {% if upff_signup_funnel.plan_frequency_filter._is_filtered %} + COALESCE(SUM(CASE WHEN ${TABLE}.order_completed_at IS NOT NULL AND ${TABLE}.order_completed_at < '2026-09-09' AND COALESCE(${TABLE}.order_type, '') <> 'Rejoin' AND ${TABLE}.step_number = 1 AND ${TABLE}.platform = 'Vizio TV' THEN ${vizio_plan_weight} END), 0) {% endif %} ;;
     value_format_name: decimal_0
   }
 
@@ -1562,7 +1594,8 @@ view: upff_signup_funnel {
     description: "Number of prior-period users who reached each funnel step. Use with Funnel Step. Also called: step volume, users per stage."
     type: number
     sql: COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Prior' AND ${reached_flag} = 1
-      AND (${TABLE}.step_number < 4 OR {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %}) THEN ${user_pk} END) ;;
+                              AND (${TABLE}.step_number < 4 OR ({% if upff_signup_funnel.plan_frequency_filter._is_filtered %} ${TABLE}.platform <> 'Vizio TV' AND {% endif %} {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %})) THEN ${user_pk} END)
+         {% if upff_signup_funnel.plan_frequency_filter._is_filtered %} + COALESCE(SUM(CASE WHEN ${TABLE}.period = 'Prior' AND ${reached_flag} = 1 AND ${TABLE}.step_number >= 4 AND ${TABLE}.platform = 'Vizio TV' THEN ${vizio_plan_weight} END), 0) {% endif %} ;;
     value_format_name: decimal_0
     required_fields: [step_name]
   }
@@ -1648,7 +1681,8 @@ view: upff_signup_funnel {
     description: "Number of current-period users who reached each funnel step. Use with Funnel Step. Also called: step volume, users per stage."
     type: number
     sql: COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Current' AND ${reached_flag} = 1
-      AND (${TABLE}.step_number < 4 OR {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %}) THEN ${user_pk} END) ;;
+                              AND (${TABLE}.step_number < 4 OR ({% if upff_signup_funnel.plan_frequency_filter._is_filtered %} ${TABLE}.platform <> 'Vizio TV' AND {% endif %} {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %})) THEN ${user_pk} END)
+         {% if upff_signup_funnel.plan_frequency_filter._is_filtered %} + COALESCE(SUM(CASE WHEN ${TABLE}.period = 'Current' AND ${reached_flag} = 1 AND ${TABLE}.step_number >= 4 AND ${TABLE}.platform = 'Vizio TV' THEN ${vizio_plan_weight} END), 0) {% endif %} ;;
     value_format_name: decimal_0
     required_fields: [step_name]
   }
