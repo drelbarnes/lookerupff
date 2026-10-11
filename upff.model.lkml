@@ -78,6 +78,20 @@ include: "/views/up_airtable_reports.view.lkml"
 include: "/Vimeo_OTT/vimeo_ott_all_customers.view.lkml"
 include: "/Vimeo_OTT/vimeo_ott_all_customers_workflows.view.lkml"
 include: "/views/Marketing_attribution/upff_signup_funnel.view.lkml"
+include: "/views/payment/payment_gateway.view.lkml"
+
+explore: payment_gateway {
+  label: "Payment Gateway"
+  description: "Payment authorization, dunning, recovery and involuntary churn, period over period."
+
+  # Always ask for the current period; Compare To defaults to "Previous Period"
+  always_filter: {
+    filters: [payment_gateway.pop_date_range: "7 days ago for 7 days"]
+  }
+
+  # Only scan rows in the current or prior period
+  sql_always_where: ${payment_gateway.pop_period} IS NOT NULL ;;
+}
 
 explore: upff_signup_funnel {
   label: "UPFF Sign-Up Funnel"
