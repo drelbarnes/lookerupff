@@ -1210,6 +1210,145 @@ view: payment_gateway {
     filters: [is_first_attempt: "yes", invoice_status: "Not recovered", pop_period: "Prior Period"]
   }
 
+  measure: revenue_not_recovered_change_pct {
+    view_label: "_Period over Period"
+    group_label: "KPIs"
+    label: "Revenue Not Recovered - Change (%)"
+    description: "Dashboard only. Percent change vs Prior Period."
+    type: number
+    value_format: "+0.0%;-0.0%;0.0%"
+    sql: (${revenue_not_recovered_this_period} - ${revenue_not_recovered_prior_period})
+      / NULLIF(${revenue_not_recovered_prior_period}, 0)::FLOAT ;;
+  }
+
+  # Revenue at risk
+  measure: revenue_at_risk_this_period {
+    view_label: "_Period over Period"
+    group_label: "KPIs"
+    label: "Revenue at Risk - This Period"
+    description: "Dashboard only; requires the Current Period and Prior Period filters."
+    type: sum
+    value_format_name: usd_0
+    sql: ${amount_usd} ;;
+    filters: [is_first_attempt: "yes", invoice_had_failure: "yes", pop_period: "This Period"]
+  }
+
+  measure: revenue_at_risk_prior_period {
+    view_label: "_Period over Period"
+    group_label: "KPIs"
+    label: "Revenue at Risk - Prior Period"
+    description: "Dashboard only; requires the Current Period and Prior Period filters."
+    type: sum
+    value_format_name: usd_0
+    sql: ${amount_usd} ;;
+    filters: [is_first_attempt: "yes", invoice_had_failure: "yes", pop_period: "Prior Period"]
+  }
+
+  measure: revenue_at_risk_change_pct {
+    view_label: "_Period over Period"
+    group_label: "KPIs"
+    label: "Revenue at Risk - Change (%)"
+    description: "Dashboard only. Percent change vs Prior Period."
+    type: number
+    value_format: "+0.0%;-0.0%;0.0%"
+    sql: (${revenue_at_risk_this_period} - ${revenue_at_risk_prior_period})
+      / NULLIF(${revenue_at_risk_prior_period}, 0)::FLOAT ;;
+  }
+
+  # Invoices attempted (use with Invoice Status for outcome changes)
+  measure: invoices_attempted_this_period {
+    view_label: "_Period over Period"
+    group_label: "Volumes"
+    label: "Invoices Attempted - This Period"
+    description: "Dashboard only; requires the Current Period and Prior Period filters."
+    type: number
+    sql: ${fa_attempted_this} ;;
+  }
+
+  measure: invoices_attempted_prior_period {
+    view_label: "_Period over Period"
+    group_label: "Volumes"
+    label: "Invoices Attempted - Prior Period"
+    description: "Dashboard only; requires the Current Period and Prior Period filters."
+    type: number
+    sql: ${fa_attempted_prior} ;;
+  }
+
+  measure: invoices_attempted_change_pct {
+    view_label: "_Period over Period"
+    group_label: "Volumes"
+    label: "Invoices Attempted - Change (%)"
+    description: "Dashboard only. Percent change vs Prior Period. Group by Invoice Status for outcome-level change."
+    type: number
+    value_format: "+0.0%;-0.0%;0.0%"
+    sql: (${fa_attempted_this} - ${fa_attempted_prior}) / NULLIF(${fa_attempted_prior}, 0)::FLOAT ;;
+  }
+
+  # Declined invoices (use with Decline Category / Gateway)
+  measure: declined_invoices_this_period {
+    view_label: "_Period over Period"
+    group_label: "Volumes"
+    label: "Declined Invoices - This Period"
+    description: "Dashboard only; requires the Current Period and Prior Period filters."
+    type: number
+    sql: ${fail_inv_this} ;;
+  }
+
+  measure: declined_invoices_prior_period {
+    view_label: "_Period over Period"
+    group_label: "Volumes"
+    label: "Declined Invoices - Prior Period"
+    description: "Dashboard only; requires the Current Period and Prior Period filters."
+    type: number
+    sql: ${fail_inv_prior} ;;
+  }
+
+  measure: declined_invoices_change_pct {
+    view_label: "_Period over Period"
+    group_label: "Volumes"
+    label: "Declined Invoices - Change (%)"
+    description: "Dashboard only. Percent change vs Prior Period. Group by Decline Category to see which decline types are growing."
+    type: number
+    value_format: "+0.0%;-0.0%;0.0%"
+    sql: (${fail_inv_this} - ${fail_inv_prior}) / NULLIF(${fail_inv_prior}, 0)::FLOAT ;;
+  }
+
+  # Authorization rate, all attempts (use with Attempt Bucket for retry change)
+  measure: att_this     { hidden: yes type: count filters: [is_payment_event: "yes", pop_period: "This Period"] }
+  measure: att_prior    { hidden: yes type: count filters: [is_payment_event: "yes", pop_period: "Prior Period"] }
+  measure: att_ok_this  { hidden: yes type: count filters: [event_type: "payment_succeeded", pop_period: "This Period"] }
+  measure: att_ok_prior { hidden: yes type: count filters: [event_type: "payment_succeeded", pop_period: "Prior Period"] }
+
+  measure: attempt_auth_rate_this_period {
+    view_label: "_Period over Period"
+    group_label: "KPIs"
+    label: "Auth Rate (All Attempts) - This Period"
+    description: "Dashboard only; requires the Current Period and Prior Period filters."
+    type: number
+    value_format_name: percent_2
+    sql: ${att_ok_this} / NULLIF(${att_this}, 0)::FLOAT ;;
+  }
+
+  measure: attempt_auth_rate_prior_period {
+    view_label: "_Period over Period"
+    group_label: "KPIs"
+    label: "Auth Rate (All Attempts) - Prior Period"
+    description: "Dashboard only; requires the Current Period and Prior Period filters."
+    type: number
+    value_format_name: percent_2
+    sql: ${att_ok_prior} / NULLIF(${att_prior}, 0)::FLOAT ;;
+  }
+
+  measure: attempt_auth_rate_change {
+    view_label: "_Period over Period"
+    group_label: "KPIs"
+    label: "Auth Rate (All Attempts) - Change (pts)"
+    description: "Dashboard only. This Period minus Prior Period, in percentage points. Group by Attempt Bucket for retry effectiveness change."
+    type: number
+    value_format: "+0.00%;-0.00%;0.00%"
+    sql: ${attempt_auth_rate_this_period} - ${attempt_auth_rate_prior_period} ;;
+  }
+
   # ===========================================================================
   # FIELD SETS
   # ===========================================================================
@@ -1231,7 +1370,11 @@ view: payment_gateway {
       dunning_rate_this_period, dunning_rate_prior_period, dunning_rate_change,
       recovery_rate_this_period, recovery_rate_prior_period, recovery_rate_change,
       involuntary_churn_this_period, involuntary_churn_prior_period, involuntary_churn_change_pct,
-      revenue_not_recovered_this_period, revenue_not_recovered_prior_period
+      revenue_not_recovered_this_period, revenue_not_recovered_prior_period, revenue_not_recovered_change_pct,
+      revenue_at_risk_this_period, revenue_at_risk_prior_period, revenue_at_risk_change_pct,
+      invoices_attempted_this_period, invoices_attempted_prior_period, invoices_attempted_change_pct,
+      declined_invoices_this_period, declined_invoices_prior_period, declined_invoices_change_pct,
+      attempt_auth_rate_this_period, attempt_auth_rate_prior_period, attempt_auth_rate_change
     ]
   }
 
