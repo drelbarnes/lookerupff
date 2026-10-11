@@ -80,8 +80,8 @@ include: "/Vimeo_OTT/vimeo_ott_all_customers_workflows.view.lkml"
 include: "/views/Marketing_attribution/upff_signup_funnel.view.lkml"
 
 explore: upff_signup_funnel {
-  label: "UPFF Sign-Up Funnel (iOS, Android, Web)"
-  description: "Entry -> Order funnel across iOS, Android and Web. Choose the Current and Prior periods and the attribution window; filter by Platform or Platform Group."
+  label: "UPFF Sign-Up Funnel"
+  description: "Entry -> Order funnel across iOS, Android, Web, Roku, Amazon Fire TV and Vizio. Choose the Current and Prior periods and the attribution window."
 
   # Defaults: this week (last 7 full days) vs last week, 3-day attribution window.
   # Business users can change these to any date ranges in the filter bar.
