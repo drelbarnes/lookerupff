@@ -23,7 +23,7 @@
 #     at the grain the user asks for instead of rolling up percentages.
 #   - Raw IDs and plumbing columns are hidden; high-cardinality fields
 #     (error message, customer ID) point the agent to the grouped version.
-#   - Period-over-period fields depend on a Liquid date filter the agent
+#   - Period-over-period fields depend on Liquid date filters the agent
 #     cannot set reliably, so they live in set: pop_fields and are excluded
 #     from the conversational explore below. For "vs last week" questions the
 #     agent uses Report Week / Report Date instead.
@@ -360,69 +360,36 @@ view: payment_gateway {
 
   # ===========================================================================
   # PERIOD OVER PERIOD  (dashboard only - excluded from the CA explore)
-  # Map the dashboard date filter to pop_date_range. Use a complete-days range
-  # (e.g. "7 days ago for 7 days") so a partial "today" isn't compared with a
-  # full prior day.
+  # Two required date filters, set independently:
+  #   Current Period  -> pop_date_range        e.g. is in the last 7 complete days
+  #   Prior Period    -> pop_prior_date_range  e.g. is 14 days ago for 7 days
+  # Use complete days so a partial "today" isn't compared with a full day.
   # ===========================================================================
 
   filter: pop_date_range {
     view_label: "_Period over Period"
     label: "Current Period"
     type: date
-    description: "Dashboard control. Date range of the current period; the prior period is derived from Compare To. Required by every Period-over-Period field. Comparisons that span 2026-09-09 mix free-trial and paid-only signups; filter Signup Model to keep them like-for-like."
+    description: "Dashboard control. Date range of the current period, e.g. 'is in the last 7 complete days'. Required by every Period-over-Period field."
   }
 
-  parameter: pop_compare_to {
+  filter: pop_prior_date_range {
     view_label: "_Period over Period"
-    label: "Compare To"
-    type: unquoted
-    description: "Dashboard control. Which prior period to compare the Current Period against."
-    allowed_value: { label: "Previous Period" value: "period" }
-    allowed_value: { label: "Same Period Last Week" value: "week" }
-    allowed_value: { label: "Same Period Last Month" value: "month" }
-    allowed_value: { label: "Same Period Last Year" value: "year" }
-    default_value: "period"
+    label: "Prior Period"
+    type: date
+    description: "Dashboard control. Date range to compare against, e.g. 'is 14 days ago for 7 days'. Any range works; keep it the same length as the Current Period for a like-for-like comparison. Ranges that span 2026-09-09 mix free-trial and paid-only signups; filter Signup Model to keep them like-for-like."
   }
 
-  dimension: pop_curr_start { hidden: yes type: string sql: {% date_start pop_date_range %} ;; }
-  dimension: pop_curr_end   { hidden: yes type: string sql: {% date_end pop_date_range %} ;; }
-
-  dimension: pop_prior_start {
-    hidden: yes
-    type: string
-    sql:
-      {% if pop_compare_to._parameter_value == 'week' %}
-        DATEADD(week, -1, {% date_start pop_date_range %})
-      {% elsif pop_compare_to._parameter_value == 'month' %}
-        DATEADD(month, -1, {% date_start pop_date_range %})
-      {% elsif pop_compare_to._parameter_value == 'year' %}
-        DATEADD(year, -1, {% date_start pop_date_range %})
-      {% else %}
-        DATEADD(day, -1 * DATEDIFF(day, {% date_start pop_date_range %}, {% date_end pop_date_range %}),
-                {% date_start pop_date_range %})
-      {% endif %} ;;
-  }
-
-  dimension: pop_prior_end {
-    hidden: yes
-    type: string
-    sql:
-      {% if pop_compare_to._parameter_value == 'week' %}
-        DATEADD(week, -1, {% date_end pop_date_range %})
-      {% elsif pop_compare_to._parameter_value == 'month' %}
-        DATEADD(month, -1, {% date_end pop_date_range %})
-      {% elsif pop_compare_to._parameter_value == 'year' %}
-        DATEADD(year, -1, {% date_end pop_date_range %})
-      {% else %}
-        {% date_start pop_date_range %}
-      {% endif %} ;;
-  }
+  dimension: pop_curr_start  { hidden: yes type: string sql: {% date_start pop_date_range %} ;; }
+  dimension: pop_curr_end    { hidden: yes type: string sql: {% date_end pop_date_range %} ;; }
+  dimension: pop_prior_start { hidden: yes type: string sql: {% date_start pop_prior_date_range %} ;; }
+  dimension: pop_prior_end   { hidden: yes type: string sql: {% date_end pop_prior_date_range %} ;; }
 
   dimension: pop_period {
     view_label: "_Period over Period"
     label: "Period"
     type: string
-    description: "Dashboard only. 'This Period' or 'Prior Period' based on the Current Period filter; null when outside both. Filter to 'This Period,Prior Period' on comparison tiles."
+    description: "Dashboard only. 'This Period' or 'Prior Period' based on the Current Period and Prior Period filters; null when outside both. If the two ranges overlap, overlapping days count as This Period."
     sql:
       CASE
         WHEN ${TABLE}.report_date >= ${pop_curr_start}  AND ${TABLE}.report_date < ${pop_curr_end}  THEN 'This Period'
@@ -1094,7 +1061,7 @@ view: payment_gateway {
     view_label: "_Period over Period"
     group_label: "KPIs"
     label: "First-Attempt Auth Rate - This Period"
-    description: "Dashboard only; requires the Current Period filter."
+    description: "Dashboard only; requires the Current Period and Prior Period filters."
     type: number
     value_format_name: percent_2
     sql: ${fa_success_this} / NULLIF(${fa_attempted_this}, 0)::FLOAT ;;
@@ -1104,7 +1071,7 @@ view: payment_gateway {
     view_label: "_Period over Period"
     group_label: "KPIs"
     label: "First-Attempt Auth Rate - Prior Period"
-    description: "Dashboard only; requires the Current Period filter."
+    description: "Dashboard only; requires the Current Period and Prior Period filters."
     type: number
     value_format_name: percent_2
     sql: ${fa_success_prior} / NULLIF(${fa_attempted_prior}, 0)::FLOAT ;;
@@ -1129,7 +1096,7 @@ view: payment_gateway {
     view_label: "_Period over Period"
     group_label: "KPIs"
     label: "Dunning Rate - This Period"
-    description: "Dashboard only; requires the Current Period filter."
+    description: "Dashboard only; requires the Current Period and Prior Period filters."
     type: number
     value_format_name: percent_2
     sql: ${dun_users_this} / NULLIF(${dun_users_this} + ${renew_users_this}, 0)::FLOAT ;;
@@ -1139,7 +1106,7 @@ view: payment_gateway {
     view_label: "_Period over Period"
     group_label: "KPIs"
     label: "Dunning Rate - Prior Period"
-    description: "Dashboard only; requires the Current Period filter."
+    description: "Dashboard only; requires the Current Period and Prior Period filters."
     type: number
     value_format_name: percent_2
     sql: ${dun_users_prior} / NULLIF(${dun_users_prior} + ${renew_users_prior}, 0)::FLOAT ;;
@@ -1164,7 +1131,7 @@ view: payment_gateway {
     view_label: "_Period over Period"
     group_label: "KPIs"
     label: "Recovery Rate - This Period"
-    description: "Dashboard only; requires the Current Period filter."
+    description: "Dashboard only; requires the Current Period and Prior Period filters."
     type: number
     value_format_name: percent_2
     sql: ${rec_inv_this} / NULLIF(${fail_inv_this}, 0)::FLOAT ;;
@@ -1174,7 +1141,7 @@ view: payment_gateway {
     view_label: "_Period over Period"
     group_label: "KPIs"
     label: "Recovery Rate - Prior Period"
-    description: "Dashboard only; requires the Current Period filter."
+    description: "Dashboard only; requires the Current Period and Prior Period filters."
     type: number
     value_format_name: percent_2
     sql: ${rec_inv_prior} / NULLIF(${fail_inv_prior}, 0)::FLOAT ;;
@@ -1194,7 +1161,7 @@ view: payment_gateway {
     view_label: "_Period over Period"
     group_label: "KPIs"
     label: "Involuntary Churn - This Period"
-    description: "Dashboard only; requires the Current Period filter."
+    description: "Dashboard only; requires the Current Period and Prior Period filters."
     type: count_distinct
     sql: ${customer_id} ;;
     filters: [event_type: "involuntary_churn", pop_period: "This Period"]
@@ -1204,7 +1171,7 @@ view: payment_gateway {
     view_label: "_Period over Period"
     group_label: "KPIs"
     label: "Involuntary Churn - Prior Period"
-    description: "Dashboard only; requires the Current Period filter."
+    description: "Dashboard only; requires the Current Period and Prior Period filters."
     type: count_distinct
     sql: ${customer_id} ;;
     filters: [event_type: "involuntary_churn", pop_period: "Prior Period"]
@@ -1225,7 +1192,7 @@ view: payment_gateway {
     view_label: "_Period over Period"
     group_label: "KPIs"
     label: "Revenue Not Recovered - This Period"
-    description: "Dashboard only; requires the Current Period filter."
+    description: "Dashboard only; requires the Current Period and Prior Period filters."
     type: sum
     value_format_name: usd_0
     sql: ${amount_usd} ;;
@@ -1236,7 +1203,7 @@ view: payment_gateway {
     view_label: "_Period over Period"
     group_label: "KPIs"
     label: "Revenue Not Recovered - Prior Period"
-    description: "Dashboard only; requires the Current Period filter."
+    description: "Dashboard only; requires the Current Period and Prior Period filters."
     type: sum
     value_format_name: usd_0
     sql: ${amount_usd} ;;
@@ -1259,7 +1226,7 @@ view: payment_gateway {
   # Liquid-dependent fields; keep out of the conversational explore
   set: pop_fields {
     fields: [
-      pop_date_range, pop_compare_to, pop_period, pop_day_index,
+      pop_date_range, pop_prior_date_range, pop_period, pop_day_index,
       first_attempt_auth_rate_this_period, first_attempt_auth_rate_prior_period, first_attempt_auth_rate_change,
       dunning_rate_this_period, dunning_rate_prior_period, dunning_rate_change,
       recovery_rate_this_period, recovery_rate_prior_period, recovery_rate_change,

@@ -80,17 +80,34 @@ include: "/Vimeo_OTT/vimeo_ott_all_customers_workflows.view.lkml"
 include: "/views/Marketing_attribution/upff_signup_funnel.view.lkml"
 include: "/views/payment/payment_gateway.view.lkml"
 
+
+# -----------------------------------------------------------------------------
+# Dashboard explore: everything, with Current Period and Prior Period
+# as required filters.
+# -----------------------------------------------------------------------------
 explore: payment_gateway {
   label: "Payment Gateway"
-  description: "Payment authorization, dunning, recovery and involuntary churn, period over period."
+  group_label: "Subscriptions"
+  description: "Card payment authorization, retries and dunning, recovery, and involuntary churn for UP Faith & Family web subscriptions, by gateway, billing period, and signup model."
 
-  # Always ask for the current period; Compare To defaults to "Previous Period"
+  # Both period filters are required; users can change the ranges
   always_filter: {
-    filters: [payment_gateway.pop_date_range: "7 days ago for 7 days"]
+    filters: [
+      payment_gateway.pop_date_range: "7 days ago for 7 days",
+      payment_gateway.pop_prior_date_range: "14 days ago for 7 days"
+    ]
   }
 
   # Only scan rows in the current or prior period
   sql_always_where: ${payment_gateway.pop_period} IS NOT NULL ;;
+
+  persist_with: payment_gateway_daily
+}
+
+datagroup: payment_gateway_daily {
+  sql_trigger: SELECT TRUNC(DATEADD(hour, -6, CONVERT_TIMEZONE('America/New_York', GETDATE()))) ;;
+  max_cache_age: "24 hours"
+  description: "Fires once a day after 6am ET, matching the payment_gateway PDT rebuild."
 }
 
 explore: upff_signup_funnel {
