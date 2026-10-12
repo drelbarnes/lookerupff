@@ -11,7 +11,7 @@ view: sub_count {
         ,CAST(status         AS VARCHAR) AS status
         ,'AzZmVjUuQo25N2MFb'::VARCHAR    AS user_id
       FROM (
-
+/*
       SELECT user_count, report_date, platform, billing_period, 'dunning_gained'::VARCHAR AS status
       FROM (
       SELECT
@@ -93,7 +93,7 @@ view: sub_count {
 
       UNION ALL
 
-
+*/
 
 SELECT
   CASE
@@ -162,6 +162,7 @@ SELECT
 FROM ${paid_sub_count.SQL_TABLE_NAME}
 where report_date < CURRENT_DATE - 1
 
+/*
       UNION ALL
 
       SELECT user_count_7d AS user_count, report_date, platform, billing_period, 'in_trial'::VARCHAR AS status
@@ -181,10 +182,11 @@ where report_date < CURRENT_DATE - 1
       ,report_date
       ,platform
       ,billing_period
-      FROM ${free_trials.SQL_TABLE_NAME}
+      FROM {free_trials.SQL_TABLE_NAME}
       GROUP BY 2, 3, 4
       ) trial_count
       ) total_trial_count
+*/
 
       ) all_rows
 
