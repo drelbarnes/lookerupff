@@ -17,6 +17,15 @@ view: monthly_report {
       ,user_count
       ,report_date
     FROM churn_gain
+    where status != 'new_paid'
+
+    UNION ALL
+    SELECT
+      status
+      ,user_count
+      ,report_date
+    FROM churn_gain
+    where status = 'new_paid' and report_date >='2026-09-09'
 
     UNION ALL
 
@@ -98,10 +107,16 @@ WHERE DATE(report_date) = DATEADD(day, -1, CURRENT_DATE)
     sql:   ${TABLE}.user_count;;
   }
 
-  measure: new_paid {
+  measure: reaquisitions {
     type: sum
     filters: [status: "reacquisition"]
     sql:   ${TABLE}.user_count;;
+  }
+
+  measure: new_paid {
+    type: sum
+    sql: ${user_count} ;;
+    filters: [status: "new_paid"]
   }
 
   measure: cancelled_paid {

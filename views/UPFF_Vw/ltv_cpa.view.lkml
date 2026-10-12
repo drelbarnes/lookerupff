@@ -14,11 +14,7 @@ view: ltv_cpa {
       -- with an unaliased report_date column for the incrementcondition tag.
       -- This avoids any alias-resolution ambiguity and matches the pattern
       -- used across all other incremental PDTs in this project.
-      , v2_table AS (
-        SELECT *
-        FROM ${UPFF_analytics_Vw_v2.SQL_TABLE_NAME}
-        WHERE report_date >= '2025-12-30'
-      ),
+      ,
 
       cancelled_user AS (
       SELECT *

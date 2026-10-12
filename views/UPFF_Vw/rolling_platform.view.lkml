@@ -2,7 +2,7 @@ view: rolling_platform {
   derived_table: {
     sql:
 
--- 1) Base filtered table
+
 ,v2_table AS (
   SELECT *
   FROM ${UPFF_analytics_Vw_v2.SQL_TABLE_NAME}
@@ -10,6 +10,10 @@ view: rolling_platform {
 ),
 sub_count as (
 select * from ${sub_count.SQL_TABLE_NAME}
+),
+cfg AS (
+  SELECT report_date
+  FROM ${configg.SQL_TABLE_NAME}
 ),
 
       -- 2) Chargebee cancellations -> treat as 'web' platform (adjust if you prefer a different label)
@@ -32,6 +36,7 @@ select * from ${sub_count.SQL_TABLE_NAME}
         (content_subscription_cancelled_at - content_subscription_activated_at) > 10000)
         --or content_subscription_cancel_reason_code is null)
         AND content_subscription_subscription_items LIKE '%UP%'
+        AND date(timestamp) >= (SELECT max(report_date) - 31 FROM cfg)
       ),
 
       -- 33) Non-Chargebee users with platform/billing info (to enrich VM webhook expirations)
@@ -52,7 +57,7 @@ select * from ${sub_count.SQL_TABLE_NAME}
       CAST(user_id AS VARCHAR)           AS user_id,
       DATE_TRUNC('month', timestamp)     AS month_start
       FROM vimeo_ott_webhook.customer_product_expired
-      WHERE DATE(timestamp) >= '2025-07-01'
+      WHERE date(timestamp) >= (SELECT max(report_date) - 31 FROM cfg)
 
       UNION ALL
 
@@ -61,7 +66,7 @@ select * from ${sub_count.SQL_TABLE_NAME}
       CAST(user_id AS VARCHAR)           AS user_id,
       DATE_TRUNC('month', timestamp)     AS month_start
       FROM vimeo_ott_webhook.customer_product_disabled
-      WHERE DATE(timestamp) >= '2025-07-01'
+      WHERE date(timestamp) >= (SELECT max(report_date) - 31 FROM cfg)
       ),
 
       -- 5) Map VM expirations to user metadata; avoid NULL platform buckets
@@ -101,24 +106,7 @@ select * from ${sub_count.SQL_TABLE_NAME}
       GROUP BY t1.report_date, t1.platform
       ),
 
-      -- 8) iOS paid subs (source of truth for iOS only)
-      new_apple0 AS (
-      SELECT *
-      FROM ${ios.SQL_TABLE_NAME}
-      ),
 
-      -- 9) Pivot iOS paid subs into monthly/yearly columns
-      new_apple2 AS (
-      SELECT
-      a.report_date,
-      a.paid_subscribers AS total_paid_subs_monthly,
-      b.paid_subscribers AS total_paid_subs_yearly
-      FROM (SELECT * FROM new_apple0 WHERE billing_period = 'monthly') a
-      LEFT JOIN (SELECT * FROM new_apple0 WHERE billing_period = 'yearly') b
-      ON a.report_date = b.report_date
-      ),
-
-      -- 10) Paid subs by platform for non-iOS, then union iOS
       total_paid_subs AS (
       SELECT
       report_date,
@@ -126,7 +114,6 @@ select * from ${sub_count.SQL_TABLE_NAME}
       SUM(CASE WHEN billing_period = 'monthly' THEN user_count ELSE 0 END) AS total_paid_subs_monthly,
       SUM(CASE WHEN billing_period = 'yearly' THEN user_count ELSE 0 END)  AS total_paid_subs_yearly
       FROM sub_count
-      WHERE platform != 'ios'
       GROUP BY report_date, platform
       ),
 
@@ -137,13 +124,7 @@ select * from ${sub_count.SQL_TABLE_NAME}
       t.total_paid_subs_monthly::bigint AS total_paid_subs_monthly,
       t.total_paid_subs_yearly::bigint  AS total_paid_subs_yearly
       FROM total_paid_subs t
-      UNION ALL
-      SELECT
-      na.report_date::date,
-      CAST('ios' AS varchar)           AS platform,
-      na.total_paid_subs_monthly::bigint,
-      na.total_paid_subs_yearly::bigint
-      FROM new_apple2 na
+
       ),
 
       -- 11) Collapse to one row per date × platform (if duplicates exist)

@@ -50,62 +50,65 @@ FROM checkout_pages
 WHERE checkout_pages.timestamp >= {% date_start filter_field %}
   AND checkout_pages.timestamp <= {% date_end filter_field %}
 GROUP BY 1),
-result as(
+result AS (
 
-SELECT
-    'Plans Page Count' AS column_name,
-    COALESCE(SUM(plans_page_count), 0) AS value,
-    1 AS page_order
-FROM checkout_pages2
-
-UNION ALL
-{% if include_marketing_pages._parameter_value == "'yes'" %}
-SELECT
-    'Marketing Page Count' AS column_name,
-    COALESCE(SUM(marketing_page_count),0) AS value,
-    0 as page_order
+    SELECT
+        date,
+        'Plans Page Count' AS column_name,
+        COALESCE(plans_page_count, 0) AS value,
+        1 AS page_order
     FROM checkout_pages2
+
+    {% if include_marketing_pages._parameter_value == "'yes'" %}
     UNION ALL
- {% endif %}
-SELECT
-    'Create Account Page Count' AS column_name,
-    COALESCE(SUM(create_account_page_count), 0) AS value,
-    2 AS page_order
-FROM checkout_pages2
-/*
-UNION ALL
 
-SELECT
-    'Select Payment Page Count' AS column_name,
-    COALESCE(SUM(select_payment_page_count), 0) AS value,
-    3 AS page_order
-FROM checkout_pages2
-*/
-UNION ALL
+    SELECT
+        date,
+        'Marketing Page Count' AS column_name,
+        COALESCE(marketing_page_count, 0) AS value,
+        0 AS page_order
+    FROM checkout_pages2
+    {% endif %}
 
-SELECT
-    'Payment Page Count' AS column_name,
-    COALESCE(SUM(payment_page_count), 0) AS value,
-    3 AS page_order
-FROM checkout_pages2
+    UNION ALL
 
-UNION ALL
+    SELECT
+        date,
+        'Create Account Page Count' AS column_name,
+        COALESCE(create_account_page_count, 0) AS value,
+        2 AS page_order
+    FROM checkout_pages2
 
-SELECT
-    'UPSell Page/Order Completed Count' AS column_name,
-    COALESCE(SUM(upsell_page_count), 0) AS value,
-    4 AS page_order
-FROM checkout_pages2
+    UNION ALL
 
-UNION ALL
+    SELECT
+        date,
+        'Payment Page Count' AS column_name,
+        COALESCE(payment_page_count, 0) AS value,
+        3 AS page_order
+    FROM checkout_pages2
 
-SELECT
-    'Confirmation Page Count' AS column_name,
-    COALESCE(SUM(confirmation_page_count), 0) AS value,
-    5 AS page_order
-FROM checkout_pages2)
+    UNION ALL
+
+    SELECT
+        date,
+        'UPSell Page/Order Completed Count' AS column_name,
+        COALESCE(upsell_page_count, 0) AS value,
+        4 AS page_order
+    FROM checkout_pages2
+
+    UNION ALL
+
+    SELECT
+        date,
+        'Confirmation Page Count' AS column_name,
+        COALESCE(confirmation_page_count, 0) AS value,
+        5 AS page_order
+    FROM checkout_pages2
+)
+
 SELECT *
-from result
+FROM result
 ;;
   }
   parameter: include_marketing_pages {
@@ -127,7 +130,10 @@ from result
     label: "Start Date"
   }
 
-
+dimension: date{
+  type: date
+  sql: ${TABLE}.date ;;
+}
   dimension: page_order {
     type: number
     sql:  ${TABLE}.page_order ;;

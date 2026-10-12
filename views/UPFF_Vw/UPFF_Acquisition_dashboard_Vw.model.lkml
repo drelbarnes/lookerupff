@@ -1,5 +1,5 @@
 connection: "upff"
-
+include: "/views/UPFF_Vw/paid_sub_count.view.lkml"
 include: "/views/UPFF_Vw/UPFF_analytics_Vw.view.lkml"
 include: "/views/UPFF_Vw/UPFF_analytics_Vw_v2.view.lkml"
 include: "/views/UPFF_Vw/rolling.view.lkml"
@@ -33,6 +33,9 @@ include: "/views/UPFF_Vw/churn_gateway.view.lkml"
 include: "/views/UPFF_Vw/dunning.view.lkml"
 include: "/views/UPFF_Vw/watch_rate.view.lkml"
 include: "/views/UPFF_Vw/bundle.view.lkml"
+include: "/views/UPFF_Vw/bundle_conversion.view.lkml"
+include: "/views/UPFF_Vw/churn_gain_historical.view.lkml"
+
 
 
 explore: UPFF_analytics_Vw {
@@ -153,4 +156,8 @@ explore: watch_rate {
 
 explore: bundle {
   label: "UPFF Bundles"
+}
+
+explore: bundle_conversion {
+  label: "UPFF Bundle Conversion"
 }
