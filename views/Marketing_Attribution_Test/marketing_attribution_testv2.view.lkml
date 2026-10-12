@@ -1857,13 +1857,17 @@ view: marketing_attribution_testv2 {
 }
 
 ################################################################################
-# Datagroup — triggers the daily incremental run at ~02:00 UTC (GMT)
+# Datagroup — triggers the daily incremental run at 2:00 AM America/New_York.
+# Returns a day number, same pattern as marketing_attribution_daily. Looker
+# stores that number and starts a build when it changes. A TO_CHAR date
+# string was checked nightly and never queued a build.
 ################################################################################
 datagroup: marketing_attribution_daily_v2 {
-  sql_trigger: SELECT TO_CHAR(
-                   CONVERT_TIMEZONE('UTC', 'UTC', GETDATE())
-                   - INTERVAL '2 hour',
-                   'YYYY-MM-DD'
+  sql_trigger: SELECT FLOOR(
+                   EXTRACT(EPOCH FROM
+                       CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE())
+                       - INTERVAL '2 hour'
+                   ) / 86400
                ) ;;
   max_cache_age: "24 hours"
 }
