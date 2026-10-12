@@ -61,7 +61,7 @@
       type: single_value
       row: 0
       col: 0
-      width: 6
+      width: 5
       height: 4
       measures: [agorapulse_post_performance.total_posts]
       note:
@@ -73,14 +73,33 @@
         brand: agorapulse_post_performance.brand_canonical
         platform: agorapulse_post_performance.platform
 
+    - name: followers_gained_kpi
+      title: "Followers gained"
+      model: social_performance
+      explore: social_daily_snapshot
+      type: single_value
+      row: 0
+      col: 5
+      width: 5
+      height: 4
+      measures: [social_daily_snapshot.followers_gained_total]
+      note:
+        text: "Gross followers gained across profile-days in the selected UTC date range. With Platform set to YouTube, this is subscribers gained. It is not net growth and is not deduplicated people across accounts or platforms."
+        state: collapsed
+        display: hover
+      listen:
+        agorapulse_snapshot_date: social_daily_snapshot.snapshot_date_date
+        brand: social_daily_snapshot.brand_canonical
+        platform: social_daily_snapshot.platform
+
     - name: total_impressions_kpi
       title: "Total impressions"
       model: social_performance
       explore: social_daily_snapshot
       type: single_value
       row: 0
-      col: 6
-      width: 6
+      col: 10
+      width: 5
       height: 4
       measures: [social_daily_snapshot.total_impressions_display]
       note:
@@ -98,8 +117,8 @@
       explore: social_daily_snapshot
       type: single_value
       row: 0
-      col: 12
-      width: 6
+      col: 15
+      width: 5
       height: 4
       measures: [social_daily_snapshot.total_video_views]
       listen:
@@ -113,8 +132,8 @@
       explore: social_daily_snapshot
       type: single_value
       row: 0
-      col: 18
-      width: 6
+      col: 20
+      width: 4
       height: 4
       measures: [social_daily_snapshot.avg_engagement_rate]
       note:
@@ -297,16 +316,17 @@
         - agorapulse_post_performance.brand_canonical
         - agorapulse_post_performance.platform
         - agorapulse_post_performance.post_url
+        - agorapulse_post_performance.post_id
       measures:
         - agorapulse_post_performance.post_impressions
         - agorapulse_post_performance.post_engagements
         - agorapulse_post_performance.post_video_views
       sorts:
-        - agorapulse_post_performance.post_impressions_rank desc
+        - agorapulse_post_performance.post_impressions desc
         - agorapulse_post_performance.post_video_views desc
       limit: 20
       note:
-        text: "Latest Social Post Last 30 row per post_id (deduped in LookML). Ranked by non-YouTube impressions for posts whose publish date (EST/EDT) falls in the selected range. YouTube impressions show N/A. Engagements and video views come from the same latest snapshot."
+        text: "Latest Social Post Last 30 row per post_id (deduped in LookML), one row per post_id. Ranked by Agorapulse impressions for posts whose publish date (EST/EDT) falls in the selected range: Instagram impressions_count, Facebook and TikTok views_count (organic + paid, same field as Total impressions). Video views use the Total video views fields: Facebook and YouTube video_views_count, Instagram and TikTok views (equal to impressions on those platforms). Values are lifetime totals per post, so they do not sum to the channel's daily totals. YouTube impressions show N/A."
         state: collapsed
         display: hover
       listen:
@@ -359,12 +379,37 @@
         brand: social_daily_snapshot.brand_canonical
         platform: social_daily_snapshot.platform
 
+    - name: followers_subscribers_trend
+      title: "Followers / subscribers trend by brand and platform"
+      model: social_performance
+      explore: social_daily_snapshot
+      type: looker_line
+      row: 52
+      col: 0
+      width: 24
+      height: 10
+      dimensions: [social_daily_snapshot.snapshot_date_date]
+      pivots: [social_daily_snapshot.brand_platform]
+      measures: [social_daily_snapshot.followers_on_day]
+      sorts: [social_daily_snapshot.snapshot_date_date asc]
+      x_axis_scale: auto
+      stacking: ""
+      show_null_points: false
+      note:
+        text: "Daily audience stock at the close of each UTC reporting day. YouTube series are subscribers; all other platforms are followers. Values are summed only across profiles within the same Brand · Platform and day, never across dates. Missing snapshot days remain gaps."
+        state: collapsed
+        display: hover
+      listen:
+        agorapulse_snapshot_date: social_daily_snapshot.snapshot_date_date
+        brand: social_daily_snapshot.brand_canonical
+        platform: social_daily_snapshot.platform
+
     - name: brand_performance_summary
       title: "Brand performance summary"
       model: social_performance
       explore: social_daily_snapshot
       type: looker_bar
-      row: 52
+      row: 62
       col: 0
       width: 12
       height: 10
@@ -391,7 +436,7 @@
       model: social_performance
       explore: agorapulse_post_performance
       type: looker_bar
-      row: 62
+      row: 72
       col: 0
       width: 24
       height: 10
@@ -417,7 +462,7 @@
       model: social_performance
       explore: social_daily_snapshot
       type: looker_bar
-      row: 52
+      row: 62
       col: 12
       width: 12
       height: 10

@@ -70,6 +70,13 @@ view: social_daily_snapshot {
     sql: ${TABLE}.platform ;;
   }
 
+  dimension: brand_platform {
+    label: "Brand · Platform"
+    type: string
+    sql: ${brand_canonical} || ' · ' || INITCAP(${platform}) ;;
+    description: "Canonical brand and platform pair used as the follower/subscriber trend series."
+  }
+
   dimension: profile_id {
     label: "Profile ID"
     type: string
@@ -111,6 +118,36 @@ view: social_daily_snapshot {
     type: number
     sql: ${TABLE}.engagement_rate_per_view ;;
     description: "Raw Agorapulse engagementRatePerView, stored as a percent (2.56 means 2.56%). Null when the API omits the field."
+  }
+
+  dimension: followers {
+    hidden: yes
+    type: number
+    sql: ${TABLE}.followers ;;
+    description: "Audience stock for the UTC profile-day. YouTube uses subscribersCount; other platforms use followersCount."
+  }
+
+  dimension: followers_gained {
+    hidden: yes
+    type: number
+    sql: ${TABLE}.followers_gained ;;
+    description: "Gross audience gained for the UTC profile-day. YouTube uses subscribersGainedCount; other platforms use followersGainedCount."
+  }
+
+  measure: followers_gained_total {
+    label: "Followers gained"
+    type: sum
+    sql: ${followers_gained} ;;
+    value_format_name: decimal_0
+    description: "Gross followers/subscribers gained across profile-days in the selected range. YouTube contributes subscribers gained. This is not net growth."
+  }
+
+  measure: followers_on_day {
+    label: "Followers / subscribers"
+    type: sum
+    sql: ${followers} ;;
+    value_format_name: decimal_0
+    description: "Audience stock summed across profiles within each UTC date and Brand · Platform series. Do not sum this measure across dates."
   }
 
   measure: total_impressions {

@@ -110,55 +110,59 @@ view: agorapulse_post_performance {
     description: "Distinct posts for current filters. Explore is already latest-row-per-post; COUNT DISTINCT stays safe if filters expand the grain."
   }
 
-  # Agorapulse content report: IG/TT put reach in viewsCount → impressions_count; FB video
-  # and YT often leave viewsCount at 0 and only populate videoViewsCount. Ranking on
-  # impressions_count alone left FB/YT at 0 and scrambled Top 20 vs Agorapulse.
-  measure: post_impressions {
-    label: "Post impressions"
-    type: sum
-    sql:
-      CASE
-        WHEN LOWER(${platform}) = 'youtube' THEN NULL
-        ELSE GREATEST(
-          COALESCE(${TABLE}.impressions_count, 0),
-          COALESCE(${TABLE}.video_views_count, 0)
-        )
-      END ;;
-    value_format_name: decimal_0
-    html: {% if value == nil %}N/A{% else %}{{ rendered_value }}{% endif %} ;;
-    description: "Latest-snapshot post volume, excluding YouTube. Non-YouTube posts use GREATEST(impressions_count, video_views_count) so Facebook video posts that only fill videoViewsCount still rank. YouTube cells render N/A."
-  }
-
-  measure: post_impressions_rank {
+  # Warehouse columns come from the raw content-report payload (Segment snake_case),
+  # not from a single impressions_count alias:
+  #   instagram → impressions_count (impressionsCount)
+  #   facebook, tiktok → views_count (viewsCount). impressions_count is null on these rows.
+  #   youtube → no impression field (video_views_count is views, shown separately)
+  # GREATEST(impressions_count, video_views_count) ranked Facebook by video views and
+  # scored TikTok and Facebook image posts at 0.
+  dimension: post_impression_value {
     hidden: yes
-    label: "Post impressions (rank)"
     type: number
     sql:
-      COALESCE(SUM(
-        CASE
-          WHEN LOWER(${platform}) = 'youtube' THEN NULL
-          ELSE GREATEST(
-            COALESCE(${TABLE}.impressions_count, 0),
-            COALESCE(${TABLE}.video_views_count, 0)
-          )
-        END
-      ), -1) ;;
-    description: "Sort key. YouTube posts have no impression metric and rank last."
+      CASE
+        WHEN LOWER(${platform}) = 'youtube' THEN -1
+        WHEN LOWER(${platform}) = 'instagram' THEN COALESCE(${TABLE}.impressions_count, 0)
+        WHEN LOWER(${platform}) IN ('facebook', 'tiktok') THEN COALESCE(${TABLE}.views_count, 0)
+        ELSE COALESCE(${TABLE}.impressions_count, ${TABLE}.views_count, 0)
+      END ;;
+    description: "Sortable impression value. YouTube is -1 so it ranks last and the measure renders N/A."
+  }
+
+  measure: post_impressions {
+    label: "Post impressions"
+    type: max
+    sql: ${post_impression_value} ;;
+    value_format_name: decimal_0
+    html: {% if value == nil or value < 0 %}N/A{% else %}{{ rendered_value }}{% endif %} ;;
+    description: "Latest-snapshot impressions. Instagram uses impressions_count. Facebook and TikTok use views_count. YouTube has no Agorapulse impression field and shows N/A. Video views stay on Post video views."
   }
 
   measure: post_engagements {
     label: "Post engagements"
-    type: sum
+    type: max
     sql: COALESCE(${TABLE}.engagement_count, 0) ;;
     value_format_name: decimal_0
     description: "Latest-snapshot engagement_count per post (view deduped); context alongside impressions."
   }
 
+  # Same platform mapping as social_daily_snapshot.total_video_views. Instagram post rows
+  # carry no viewsCount, so impressionsCount stands in, matching the audience tile where
+  # Instagram impressions and video views are the same field.
   measure: post_video_views {
     label: "Post video views"
-    type: sum
-    sql: COALESCE(${TABLE}.video_views_count, 0) ;;
+    type: max
+    sql:
+      NULLIF(
+        CASE
+          WHEN LOWER(${platform}) IN ('facebook', 'youtube') THEN ${TABLE}.video_views_count
+          WHEN LOWER(${platform}) = 'tiktok' THEN ${TABLE}.views_count
+          WHEN LOWER(${platform}) = 'instagram' THEN COALESCE(${TABLE}.views_count, ${TABLE}.impressions_count)
+          ELSE ${TABLE}.video_views_count
+        END
+      , 0) ;;
     value_format_name: decimal_0
-    description: "Latest-snapshot video_views_count per post (view deduped); context alongside impressions."
+    description: "Latest-snapshot video views per post, same fields as Total video views. Facebook and YouTube: video_views_count. TikTok: views_count. Instagram: views_count, else impressions_count. Null or zero renders as Looker's null symbol (photo posts have no video-view field)."
   }
 }
