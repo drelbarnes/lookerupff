@@ -1469,6 +1469,14 @@ view: marketing_attribution_testv2 {
     drill_fields: [drill_conversions*]
   }
 
+  measure: paid_trials {
+    type: count
+    label: "Paid Trials"
+    description: "Same count as Free Trials Started. Social Performance Dashboard v2 uses this label."
+    filters: [event_type: "conversion", conversion_event_type: "free_trial", is_primary_attribution: "yes", within_attribution_window: "yes"]
+    drill_fields: [drill_conversions*]
+  }
+
   measure: free_trials_converted {
     type: count_distinct
     label: "Free Trials Converted"
