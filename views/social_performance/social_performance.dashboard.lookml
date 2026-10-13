@@ -202,7 +202,7 @@
         brand: marketing_attribution_testv2.brand_canonical
 
     - name: organic_social_free_trials_started_kpi
-      title: "Paid Subscriptions (organic social, web)"
+      title: "Free trials started (organic social, web)"
       model: social_performance
       explore: marketing_attribution_testv2
       type: single_value
@@ -215,7 +215,7 @@
         marketing_attribution_testv2.marketing_platform: "Organic Social"
         marketing_attribution_testv2.surface: "web"
       note:
-        text: "Website paid subscriptions credited to organic social. A trial counts when the selected attribution model gives organic social the credit and the trial falls inside the attribution window."
+        text: "Website free trials credited to organic social. A trial counts when the selected attribution model gives organic social the credit and the trial falls inside the attribution window."
         state: collapsed
         display: hover
       listen:
@@ -250,7 +250,7 @@
         brand: marketing_attribution_testv2.brand_canonical
 
     - name: organic_social_free_trials_converted_kpi
-      title: "Paid Conversions (organic social, web)"
+      title: "Free trials converted (organic social, web)"
       model: social_performance
       explore: marketing_attribution_testv2
       type: single_value
@@ -656,43 +656,43 @@
         brand: social_daily_snapshot.brand_canonical
         platform: social_daily_snapshot.platform
 
-    - name: total_impressions_kpi
-      title: "Total impressions"
-      model: social_performance
-      explore: social_daily_snapshot
-      type: single_value
-      row: 6
-      col: 8
-      width: 4
-      height: 4
-      measures: [social_daily_snapshot.total_impressions_display]
-      note:
-        text: "Times posts were shown on Facebook, Instagram, and TikTok during the selected dates. YouTube impressions are unavailable, so this shows N/A when only YouTube is selected. YouTube watches are on Total video views."
-        state: collapsed
-        display: hover
-      listen:
-        agorapulse_snapshot_date: social_daily_snapshot.snapshot_date_date
-        brand: social_daily_snapshot.brand_canonical
-        platform: social_daily_snapshot.platform
+    # - name: total_impressions_kpi
+    #   title: "Total impressions"
+    #   model: social_performance
+    #   explore: social_daily_snapshot
+    #   type: single_value
+    #   row: 6
+    #   col: 8
+    #   width: 4
+    #   height: 4
+    #   measures: [social_daily_snapshot.total_impressions_display]
+    #   note:
+    #     text: "Times posts were shown on Facebook, Instagram, and TikTok during the selected dates. YouTube impressions are unavailable, so this shows N/A when only YouTube is selected. YouTube watches are on Total video views."
+    #     state: collapsed
+    #     display: hover
+    #   listen:
+    #     agorapulse_snapshot_date: social_daily_snapshot.snapshot_date_date
+    #     brand: social_daily_snapshot.brand_canonical
+    #     platform: social_daily_snapshot.platform
 
-    - name: total_video_views_kpi
-      title: "Total video views"
-      model: social_performance
-      explore: social_daily_snapshot
-      type: single_value
-      row: 6
-      col: 12
-      width: 4
-      height: 4
-      measures: [social_daily_snapshot.total_video_views]
-      note:
-        text: "Times videos were watched during the selected dates on Facebook, Instagram, TikTok, and YouTube. Each day in the range is added together."
-        state: collapsed
-        display: hover
-      listen:
-        agorapulse_snapshot_date: social_daily_snapshot.snapshot_date_date
-        brand: social_daily_snapshot.brand_canonical
-        platform: social_daily_snapshot.platform
+    # - name: total_video_views_kpi
+    #   title: "Total video views"
+    #   model: social_performance
+    #   explore: social_daily_snapshot
+    #   type: single_value
+    #   row: 6
+    #   col: 12
+    #   width: 4
+    #   height: 4
+    #   measures: [social_daily_snapshot.total_video_views]
+    #   note:
+    #     text: "Times videos were watched during the selected dates on Facebook, Instagram, TikTok, and YouTube. Each day in the range is added together."
+    #     state: collapsed
+    #     display: hover
+    #   listen:
+    #     agorapulse_snapshot_date: social_daily_snapshot.snapshot_date_date
+    #     brand: social_daily_snapshot.brand_canonical
+    #     platform: social_daily_snapshot.platform
 
     - name: total_engagements_kpi
       title: "Total engagements"
@@ -732,29 +732,29 @@
         brand: social_daily_snapshot.brand_canonical
         platform: social_daily_snapshot.platform
 
-    - name: organic_social_site_visits_kpi
-      title: "Organic social site visits"
-      model: social_performance
-      explore: marketing_attribution_testv2
-      type: single_value
-      row: 10
-      col: 0
-      width: 5
-      height: 4
-      measures: [marketing_attribution_testv2.total_visits]
-      filters:
-        marketing_attribution_testv2.marketing_platform: "Organic Social"
-        marketing_attribution_testv2.surface: "web"
-      note:
-        text: "Website visits that came from an organic social link. The date is when the visit happened. Results follow the attribution model and window selected above."
-        state: collapsed
-        display: hover
-      listen:
-        agorapulse_snapshot_date: marketing_attribution_testv2.report_date_date
-        marketing_attribution_attribution_model: marketing_attribution_testv2.attribution_model
-        marketing_attribution_attribution_window: marketing_attribution_testv2.attribution_window_days
-        marketing_attribution_campaign_name: marketing_attribution_testv2.campaign_name
-        brand: marketing_attribution_testv2.brand_canonical
+    # - name: organic_social_site_visits_kpi
+    #   title: "Organic social site visits"
+    #   model: social_performance
+    #   explore: marketing_attribution_testv2
+    #   type: single_value
+    #   row: 10
+    #   col: 0
+    #   width: 5
+    #   height: 4
+    #   measures: [marketing_attribution_testv2.total_visits]
+    #   filters:
+    #     marketing_attribution_testv2.marketing_platform: "Organic Social"
+    #     marketing_attribution_testv2.surface: "web"
+    #   note:
+    #     text: "Website visits that came from an organic social link. The date is when the visit happened. Results follow the attribution model and window selected above."
+    #     state: collapsed
+    #     display: hover
+    #   listen:
+    #     agorapulse_snapshot_date: marketing_attribution_testv2.report_date_date
+    #     marketing_attribution_attribution_model: marketing_attribution_testv2.attribution_model
+    #     marketing_attribution_attribution_window: marketing_attribution_testv2.attribution_window_days
+    #     marketing_attribution_campaign_name: marketing_attribution_testv2.campaign_name
+    #     brand: marketing_attribution_testv2.brand_canonical
 
     - name: organic_social_paid_trials_kpi
       title: "Paid trials (organic social, web)"
@@ -780,113 +780,113 @@
         marketing_attribution_campaign_name: marketing_attribution_testv2.campaign_name
         brand: marketing_attribution_testv2.brand_canonical
 
-    - name: organic_social_trial_to_paid_kpi
-      title: "Trial to paid conversion rate (organic social, web)"
-      model: social_performance
-      explore: marketing_attribution_testv2
-      type: single_value
-      row: 10
-      col: 10
-      width: 5
-      height: 4
-      measures: [marketing_attribution_testv2.trial_to_paid_conversion_rate]
-      filters:
-        marketing_attribution_testv2.marketing_platform: "Organic Social"
-        marketing_attribution_testv2.surface: "web"
-      note:
-        text: "Share of organic-social website trials that became paying subscribers: trials converted divided by trials started. Follows the attribution model and window selected above."
-        state: collapsed
-        display: hover
-      listen:
-        agorapulse_snapshot_date: marketing_attribution_testv2.report_date_date
-        marketing_attribution_attribution_model: marketing_attribution_testv2.attribution_model
-        marketing_attribution_attribution_window: marketing_attribution_testv2.attribution_window_days
-        marketing_attribution_campaign_name: marketing_attribution_testv2.campaign_name
-        brand: marketing_attribution_testv2.brand_canonical
+    # - name: organic_social_trial_to_paid_kpi
+    #   title: "Trial to paid conversion rate (organic social, web)"
+    #   model: social_performance
+    #   explore: marketing_attribution_testv2
+    #   type: single_value
+    #   row: 10
+    #   col: 10
+    #   width: 5
+    #   height: 4
+    #   measures: [marketing_attribution_testv2.trial_to_paid_conversion_rate]
+    #   filters:
+    #     marketing_attribution_testv2.marketing_platform: "Organic Social"
+    #     marketing_attribution_testv2.surface: "web"
+    #   note:
+    #     text: "Share of organic-social website trials that became paying subscribers: trials converted divided by trials started. Follows the attribution model and window selected above."
+    #     state: collapsed
+    #     display: hover
+    #   listen:
+    #     agorapulse_snapshot_date: marketing_attribution_testv2.report_date_date
+    #     marketing_attribution_attribution_model: marketing_attribution_testv2.attribution_model
+    #     marketing_attribution_attribution_window: marketing_attribution_testv2.attribution_window_days
+    #     marketing_attribution_campaign_name: marketing_attribution_testv2.campaign_name
+    #     brand: marketing_attribution_testv2.brand_canonical
 
-    - name: organic_social_free_trials_converted_kpi
-      title: "Paid Conversions converted (organic social, web)"
-      model: social_performance
-      explore: marketing_attribution_testv2
-      type: single_value
-      row: 10
-      col: 15
-      width: 5
-      height: 4
-      measures: [marketing_attribution_testv2.free_trials_converted]
-      filters:
-        marketing_attribution_testv2.marketing_platform: "Organic Social"
-        marketing_attribution_testv2.surface: "web"
-      note:
-        text: "People who started a website trial from organic social and then became paying subscribers. Each person is counted once. Follows the attribution model and window selected above."
-        state: collapsed
-        display: hover
-      listen:
-        agorapulse_snapshot_date: marketing_attribution_testv2.report_date_date
-        marketing_attribution_attribution_model: marketing_attribution_testv2.attribution_model
-        marketing_attribution_attribution_window: marketing_attribution_testv2.attribution_window_days
-        marketing_attribution_campaign_name: marketing_attribution_testv2.campaign_name
-        brand: marketing_attribution_testv2.brand_canonical
+    # - name: organic_social_free_trials_converted_kpi
+    #   title: "Free trials converted (organic social, web)"
+    #   model: social_performance
+    #   explore: marketing_attribution_testv2
+    #   type: single_value
+    #   row: 10
+    #   col: 15
+    #   width: 5
+    #   height: 4
+    #   measures: [marketing_attribution_testv2.free_trials_converted]
+    #   filters:
+    #     marketing_attribution_testv2.marketing_platform: "Organic Social"
+    #     marketing_attribution_testv2.surface: "web"
+    #   note:
+    #     text: "People who started a website trial from organic social and then became paying subscribers. Each person is counted once. Follows the attribution model and window selected above."
+    #     state: collapsed
+    #     display: hover
+    #   listen:
+    #     agorapulse_snapshot_date: marketing_attribution_testv2.report_date_date
+    #     marketing_attribution_attribution_model: marketing_attribution_testv2.attribution_model
+    #     marketing_attribution_attribution_window: marketing_attribution_testv2.attribution_window_days
+    #     marketing_attribution_campaign_name: marketing_attribution_testv2.campaign_name
+    #     brand: marketing_attribution_testv2.brand_canonical
 
-    - name: organic_social_reacquisitions_kpi
-      title: "Reacquisitions (organic social, web)"
-      model: social_performance
-      explore: marketing_attribution_testv2
-      type: single_value
-      row: 10
-      col: 20
-      width: 4
-      height: 4
-      measures: [marketing_attribution_testv2.reacquisitions]
-      filters:
-        marketing_attribution_testv2.marketing_platform: "Organic Social"
-        marketing_attribution_testv2.surface: "web"
-      note:
-        text: "Former subscribers who resubscribed when organic social gets the credit. Website only. Follows the attribution model and window selected above."
-        state: collapsed
-        display: hover
-      listen:
-        agorapulse_snapshot_date: marketing_attribution_testv2.report_date_date
-        marketing_attribution_attribution_model: marketing_attribution_testv2.attribution_model
-        marketing_attribution_attribution_window: marketing_attribution_testv2.attribution_window_days
-        marketing_attribution_campaign_name: marketing_attribution_testv2.campaign_name
-        brand: marketing_attribution_testv2.brand_canonical
+    # - name: organic_social_reacquisitions_kpi
+    #   title: "Reacquisitions (organic social, web)"
+    #   model: social_performance
+    #   explore: marketing_attribution_testv2
+    #   type: single_value
+    #   row: 10
+    #   col: 20
+    #   width: 4
+    #   height: 4
+    #   measures: [marketing_attribution_testv2.reacquisitions]
+    #   filters:
+    #     marketing_attribution_testv2.marketing_platform: "Organic Social"
+    #     marketing_attribution_testv2.surface: "web"
+    #   note:
+    #     text: "Former subscribers who resubscribed when organic social gets the credit. Website only. Follows the attribution model and window selected above."
+    #     state: collapsed
+    #     display: hover
+    #   listen:
+    #     agorapulse_snapshot_date: marketing_attribution_testv2.report_date_date
+    #     marketing_attribution_attribution_model: marketing_attribution_testv2.attribution_model
+    #     marketing_attribution_attribution_window: marketing_attribution_testv2.attribution_window_days
+    #     marketing_attribution_campaign_name: marketing_attribution_testv2.campaign_name
+    #     brand: marketing_attribution_testv2.brand_canonical
 
-    - name: campaign_subscription_events_organic_social
-      title: "Campaign Subscription Events (Organic Social)"
-      model: social_performance
-      explore: marketing_attribution_testv2
-      type: looker_grid
-      row: 14
-      col: 0
-      width: 24
-      height: 14
-      dimensions:
-        - marketing_attribution_testv2.brand_canonical
-        - marketing_attribution_testv2.campaign_name
-        - marketing_attribution_testv2.campaign_content
-        - marketing_attribution_testv2.marketing_platform
-        - marketing_attribution_testv2.campaign_medium
-      measures:
-        - marketing_attribution_testv2.paid_trials
-        - marketing_attribution_testv2.free_trials_converted
-        - marketing_attribution_testv2.reacquisitions
-      filters:
-        marketing_attribution_testv2.marketing_platform: "Organic Social"
-        marketing_attribution_testv2.surface: "web"
-      sorts:
-        - marketing_attribution_testv2.paid_trials desc
-      limit: 200
-      note:
-        text: "Organic social website results by campaign: trials started, trials that became paid, and subscribers who came back. Uses the conversion date plus the attribution model, window, campaign, and brand filters."
-        state: collapsed
-        display: hover
-      listen:
-        agorapulse_snapshot_date: marketing_attribution_testv2.report_date_date
-        marketing_attribution_attribution_model: marketing_attribution_testv2.attribution_model
-        marketing_attribution_attribution_window: marketing_attribution_testv2.attribution_window_days
-        marketing_attribution_campaign_name: marketing_attribution_testv2.campaign_name
-        brand: marketing_attribution_testv2.brand_canonical
+    # - name: campaign_subscription_events_organic_social
+    #   title: "Campaign Subscription Events (Organic Social)"
+    #   model: social_performance
+    #   explore: marketing_attribution_testv2
+    #   type: looker_grid
+    #   row: 14
+    #   col: 0
+    #   width: 24
+    #   height: 14
+    #   dimensions:
+    #     - marketing_attribution_testv2.brand_canonical
+    #     - marketing_attribution_testv2.campaign_name
+    #     - marketing_attribution_testv2.campaign_content
+    #     - marketing_attribution_testv2.marketing_platform
+    #     - marketing_attribution_testv2.campaign_medium
+    #   measures:
+    #     - marketing_attribution_testv2.paid_trials
+    #     - marketing_attribution_testv2.free_trials_converted
+    #     - marketing_attribution_testv2.reacquisitions
+    #   filters:
+    #     marketing_attribution_testv2.marketing_platform: "Organic Social"
+    #     marketing_attribution_testv2.surface: "web"
+    #   sorts:
+    #     - marketing_attribution_testv2.paid_trials desc
+    #   limit: 200
+    #   note:
+    #     text: "Organic social website results by campaign: trials started, trials that became paid, and subscribers who came back. Uses the conversion date plus the attribution model, window, campaign, and brand filters."
+    #     state: collapsed
+    #     display: hover
+    #   listen:
+    #     agorapulse_snapshot_date: marketing_attribution_testv2.report_date_date
+    #     marketing_attribution_attribution_model: marketing_attribution_testv2.attribution_model
+    #     marketing_attribution_attribution_window: marketing_attribution_testv2.attribution_window_days
+    #     marketing_attribution_campaign_name: marketing_attribution_testv2.campaign_name
+    #     brand: marketing_attribution_testv2.brand_canonical
 
     - name: top_posts_by_impressions
       title: "Top 20 posts by impressions (publish window)"
