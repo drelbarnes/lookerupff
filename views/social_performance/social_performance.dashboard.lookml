@@ -202,7 +202,7 @@
         brand: marketing_attribution_testv2.brand_canonical
 
     - name: organic_social_free_trials_started_kpi
-      title: "Free trials started (organic social, web)"
+      title: "Paid Subscriptions (organic social, web)"
       model: social_performance
       explore: marketing_attribution_testv2
       type: single_value
@@ -215,7 +215,7 @@
         marketing_attribution_testv2.marketing_platform: "Organic Social"
         marketing_attribution_testv2.surface: "web"
       note:
-        text: "Website free trials credited to organic social. A trial counts when the selected attribution model gives organic social the credit and the trial falls inside the attribution window."
+        text: "Website paid subscriptions credited to organic social. A trial counts when the selected attribution model gives organic social the credit and the trial falls inside the attribution window."
         state: collapsed
         display: hover
       listen:
@@ -250,7 +250,7 @@
         brand: marketing_attribution_testv2.brand_canonical
 
     - name: organic_social_free_trials_converted_kpi
-      title: "Free trials converted (organic social, web)"
+      title: "Paid Conversions (organic social, web)"
       model: social_performance
       explore: marketing_attribution_testv2
       type: single_value
@@ -805,7 +805,7 @@
         brand: marketing_attribution_testv2.brand_canonical
 
     - name: organic_social_free_trials_converted_kpi
-      title: "Free trials converted (organic social, web)"
+      title: "Paid Conversions converted (organic social, web)"
       model: social_performance
       explore: marketing_attribution_testv2
       type: single_value
