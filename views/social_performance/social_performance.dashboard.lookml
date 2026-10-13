@@ -619,19 +619,19 @@
   elements:
     - name: page_summary
       type: text
-      title_text: '<div style="text-align: left" align="left">Summary</div>'
-      body_text: '<div style="text-align: left" align="left">The Social Performance Dashboard shows how social content performs across Facebook, Instagram, TikTok, and YouTube, and how organic social activity contributes to website visits and subscriptions. The top tiles summarize posts published, followers gained, impressions, video views, engagements, and engagement rate, followed by organic social visits, trials, conversions, and reacquisitions. The charts below highlight top-performing posts, daily performance trends, audience growth, and results by brand and platform. Use the filters to change the date range, brand, platform, campaign, or attribution settings. Read the tile notes before drawing conclusions, especially because YouTube impressions are unavailable and post metrics use publish dates while audience metrics use reporting dates.</div>'
+      title_text: '<div style="text-align: left; margin: 0; padding: 0; line-height: 1.2;" align="left">Summary</div>'
+      body_text: '<div style="text-align: left; margin: 0; padding: 0; line-height: 1.35;" align="left">The Social Performance Dashboard shows how social content performs across Facebook, Instagram, TikTok, and YouTube, and how organic social activity contributes to website visits and subscriptions. The top tiles summarize posts published, followers gained, impressions, video views, engagements, and engagement rate, followed by organic social visits, trials, conversions, and reacquisitions. The charts below highlight top-performing posts, daily performance trends, audience growth, and results by brand and platform. Use the filters to change the date range, brand, platform, campaign, or attribution settings. Read the tile notes before drawing conclusions, especially because YouTube impressions are unavailable and post metrics use publish dates while audience metrics use reporting dates.</div>'
       row: 0
       col: 0
       width: 24
-      height: 6
+      height: 4
 
     - name: total_posts_kpi
       title: "Total posts"
       model: social_performance
       explore: agorapulse_post_performance
       type: single_value
-      row: 6
+      row: 4
       col: 0
       width: 6
       height: 4
@@ -650,7 +650,7 @@
       model: social_performance
       explore: social_daily_snapshot
       type: single_value
-      row: 6
+      row: 4
       col: 6
       width: 6
       height: 4
@@ -669,7 +669,7 @@
     #   model: social_performance
     #   explore: social_daily_snapshot
     #   type: single_value
-    #   row: 6
+    #   row: 4
     #   col: 8
     #   width: 4
     #   height: 4
@@ -688,7 +688,7 @@
     #   model: social_performance
     #   explore: social_daily_snapshot
     #   type: single_value
-    #   row: 6
+    #   row: 4
     #   col: 12
     #   width: 4
     #   height: 4
@@ -707,7 +707,7 @@
       model: social_performance
       explore: social_daily_snapshot
       type: single_value
-      row: 6
+      row: 4
       col: 12
       width: 6
       height: 4
@@ -726,7 +726,7 @@
       model: social_performance
       explore: social_daily_snapshot
       type: single_value
-      row: 6
+      row: 4
       col: 18
       width: 6
       height: 4
@@ -745,7 +745,7 @@
     #   model: social_performance
     #   explore: marketing_attribution_testv2
     #   type: single_value
-    #   row: 10
+    #   row: 8
     #   col: 0
     #   width: 5
     #   height: 4
@@ -769,7 +769,7 @@
     #   model: social_performance
     #   explore: marketing_attribution_testv2
     #   type: single_value
-    #   row: 10
+    #   row: 8
     #   col: 5
     #   width: 5
     #   height: 4
@@ -793,7 +793,7 @@
     #   model: social_performance
     #   explore: marketing_attribution_testv2
     #   type: single_value
-    #   row: 10
+    #   row: 8
     #   col: 10
     #   width: 5
     #   height: 4
@@ -817,7 +817,7 @@
     #   model: social_performance
     #   explore: marketing_attribution_testv2
     #   type: single_value
-    #   row: 10
+    #   row: 8
     #   col: 15
     #   width: 5
     #   height: 4
@@ -841,7 +841,7 @@
     #   model: social_performance
     #   explore: marketing_attribution_testv2
     #   type: single_value
-    #   row: 10
+    #   row: 8
     #   col: 20
     #   width: 4
     #   height: 4
@@ -865,7 +865,7 @@
     #   model: social_performance
     #   explore: marketing_attribution_testv2
     #   type: looker_grid
-    #   row: 14
+    #   row: 12
     #   col: 0
     #   width: 24
     #   height: 14
@@ -901,7 +901,7 @@
       model: social_performance
       explore: agorapulse_post_performance
       type: looker_grid
-      row: 10
+      row: 8
       col: 0
       width: 24
       height: 10
@@ -936,7 +936,7 @@
       model: social_performance
       explore: social_daily_snapshot
       type: looker_area
-      row: 20
+      row: 18
       col: 0
       dimensions: [social_daily_snapshot.snapshot_date_date]
       pivots: [social_daily_snapshot.platform]
@@ -963,7 +963,7 @@
       model: social_performance
       explore: social_daily_snapshot
       type: looker_area
-      row: 30
+      row: 28
       col: 0
       dimensions: [social_daily_snapshot.snapshot_date_date]
       pivots: [social_daily_snapshot.platform]
@@ -989,7 +989,7 @@
       model: social_performance
       explore: social_daily_snapshot
       type: looker_line
-      row: 40
+      row: 38
       col: 0
       width: 24
       height: 10
@@ -1014,7 +1014,7 @@
       model: social_performance
       explore: social_daily_snapshot
       type: looker_bar
-      row: 50
+      row: 48
       col: 0
       width: 12
       height: 10
@@ -1041,10 +1041,10 @@
       model: social_performance
       explore: agorapulse_post_performance
       type: looker_bar
-      row: 60
+      row: 58
       col: 0
       width: 24
-      height: 6
+      height: 5
       dimensions: [agorapulse_post_performance.brand_canonical]
       measures: [agorapulse_post_performance.total_posts]
       sorts: [agorapulse_post_performance.total_posts desc]
@@ -1067,12 +1067,14 @@
       model: social_performance
       explore: social_daily_snapshot
       type: looker_bar
-      row: 50
+      row: 48
       col: 12
       width: 12
       height: 10
       dimensions: [social_daily_snapshot.platform]
       measures: [social_daily_snapshot.organic_impressions_excluding_youtube]
+      filters:
+        social_daily_snapshot.platform_reports_impressions: "yes"
       sorts: [social_daily_snapshot.organic_impressions_excluding_youtube desc]
       stacking: ""
       hide_legend: true
@@ -1120,7 +1122,7 @@
         </ul>
         Hover the note on any tile when a figure looks off. The note states the rule for that tile.
         </div>
-      row: 66
+      row: 63
       col: 0
       width: 24
       height: 22
