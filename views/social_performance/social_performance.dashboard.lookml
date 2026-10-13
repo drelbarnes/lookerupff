@@ -527,9 +527,11 @@
 
     - name: how_to_read
       type: text
-      title_text: '<div style="text-align: left" align="left">How to read this dashboard</div>'
+      title_text: "How to read this dashboard"
+      title_hidden: yes
       body_text: |
-        <div style="text-align: left" align="left">
+        <div style="text-align: left; margin: -12px 0 0 0; padding: 0;" align="left">
+        <div style="margin: 0 0 8px 0; padding: 0; font-weight: 600;">How to read this dashboard</div>
         This page has two parts. The top row and the charts below the campaign table come from Agorapulse and describe posts, audience, and engagement. The second row of tiles and the campaign table describe website visits and subscriptions credited to organic social. Those website tiles are website only.
         <br><br>
         <strong>Start with the filters</strong>
@@ -1092,9 +1094,11 @@
 
     - name: how_to_read
       type: text
-      title_text: '<div style="text-align: left" align="left">How to read this dashboard</div>'
+      title_text: "How to read this dashboard"
+      title_hidden: yes
       body_text: |
-        <div style="text-align: left" align="left">
+        <div style="text-align: left; margin: -12px 0 0 0; padding: 0;" align="left">
+        <div style="margin: 0 0 8px 0; padding: 0; font-weight: 600;">How to read this dashboard</div>
         This page has two parts. The top row and the charts below the campaign table come from Agorapulse and describe posts, audience, and engagement. The second row of tiles and the campaign table describe website visits and subscriptions credited to organic social. Those website tiles are website only.
         <br><br>
         <strong>Start with the filters</strong>
