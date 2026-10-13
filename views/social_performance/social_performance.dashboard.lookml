@@ -379,7 +379,7 @@
       pivots: [social_daily_snapshot.platform]
       measures: [social_daily_snapshot.organic_impressions_excluding_youtube]
       filters:
-        social_daily_snapshot.platform: "-youtube"
+        social_daily_snapshot.platform_reports_impressions: "yes"
       sorts: [social_daily_snapshot.snapshot_date_date asc]
       x_axis_scale: auto
       width: 24
@@ -940,7 +940,7 @@
       pivots: [social_daily_snapshot.platform]
       measures: [social_daily_snapshot.organic_impressions_excluding_youtube]
       filters:
-        social_daily_snapshot.platform: "-youtube"
+        social_daily_snapshot.platform_reports_impressions: "yes"
       sorts: [social_daily_snapshot.snapshot_date_date asc]
       x_axis_scale: auto
       width: 24

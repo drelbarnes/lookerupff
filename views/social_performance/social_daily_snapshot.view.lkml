@@ -70,6 +70,15 @@ view: social_daily_snapshot {
     sql: ${TABLE}.platform ;;
   }
 
+  # Separate from platform so a dashboard Platform filter cannot override it.
+  # Impression charts filter this to yes; otherwise YouTube remains a pivot and a legend entry.
+  dimension: platform_reports_impressions {
+    hidden: yes
+    type: yesno
+    sql: LOWER(${TABLE}.platform) <> 'youtube' ;;
+    description: "Yes when the platform has an impression metric. YouTube is no."
+  }
+
   dimension: brand_platform {
     label: "Brand · Platform"
     type: string
