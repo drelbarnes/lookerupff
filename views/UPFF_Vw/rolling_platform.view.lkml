@@ -16,6 +16,10 @@ cfg AS (
   FROM ${configg.SQL_TABLE_NAME}
 ),
 
+backfill_cfg as (
+  SELECT report_date from ${config_backfill.SQL_TABLE_NAME}
+),
+
       -- 2) Chargebee cancellations -> treat as 'web' platform (adjust if you prefer a different label)
       user_cancelled_counts2 AS (
 

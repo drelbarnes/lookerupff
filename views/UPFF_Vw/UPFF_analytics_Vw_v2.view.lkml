@@ -7,13 +7,15 @@ view: UPFF_analytics_Vw_v2 {
 ),
 
       chargebee_subscriptions as (
-      select * from http_api.chargebee_subscriptions where  CAST(uploaded_at AS DATE) >= (
-      SELECT MAX(report_date)
-      FROM cfg)),
+      select * from http_api.chargebee_subscriptions where  CAST(uploaded_at AS DATE) >= (current_date - 220)
+      --(SELECT MAX(report_date) FROM cfg)
+      ),
 
       vimeo_subscriptions as(
       -- select * from customers.all_customers where report_date = TO_CHAR(CURRENT_DATE, 'YYYY-MM-DD') --
-      select * from customers.all_customers where report_date >= (SELECT max(report_date) FROM cfg)),
+      select * from customers.all_customers where report_date >= (current_date - 220)
+      --(SELECT max(report_date) FROM cfg)
+      and action !='follow'),
 
       ------  Chargebee ------
       -- get daily status of each user
@@ -66,7 +68,7 @@ view: UPFF_analytics_Vw_v2 {
       END as billing_period
       ,report_date::DATE as report_date
       from vimeo_subscriptions
-      where action = 'subscription' and platform not in('api','web')
+      where platform not in('api','web')
       ),
 
 

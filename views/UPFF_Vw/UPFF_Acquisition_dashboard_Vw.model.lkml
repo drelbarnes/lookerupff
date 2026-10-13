@@ -4,6 +4,7 @@ include: "/views/UPFF_Vw/UPFF_analytics_Vw.view.lkml"
 include: "/views/UPFF_Vw/UPFF_analytics_Vw_v2.view.lkml"
 include: "/views/UPFF_Vw/rolling.view.lkml"
 include: "/views/UPFF_Vw/configg.view.lkml"
+include: "/views/UPFF_Vw/config_backfill.view.lkml"
 include: "/views/UPFF_Vw/rolling_platform.view.lkml"
 include: "/views/UPFF_Vw/ios.view.lkml"
 include: "/views/UPFF_Vw/running.view.lkml"
@@ -160,4 +161,8 @@ explore: bundle {
 
 explore: bundle_conversion {
   label: "UPFF Bundle Conversion"
+}
+
+explore: rolling_platform {
+  label: "UPFF rolling platform"
 }
