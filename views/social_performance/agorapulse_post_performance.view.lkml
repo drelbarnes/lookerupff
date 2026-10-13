@@ -136,7 +136,58 @@ view: agorapulse_post_performance {
     sql: ${post_impression_value} ;;
     value_format_name: decimal_0
     html: {% if value == nil or value < 0 %}N/A{% else %}{{ rendered_value }}{% endif %} ;;
-    description: "Latest-snapshot impressions. Instagram uses impressions_count. Facebook and TikTok use views_count. YouTube has no Agorapulse impression field and shows N/A. Video views stay on Post video views."
+    description: "Latest-snapshot impressions. Instagram uses impressions_count. Facebook and TikTok use views_count. YouTube has no Agorapulse impression field and shows N/A. Video views stay on Post video views. Top 20 sorts on this total and displays the organic and paid split instead."
+  }
+
+  # Split of post_impression_value. Organic + paid equals that total:
+  #   instagram → organic_impressions_count + paid_impressions_count
+  #   facebook  → organic_views_count + paid_views_count
+  #   tiktok    → views_count + 0 (content report has no paid split)
+  #   youtube   → N/A
+  dimension: post_organic_impression_value {
+    hidden: yes
+    type: number
+    sql:
+      CASE
+        WHEN LOWER(${platform}) = 'youtube' THEN -1
+        WHEN LOWER(${platform}) = 'instagram' THEN COALESCE(${TABLE}.organic_impressions_count, 0)
+        WHEN LOWER(${platform}) = 'facebook' THEN COALESCE(${TABLE}.organic_views_count, 0)
+        WHEN LOWER(${platform}) = 'tiktok' THEN COALESCE(${TABLE}.views_count, 0)
+        ELSE COALESCE(${TABLE}.organic_impressions_count, ${TABLE}.organic_views_count, 0)
+      END ;;
+    description: "Sortable organic impression value. YouTube is -1 so the measure renders N/A."
+  }
+
+  dimension: post_paid_impression_value {
+    hidden: yes
+    type: number
+    sql:
+      CASE
+        WHEN LOWER(${platform}) = 'youtube' THEN -1
+        WHEN LOWER(${platform}) = 'instagram' THEN COALESCE(${TABLE}.paid_impressions_count, 0)
+        WHEN LOWER(${platform}) = 'facebook' THEN COALESCE(${TABLE}.paid_views_count, 0)
+        WHEN LOWER(${platform}) = 'tiktok' THEN 0
+        ELSE COALESCE(${TABLE}.paid_impressions_count, ${TABLE}.paid_views_count, 0)
+      END ;;
+    description: "Sortable paid impression value. YouTube is -1 so the measure renders N/A. TikTok has no paid split and is 0."
+  }
+
+  measure: post_organic_impressions {
+    label: "Organic impressions"
+    type: max
+    sql: ${post_organic_impression_value} ;;
+    value_format_name: decimal_0
+    html: {% if value == nil or value < 0 %}N/A{% else %}{{ rendered_value }}{% endif %} ;;
+    description: "Latest-snapshot organic impressions. Instagram uses organic_impressions_count. Facebook uses organic_views_count. TikTok uses views_count. YouTube shows N/A."
+  }
+
+  measure: post_paid_impressions {
+    label: "Paid impressions"
+    type: max
+    sql: ${post_paid_impression_value} ;;
+    value_format_name: decimal_0
+    html: {% if value == nil or value < 0 %}N/A{% else %}{{ rendered_value }}{% endif %} ;;
+    description: "Latest-snapshot paid impressions. Instagram uses paid_impressions_count. Facebook uses paid_views_count. TikTok is 0. YouTube shows N/A."
   }
 
   measure: post_engagements {

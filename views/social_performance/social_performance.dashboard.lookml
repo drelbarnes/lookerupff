@@ -56,8 +56,8 @@
   elements:
     - name: page_summary
       type: text
-      title_text: "Summary"
-      body_text: "The Social Performance Dashboard shows how social content performs across Facebook, Instagram, TikTok, and YouTube, and how organic social activity contributes to website visits and subscriptions. The top tiles summarize posts published, followers gained, impressions, video views, engagements, and engagement rate, followed by organic social visits, trials, conversions, and reacquisitions. The charts below highlight top-performing posts, daily performance trends, audience growth, and results by brand and platform. Use the filters to change the date range, brand, platform, campaign, or attribution settings. Read the tile notes before drawing conclusions, especially because YouTube impressions are unavailable and post metrics use publish dates while audience metrics use reporting dates."
+      title_text: '<div style="text-align: left" align="left">Summary</div>'
+      body_text: '<div style="text-align: left" align="left">The Social Performance Dashboard shows how social content performs across Facebook, Instagram, TikTok, and YouTube, and how organic social activity contributes to website visits and subscriptions. The top tiles summarize posts published, followers gained, impressions, video views, engagements, and engagement rate, followed by organic social visits, trials, conversions, and reacquisitions. The charts below highlight top-performing posts, daily performance trends, audience growth, and results by brand and platform. Use the filters to change the date range, brand, platform, campaign, or attribution settings. Read the tile notes before drawing conclusions, especially because YouTube impressions are unavailable and post metrics use publish dates while audience metrics use reporting dates.</div>'
       row: 0
       col: 0
       width: 24
@@ -350,15 +350,17 @@
         - agorapulse_post_performance.post_url
         - agorapulse_post_performance.post_id
       measures:
-        - agorapulse_post_performance.post_impressions
+        - agorapulse_post_performance.post_organic_impressions
+        - agorapulse_post_performance.post_paid_impressions
         - agorapulse_post_performance.post_engagements
         - agorapulse_post_performance.post_video_views
+      hidden_fields: [agorapulse_post_performance.post_impressions]
       sorts:
         - agorapulse_post_performance.post_impressions desc
         - agorapulse_post_performance.post_video_views desc
       limit: 20
       note:
-        text: "The 20 posts with the most impressions among posts published in the selected dates (Eastern time). Each number is the post's all-time total, so it includes performance outside those dates. YouTube impressions show as N/A."
+        text: "The 20 posts with the most impressions among posts published in the selected dates (Eastern time). Organic and paid impressions are each the post's all-time total, so they include performance outside those dates. YouTube shows N/A on both columns. TikTok paid impressions are 0."
         state: collapsed
         display: hover
       listen:
@@ -367,7 +369,7 @@
         platform: agorapulse_post_performance.platform
 
     - name: impressions_over_time
-      title: "Impressions over time by platform"
+      title: "Organic Impressions over time by platform"
       model: social_performance
       explore: social_daily_snapshot
       type: looker_area
@@ -375,7 +377,9 @@
       col: 0
       dimensions: [social_daily_snapshot.snapshot_date_date]
       pivots: [social_daily_snapshot.platform]
-      measures: [social_daily_snapshot.total_impressions]
+      measures: [social_daily_snapshot.organic_impressions_excluding_youtube]
+      filters:
+        social_daily_snapshot.platform: "-youtube"
       sorts: [social_daily_snapshot.snapshot_date_date asc]
       x_axis_scale: auto
       width: 24
@@ -383,7 +387,7 @@
       stacking: ""
       show_null_points: false
       note:
-        text: "Impressions by day and platform for the selected dates. YouTube is omitted because impressions are unavailable. YouTube watches are on the video views chart below."
+        text: "Organic impressions by day and platform for the selected dates. Facebook and Instagram count organic views only. TikTok is treated as organic. YouTube is hidden because impressions are unavailable. YouTube watches are on the video views chart below."
         state: collapsed
         display: hover
       listen:
@@ -521,34 +525,36 @@
 
     - name: how_to_read
       type: text
-      title_text: "How to read this dashboard"
+      title_text: '<div style="text-align: left" align="left">How to read this dashboard</div>'
       body_text: |
+        <div style="text-align: left" align="left">
         This page has two parts. The top row and the charts below the campaign table come from Agorapulse and describe posts, audience, and engagement. The second row of tiles and the campaign table describe website visits and subscriptions credited to organic social. Those website tiles are website only.
-
-        **Start with the filters**
-
+        <br><br>
+        <strong>Start with the filters</strong>
+        <br><br>
         Set the date range, brand, and platform first, then read the social tiles and charts. Brand applies to every tile. UP Faith & Family and UPFF are one brand. Platform applies to the social tiles and charts only. It leaves the website row and the campaign table unchanged.
-
+        <br><br>
         Attribution model, attribution window, and campaign name apply only to the website row and the campaign table. Changing them leaves posts, impressions, video views, engagements, and followers unchanged.
-
-        **The date range means three different things**
-
-        - **Total posts**, **Posts by brand**, and which posts appear in **Top 20 posts by impressions** use each post's Eastern publish date.
-        - **Impressions**, **video views**, **engagements**, **engagement rate**, and **followers gained** use the day the activity happened. A post published earlier can still add to these totals.
-        - The website tiles and the campaign table use the day of the visit or subscription event, then keep only the events the selected attribution model and window credit to organic social.
-
-        **How to read the numbers**
-
-        - **Top 20 posts by impressions** ranks posts published in the selected dates. Each impression, engagement, and video-view number is that post's all-time total.
-        - **Engagement rate per view** is the average of each day's rate, so a quiet day counts the same as a busy day. Facebook, Instagram, and TikTok use Agorapulse's rate. YouTube uses that day's engagements divided by video views.
-        - **Followers gained** counts new follows added during the dates. On YouTube that is new subscribers. Unfollows are left out. Someone who follows more than one account is counted on each account.
-        - **Followers / subscribers trend** is the audience size at the end of each day, by brand and platform. A gap means no snapshot was captured that day.
-        - YouTube impressions are unavailable. **Total impressions** shows N/A when only YouTube is selected, and YouTube is left off the impression charts and the brand and channel bars. Use **Total video views** and the video-views chart for YouTube.
-        - Twitter/X is not on this dashboard.
-        - Website visits and trials follow a different count than impressions. Impressions count times a post was shown. The website tiles count visits and subscriptions that arrived from an organic social link and received credit under the attribution settings above the page.
-        - Numbers refresh once a day. The last few days can still move as Agorapulse revises them.
-
+        <br><br>
+        <strong>The date range means three different things</strong>
+        <ul>
+        <li><strong>Total posts</strong>, <strong>Posts by brand</strong>, and which posts appear in <strong>Top 20 posts by impressions</strong> use each post's Eastern publish date.</li>
+        <li><strong>Impressions</strong>, <strong>video views</strong>, <strong>engagements</strong>, <strong>engagement rate</strong>, and <strong>followers gained</strong> use the day the activity happened. A post published earlier can still add to these totals.</li>
+        <li>The website tiles and the campaign table use the day of the visit or subscription event, then keep only the events the selected attribution model and window credit to organic social.</li>
+        </ul>
+        <strong>How to read the numbers</strong>
+        <ul>
+        <li><strong>Top 20 posts by impressions</strong> ranks posts published in the selected dates. Each impression, engagement, and video-view number is that post's all-time total.</li>
+        <li><strong>Engagement rate per view</strong> is the average of each day's rate, so a quiet day counts the same as a busy day. Facebook, Instagram, and TikTok use Agorapulse's rate. YouTube uses that day's engagements divided by video views.</li>
+        <li><strong>Followers gained</strong> counts new follows added during the dates. On YouTube that is new subscribers. Unfollows are left out. Someone who follows more than one account is counted on each account.</li>
+        <li><strong>Followers / subscribers trend</strong> is the audience size at the end of each day, by brand and platform. A gap means no snapshot was captured that day.</li>
+        <li>YouTube impressions are unavailable. <strong>Total impressions</strong> shows N/A when only YouTube is selected, and YouTube is left off the impression charts and the brand and channel bars. Use <strong>Total video views</strong> and the video-views chart for YouTube.</li>
+        <li>Twitter/X is not on this dashboard.</li>
+        <li>Website visits and trials follow a different count than impressions. Impressions count times a post was shown. The website tiles count visits and subscriptions that arrived from an organic social link and received credit under the attribution settings above the page.</li>
+        <li>Numbers refresh once a day. The last few days can still move as Agorapulse revises them.</li>
+        </ul>
         Hover the note on any tile when a figure looks off. The note states the rule for that tile.
+        </div>
       row: 88
       col: 0
       width: 24
@@ -611,8 +617,8 @@
   elements:
     - name: page_summary
       type: text
-      title_text: "Summary"
-      body_text: "The Social Performance Dashboard shows how social content performs across Facebook, Instagram, TikTok, and YouTube, and how organic social activity contributes to website visits and subscriptions. The top tiles summarize posts published, followers gained, impressions, video views, engagements, and engagement rate, followed by organic social visits, trials, conversions, and reacquisitions. The charts below highlight top-performing posts, daily performance trends, audience growth, and results by brand and platform. Use the filters to change the date range, brand, platform, campaign, or attribution settings. Read the tile notes before drawing conclusions, especially because YouTube impressions are unavailable and post metrics use publish dates while audience metrics use reporting dates."
+      title_text: '<div style="text-align: left" align="left">Summary</div>'
+      body_text: '<div style="text-align: left" align="left">The Social Performance Dashboard shows how social content performs across Facebook, Instagram, TikTok, and YouTube, and how organic social activity contributes to website visits and subscriptions. The top tiles summarize posts published, followers gained, impressions, video views, engagements, and engagement rate, followed by organic social visits, trials, conversions, and reacquisitions. The charts below highlight top-performing posts, daily performance trends, audience growth, and results by brand and platform. Use the filters to change the date range, brand, platform, campaign, or attribution settings. Read the tile notes before drawing conclusions, especially because YouTube impressions are unavailable and post metrics use publish dates while audience metrics use reporting dates.</div>'
       row: 0
       col: 0
       width: 24
@@ -905,15 +911,17 @@
         - agorapulse_post_performance.post_url
         - agorapulse_post_performance.post_id
       measures:
-        - agorapulse_post_performance.post_impressions
+        - agorapulse_post_performance.post_organic_impressions
+        - agorapulse_post_performance.post_paid_impressions
         - agorapulse_post_performance.post_engagements
         - agorapulse_post_performance.post_video_views
+      hidden_fields: [agorapulse_post_performance.post_impressions]
       sorts:
         - agorapulse_post_performance.post_impressions desc
         - agorapulse_post_performance.post_video_views desc
       limit: 20
       note:
-        text: "The 20 posts with the most impressions among posts published in the selected dates (Eastern time). Each number is the post's all-time total, so it includes performance outside those dates. YouTube impressions show as N/A."
+        text: "The 20 posts with the most impressions among posts published in the selected dates (Eastern time). Organic and paid impressions are each the post's all-time total, so they include performance outside those dates. YouTube shows N/A on both columns. TikTok paid impressions are 0."
         state: collapsed
         display: hover
       listen:
@@ -922,7 +930,7 @@
         platform: agorapulse_post_performance.platform
 
     - name: impressions_over_time
-      title: "Impressions over time by platform"
+      title: "Organic Impressions over time by platform"
       model: social_performance
       explore: social_daily_snapshot
       type: looker_area
@@ -930,7 +938,9 @@
       col: 0
       dimensions: [social_daily_snapshot.snapshot_date_date]
       pivots: [social_daily_snapshot.platform]
-      measures: [social_daily_snapshot.total_impressions]
+      measures: [social_daily_snapshot.organic_impressions_excluding_youtube]
+      filters:
+        social_daily_snapshot.platform: "-youtube"
       sorts: [social_daily_snapshot.snapshot_date_date asc]
       x_axis_scale: auto
       width: 24
@@ -938,7 +948,7 @@
       stacking: ""
       show_null_points: false
       note:
-        text: "Impressions by day and platform for the selected dates. YouTube is omitted because impressions are unavailable. YouTube watches are on the video views chart below."
+        text: "Organic impressions by day and platform for the selected dates. Facebook and Instagram count organic views only. TikTok is treated as organic. YouTube is hidden because impressions are unavailable. YouTube watches are on the video views chart below."
         state: collapsed
         display: hover
       listen:
@@ -996,7 +1006,7 @@
         platform: social_daily_snapshot.platform
 
     - name: brand_performance_summary
-      title: "Brand performance summary"
+      title: "Brand performance summary for organic"
       model: social_performance
       explore: social_daily_snapshot
       type: looker_bar
@@ -1005,10 +1015,10 @@
       width: 12
       height: 10
       dimensions: [social_daily_snapshot.brand_canonical]
-      measures: [social_daily_snapshot.total_impressions]
-      sorts: [social_daily_snapshot.total_impressions_rank asc]
+      measures: [social_daily_snapshot.organic_impressions_excluding_youtube]
+      sorts: [social_daily_snapshot.organic_impressions_excluding_youtube desc]
       note:
-        text: "Impressions by brand for the selected dates. YouTube is left out because impressions are unavailable for that platform."
+        text: "Organic impressions by brand for the selected dates. Facebook and Instagram count organic views only. TikTok is treated as organic. YouTube is left out because impressions are unavailable."
         state: collapsed
         display: hover
       stacking: ""
@@ -1030,7 +1040,7 @@
       row: 60
       col: 0
       width: 24
-      height: 10
+      height: 6
       dimensions: [agorapulse_post_performance.brand_canonical]
       measures: [agorapulse_post_performance.total_posts]
       sorts: [agorapulse_post_performance.total_posts desc]
@@ -1049,7 +1059,7 @@
         platform: agorapulse_post_performance.platform
 
     - name: platform_top_channels_impressions
-      title: "Top channels by impressions"
+      title: "Top channels by impressions for organic"
       model: social_performance
       explore: social_daily_snapshot
       type: looker_bar
@@ -1058,15 +1068,15 @@
       width: 12
       height: 10
       dimensions: [social_daily_snapshot.platform]
-      measures: [social_daily_snapshot.total_impressions]
-      sorts: [social_daily_snapshot.total_impressions_rank desc]
+      measures: [social_daily_snapshot.organic_impressions_excluding_youtube]
+      sorts: [social_daily_snapshot.organic_impressions_excluding_youtube desc]
       stacking: ""
       hide_legend: true
       show_value_labels: true
       x_axis_gridlines: false
       y_axis_gridlines: false
       note:
-        text: "Impressions by platform for the selected dates, with the largest platform first. YouTube is left out because impressions are unavailable."
+        text: "Organic impressions by platform for the selected brand and dates, with the largest platform first. Facebook and Instagram count organic views only. TikTok is treated as organic. YouTube is left out because impressions are unavailable."
         state: collapsed
         display: hover
       listen:
@@ -1076,35 +1086,37 @@
 
     - name: how_to_read
       type: text
-      title_text: "How to read this dashboard"
+      title_text: '<div style="text-align: left" align="left">How to read this dashboard</div>'
       body_text: |
+        <div style="text-align: left" align="left">
         This page has two parts. The top row and the charts below the campaign table come from Agorapulse and describe posts, audience, and engagement. The second row of tiles and the campaign table describe website visits and subscriptions credited to organic social. Those website tiles are website only.
-
-        **Start with the filters**
-
+        <br><br>
+        <strong>Start with the filters</strong>
+        <br><br>
         Set the date range, brand, and platform first, then read the social tiles and charts. Brand applies to every tile. UP Faith & Family and UPFF are one brand. Platform applies to the social tiles and charts only. It leaves the website row and the campaign table unchanged.
-
+        <br><br>
         Attribution model, attribution window, and campaign name apply only to the website row and the campaign table. Changing them leaves posts, impressions, video views, engagements, and followers unchanged.
-
-        **The date range means three different things**
-
-        - **Total posts**, **Posts by brand**, and which posts appear in **Top 20 posts by impressions** use each post's Eastern publish date.
-        - **Impressions**, **video views**, **engagements**, **engagement rate**, and **followers gained** use the day the activity happened. A post published earlier can still add to these totals.
-        - The website tiles and the campaign table use the day of the visit or subscription event, then keep only the events the selected attribution model and window credit to organic social.
-
-        **How to read the numbers**
-
-        - **Top 20 posts by impressions** ranks posts published in the selected dates. Each impression, engagement, and video-view number is that post's all-time total.
-        - **Engagement rate per view** is the average of each day's rate, so a quiet day counts the same as a busy day. Facebook, Instagram, and TikTok use Agorapulse's rate. YouTube uses that day's engagements divided by video views.
-        - **Followers gained** counts new follows added during the dates. On YouTube that is new subscribers. Unfollows are left out. Someone who follows more than one account is counted on each account.
-        - **Followers / subscribers trend** is the audience size at the end of each day, by brand and platform. A gap means no snapshot was captured that day.
-        - YouTube impressions are unavailable. **Total impressions** shows N/A when only YouTube is selected, and YouTube is left off the impression charts and the brand and channel bars. Use **Total video views** and the video-views chart for YouTube.
-        - Twitter/X is not on this dashboard.
-        - Website visits and trials follow a different count than impressions. Impressions count times a post was shown. The website tiles count visits and subscriptions that arrived from an organic social link and received credit under the attribution settings above the page.
-        - Numbers refresh once a day. The last few days can still move as Agorapulse revises them.
-
+        <br><br>
+        <strong>The date range means three different things</strong>
+        <ul>
+        <li><strong>Total posts</strong>, <strong>Posts by brand</strong>, and which posts appear in <strong>Top 20 posts by impressions</strong> use each post's Eastern publish date.</li>
+        <li><strong>Impressions</strong>, <strong>video views</strong>, <strong>engagements</strong>, <strong>engagement rate</strong>, and <strong>followers gained</strong> use the day the activity happened. A post published earlier can still add to these totals.</li>
+        <li>The website tiles and the campaign table use the day of the visit or subscription event, then keep only the events the selected attribution model and window credit to organic social.</li>
+        </ul>
+        <strong>How to read the numbers</strong>
+        <ul>
+        <li><strong>Top 20 posts by impressions</strong> ranks posts published in the selected dates. Each impression, engagement, and video-view number is that post's all-time total.</li>
+        <li><strong>Engagement rate per view</strong> is the average of each day's rate, so a quiet day counts the same as a busy day. Facebook, Instagram, and TikTok use Agorapulse's rate. YouTube uses that day's engagements divided by video views.</li>
+        <li><strong>Followers gained</strong> counts new follows added during the dates. On YouTube that is new subscribers. Unfollows are left out. Someone who follows more than one account is counted on each account.</li>
+        <li><strong>Followers / subscribers trend</strong> is the audience size at the end of each day, by brand and platform. A gap means no snapshot was captured that day.</li>
+        <li>YouTube impressions are unavailable. <strong>Total impressions</strong> shows N/A when only YouTube is selected, and YouTube is left off the impression charts and the brand and channel bars. Use <strong>Total video views</strong> and the video-views chart for YouTube.</li>
+        <li>Twitter/X is not on this dashboard.</li>
+        <li>Website visits and trials follow a different count than impressions. Impressions count times a post was shown. The website tiles count visits and subscriptions that arrived from an organic social link and received credit under the attribution settings above the page.</li>
+        <li>Numbers refresh once a day. The last few days can still move as Agorapulse revises them.</li>
+        </ul>
         Hover the note on any tile when a figure looks off. The note states the rule for that tile.
-      row: 70
+        </div>
+      row: 66
       col: 0
       width: 24
       height: 22
