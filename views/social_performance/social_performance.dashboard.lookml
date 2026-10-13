@@ -405,13 +405,15 @@
       dimensions: [social_daily_snapshot.snapshot_date_date]
       pivots: [social_daily_snapshot.platform]
       measures: [social_daily_snapshot.total_video_views]
+      filters:
+        social_daily_snapshot.platform_reports_video_views: "yes"
       sorts: [social_daily_snapshot.snapshot_date_date asc]
       x_axis_scale: auto
       width: 24
       height: 10
       stacking: ""
       note:
-        text: "Video watches by day and platform for the selected dates, including YouTube. Each point is that day's watches."
+        text: "Video watches by day and platform for the selected dates, including YouTube. Instagram is hidden. Each point is that day's watches."
         state: collapsed
         display: hover
       listen:
@@ -966,13 +968,15 @@
       dimensions: [social_daily_snapshot.snapshot_date_date]
       pivots: [social_daily_snapshot.platform]
       measures: [social_daily_snapshot.total_video_views]
+      filters:
+        social_daily_snapshot.platform_reports_video_views: "yes"
       sorts: [social_daily_snapshot.snapshot_date_date asc]
       x_axis_scale: auto
       width: 24
       height: 10
       stacking: ""
       note:
-        text: "Video watches by day and platform for the selected dates, including YouTube. Each point is that day's watches."
+        text: "Video watches by day and platform for the selected dates, including YouTube. Instagram is hidden. Each point is that day's watches."
         state: collapsed
         display: hover
       listen:
