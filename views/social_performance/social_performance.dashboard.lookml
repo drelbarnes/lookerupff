@@ -625,7 +625,7 @@
       type: single_value
       row: 6
       col: 0
-      width: 4
+      width: 6
       height: 4
       measures: [agorapulse_post_performance.total_posts]
       note:
@@ -643,8 +643,8 @@
       explore: social_daily_snapshot
       type: single_value
       row: 6
-      col: 4
-      width: 4
+      col: 6
+      width: 6
       height: 4
       measures: [social_daily_snapshot.followers_gained_total]
       note:
@@ -700,8 +700,8 @@
       explore: social_daily_snapshot
       type: single_value
       row: 6
-      col: 16
-      width: 4
+      col: 12
+      width: 6
       height: 4
       measures: [social_daily_snapshot.total_engagements]
       note:
@@ -719,8 +719,8 @@
       explore: social_daily_snapshot
       type: single_value
       row: 6
-      col: 20
-      width: 4
+      col: 18
+      width: 6
       height: 4
       measures: [social_daily_snapshot.avg_engagement_rate]
       note:
@@ -756,29 +756,29 @@
     #     marketing_attribution_campaign_name: marketing_attribution_testv2.campaign_name
     #     brand: marketing_attribution_testv2.brand_canonical
 
-    - name: organic_social_paid_trials_kpi
-      title: "Paid trials (organic social, web)"
-      model: social_performance
-      explore: marketing_attribution_testv2
-      type: single_value
-      row: 10
-      col: 5
-      width: 5
-      height: 4
-      measures: [marketing_attribution_testv2.paid_trials]
-      filters:
-        marketing_attribution_testv2.marketing_platform: "Organic Social"
-        marketing_attribution_testv2.surface: "web"
-      note:
-        text: "Website trials credited to organic social. This is the free-trial start count. A trial counts when organic social gets the credit and it falls inside the attribution window."
-        state: collapsed
-        display: hover
-      listen:
-        agorapulse_snapshot_date: marketing_attribution_testv2.report_date_date
-        marketing_attribution_attribution_model: marketing_attribution_testv2.attribution_model
-        marketing_attribution_attribution_window: marketing_attribution_testv2.attribution_window_days
-        marketing_attribution_campaign_name: marketing_attribution_testv2.campaign_name
-        brand: marketing_attribution_testv2.brand_canonical
+    # - name: organic_social_paid_trials_kpi
+    #   title: "Paid trials (organic social, web)"
+    #   model: social_performance
+    #   explore: marketing_attribution_testv2
+    #   type: single_value
+    #   row: 10
+    #   col: 5
+    #   width: 5
+    #   height: 4
+    #   measures: [marketing_attribution_testv2.paid_trials]
+    #   filters:
+    #     marketing_attribution_testv2.marketing_platform: "Organic Social"
+    #     marketing_attribution_testv2.surface: "web"
+    #   note:
+    #     text: "Website trials credited to organic social. This is the free-trial start count. A trial counts when organic social gets the credit and it falls inside the attribution window."
+    #     state: collapsed
+    #     display: hover
+    #   listen:
+    #     agorapulse_snapshot_date: marketing_attribution_testv2.report_date_date
+    #     marketing_attribution_attribution_model: marketing_attribution_testv2.attribution_model
+    #     marketing_attribution_attribution_window: marketing_attribution_testv2.attribution_window_days
+    #     marketing_attribution_campaign_name: marketing_attribution_testv2.campaign_name
+    #     brand: marketing_attribution_testv2.brand_canonical
 
     # - name: organic_social_trial_to_paid_kpi
     #   title: "Trial to paid conversion rate (organic social, web)"
@@ -893,7 +893,7 @@
       model: social_performance
       explore: agorapulse_post_performance
       type: looker_grid
-      row: 28
+      row: 10
       col: 0
       width: 24
       height: 10
@@ -926,7 +926,7 @@
       model: social_performance
       explore: social_daily_snapshot
       type: looker_area
-      row: 38
+      row: 20
       col: 0
       dimensions: [social_daily_snapshot.snapshot_date_date]
       pivots: [social_daily_snapshot.platform]
@@ -951,7 +951,7 @@
       model: social_performance
       explore: social_daily_snapshot
       type: looker_area
-      row: 48
+      row: 30
       col: 0
       dimensions: [social_daily_snapshot.snapshot_date_date]
       pivots: [social_daily_snapshot.platform]
@@ -975,7 +975,7 @@
       model: social_performance
       explore: social_daily_snapshot
       type: looker_line
-      row: 58
+      row: 40
       col: 0
       width: 24
       height: 10
@@ -1000,7 +1000,7 @@
       model: social_performance
       explore: social_daily_snapshot
       type: looker_bar
-      row: 68
+      row: 50
       col: 0
       width: 12
       height: 10
@@ -1027,7 +1027,7 @@
       model: social_performance
       explore: agorapulse_post_performance
       type: looker_bar
-      row: 78
+      row: 60
       col: 0
       width: 24
       height: 10
@@ -1053,7 +1053,7 @@
       model: social_performance
       explore: social_daily_snapshot
       type: looker_bar
-      row: 68
+      row: 50
       col: 12
       width: 12
       height: 10
@@ -1104,7 +1104,7 @@
         - Numbers refresh once a day. The last few days can still move as Agorapulse revises them.
 
         Hover the note on any tile when a figure looks off. The note states the rule for that tile.
-      row: 88
+      row: 70
       col: 0
       width: 24
       height: 22
