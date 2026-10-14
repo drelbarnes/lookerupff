@@ -1094,7 +1094,6 @@
 
     - name: how_to_read
       type: text
-      title_text: "How to read this dashboard"
       title_hidden: yes
       body_text: |
         <div style="text-align: left; margin: -12px 0 0 0; padding: 0 8px 0 0; max-height: 340px; overflow-y: auto;" align="left">
