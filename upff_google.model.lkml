@@ -68,7 +68,6 @@ include: "bigquery_looker_get_clicks.view.lkml"
 include: "churn_cohorts.view.lkml"
 include: "bigquery_active_users.view.lkml"
 include: "bigquery_churn_cohorts_v2.view.lkml"
-include: "mysql_roku_firstplays.view.lkml"
 include: "bigquery_purchase_event.view.lkml"
 include: "bigquery_app_installs_by_platform.view.lkml"
 include: "bigquery_http_api_roku_firstplay.view.lkml"
@@ -1230,7 +1229,6 @@ explore: bigquery_app_installs_by_platform {}
 
 include: "redshift_php_get_weekly_comments.view.lkml"
 
-explore: mysql_roku_firstplays {}
 
 explore: bigquery_churn_cohorts_v2 {}
 
