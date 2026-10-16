@@ -1076,11 +1076,9 @@ view: upff_signup_funnel {
     type: string
     sql:
       CASE
-        WHEN ${device_name} IS NULL THEN NULL
         WHEN ${device_name} IN ('iPhone', 'Android Phone')                     THEN 'Mobile'
         WHEN ${device_name} IN ('iPad', 'Android Tablet')                      THEN 'Tablet'
         WHEN ${device_name} IN ('Mac', 'Windows PC', 'Chromebook', 'Linux PC') THEN 'Desktop'
-        WHEN ${device_name} = 'Smart TV / Streaming Device'                     THEN 'TV'
         WHEN ${device_name} LIKE '% App'                                        THEN 'App'
         ELSE 'Other / Unknown'
       END ;;
