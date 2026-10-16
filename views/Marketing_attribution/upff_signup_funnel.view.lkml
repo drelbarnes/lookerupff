@@ -34,6 +34,9 @@
 # Customer Type: Net New vs Rejoin (iOS/Android/Fire TV: context_transaction_purchase_context;
 # Roku/Vizio TV: "view";
 # web: order_completed vs order_resubscribed). Rejoins are paid at the order.
+# Bundles (Web only): Bundle Type from Chargebee subscription_created items for the
+# order's email; Bundle Upsell Rate = bundle orders / web orders.
+# Device Name: parsed from the web visitor's context_user_agent (apps show their app).
 # Plan Frequency: Monthly / Yearly (apps: context_transaction_product_sku;
 # web: value 5.99 / 59.99). Plan Frequency Filter narrows orders only.
 # Offer by order date:
@@ -139,7 +142,7 @@ view: upff_signup_funnel {
       WITH
 
             -- ---------- Unioned event sources ----------
-            -- Web carries Segment UTM fields (context_campaign_*); mobile and CTV apps have none.
+            -- Web carries Segment UTM fields (context_campaign_*) and the browser user agent; mobile and CTV apps have neither.
             entry_events AS (
                 SELECT 'iOS'::VARCHAR(32) AS platform, COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at,
                        CAST(NULL AS VARCHAR(512)) AS campaign_source,
@@ -147,31 +150,36 @@ view: upff_signup_funnel {
                        CAST(NULL AS VARCHAR(512)) AS campaign_medium,
                        CAST(NULL AS VARCHAR(512)) AS campaign_content,
                        CAST(NULL AS VARCHAR(512)) AS campaign_term,
-                       'Mobile App (no UTM)'::VARCHAR(64) AS marketing_platform
+                       'Mobile App (no UTM)'::VARCHAR(64) AS marketing_platform,
+                       CAST(NULL AS VARCHAR(2048)) AS user_agent
                 FROM ios.app_installed
                 UNION ALL
                 SELECT 'Android', COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at,
                        CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
                        CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
-                       'Mobile App (no UTM)'::VARCHAR(64)
+                       'Mobile App (no UTM)'::VARCHAR(64),
+                       CAST(NULL AS VARCHAR(2048))
                 FROM android.app_installed
                 UNION ALL
                 SELECT 'Roku', COALESCE(NULLIF(TRIM(anonymous_id), ''), 'device:' || NULLIF(TRIM(device_id::VARCHAR(256)), '')) AS anonymous_id, received_at,
                        CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
                        CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
-                       'Connected TV (no UTM)'::VARCHAR(64)
+                       'Connected TV (no UTM)'::VARCHAR(64),
+                       CAST(NULL AS VARCHAR(2048))
                 FROM roku.app_installed
                 UNION ALL
                 SELECT 'Amazon Fire TV', COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at,
                        CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
                        CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
-                       'Connected TV (no UTM)'::VARCHAR(64)
+                       'Connected TV (no UTM)'::VARCHAR(64),
+                       CAST(NULL AS VARCHAR(2048))
                 FROM amazon_fire_tv.app_installed
                 UNION ALL
                 SELECT 'Vizio TV', COALESCE(NULLIF(TRIM(anonymous_id), ''), 'device:' || NULLIF(TRIM(device_id::VARCHAR(256)), '')) AS anonymous_id, received_at,
                        CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
                        CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
-                       'Connected TV (no UTM)'::VARCHAR(64)
+                       'Connected TV (no UTM)'::VARCHAR(64),
+                       CAST(NULL AS VARCHAR(2048))
                 FROM vizio_tv.app_installed
                 UNION ALL
                 SELECT 'Web', COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at,
@@ -208,7 +216,8 @@ view: upff_signup_funnel {
                          WHEN LOWER(context_campaign_source) IN ('organic','direct')                  THEN 'Others'
                          WHEN context_campaign_source IS NULL                                         THEN 'Unknown'
                          ELSE 'Others'
-                       END::VARCHAR(64)
+                       END::VARCHAR(64),
+                       context_user_agent::VARCHAR(2048)
                 FROM javascript_upff_home.pages
                 --WHERE path IN ('/stream/', '/subscribe/')
             ),
@@ -314,10 +323,10 @@ view: upff_signup_funnel {
       -- user arrived (first touch within the period).
       entries AS (
       SELECT platform, anonymous_id, entry_at, period,
-      campaign_source, campaign_name, campaign_medium, campaign_content, campaign_term, marketing_platform
+      campaign_source, campaign_name, campaign_medium, campaign_content, campaign_term, marketing_platform, user_agent
       FROM (
       SELECT platform, anonymous_id, received_at AS entry_at, 'Current' AS period,
-      campaign_source, campaign_name, campaign_medium, campaign_content, campaign_term, marketing_platform,
+      campaign_source, campaign_name, campaign_medium, campaign_content, campaign_term, marketing_platform, user_agent,
       ROW_NUMBER() OVER (PARTITION BY platform, anonymous_id ORDER BY received_at) AS rn
       FROM entry_events
       WHERE {% condition current_period %} received_at {% endcondition %}
@@ -326,7 +335,7 @@ view: upff_signup_funnel {
       UNION ALL
 
       SELECT platform, anonymous_id, received_at AS entry_at, 'Prior' AS period,
-      campaign_source, campaign_name, campaign_medium, campaign_content, campaign_term, marketing_platform,
+      campaign_source, campaign_name, campaign_medium, campaign_content, campaign_term, marketing_platform, user_agent,
       ROW_NUMBER() OVER (PARTITION BY platform, anonymous_id ORDER BY received_at) AS rn
       FROM entry_events
       WHERE {% condition prior_period %} received_at {% endcondition %}
@@ -389,6 +398,28 @@ view: upff_signup_funnel {
       AND e.received_at <  DATEADD(day, {% parameter attribution_days %}, en.entry_at)
       ) first_order
       WHERE rn = 1
+      ),
+
+      -- Web bundles: the products on Chargebee subscriptions created for the order's email
+      -- from 1 day before to 2 days after the order. Bundles are sold on the web only.
+      web_bundle AS (
+      SELECT oc.platform, oc.anonymous_id, oc.period
+      , MAX(CASE WHEN cb.item ILIKE '%UP%'      THEN 1 ELSE 0 END) AS has_upff
+      , MAX(CASE WHEN cb.item ILIKE '%Gaither%' THEN 1 ELSE 0 END) AS has_gaither
+      , MAX(CASE WHEN cb.item ILIKE '%Minno%'   THEN 1 ELSE 0 END) AS has_minno
+      FROM order_completed oc
+      JOIN (
+      SELECT LOWER(TRIM(content_customer_email))                      AS email
+      , "timestamp"                                              AS created_at
+      , content_subscription_subscription_items_0_item_price_id AS item
+      FROM chargebee_webhook_events.subscription_created
+      ) cb
+      ON  cb.email       = oc.customer_email
+      AND cb.created_at >= DATEADD(day, -1, oc.order_completed_at)
+      AND cb.created_at <  DATEADD(day,  2, oc.order_completed_at)
+      WHERE oc.platform = 'Web'
+      AND oc.customer_email IS NOT NULL AND oc.customer_email <> ''
+      GROUP BY oc.platform, oc.anonymous_id, oc.period
       ),
 
       -- Plan mix of every platform except Vizio TV (which has no plan field), per period.
@@ -575,6 +606,19 @@ view: upff_signup_funnel {
       , oc.plan_frequency
       -- Vizio TV only: estimated share of its orders that are monthly (all other platforms' mix)
       , CASE WHEN en.platform = 'Vizio TV' THEN pm.monthly_share END AS est_monthly_share
+      -- Browser user agent from the first site visit (Web only)
+      , en.user_agent
+      -- Bundle on the order (Web only; bundles are not sold in the apps)
+      , CASE
+      WHEN oc.order_completed_at IS NULL THEN NULL
+      WHEN en.platform <> 'Web'          THEN 'App (no bundles)'
+      WHEN wb.anonymous_id IS NULL       THEN 'Unmatched'
+      WHEN wb.has_upff = 1 AND wb.has_gaither = 1 AND wb.has_minno = 1 THEN 'UP Entertainment Bundle'
+      WHEN wb.has_upff = 1 AND wb.has_gaither = 1 AND wb.has_minno = 0 THEN 'GaitherTV+ Bundle'
+      WHEN wb.has_upff = 1 AND wb.has_gaither = 0 AND wb.has_minno = 1 THEN 'Minno Bundle'
+      WHEN wb.has_upff = 0 AND wb.has_gaither = 1 AND wb.has_minno = 1 THEN 'GaitherTV+ Minno Bundle'
+      ELSE 'No Bundle'
+      END::VARCHAR(32) AS bundle_type
       FROM entries en
       LEFT JOIN signup_viewed sv
       ON sv.anonymous_id = en.anonymous_id AND sv.platform = en.platform AND sv.period = en.period
@@ -586,6 +630,8 @@ view: upff_signup_funnel {
       ON pd.anonymous_id = en.anonymous_id AND pd.platform = en.platform AND pd.period = en.period
       LEFT JOIN plan_mix pm
       ON pm.period = en.period
+      LEFT JOIN web_bundle wb
+      ON wb.anonymous_id = en.anonymous_id AND wb.platform = en.platform AND wb.period = en.period
       LEFT JOIN (SELECT platform, anonymous_id, MAX(user_id) AS user_id FROM app_user_ids GROUP BY platform, anonymous_id) uid
       ON uid.anonymous_id = oc.anonymous_id AND uid.platform = oc.platform
       ),
@@ -699,6 +745,8 @@ view: upff_signup_funnel {
       , CAST(NULL AS VARCHAR(16))                                             -- order_type
       , CAST(NULL AS VARCHAR(16))                                             -- plan_frequency
       , CAST(NULL AS FLOAT)                                                   -- est_monthly_share
+      , CAST(NULL AS VARCHAR(2048))                                           -- user_agent
+      , CAST(NULL AS VARCHAR(32))                                             -- bundle_type
       , CAST(NULL AS BIGINT)                                                         -- platform_day_rn
       , DATEDIFF(day, DATE_TRUNC('day', sr.period_start), sr.spend_date) + 1   -- day_of_period
       , CAST(NULL AS BIGINT), CAST(NULL AS BIGINT), CAST(NULL AS BIGINT)
@@ -982,6 +1030,79 @@ view: upff_signup_funnel {
     description: "Ad campaign the spend belongs to (Facebook and Google Ads). Use only with spend measures."
     type: string
     sql: ${TABLE}.spend_campaign ;;
+  }
+
+  # ---------------------------------------------------------------------------
+  # Device (from the browser user agent) and bundles - Web
+  # ---------------------------------------------------------------------------
+
+  dimension: device_name {
+    group_label: "Device"
+    label: "Device Name"
+    description: "Device the person used. Web: read from the browser user agent (context_user_agent) of their first site visit in the period: iPhone, iPad, Android Phone, Android Tablet, Mac, Windows PC, Chromebook, Linux PC, Smart TV / Streaming Device, Other or Unknown. Apps show as their app (e.g. iOS App, Roku App). Filtering to a web device limits results to web visitors on that device. Also called: device, device type, phone vs desktop."
+    type: string
+    sql: CASE
+        WHEN ${TABLE}.platform IS NULL THEN NULL
+        WHEN ${TABLE}.platform <> 'Web' THEN ${TABLE}.platform || ' App'
+        WHEN ${TABLE}.user_agent IS NULL OR ${TABLE}.user_agent = '' THEN 'Unknown'
+        WHEN ${TABLE}.user_agent ILIKE '%iPad%'                                   THEN 'iPad'
+        WHEN ${TABLE}.user_agent ILIKE '%iPhone%' OR ${TABLE}.user_agent ILIKE '%iPod%' THEN 'iPhone'
+        WHEN ${TABLE}.user_agent ILIKE '%SmartTV%' OR ${TABLE}.user_agent ILIKE '%SMART-TV%'
+          OR ${TABLE}.user_agent ILIKE '%Tizen%'   OR ${TABLE}.user_agent ILIKE '%Web0S%'
+          OR ${TABLE}.user_agent ILIKE '%AFT%'     OR ${TABLE}.user_agent ILIKE '%CrKey%'  THEN 'Smart TV / Streaming Device'
+        WHEN ${TABLE}.user_agent ILIKE '%Android%' AND ${TABLE}.user_agent ILIKE '%Mobile%' THEN 'Android Phone'
+        WHEN ${TABLE}.user_agent ILIKE '%Android%'                                THEN 'Android Tablet'
+        WHEN ${TABLE}.user_agent ILIKE '%CrOS%'                                   THEN 'Chromebook'
+        WHEN ${TABLE}.user_agent ILIKE '%Macintosh%'                              THEN 'Mac'
+        WHEN ${TABLE}.user_agent ILIKE '%Windows%'                                THEN 'Windows PC'
+        WHEN ${TABLE}.user_agent ILIKE '%Linux%'                                  THEN 'Linux PC'
+        ELSE 'Other'
+      END ;;
+    suggestions: ["iPhone", "iPad", "Android Phone", "Android Tablet", "Mac", "Windows PC", "Chromebook", "Linux PC",
+      "Smart TV / Streaming Device", "Other", "Unknown", "iOS App", "Android App", "Roku App", "Amazon Fire TV App", "Vizio TV App"]
+  }
+
+  dimension: device_category {
+    group_label: "Device"
+    label: "Device Category"
+    description: "Mobile, Tablet, Desktop, TV or App, grouped from Device Name. Web only for Mobile / Tablet / Desktop / TV. Also called: mobile vs desktop."
+    type: string
+    sql:
+      CASE
+        WHEN ${device_name} IS NULL THEN NULL
+        WHEN ${device_name} IN ('iPhone', 'Android Phone')                     THEN 'Mobile'
+        WHEN ${device_name} IN ('iPad', 'Android Tablet')                      THEN 'Tablet'
+        WHEN ${device_name} IN ('Mac', 'Windows PC', 'Chromebook', 'Linux PC') THEN 'Desktop'
+        WHEN ${device_name} = 'Smart TV / Streaming Device'                     THEN 'TV'
+        WHEN ${device_name} LIKE '% App'                                        THEN 'App'
+        ELSE 'Other / Unknown'
+      END ;;
+    suggestions: ["Mobile", "Tablet", "Desktop", "TV", "App", "Other / Unknown"]
+  }
+
+  dimension: user_agent {
+    group_label: "Device"
+    label: "User Agent (Raw)"
+    description: "Raw browser user agent string from the first site visit (Web only). For troubleshooting Device Name."
+    type: string
+    sql: ${TABLE}.user_agent ;;
+  }
+
+  dimension: bundle_type {
+    group_label: "Bundles (Web)"
+    label: "Bundle Type"
+    description: "Bundle on a web order, from the Chargebee subscriptions created for the customer's email around the order: UP Entertainment Bundle (UPFF + GaitherTV+ + Minno), GaitherTV+ Bundle (UPFF + GaitherTV+), Minno Bundle (UPFF + Minno), GaitherTV+ Minno Bundle, or No Bundle. Unmatched = web order with no Chargebee subscription found. App orders show App (no bundles). Blank for users who did not order. Also called: bundle, upsell, package."
+    type: string
+    sql: ${TABLE}.bundle_type ;;
+    suggestions: ["UP Entertainment Bundle", "GaitherTV+ Bundle", "Minno Bundle", "GaitherTV+ Minno Bundle", "No Bundle", "Unmatched", "App (no bundles)"]
+  }
+
+  dimension: is_bundle {
+    group_label: "Bundles (Web)"
+    label: "Bundle Order"
+    description: "Yes if the web order included a bundle."
+    type: yesno
+    sql: ${TABLE}.bundle_type LIKE '%Bundle' AND ${TABLE}.bundle_type <> 'No Bundle' ;;
   }
 
   # ---------------------------------------------------------------------------
@@ -1813,6 +1934,109 @@ view: upff_signup_funnel {
   }
 
   # ---------------------------------------------------------------------------
+  # Bundles (Web only)
+  # ---------------------------------------------------------------------------
+
+  measure: bundle_orders_current {
+    group_label: "Bundles (Web)"
+    label: "Bundle Orders (Current Period)"
+    description: "Current-period web orders that included a bundle (UP Entertainment, GaitherTV+, Minno or GaitherTV+ Minno). Also called: bundle sign-ups, upsells."
+    type: number
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Current' AND ${TABLE}.platform = 'Web' AND ${TABLE}.order_completed_at IS NOT NULL AND {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} AND ${is_bundle} THEN ${user_pk} END) ;;
+    value_format_name: decimal_0
+  }
+
+  measure: web_orders_current {
+    group_label: "Bundles (Web)"
+    label: "Web Orders (Current Period)"
+    description: "Current-period web orders (all, with or without a bundle). Denominator for Bundle Upsell Rate."
+    type: number
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Current' AND ${TABLE}.platform = 'Web' AND ${TABLE}.order_completed_at IS NOT NULL AND {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END) ;;
+    value_format_name: decimal_0
+  }
+
+  measure: bundle_upsell_rate_current {
+    group_label: "Bundles (Web)"
+    label: "Bundle Upsell Rate (Current Period)"
+    description: "Share of current-period web orders that included a bundle (Bundle Orders / Web Orders). Also called: upsell rate, bundle attach rate, bundle take rate."
+    type: number
+    sql: 1.0 * ${bundle_orders_current} / NULLIF(${web_orders_current}, 0) ;;
+    value_format_name: percent_2
+  }
+
+  measure: bundle_conversion_rate_current {
+    group_label: "Bundles (Web)"
+    label: "Bundle Conversion Rate (Current Period)"
+    description: "Share of current-period web entries (site visitors) who completed a bundle order (Bundle Orders / web Entries). Also called: visit-to-bundle rate."
+    type: number
+    sql: 1.0 * ${bundle_orders_current} / NULLIF(COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Current' AND ${TABLE}.platform = 'Web' THEN ${user_pk} END), 0) ;;
+    value_format_name: percent_2
+  }
+
+  measure: bundle_orders_prior {
+    group_label: "Bundles (Web)"
+    label: "Bundle Orders (Prior Period)"
+    description: "Prior-period web orders that included a bundle (UP Entertainment, GaitherTV+, Minno or GaitherTV+ Minno). Also called: bundle sign-ups, upsells."
+    type: number
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Prior' AND ${TABLE}.platform = 'Web' AND ${TABLE}.order_completed_at IS NOT NULL AND {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} AND ${is_bundle} THEN ${user_pk} END) ;;
+    value_format_name: decimal_0
+  }
+
+  measure: web_orders_prior {
+    group_label: "Bundles (Web)"
+    label: "Web Orders (Prior Period)"
+    description: "Prior-period web orders (all, with or without a bundle). Denominator for Bundle Upsell Rate."
+    type: number
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Prior' AND ${TABLE}.platform = 'Web' AND ${TABLE}.order_completed_at IS NOT NULL AND {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END) ;;
+    value_format_name: decimal_0
+  }
+
+  measure: bundle_upsell_rate_prior {
+    group_label: "Bundles (Web)"
+    label: "Bundle Upsell Rate (Prior Period)"
+    description: "Share of prior-period web orders that included a bundle (Bundle Orders / Web Orders). Also called: upsell rate, bundle attach rate, bundle take rate."
+    type: number
+    sql: 1.0 * ${bundle_orders_prior} / NULLIF(${web_orders_prior}, 0) ;;
+    value_format_name: percent_2
+  }
+
+  measure: bundle_conversion_rate_prior {
+    group_label: "Bundles (Web)"
+    label: "Bundle Conversion Rate (Prior Period)"
+    description: "Share of prior-period web entries (site visitors) who completed a bundle order (Bundle Orders / web Entries). Also called: visit-to-bundle rate."
+    type: number
+    sql: 1.0 * ${bundle_orders_prior} / NULLIF(COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Prior' AND ${TABLE}.platform = 'Web' THEN ${user_pk} END), 0) ;;
+    value_format_name: percent_2
+  }
+
+  measure: bundle_upsell_rate_change_pp {
+    group_label: "Bundles (Web)"
+    label: "Bundle Upsell Rate Change in Percentage Points"
+    description: "Current minus prior Bundle Upsell Rate, in percentage points."
+    type: number
+    sql: 100.0 * (${bundle_upsell_rate_current} - ${bundle_upsell_rate_prior}) ;;
+    value_format_name: decimal_2
+  }
+
+  measure: bundle_orders {
+    group_label: "Bundles (Web)"
+    label: "Bundle Orders"
+    description: "Web orders that included a bundle, for any grouping (e.g. Entry Date with Bundle Type)."
+    type: number
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.platform = 'Web' AND ${TABLE}.order_completed_at IS NOT NULL AND ${is_bundle} AND {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END) ;;
+    value_format_name: decimal_0
+  }
+
+  measure: bundle_upsell_rate {
+    group_label: "Bundles (Web)"
+    label: "Bundle Upsell Rate"
+    description: "Bundle Orders / Web Orders for any grouping, e.g. by Entry Date for a daily upsell line."
+    type: number
+    sql: 1.0 * ${bundle_orders} / NULLIF(COUNT(DISTINCT CASE WHEN ${TABLE}.platform = 'Web' AND ${TABLE}.order_completed_at IS NOT NULL AND {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END), 0) ;;
+    value_format_name: percent_2
+  }
+
+  # ---------------------------------------------------------------------------
   # Marketing spend and cost per acquisition (CPA)
   # Spend is daily paid media spend by channel, assigned to the Current or Prior
   # Period by spend date. It is not split by platform, so these measures are for
@@ -1928,6 +2152,6 @@ view: upff_signup_funnel {
   }
 
   set: detail {
-    fields: [platform, anonymous_id, period, entry_time, marketing_platform, campaign_source, campaign_name, converted, order_type, plan_frequency, signup_offer, became_paying, paid_date, customer_email]
+    fields: [platform, anonymous_id, period, entry_time, marketing_platform, campaign_source, campaign_name, converted, order_type, plan_frequency, bundle_type, device_name, signup_offer, became_paying, paid_date, customer_email]
   }
 }
