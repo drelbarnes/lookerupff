@@ -98,6 +98,13 @@ view: upff_signup_funnel {
   # Web campaign filters (apply to Web users only; app users always included)
   # ---------------------------------------------------------------------------
 
+  filter: bundle_type_filter {
+    type: string
+    label: "Bundle Type Filter"
+    description: "Limits the bundle counts (Bundle Orders and the per-bundle measures) to the selected bundle type(s), while web visitors and web orders stay complete, so Bundle Upsell Rate and Bundle Conversion Rate read correctly for that bundle. Use this, not the Bundle Type field, to focus on one bundle."
+    suggestions: ["UP Entertainment Bundle", "GaitherTV+ Bundle", "Minno Bundle", "GaitherTV+ Minno Bundle"]
+  }
+
   filter: plan_frequency_filter {
     type: string
     label: "Plan Frequency Filter"
@@ -1091,7 +1098,8 @@ view: upff_signup_funnel {
   dimension: bundle_type {
     group_label: "Bundles (Web)"
     label: "Bundle Type"
-    description: "Bundle on a web order, from the Chargebee subscriptions created for the customer's email around the order: UP Entertainment Bundle (UPFF + GaitherTV+ + Minno), GaitherTV+ Bundle (UPFF + GaitherTV+), Minno Bundle (UPFF + Minno), GaitherTV+ Minno Bundle, or No Bundle. Unmatched = web order with no Chargebee subscription found. App orders show App (no bundles). Blank for users who did not order. Also called: bundle, upsell, package."
+    description: "Bundle on a web order, from the Chargebee subscriptions created for the customer's email around the order: UP Entertainment Bundle (UPFF + GaitherTV+ + Minno), GaitherTV+ Bundle (UPFF + GaitherTV+), Minno Bundle (UPFF + Minno), GaitherTV+ Minno Bundle, or No Bundle. Unmatched = web order with no Chargebee subscription found. App orders show App (no bundles). Blank for users who did not order. For display and drill-downs; to focus on one bundle use Bundle Type Filter, and for charts use the per-bundle measures. Filtering or pivoting on this field makes every bundle rate read 100%, so it cannot be used as a filter. Also called: bundle, upsell, package."
+    can_filter: no
     type: string
     sql: ${TABLE}.bundle_type ;;
     suggestions: ["UP Entertainment Bundle", "GaitherTV+ Bundle", "Minno Bundle", "GaitherTV+ Minno Bundle", "No Bundle", "Unmatched", "App (no bundles)"]
@@ -1101,6 +1109,7 @@ view: upff_signup_funnel {
     group_label: "Bundles (Web)"
     label: "Bundle Order"
     description: "Yes if the web order included a bundle."
+    can_filter: no
     type: yesno
     sql: ${TABLE}.bundle_type LIKE '%Bundle' AND ${TABLE}.bundle_type <> 'No Bundle' ;;
   }
@@ -1942,7 +1951,7 @@ view: upff_signup_funnel {
     label: "Bundle Orders (Current Period)"
     description: "Current-period web orders that included a bundle (UP Entertainment, GaitherTV+, Minno or GaitherTV+ Minno). Also called: bundle sign-ups, upsells."
     type: number
-    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Current' AND ${TABLE}.platform = 'Web' AND ${TABLE}.order_completed_at IS NOT NULL AND {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} AND ${is_bundle} THEN ${user_pk} END) ;;
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Current' AND ${TABLE}.platform = 'Web' AND ${TABLE}.order_completed_at IS NOT NULL AND {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} AND ${is_bundle} AND {% condition bundle_type_filter %} ${TABLE}.bundle_type {% endcondition %} THEN ${user_pk} END) ;;
     value_format_name: decimal_0
   }
 
@@ -1978,7 +1987,7 @@ view: upff_signup_funnel {
     label: "Bundle Orders (Prior Period)"
     description: "Prior-period web orders that included a bundle (UP Entertainment, GaitherTV+, Minno or GaitherTV+ Minno). Also called: bundle sign-ups, upsells."
     type: number
-    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Prior' AND ${TABLE}.platform = 'Web' AND ${TABLE}.order_completed_at IS NOT NULL AND {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} AND ${is_bundle} THEN ${user_pk} END) ;;
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Prior' AND ${TABLE}.platform = 'Web' AND ${TABLE}.order_completed_at IS NOT NULL AND {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} AND ${is_bundle} AND {% condition bundle_type_filter %} ${TABLE}.bundle_type {% endcondition %} THEN ${user_pk} END) ;;
     value_format_name: decimal_0
   }
 
@@ -2023,14 +2032,41 @@ view: upff_signup_funnel {
     label: "Bundle Orders"
     description: "Web orders that included a bundle, for any grouping (e.g. Entry Date with Bundle Type)."
     type: number
-    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.platform = 'Web' AND ${TABLE}.order_completed_at IS NOT NULL AND ${is_bundle} AND {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END) ;;
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.platform = 'Web' AND ${TABLE}.order_completed_at IS NOT NULL AND ${is_bundle} AND {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} AND {% condition bundle_type_filter %} ${TABLE}.bundle_type {% endcondition %} THEN ${user_pk} END) ;;
+    value_format_name: decimal_0
+  }
+
+  measure: bundle_orders_up_entertainment {
+    group_label: "Bundles (Web)"
+    label: "UP Entertainment Bundle Orders"
+    description: "Web orders that included the UP Entertainment Bundle, for any grouping. Use these per-bundle measures as stacked bars instead of pivoting on Bundle Type, so the upsell rate line stays correct."
+    type: number
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.platform = 'Web' AND ${TABLE}.order_completed_at IS NOT NULL AND {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} AND ${TABLE}.bundle_type = 'UP Entertainment Bundle' THEN ${user_pk} END) ;;
+    value_format_name: decimal_0
+  }
+
+  measure: bundle_orders_gaithertv {
+    group_label: "Bundles (Web)"
+    label: "GaitherTV+ Bundle Orders"
+    description: "Web orders that included the GaitherTV+ Bundle, for any grouping. Use these per-bundle measures as stacked bars instead of pivoting on Bundle Type, so the upsell rate line stays correct."
+    type: number
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.platform = 'Web' AND ${TABLE}.order_completed_at IS NOT NULL AND {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} AND ${TABLE}.bundle_type = 'GaitherTV+ Bundle' THEN ${user_pk} END) ;;
+    value_format_name: decimal_0
+  }
+
+  measure: bundle_orders_minno {
+    group_label: "Bundles (Web)"
+    label: "Minno Bundle Orders"
+    description: "Web orders that included the Minno Bundle, for any grouping. Use these per-bundle measures as stacked bars instead of pivoting on Bundle Type, so the upsell rate line stays correct."
+    type: number
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.platform = 'Web' AND ${TABLE}.order_completed_at IS NOT NULL AND {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} AND ${TABLE}.bundle_type = 'Minno Bundle' THEN ${user_pk} END) ;;
     value_format_name: decimal_0
   }
 
   measure: bundle_upsell_rate {
     group_label: "Bundles (Web)"
     label: "Bundle Upsell Rate"
-    description: "Bundle Orders / Web Orders for any grouping, e.g. by Entry Date for a daily upsell line."
+    description: "Bundle Orders / Web Orders for any grouping, e.g. by Entry Date for a daily upsell line. Do not pivot or filter on Bundle Type with this measure (it would read 100%); use Bundle Type Filter instead."
     type: number
     sql: 1.0 * ${bundle_orders} / NULLIF(COUNT(DISTINCT CASE WHEN ${TABLE}.platform = 'Web' AND ${TABLE}.order_completed_at IS NOT NULL AND {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END), 0) ;;
     value_format_name: percent_2
