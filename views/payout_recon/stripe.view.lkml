@@ -16,10 +16,10 @@ customer_email as email
 , fee
 , 'paypal' as payment_gateway
 ,reporting_category as payment_description
-FROM  `up-faith-and-family-216419.customers.stripe-payout-recon-8-2026`
+FROM  `up-faith-and-family-216419.customers.stripe-payout-recon-9-2026`
 --FROM  `up-faith-and-family-216419.customers.paypal_payout_recon_3_2026`
 WHERE date(charge_created) <= (SELECT report_date FROM config)
-and date(automatic_payout_effective_at) <'2026-08-30'
+--and date(automatic_payout_effective_at) <'2026-09-30'
 ),
 
 count_dict as (
@@ -211,16 +211,16 @@ charges as (SELECT distinct
   END AS product_3_period,
   cast(NULL as string) AS product_4_period,
   content_credit_note_line_items_0_tax_amount as tax_1,
-  content_invoice_line_items_1_tax_amount as tax_2,
-  content_invoice_line_items_2_tax_amount as tax_3,
+  content_credit_note_line_items_1_tax_amount as tax_2,
+  content_credit_note_line_items_2_tax_amount as tax_3,
   NULL as tax_4,
   content_credit_note_line_items_0_unit_amount as original_amount1,
-  content_invoice_line_items_1_unit_amount as original_amount2,
-  content_invoice_line_items_2_unit_amount as original_amount3,
+  content_credit_note_line_items_1_unit_amount as original_amount2,
+  content_credit_note_line_items_2_unit_amount as original_amount3,
   NULL as original_amount4,
   content_credit_note_line_items_0_discount_amount AS discount_amount1,
-  content_invoice_line_items_1_discount_amount  AS discount_amount2,
-  content_invoice_line_items_2_discount_amount AS discount_amount3,
+  content_credit_note_line_items_1_discount_amount  AS discount_amount2,
+  content_credit_note_line_items_2_discount_amount AS discount_amount3,
   NULL AS discount_amount4,
   content_credit_note_amount_refunded as total_amount,
   content_customer_payment_method_reference_id
@@ -238,56 +238,44 @@ FROM
   content_transaction_id_at_gateway as transaction_id,
   date(received_at) as report_date,
   CASE
-    WHEN content_invoice_line_items_0_entity_id LIKE '%UP%' THEN 'UP-Faith-Family'
-    WHEN content_invoice_line_items_0_entity_id LIKE '%Minno%' THEN 'Minno'
-    WHEN content_invoice_line_items_0_entity_id LIKE '%Gaither%' THEN 'GaitherTV'
+    WHEN LOWER(content_credit_note_line_items_0_description) LIKE '%up%'
+        THEN 'UP-Faith-Family'
+    WHEN REGEXP_CONTAINS(
+        LOWER(content_credit_note_line_items_0_description), r'(ga|gtv)'
+    )
+        THEN 'GaitherTV'
+    WHEN REGEXP_CONTAINS(
+        LOWER(content_credit_note_line_items_0_description), r'(mi|mno)'
+    )
+        THEN 'Minno'
     ELSE NULL
-  END AS product_1,
-  CASE
-    WHEN content_invoice_line_items_1_entity_id LIKE '%UP%' THEN 'UP-Faith-Family'
-    WHEN content_invoice_line_items_1_entity_id LIKE '%Minno%' THEN 'Minno'
-    WHEN content_invoice_line_items_1_entity_id LIKE '%Gaither%' THEN 'GaitherTV'
-    ELSE NULL
-  END AS product_2,
-  CASE
-    WHEN content_invoice_line_items_2_entity_id LIKE '%UP%' THEN 'UP-Faith-Family'
-    WHEN content_invoice_line_items_2_entity_id LIKE '%Minno%' THEN 'Minno'
-    WHEN content_invoice_line_items_2_entity_id LIKE '%Gaither%' THEN 'GaitherTV'
-    ELSE NULL
-  END AS product_3,
+END AS product_1,
+ cast(NULL as string) as product_2,
+  cast(NULL as string) as  product_3,
   cast(NULL as string) AS product_4,
   CASE
-    WHEN content_invoice_line_items_0_entity_id LIKE '%Yearly%' THEN 'Yearly'
-    WHEN content_invoice_line_items_0_entity_id LIKE '%Monthly%' THEN 'Monthly'
+    WHEN content_credit_note_line_items_0_unit_amount > 1000 THEN 'Yearly'
+    WHEN content_credit_note_line_items_0_unit_amount < 1000 THEN 'Monthly'
     ELSE NULL
   END AS product_1_period,
-  CASE
-    WHEN content_invoice_line_items_1_entity_id LIKE '%Yearly%' THEN 'Yearly'
-    WHEN content_invoice_line_items_1_entity_id LIKE '%Monthly%' THEN 'Monthly'
-    ELSE NULL
-  END AS product_2_period,
-  CASE
-    WHEN content_invoice_line_items_2_entity_id LIKE '%Yearly%' THEN 'Yearly'
-    WHEN content_invoice_line_items_2_entity_id LIKE '%Monthly%' THEN 'Monthly'
-    ELSE NULL
-  END AS product_3_period,
+  cast(NULL as string) AS product_2_period,
+  cast(NULL as string) AS  product_3_period,
   cast(NULL as string) AS product_4_period,
   content_credit_note_line_items_0_tax_amount as tax_1,
-  content_invoice_line_items_1_tax_amount as tax_2,
-  content_invoice_line_items_2_tax_amount as tax_3,
+  NULL as tax_2,
+  NULL as tax_3,
   NULL as tax_4,
   content_credit_note_line_items_0_unit_amount as original_amount1,
-  content_invoice_line_items_1_unit_amount as original_amount2,
-  content_invoice_line_items_2_unit_amount as original_amount3,
+  NULL as original_amount2,
+  NULL as original_amount3,
   NULL as original_amount4,
-  content_credit_note_line_items_0_discount_amount AS discount_amount1,
-  content_invoice_line_items_1_discount_amount  AS discount_amount2,
-  content_invoice_line_items_2_discount_amount AS discount_amount3,
+  content_credit_note_line_items_0_discount_amount +content_credit_note_allocations_0_allocated_amount  AS discount_amount1,
+  NULL  AS discount_amount2,
+  NULL AS discount_amount3,
   NULL AS discount_amount4,
   content_credit_note_amount_refunded as total_amount,
   content_customer_payment_method_reference_id
   ,content_invoice_credits_applied
-  --'refund' AS reporting_category
 FROM
  `up-faith-and-family-216419.chargebee_webhook_events.payment_refunded` WHERE date(received_at) between (SELECT report_date FROM config) - INTERVAL 94 DAY
   AND (SELECT report_date FROM config) and content_invoice_issued_credit_notes_0_cn_reason_code = 'subscription_change'

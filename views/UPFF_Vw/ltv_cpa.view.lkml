@@ -58,13 +58,14 @@ view: ltv_cpa {
       AND DATE(received_at) >='2025-07-01'
 
       UNION ALL*/
-      select
+      select distinct
             DATE(DATEADD(HOUR, -4, timestamp)) AS report_date,
             user_id,
             subscription_frequency as billing_period,
             platform
         from vimeo_ott_webhook.customer_product_created
-        where date(timestamp) >='2026-09-09' and platform != 'api'
+        where  platform not in ( 'api','web')
+        and subscription_frequency != 'custom'
 /*
       UNION ALL
       SELECT
@@ -76,8 +77,8 @@ view: ltv_cpa {
       WHERE event_type = 'Free Trial to Paid'  */
 
       UNION ALL
-      SELECT
-          DATE(DATEADD(HOUR, -4, received_at)) AS report_date,
+      SELECT distinct
+          DATE(DATEADD(HOUR, +18, timestamp)) AS report_date,
           content_customer_id AS user_id,
           CASE
             WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'
@@ -86,11 +87,11 @@ view: ltv_cpa {
           'web' AS platform
         FROM chargebee_webhook_events.subscription_created
         WHERE content_subscription_subscription_items LIKE '%UP%'
-        and DATE(DATEADD(HOUR, -4, received_at))  >='2026-09-09'
+        and DATE(DATEADD(HOUR, +18, received_at))  >='2026-09-09'
 
       UNION ALL
-      select
-      DATE(received_at) AS report_date,
+      select distinct
+      DATE(DATEADD(HOUR, +18, timestamp)) AS report_date,
       content_subscription_id::VARCHAR AS user_id,
       CASE
       WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'::VARCHAR
@@ -100,10 +101,12 @@ view: ltv_cpa {
       FROM chargebee_webhook_events.subscription_reactivated
       WHERE content_subscription_subscription_items LIKE '%UP%'
       and date(timestamp) >= '2026-09-09'
+      and content_subscription_status != 'in_trial'
+
 
       UNION ALL
-      select
-      DATE(received_at) AS report_date,
+      select distinct
+      DATE(DATEADD(HOUR, +18, timestamp)) AS report_date,
       content_subscription_id::VARCHAR AS user_id,
       CASE
       WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'::VARCHAR
@@ -115,11 +118,10 @@ view: ltv_cpa {
       and date(timestamp) >= '2026-09-09'
 
       ),
-
       daily_converted_counts AS (
       SELECT
       report_date,
-      COUNT(user_id) AS user_count
+      COUNT(distinct user_id) AS user_count
       FROM trials_converted
       GROUP BY report_date
       ),

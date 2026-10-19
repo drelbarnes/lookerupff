@@ -49,7 +49,7 @@ view: vimeo {
       UNION ALL
 
       SELECT
-      content_subscription_id            AS user_id,
+      content_subscription_id || DATE(DATEADD(HOUR, +18, timestamp))::VARCHAR AS user_id,
       'web'                              AS platform,
       CASE
       WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'
@@ -73,16 +73,17 @@ view: vimeo {
       ON  a.report_date = b.report_date
       AND a.user_id     = b.user_id */
 
-      select
+
+    select
         user_id,
         platform,
-        subscription_frequency as billing_period,
-        'Direct to Paid'                   AS event_type,
+        billing_period,
+        'Direct to Paid'AS event_type,
        report_date
     from (
         select
             user_id,
-            subscription_frequency,
+            subscription_frequency as billing_period,
             platform,
             DATE(DATEADD(HOUR, -4, timestamp)) AS report_date,
             created_at,
@@ -91,10 +92,11 @@ view: vimeo {
                 order by report_date
             ) as rn
         from vimeo_ott_webhook.customer_product_created
-        where platform != 'api'
+        where platform not in ( 'api','web') and billing_period != 'custom'
           --and date(timestamp) = date(created_at)
     )
     where rn != 1
+
 
       UNION ALL
 
@@ -205,7 +207,7 @@ view: vimeo {
   measure: resubscribed_web {
     type: count_distinct
     filters: [event_type: "Direct to Paid", platform: "web"]
-    sql: ${TABLE}.user_id ;;
+    sql:  CAST(${TABLE}.user_id AS VARCHAR) ;;
   }
 
   measure: resubscribed_vizio {
