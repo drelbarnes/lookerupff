@@ -1094,10 +1094,10 @@
 
     - name: how_to_read
       type: text
+      title_hidden: yes
       body_text: |
-        <div style="text-align: left; padding-top: 0;" align="left">
-        <strong>How to read this dashboard</strong>
-        <br>
+        <div style="text-align: left; margin: 0; padding: 4px 8px 0 0; max-height: 340px; overflow-y: auto;" align="left">
+        <div style="margin: 0 0 8px 0; padding: 0; font-weight: 600; line-height: 1.3;">How to read this dashboard</div>
         This page has two parts. The top row and the charts below the campaign table come from Agorapulse and describe posts, audience, and engagement. The second row of tiles and the campaign table describe website visits and subscriptions credited to organic social. Those website tiles are website only.
         <br><br>
         <strong>Start with the filters</strong>
@@ -1128,4 +1128,4 @@
       row: 63
       col: 0
       width: 24
-      height: 16
+      height: 8

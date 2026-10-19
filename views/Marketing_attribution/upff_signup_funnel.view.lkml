@@ -34,6 +34,11 @@
 # Customer Type: Net New vs Rejoin (iOS/Android/Fire TV: context_transaction_purchase_context;
 # Roku/Vizio TV: "view";
 # web: order_completed vs order_resubscribed). Rejoins are paid at the order.
+# Bundles (Web only): Bundle Type from Chargebee subscription_created items for the
+# order's email; Bundle Upsell Rate = bundle orders / web orders.
+# Landing Page: first page of the web visitor's first site visit; Landing Page Filter +
+# Landing Page Share = share of web traffic on chosen pages. Traffic Type groups UTMs.
+# Device Name: parsed from the web visitor's context_user_agent (apps show their app).
 # Plan Frequency: Monthly / Yearly (apps: context_transaction_product_sku;
 # web: value 5.99 / 59.99). Plan Frequency Filter narrows orders only.
 # Offer by order date:
@@ -95,6 +100,20 @@ view: upff_signup_funnel {
   # Web campaign filters (apply to Web users only; app users always included)
   # ---------------------------------------------------------------------------
 
+  filter: landing_page_filter {
+    type: string
+    label: "Landing Page Filter"
+    description: "Pick one or more website landing pages (e.g. /stream/, /plans/). Landing Page Share then shows the percent of web visitors whose first page was one of them, versus the rest of the website. Web visitors as a whole stay complete, so the share reads correctly. Leave empty and the share is 100%."
+    suggest_dimension: landing_page
+  }
+
+  filter: bundle_type_filter {
+    type: string
+    label: "Bundle Type Filter"
+    description: "Limits the bundle counts (Bundle Orders and the per-bundle measures) to the selected bundle type(s), while web visitors and web orders stay complete, so Bundle Upsell Rate and Bundle Conversion Rate read correctly for that bundle. Use this, not the Bundle Type field, to focus on one bundle."
+    suggestions: ["UP Entertainment Bundle", "GaitherTV+ Bundle", "Minno Bundle", "GaitherTV+ Minno Bundle"]
+  }
+
   filter: plan_frequency_filter {
     type: string
     label: "Plan Frequency Filter"
@@ -139,7 +158,7 @@ view: upff_signup_funnel {
       WITH
 
             -- ---------- Unioned event sources ----------
-            -- Web carries Segment UTM fields (context_campaign_*); mobile and CTV apps have none.
+            -- Web carries Segment UTM fields (context_campaign_*) and the browser user agent; mobile and CTV apps have neither.
             entry_events AS (
                 SELECT 'iOS'::VARCHAR(32) AS platform, COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at,
                        CAST(NULL AS VARCHAR(512)) AS campaign_source,
@@ -147,31 +166,41 @@ view: upff_signup_funnel {
                        CAST(NULL AS VARCHAR(512)) AS campaign_medium,
                        CAST(NULL AS VARCHAR(512)) AS campaign_content,
                        CAST(NULL AS VARCHAR(512)) AS campaign_term,
-                       'Mobile App (no UTM)'::VARCHAR(64) AS marketing_platform
+                       'Mobile App (no UTM)'::VARCHAR(64) AS marketing_platform,
+                       CAST(NULL AS VARCHAR(2048)) AS user_agent,
+                       CAST(NULL AS VARCHAR(1024)) AS landing_path
                 FROM ios.app_installed
                 UNION ALL
                 SELECT 'Android', COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at,
                        CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
                        CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
-                       'Mobile App (no UTM)'::VARCHAR(64)
+                       'Mobile App (no UTM)'::VARCHAR(64),
+                       CAST(NULL AS VARCHAR(2048)),
+                       CAST(NULL AS VARCHAR(1024))
                 FROM android.app_installed
                 UNION ALL
                 SELECT 'Roku', COALESCE(NULLIF(TRIM(anonymous_id), ''), 'device:' || NULLIF(TRIM(device_id::VARCHAR(256)), '')) AS anonymous_id, received_at,
                        CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
                        CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
-                       'Connected TV (no UTM)'::VARCHAR(64)
+                       'Connected TV (no UTM)'::VARCHAR(64),
+                       CAST(NULL AS VARCHAR(2048)),
+                       CAST(NULL AS VARCHAR(1024))
                 FROM roku.app_installed
                 UNION ALL
                 SELECT 'Amazon Fire TV', COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at,
                        CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
                        CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
-                       'Connected TV (no UTM)'::VARCHAR(64)
+                       'Connected TV (no UTM)'::VARCHAR(64),
+                       CAST(NULL AS VARCHAR(2048)),
+                       CAST(NULL AS VARCHAR(1024))
                 FROM amazon_fire_tv.app_installed
                 UNION ALL
                 SELECT 'Vizio TV', COALESCE(NULLIF(TRIM(anonymous_id), ''), 'device:' || NULLIF(TRIM(device_id::VARCHAR(256)), '')) AS anonymous_id, received_at,
                        CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
                        CAST(NULL AS VARCHAR(512)), CAST(NULL AS VARCHAR(512)),
-                       'Connected TV (no UTM)'::VARCHAR(64)
+                       'Connected TV (no UTM)'::VARCHAR(64),
+                       CAST(NULL AS VARCHAR(2048)),
+                       CAST(NULL AS VARCHAR(1024))
                 FROM vizio_tv.app_installed
                 UNION ALL
                 SELECT 'Web', COALESCE(NULLIF(TRIM(anonymous_id), ''), 'ip:' || NULLIF(TRIM(context_ip), '')) AS anonymous_id, received_at,
@@ -208,7 +237,9 @@ view: upff_signup_funnel {
                          WHEN LOWER(context_campaign_source) IN ('organic','direct')                  THEN 'Others'
                          WHEN context_campaign_source IS NULL                                         THEN 'Unknown'
                          ELSE 'Others'
-                       END::VARCHAR(64)
+                       END::VARCHAR(64),
+                       context_user_agent::VARCHAR(2048),
+                       LOWER(TRIM(path))::VARCHAR(1024)
                 FROM javascript_upff_home.pages
                 --WHERE path IN ('/stream/', '/subscribe/')
             ),
@@ -314,10 +345,10 @@ view: upff_signup_funnel {
       -- user arrived (first touch within the period).
       entries AS (
       SELECT platform, anonymous_id, entry_at, period,
-      campaign_source, campaign_name, campaign_medium, campaign_content, campaign_term, marketing_platform
+      campaign_source, campaign_name, campaign_medium, campaign_content, campaign_term, marketing_platform, user_agent, landing_path
       FROM (
       SELECT platform, anonymous_id, received_at AS entry_at, 'Current' AS period,
-      campaign_source, campaign_name, campaign_medium, campaign_content, campaign_term, marketing_platform,
+      campaign_source, campaign_name, campaign_medium, campaign_content, campaign_term, marketing_platform, user_agent, landing_path,
       ROW_NUMBER() OVER (PARTITION BY platform, anonymous_id ORDER BY received_at) AS rn
       FROM entry_events
       WHERE {% condition current_period %} received_at {% endcondition %}
@@ -326,7 +357,7 @@ view: upff_signup_funnel {
       UNION ALL
 
       SELECT platform, anonymous_id, received_at AS entry_at, 'Prior' AS period,
-      campaign_source, campaign_name, campaign_medium, campaign_content, campaign_term, marketing_platform,
+      campaign_source, campaign_name, campaign_medium, campaign_content, campaign_term, marketing_platform, user_agent, landing_path,
       ROW_NUMBER() OVER (PARTITION BY platform, anonymous_id ORDER BY received_at) AS rn
       FROM entry_events
       WHERE {% condition prior_period %} received_at {% endcondition %}
@@ -389,6 +420,28 @@ view: upff_signup_funnel {
       AND e.received_at <  DATEADD(day, {% parameter attribution_days %}, en.entry_at)
       ) first_order
       WHERE rn = 1
+      ),
+
+      -- Web bundles: the products on Chargebee subscriptions created for the order's email
+      -- from 1 day before to 2 days after the order. Bundles are sold on the web only.
+      web_bundle AS (
+      SELECT oc.platform, oc.anonymous_id, oc.period
+      , MAX(CASE WHEN cb.item ILIKE '%UP%'      THEN 1 ELSE 0 END) AS has_upff
+      , MAX(CASE WHEN cb.item ILIKE '%Gaither%' THEN 1 ELSE 0 END) AS has_gaither
+      , MAX(CASE WHEN cb.item ILIKE '%Minno%'   THEN 1 ELSE 0 END) AS has_minno
+      FROM order_completed oc
+      JOIN (
+      SELECT LOWER(TRIM(content_customer_email))                      AS email
+      , "timestamp"                                              AS created_at
+      , content_subscription_subscription_items_0_item_price_id AS item
+      FROM chargebee_webhook_events.subscription_created
+      ) cb
+      ON  cb.email       = oc.customer_email
+      AND cb.created_at >= DATEADD(day, -1, oc.order_completed_at)
+      AND cb.created_at <  DATEADD(day,  2, oc.order_completed_at)
+      WHERE oc.platform = 'Web'
+      AND oc.customer_email IS NOT NULL AND oc.customer_email <> ''
+      GROUP BY oc.platform, oc.anonymous_id, oc.period
       ),
 
       -- Plan mix of every platform except Vizio TV (which has no plan field), per period.
@@ -575,6 +628,21 @@ view: upff_signup_funnel {
       , oc.plan_frequency
       -- Vizio TV only: estimated share of its orders that are monthly (all other platforms' mix)
       , CASE WHEN en.platform = 'Vizio TV' THEN pm.monthly_share END AS est_monthly_share
+      -- Browser user agent from the first site visit (Web only)
+      , en.user_agent
+      -- Bundle on the order (Web only; bundles are not sold in the apps)
+      , CASE
+      WHEN oc.order_completed_at IS NULL THEN NULL
+      WHEN en.platform <> 'Web'          THEN 'App (no bundles)'
+      WHEN wb.anonymous_id IS NULL       THEN 'Unmatched'
+      WHEN wb.has_upff = 1 AND wb.has_gaither = 1 AND wb.has_minno = 1 THEN 'UP Entertainment Bundle'
+      WHEN wb.has_upff = 1 AND wb.has_gaither = 1 AND wb.has_minno = 0 THEN 'GaitherTV+ Bundle'
+      WHEN wb.has_upff = 1 AND wb.has_gaither = 0 AND wb.has_minno = 1 THEN 'Minno Bundle'
+      WHEN wb.has_upff = 0 AND wb.has_gaither = 1 AND wb.has_minno = 1 THEN 'GaitherTV+ Minno Bundle'
+      ELSE 'No Bundle'
+      END::VARCHAR(32) AS bundle_type
+      -- First page of the visitor's first site visit in the period (Web only)
+      , en.landing_path
       FROM entries en
       LEFT JOIN signup_viewed sv
       ON sv.anonymous_id = en.anonymous_id AND sv.platform = en.platform AND sv.period = en.period
@@ -586,6 +654,8 @@ view: upff_signup_funnel {
       ON pd.anonymous_id = en.anonymous_id AND pd.platform = en.platform AND pd.period = en.period
       LEFT JOIN plan_mix pm
       ON pm.period = en.period
+      LEFT JOIN web_bundle wb
+      ON wb.anonymous_id = en.anonymous_id AND wb.platform = en.platform AND wb.period = en.period
       LEFT JOIN (SELECT platform, anonymous_id, MAX(user_id) AS user_id FROM app_user_ids GROUP BY platform, anonymous_id) uid
       ON uid.anonymous_id = oc.anonymous_id AND uid.platform = oc.platform
       ),
@@ -699,6 +769,9 @@ view: upff_signup_funnel {
       , CAST(NULL AS VARCHAR(16))                                             -- order_type
       , CAST(NULL AS VARCHAR(16))                                             -- plan_frequency
       , CAST(NULL AS FLOAT)                                                   -- est_monthly_share
+      , CAST(NULL AS VARCHAR(2048))                                           -- user_agent
+      , CAST(NULL AS VARCHAR(32))                                             -- bundle_type
+      , CAST(NULL AS VARCHAR(1024))                                           -- landing_path
       , CAST(NULL AS BIGINT)                                                         -- platform_day_rn
       , DATEDIFF(day, DATE_TRUNC('day', sr.period_start), sr.spend_date) + 1   -- day_of_period
       , CAST(NULL AS BIGINT), CAST(NULL AS BIGINT), CAST(NULL AS BIGINT)
@@ -982,6 +1055,111 @@ view: upff_signup_funnel {
     description: "Ad campaign the spend belongs to (Facebook and Google Ads). Use only with spend measures."
     type: string
     sql: ${TABLE}.spend_campaign ;;
+  }
+
+  # ---------------------------------------------------------------------------
+  # Device (from the browser user agent) and bundles - Web
+  # ---------------------------------------------------------------------------
+
+  dimension: device_name {
+    group_label: "Device"
+    label: "Device Name"
+    description: "Device the person used. Web: read from the browser user agent (context_user_agent) of their first site visit in the period: iPhone, iPad, Android Phone, Android Tablet, Mac, Windows PC, Chromebook, Linux PC, Smart TV / Streaming Device, Other or Unknown. Apps show as their app (e.g. iOS App, Roku App). Filtering to a web device limits results to web visitors on that device. Also called: device, device type, phone vs desktop."
+    type: string
+    sql: CASE
+        WHEN ${TABLE}.platform IS NULL THEN NULL
+        WHEN ${TABLE}.platform <> 'Web' THEN ${TABLE}.platform || ' App'
+        WHEN ${TABLE}.user_agent IS NULL OR ${TABLE}.user_agent = '' THEN 'Unknown'
+        WHEN ${TABLE}.user_agent ILIKE '%iPad%'                                   THEN 'iPad'
+        WHEN ${TABLE}.user_agent ILIKE '%iPhone%' OR ${TABLE}.user_agent ILIKE '%iPod%' THEN 'iPhone'
+        WHEN ${TABLE}.user_agent ILIKE '%SmartTV%' OR ${TABLE}.user_agent ILIKE '%SMART-TV%'
+          OR ${TABLE}.user_agent ILIKE '%Tizen%'   OR ${TABLE}.user_agent ILIKE '%Web0S%'
+          OR ${TABLE}.user_agent ILIKE '%AFT%'     OR ${TABLE}.user_agent ILIKE '%CrKey%'  THEN 'Smart TV / Streaming Device'
+        WHEN ${TABLE}.user_agent ILIKE '%Android%' AND ${TABLE}.user_agent ILIKE '%Mobile%' THEN 'Android Phone'
+        WHEN ${TABLE}.user_agent ILIKE '%Android%'                                THEN 'Android Tablet'
+        WHEN ${TABLE}.user_agent ILIKE '%CrOS%'                                   THEN 'Chromebook'
+        WHEN ${TABLE}.user_agent ILIKE '%Macintosh%'                              THEN 'Mac'
+        WHEN ${TABLE}.user_agent ILIKE '%Windows%'                                THEN 'Windows PC'
+        WHEN ${TABLE}.user_agent ILIKE '%Linux%'                                  THEN 'Linux PC'
+        ELSE 'Other'
+      END ;;
+    suggestions: ["iPhone", "iPad", "Android Phone", "Android Tablet", "Mac", "Windows PC", "Chromebook", "Linux PC",
+      "Smart TV / Streaming Device", "Other", "Unknown", "iOS App", "Android App", "Roku App", "Amazon Fire TV App", "Vizio TV App"]
+  }
+
+  dimension: device_category {
+    group_label: "Device"
+    label: "Device Category"
+    description: "Mobile, Tablet, Desktop, TV or App, grouped from Device Name. Web only for Mobile / Tablet / Desktop / TV. Also called: mobile vs desktop."
+    type: string
+    sql:
+      CASE
+        WHEN ${device_name} IS NULL THEN NULL
+        WHEN ${device_name} IN ('iPhone', 'Android Phone')                     THEN 'Mobile'
+        WHEN ${device_name} IN ('iPad', 'Android Tablet')                      THEN 'Tablet'
+        WHEN ${device_name} IN ('Mac', 'Windows PC', 'Chromebook', 'Linux PC') THEN 'Desktop'
+        WHEN ${device_name} = 'Smart TV / Streaming Device'                     THEN 'TV'
+        WHEN ${device_name} LIKE '% App'                                        THEN 'App'
+        ELSE 'Other / Unknown'
+      END ;;
+    suggestions: ["Mobile", "Tablet", "Desktop", "TV", "App", "Other / Unknown"]
+  }
+
+  dimension: user_agent {
+    group_label: "Device"
+    label: "User Agent (Raw)"
+    description: "Raw browser user agent string from the first site visit (Web only). For troubleshooting Device Name."
+    type: string
+    sql: ${TABLE}.user_agent ;;
+  }
+
+  dimension: bundle_type {
+    group_label: "Bundles (Web)"
+    label: "Bundle Type"
+    description: "Bundle on a web order, from the Chargebee subscriptions created for the customer's email around the order: UP Entertainment Bundle (UPFF + GaitherTV+ + Minno), GaitherTV+ Bundle (UPFF + GaitherTV+), Minno Bundle (UPFF + Minno), GaitherTV+ Minno Bundle, or No Bundle. Unmatched = web order with no Chargebee subscription found. App orders show App (no bundles). Blank for users who did not order. For display and drill-downs; to focus on one bundle use Bundle Type Filter, and for charts use the per-bundle measures. Filtering or pivoting on this field makes every bundle rate read 100%, so it cannot be used as a filter. Also called: bundle, upsell, package."
+    can_filter: no
+    type: string
+    sql: ${TABLE}.bundle_type ;;
+    suggestions: ["UP Entertainment Bundle", "GaitherTV+ Bundle", "Minno Bundle", "GaitherTV+ Minno Bundle", "No Bundle", "Unmatched", "App (no bundles)"]
+  }
+
+  dimension: is_bundle {
+    group_label: "Bundles (Web)"
+    label: "Bundle Order"
+    description: "Yes if the web order included a bundle."
+    can_filter: no
+    type: yesno
+    sql: ${TABLE}.bundle_type LIKE '%Bundle' AND ${TABLE}.bundle_type <> 'No Bundle' ;;
+  }
+
+  # ---------------------------------------------------------------------------
+  # Landing pages and traffic type (Web)
+  # ---------------------------------------------------------------------------
+
+  dimension: landing_page {
+    group_label: "Landing Pages (Web)"
+    label: "Landing Page"
+    description: "First page a web visitor viewed in the period (their landing page), e.g. /stream/, /, /plans/, /heartland/. Web only. For display and grouping; to measure the share of traffic on chosen pages use Landing Page Filter with Landing Page Share (filtering on this field would make the share read 100%). Also called: entry page, landing URL, first page."
+    type: string
+    can_filter: no
+    sql: ${TABLE}.landing_path ;;
+  }
+
+  dimension: traffic_type {
+    group_label: "Landing Pages (Web)"
+    label: "Traffic Type"
+    description: "How a web visitor arrived, grouped from Marketing Platform: Paid (Google Search, Google PMax, Google Display, YouTube, Meta Ads, Bing Ads), Owned (HubSpot email, UPtv Digital), Organic (Organic Search, Organic Social, ChatGPT), or Direct / Unknown (no UTM, Others, Unknown). App users show as App. Use with Landing Page Share to see whether landing pages are reached through paid campaigns or organically/directly. Also called: paid vs organic, traffic source, acquisition channel."
+    type: string
+    sql:
+      CASE
+        WHEN ${TABLE}.platform IS NULL THEN NULL
+        WHEN ${TABLE}.platform <> 'Web' THEN 'App'
+        WHEN ${TABLE}.marketing_platform IN ('Google Search', 'Google PMax', 'Google Display', 'YouTube', 'Meta Ads', 'Bing Ads') THEN 'Paid'
+        WHEN ${TABLE}.marketing_platform IN ('HubSpot', 'UPtv Digital')                 THEN 'Owned'
+        WHEN ${TABLE}.marketing_platform IN ('Organic Search', 'Organic Social', 'ChatGPT') THEN 'Organic'
+        ELSE 'Direct / Unknown'
+      END ;;
+    suggestions: ["Paid", "Owned", "Organic", "Direct / Unknown", "App"]
   }
 
   # ---------------------------------------------------------------------------
@@ -1813,6 +1991,314 @@ view: upff_signup_funnel {
   }
 
   # ---------------------------------------------------------------------------
+  # Landing page share (Web) - pick pages with Landing Page Filter
+  # ---------------------------------------------------------------------------
+
+  measure: landing_page_visitors_current {
+    group_label: "Landing Pages (Web)"
+    label: "Landing Page Visitors (Current Period)"
+    description: "Current-period web visitors whose landing page is one of the pages chosen in Landing Page Filter."
+    type: number
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Current' AND ${TABLE}.platform = 'Web' AND {% condition landing_page_filter %} ${TABLE}.landing_path {% endcondition %} THEN ${user_pk} END) ;;
+    value_format_name: decimal_0
+  }
+
+  measure: web_visitors_current {
+    group_label: "Landing Pages (Web)"
+    label: "Web Visitors (Current Period)"
+    description: "All current-period web visitors (web entries). Denominator for Landing Page Share."
+    type: number
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Current' AND ${TABLE}.platform = 'Web' THEN ${user_pk} END) ;;
+    value_format_name: decimal_0
+  }
+
+  measure: landing_page_share_current {
+    group_label: "Landing Pages (Web)"
+    label: "Landing Page Share (Current Period)"
+    description: "Percent of current-period web visitors who landed on the pages chosen in Landing Page Filter, versus the rest of the website. Group by Traffic Type or Marketing Platform to see the share within paid, organic or direct traffic. Also called: landing page traffic share, entry page share."
+    type: number
+    sql: 1.0 * ${landing_page_visitors_current} / NULLIF(${web_visitors_current}, 0) ;;
+    value_format_name: percent_2
+  }
+
+  measure: rest_of_site_share_current {
+    group_label: "Landing Pages (Web)"
+    label: "Rest of Website Share (Current Period)"
+    description: "Percent of current-period web visitors who landed anywhere other than the chosen landing pages (100% minus Landing Page Share)."
+    type: number
+    sql: 1.0 - ${landing_page_share_current} ;;
+    value_format_name: percent_2
+  }
+
+  measure: landing_page_conversion_rate_current {
+    group_label: "Landing Pages (Web)"
+    label: "Landing Page Conversion Rate (Current Period)"
+    description: "Percent of current-period visitors to the chosen landing pages who completed an order."
+    type: number
+    sql: 1.0 * COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Current' AND ${TABLE}.platform = 'Web' AND {% condition landing_page_filter %} ${TABLE}.landing_path {% endcondition %} AND ${TABLE}.order_completed_at IS NOT NULL THEN ${user_pk} END)
+      / NULLIF(${landing_page_visitors_current}, 0) ;;
+    value_format_name: percent_2
+  }
+
+  measure: cost_per_landing_page_visitor_current {
+    group_label: "Landing Pages (Web)"
+    label: "Cost per Landing Page Visitor (Current Period)"
+    description: "Total marketing spend divided by current-period visitors to the chosen landing pages. Spend covers all paid media (including app campaigns), so read this as a directional cost per landing page visit. Blank when a Web Campaign Filter is applied."
+    type: number
+    sql: {% if upff_signup_funnel.marketing_platform_filter._is_filtered or upff_signup_funnel.campaign_source_filter._is_filtered or upff_signup_funnel.campaign_name_filter._is_filtered or upff_signup_funnel.campaign_medium_filter._is_filtered %} NULL {% else %} ${spend_current} / NULLIF(${landing_page_visitors_current}, 0) {% endif %} ;;
+    value_format_name: usd
+  }
+
+  measure: landing_page_visitors_prior {
+    group_label: "Landing Pages (Web)"
+    label: "Landing Page Visitors (Prior Period)"
+    description: "Prior-period web visitors whose landing page is one of the pages chosen in Landing Page Filter."
+    type: number
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Prior' AND ${TABLE}.platform = 'Web' AND {% condition landing_page_filter %} ${TABLE}.landing_path {% endcondition %} THEN ${user_pk} END) ;;
+    value_format_name: decimal_0
+  }
+
+  measure: web_visitors_prior {
+    group_label: "Landing Pages (Web)"
+    label: "Web Visitors (Prior Period)"
+    description: "All prior-period web visitors (web entries). Denominator for Landing Page Share."
+    type: number
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Prior' AND ${TABLE}.platform = 'Web' THEN ${user_pk} END) ;;
+    value_format_name: decimal_0
+  }
+
+  measure: landing_page_share_prior {
+    group_label: "Landing Pages (Web)"
+    label: "Landing Page Share (Prior Period)"
+    description: "Percent of prior-period web visitors who landed on the pages chosen in Landing Page Filter, versus the rest of the website. Group by Traffic Type or Marketing Platform to see the share within paid, organic or direct traffic. Also called: landing page traffic share, entry page share."
+    type: number
+    sql: 1.0 * ${landing_page_visitors_prior} / NULLIF(${web_visitors_prior}, 0) ;;
+    value_format_name: percent_2
+  }
+
+  measure: rest_of_site_share_prior {
+    group_label: "Landing Pages (Web)"
+    label: "Rest of Website Share (Prior Period)"
+    description: "Percent of prior-period web visitors who landed anywhere other than the chosen landing pages (100% minus Landing Page Share)."
+    type: number
+    sql: 1.0 - ${landing_page_share_prior} ;;
+    value_format_name: percent_2
+  }
+
+  measure: landing_page_conversion_rate_prior {
+    group_label: "Landing Pages (Web)"
+    label: "Landing Page Conversion Rate (Prior Period)"
+    description: "Percent of prior-period visitors to the chosen landing pages who completed an order."
+    type: number
+    sql: 1.0 * COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Prior' AND ${TABLE}.platform = 'Web' AND {% condition landing_page_filter %} ${TABLE}.landing_path {% endcondition %} AND ${TABLE}.order_completed_at IS NOT NULL THEN ${user_pk} END)
+      / NULLIF(${landing_page_visitors_prior}, 0) ;;
+    value_format_name: percent_2
+  }
+
+  measure: cost_per_landing_page_visitor_prior {
+    group_label: "Landing Pages (Web)"
+    label: "Cost per Landing Page Visitor (Prior Period)"
+    description: "Total marketing spend divided by prior-period visitors to the chosen landing pages. Spend covers all paid media (including app campaigns), so read this as a directional cost per landing page visit. Blank when a Web Campaign Filter is applied."
+    type: number
+    sql: {% if upff_signup_funnel.marketing_platform_filter._is_filtered or upff_signup_funnel.campaign_source_filter._is_filtered or upff_signup_funnel.campaign_name_filter._is_filtered or upff_signup_funnel.campaign_medium_filter._is_filtered %} NULL {% else %} ${spend_prior} / NULLIF(${landing_page_visitors_prior}, 0) {% endif %} ;;
+    value_format_name: usd
+  }
+
+  measure: landing_page_paid_share_current {
+    group_label: "Web Landing Pages"
+    label: "Paid Share of Landing Page Visitors (Current Period)"
+    description: "Of the current-period visitors who landed on the pages in Landing Page Filter, the share who arrived from paid media (Traffic Type = Paid). A falling paid share means more of those pages' traffic is organic, direct or owned, which spreads paid cost over fewer paid visitors. Also called: paid mix."
+    type: number
+    sql: 1.0 * COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Current' AND ${TABLE}.platform = 'Web' AND {% condition landing_page_filter %} ${TABLE}.landing_path {% endcondition %} AND ${TABLE}.marketing_platform IN ('Google Search', 'Google PMax', 'Google Display', 'YouTube', 'Meta Ads', 'Bing Ads') THEN ${user_pk} END) / NULLIF(${landing_page_visitors_current}, 0) ;;
+    value_format_name: percent_2
+  }
+
+  measure: rest_of_site_conversion_rate_current {
+    group_label: "Web Landing Pages"
+    label: "Rest of Site Conversion Rate (Current Period)"
+    description: "Percent of current-period visitors who landed anywhere other than the chosen landing pages and completed an order. Compare with Landing Page Conversion Rate."
+    type: number
+    sql: 1.0 * COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Current' AND ${TABLE}.platform = 'Web' AND NOT ({% condition landing_page_filter %} ${TABLE}.landing_path {% endcondition %}) AND ${TABLE}.order_completed_at IS NOT NULL AND {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END) / NULLIF(COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Current' AND ${TABLE}.platform = 'Web' AND NOT ({% condition landing_page_filter %} ${TABLE}.landing_path {% endcondition %}) THEN ${user_pk} END), 0) ;;
+    value_format_name: percent_2
+  }
+
+  measure: landing_page_paid_share_prior {
+    group_label: "Web Landing Pages"
+    label: "Paid Share of Landing Page Visitors (Prior Period)"
+    description: "Of the prior-period visitors who landed on the pages in Landing Page Filter, the share who arrived from paid media (Traffic Type = Paid). A falling paid share means more of those pages' traffic is organic, direct or owned, which spreads paid cost over fewer paid visitors. Also called: paid mix."
+    type: number
+    sql: 1.0 * COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Prior' AND ${TABLE}.platform = 'Web' AND {% condition landing_page_filter %} ${TABLE}.landing_path {% endcondition %} AND ${TABLE}.marketing_platform IN ('Google Search', 'Google PMax', 'Google Display', 'YouTube', 'Meta Ads', 'Bing Ads') THEN ${user_pk} END) / NULLIF(${landing_page_visitors_prior}, 0) ;;
+    value_format_name: percent_2
+  }
+
+  measure: rest_of_site_conversion_rate_prior {
+    group_label: "Web Landing Pages"
+    label: "Rest of Site Conversion Rate (Prior Period)"
+    description: "Percent of prior-period visitors who landed anywhere other than the chosen landing pages and completed an order. Compare with Landing Page Conversion Rate."
+    type: number
+    sql: 1.0 * COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Prior' AND ${TABLE}.platform = 'Web' AND NOT ({% condition landing_page_filter %} ${TABLE}.landing_path {% endcondition %}) AND ${TABLE}.order_completed_at IS NOT NULL AND {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END) / NULLIF(COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Prior' AND ${TABLE}.platform = 'Web' AND NOT ({% condition landing_page_filter %} ${TABLE}.landing_path {% endcondition %}) THEN ${user_pk} END), 0) ;;
+    value_format_name: percent_2
+  }
+
+  measure: landing_page_paid_share_change_pp {
+    group_label: "Web Landing Pages"
+    label: "Paid Share of Landing Page Visitors Change in Percentage Points"
+    description: "Current minus prior Paid Share of Landing Page Visitors, in percentage points. Negative means the chosen pages are getting relatively more organic, direct or owned traffic."
+    type: number
+    sql: 100.0 * (${landing_page_paid_share_current} - ${landing_page_paid_share_prior}) ;;
+    value_format_name: decimal_2
+  }
+
+  measure: landing_page_share_change_pp {
+    group_label: "Landing Pages (Web)"
+    label: "Landing Page Share Change in Percentage Points"
+    description: "Current minus prior Landing Page Share, in percentage points. Positive means a larger share of web traffic is landing on the chosen pages."
+    type: number
+    sql: 100.0 * (${landing_page_share_current} - ${landing_page_share_prior}) ;;
+    value_format_name: decimal_2
+  }
+
+  measure: landing_page_share {
+    group_label: "Landing Pages (Web)"
+    label: "Landing Page Share"
+    description: "Percent of web visitors who landed on the pages chosen in Landing Page Filter, for any grouping (e.g. Entry Date, Day of Period with Period pivoted, Traffic Type or Marketing Platform)."
+    type: number
+    sql: 1.0 * COUNT(DISTINCT CASE WHEN ${TABLE}.platform = 'Web' AND {% condition landing_page_filter %} ${TABLE}.landing_path {% endcondition %} THEN ${user_pk} END)
+      / NULLIF(COUNT(DISTINCT CASE WHEN ${TABLE}.platform = 'Web' THEN ${user_pk} END), 0) ;;
+    value_format_name: percent_2
+  }
+
+  # ---------------------------------------------------------------------------
+  # Bundles (Web only)
+  # ---------------------------------------------------------------------------
+
+  measure: bundle_orders_current {
+    group_label: "Bundles (Web)"
+    label: "Bundle Orders (Current Period)"
+    description: "Current-period web orders that included a bundle (UP Entertainment, GaitherTV+, Minno or GaitherTV+ Minno). Also called: bundle sign-ups, upsells."
+    type: number
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Current' AND ${TABLE}.platform = 'Web' AND ${TABLE}.order_completed_at IS NOT NULL AND {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} AND ${is_bundle} AND {% condition bundle_type_filter %} ${TABLE}.bundle_type {% endcondition %} THEN ${user_pk} END) ;;
+    value_format_name: decimal_0
+  }
+
+  measure: web_orders_current {
+    group_label: "Bundles (Web)"
+    label: "Web Orders (Current Period)"
+    description: "Current-period web orders (all, with or without a bundle). Denominator for Bundle Upsell Rate."
+    type: number
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Current' AND ${TABLE}.platform = 'Web' AND ${TABLE}.order_completed_at IS NOT NULL AND {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END) ;;
+    value_format_name: decimal_0
+  }
+
+  measure: bundle_upsell_rate_current {
+    group_label: "Bundles (Web)"
+    label: "Bundle Upsell Rate (Current Period)"
+    description: "Share of current-period web orders that included a bundle (Bundle Orders / Web Orders). Also called: upsell rate, bundle attach rate, bundle take rate."
+    type: number
+    sql: 1.0 * ${bundle_orders_current} / NULLIF(${web_orders_current}, 0) ;;
+    value_format_name: percent_2
+  }
+
+  measure: bundle_conversion_rate_current {
+    group_label: "Bundles (Web)"
+    label: "Bundle Conversion Rate (Current Period)"
+    description: "Share of current-period web entries (site visitors) who completed a bundle order (Bundle Orders / web Entries). Also called: visit-to-bundle rate."
+    type: number
+    sql: 1.0 * ${bundle_orders_current} / NULLIF(COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Current' AND ${TABLE}.platform = 'Web' THEN ${user_pk} END), 0) ;;
+    value_format_name: percent_2
+  }
+
+  measure: bundle_orders_prior {
+    group_label: "Bundles (Web)"
+    label: "Bundle Orders (Prior Period)"
+    description: "Prior-period web orders that included a bundle (UP Entertainment, GaitherTV+, Minno or GaitherTV+ Minno). Also called: bundle sign-ups, upsells."
+    type: number
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Prior' AND ${TABLE}.platform = 'Web' AND ${TABLE}.order_completed_at IS NOT NULL AND {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} AND ${is_bundle} AND {% condition bundle_type_filter %} ${TABLE}.bundle_type {% endcondition %} THEN ${user_pk} END) ;;
+    value_format_name: decimal_0
+  }
+
+  measure: web_orders_prior {
+    group_label: "Bundles (Web)"
+    label: "Web Orders (Prior Period)"
+    description: "Prior-period web orders (all, with or without a bundle). Denominator for Bundle Upsell Rate."
+    type: number
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Prior' AND ${TABLE}.platform = 'Web' AND ${TABLE}.order_completed_at IS NOT NULL AND {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END) ;;
+    value_format_name: decimal_0
+  }
+
+  measure: bundle_upsell_rate_prior {
+    group_label: "Bundles (Web)"
+    label: "Bundle Upsell Rate (Prior Period)"
+    description: "Share of prior-period web orders that included a bundle (Bundle Orders / Web Orders). Also called: upsell rate, bundle attach rate, bundle take rate."
+    type: number
+    sql: 1.0 * ${bundle_orders_prior} / NULLIF(${web_orders_prior}, 0) ;;
+    value_format_name: percent_2
+  }
+
+  measure: bundle_conversion_rate_prior {
+    group_label: "Bundles (Web)"
+    label: "Bundle Conversion Rate (Prior Period)"
+    description: "Share of prior-period web entries (site visitors) who completed a bundle order (Bundle Orders / web Entries). Also called: visit-to-bundle rate."
+    type: number
+    sql: 1.0 * ${bundle_orders_prior} / NULLIF(COUNT(DISTINCT CASE WHEN ${TABLE}.period = 'Prior' AND ${TABLE}.platform = 'Web' THEN ${user_pk} END), 0) ;;
+    value_format_name: percent_2
+  }
+
+  measure: bundle_upsell_rate_change_pp {
+    group_label: "Bundles (Web)"
+    label: "Bundle Upsell Rate Change in Percentage Points"
+    description: "Current minus prior Bundle Upsell Rate, in percentage points."
+    type: number
+    sql: 100.0 * (${bundle_upsell_rate_current} - ${bundle_upsell_rate_prior}) ;;
+    value_format_name: decimal_2
+  }
+
+  measure: bundle_orders {
+    group_label: "Bundles (Web)"
+    label: "Bundle Orders"
+    description: "Web orders that included a bundle, for any grouping (e.g. Entry Date with Bundle Type)."
+    type: number
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.platform = 'Web' AND ${TABLE}.order_completed_at IS NOT NULL AND ${is_bundle} AND {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} AND {% condition bundle_type_filter %} ${TABLE}.bundle_type {% endcondition %} THEN ${user_pk} END) ;;
+    value_format_name: decimal_0
+  }
+
+  measure: bundle_orders_up_entertainment {
+    group_label: "Bundles (Web)"
+    label: "UP Entertainment Bundle Orders"
+    description: "Web orders that included the UP Entertainment Bundle, for any grouping. Use these per-bundle measures as stacked bars instead of pivoting on Bundle Type, so the upsell rate line stays correct."
+    type: number
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.platform = 'Web' AND ${TABLE}.order_completed_at IS NOT NULL AND {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} AND ${TABLE}.bundle_type = 'UP Entertainment Bundle' THEN ${user_pk} END) ;;
+    value_format_name: decimal_0
+  }
+
+  measure: bundle_orders_gaithertv {
+    group_label: "Bundles (Web)"
+    label: "GaitherTV+ Bundle Orders"
+    description: "Web orders that included the GaitherTV+ Bundle, for any grouping. Use these per-bundle measures as stacked bars instead of pivoting on Bundle Type, so the upsell rate line stays correct."
+    type: number
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.platform = 'Web' AND ${TABLE}.order_completed_at IS NOT NULL AND {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} AND ${TABLE}.bundle_type = 'GaitherTV+ Bundle' THEN ${user_pk} END) ;;
+    value_format_name: decimal_0
+  }
+
+  measure: bundle_orders_minno {
+    group_label: "Bundles (Web)"
+    label: "Minno Bundle Orders"
+    description: "Web orders that included the Minno Bundle, for any grouping. Use these per-bundle measures as stacked bars instead of pivoting on Bundle Type, so the upsell rate line stays correct."
+    type: number
+    sql: COUNT(DISTINCT CASE WHEN ${TABLE}.platform = 'Web' AND ${TABLE}.order_completed_at IS NOT NULL AND {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} AND ${TABLE}.bundle_type = 'Minno Bundle' THEN ${user_pk} END) ;;
+    value_format_name: decimal_0
+  }
+
+  measure: bundle_upsell_rate {
+    group_label: "Bundles (Web)"
+    label: "Bundle Upsell Rate"
+    description: "Bundle Orders / Web Orders for any grouping, e.g. by Entry Date for a daily upsell line. Do not pivot or filter on Bundle Type with this measure (it would read 100%); use Bundle Type Filter instead."
+    type: number
+    sql: 1.0 * ${bundle_orders} / NULLIF(COUNT(DISTINCT CASE WHEN ${TABLE}.platform = 'Web' AND ${TABLE}.order_completed_at IS NOT NULL AND {% condition plan_frequency_filter %} ${TABLE}.plan_frequency {% endcondition %} THEN ${user_pk} END), 0) ;;
+    value_format_name: percent_2
+  }
+
+  # ---------------------------------------------------------------------------
   # Marketing spend and cost per acquisition (CPA)
   # Spend is daily paid media spend by channel, assigned to the Current or Prior
   # Period by spend date. It is not split by platform, so these measures are for
@@ -1928,6 +2414,6 @@ view: upff_signup_funnel {
   }
 
   set: detail {
-    fields: [platform, anonymous_id, period, entry_time, marketing_platform, campaign_source, campaign_name, converted, order_type, plan_frequency, signup_offer, became_paying, paid_date, customer_email]
+    fields: [platform, anonymous_id, period, entry_time, marketing_platform, campaign_source, campaign_name, converted, order_type, plan_frequency, bundle_type, device_name, signup_offer, became_paying, paid_date, customer_email]
   }
 }
