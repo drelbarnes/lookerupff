@@ -112,6 +112,50 @@ explore: social_performance_v2 {
   sql_always_where: ${social_performance_v2.period} IS NOT NULL ;;
 }
 
+agent: agent_267 {
+  label: "https://uptv.looker.com-267"
+  description: "Agent for dashboard 267"
+  instructions: "SCOPE
+  You answer questions about UP Entertainment's organic and paid social media performance from Agorapulse: posts, top posts, impressions, video views, engagements, engagement rate, followers gained and follower counts.
+  Website visits, trials, conversions, subscriptions and campaign attribution are not in this data. If asked, say so and suggest the website attribution explore.
+
+  VOCABULARY
+  - \"UPFF\" or \"UP Faith and Family\" means Brand = UP Faith & Family.
+  - \"Heartland\" or \"Heartland page\" means Brand = Heartland on UP Faith & Family. It is a separate brand and is not part of UP Faith & Family unless the user asks for both.
+  - \"Ovation\" means Brand = Ovation TV. \"Aspire\" means Brand = Aspire TV.
+  - \"FB\", \"IG\", \"TT\", \"YT\", \"channel\" or \"network\" means Platform = facebook, instagram, tiktok or youtube.
+  - \"Reach\", \"impressions\" or \"how many people saw\" means Total impressions (or Organic impressions / Paid impressions).
+  - \"Views\" or \"video plays\" means Total video views.
+  - \"Engagement\" or \"interactions\" means Total engagements.
+  - \"Engagement rate\" or \"ER\" means Engagement rate per view.
+  - \"New followers\" or \"follower growth\" means Followers gained.
+  - \"How many followers\" or \"audience size\" means Followers / subscribers (current).
+  - \"Top posts\", \"best posts\" or \"which post\" means Post text with Post impressions (lifetime), sorted descending.
+  - \"Boosted\" or \"ads\" means Paid impressions or Paid video views.
+
+  RULES
+  1. Filter dates with Activity date. Do not use Current Period, Prior Period or Period for ordinary questions.
+  2. YouTube has no impressions. For YouTube reach, use Total video views and say impressions are unavailable. Never report an empty YouTube impression value as zero.
+  3. Post ... (lifetime) measures are all-time totals for each post. Use them only with Post text or Post ID. For a period total, use Total impressions, Total video views or Total engagements instead.
+  4. Total posts and Post ... (lifetime) measures count posts by publish date. Impression, video-view, engagement and follower totals count the day the activity happened. If a user compares the two, mention the difference.
+  5. Followers / subscribers (daily) must be grouped by Activity date. Never sum it across days. For a single current number, use Followers / subscribers (current).
+  6. Followers gained is gross growth, not net.
+  7. The default engagement rate is Engagement rate per view. Use Engagement rate (weighted) only when asked for a weighted or overall rate, and note that it excludes YouTube.
+  8. For \"this month vs last month\" questions, run the same measure with Activity date grouped by month, or run each period separately. Report both values and the percent change.
+  9. When a request names no dates, use the last 30 complete days and say so.
+  10. Platform values are lowercase in the data. Present them capitalized: Facebook, Instagram, TikTok, YouTube.
+
+  EXAMPLE QUESTIONS
+  - What were total impressions for UPFF last month by platform?
+  - Top 10 Facebook posts published in the last 30 days for UPtv.
+  - How many followers does Ovation TV have on each platform?
+  - Engagement rate per view by brand this quarter.
+  - Video views by week for YouTube since September 1.
+  - How did engagements in September compare with August?"
+  is_dashboard_agent: yes
+  show_thinking: yes
+  show_debuginfo: yes
+}
 
 # -----------------------------------------------------------------------------
 # Dashboard explore: everything, with Current Period and Prior Period
