@@ -79,6 +79,38 @@ include: "/Vimeo_OTT/vimeo_ott_all_customers.view.lkml"
 include: "/Vimeo_OTT/vimeo_ott_all_customers_workflows.view.lkml"
 include: "/views/Marketing_attribution/upff_signup_funnel.view.lkml"
 include: "/views/payment/payment_gateway.view.lkml"
+include: "views/social_performance/social_performance_v2.view.lkml"
+
+
+# -----------------------------------------------------------------------------
+# Social Performance Dashboard explore: everything, with Current Period and Prior Period
+# as required filters.
+# -----------------------------------------------------------------------------
+datagroup: agorapulse_webhook_datagroup {
+  sql_trigger:
+    SELECT GREATEST(
+      (SELECT MAX(ingested_at::timestamp) FROM agorapulse_webhook.social_post_last_30),
+      (SELECT MAX(ingested_at::timestamp) FROM agorapulse_webhook.social_daily_snapshot)
+    ) ;;
+  max_cache_age: "24 hours"
+}
+
+explore: social_performance_v2 {
+  label: "Social Performance"
+  persist_with: agorapulse_webhook_datagroup
+
+  # Both windows are always set, so every query has a bounded comparison.
+  # Dashboard filters on these fields override these defaults.
+  always_filter: {
+    filters: [
+      social_performance_v2.current_period: "30 complete days",
+      social_performance_v2.prior_period: "60 days ago for 30 days"
+    ]
+  }
+
+  # Scan only the current window and the prior window.
+  sql_always_where: ${social_performance_v2.period} IS NOT NULL ;;
+}
 
 
 # -----------------------------------------------------------------------------
