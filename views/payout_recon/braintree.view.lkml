@@ -5,25 +5,7 @@ view: braintree {
         FROM ${config.SQL_TABLE_NAME}),
 
       paypal0 as (
-      SELECT distinct
-      NULL as email
-      , date(Disbursement_Date)  as charge_created
-      , 'charge' as reporting_category
-      , Original_Transaction_ID as source_id
-      , Transaction_ID as transaction_id
-      , Settlement_Amount as gross
-      ,CASE WHEN Transaction_Type = 'sale' THEN 0.05
-      ELSE 0
-      END as fee
-      , 'Braintree' as payment_gateway
-      ,Transaction_Type as payment_description
-      from `up-faith-and-family-216419.customers.braintree-payout-recon-8-2026`
-      where date(Disbursement_Date) <'2026-08-31'
-      --FROM `up-faith-and-family-216419.customers.braintree-payout-recon-8-2026`
-
-
-      UNION ALL
-      SELECT distinct
+SELECT distinct
       NULL as email
       , date(Disbursement_Date)  as charge_created
       , 'charge' as reporting_category
@@ -36,9 +18,11 @@ view: braintree {
         WHEN Status != 'Open' THEN 'charge_back_won'
         ELSE 'charge_back'
         END as payment_description
-        From `up-faith-and-family-216419.customers.dispute_report_9_22_2026`
-      where date(Disbursement_Date) <'2026-08-31'
+        From
+`up-faith-and-family-216419.customers.dispute_report_Aug_Sept_2026`
+where date(Disbursement_Date) <'2026-09-01'
 
+/*
       UNION ALL
       SELECT distinct
       NULL as email
@@ -52,23 +36,27 @@ view: braintree {
       END as fee
       , 'Braintree' as payment_gateway
       ,Transaction_Type as payment_description
-      FROM`up-faith-and-family-216419.customers.braintree-payout-recon-7-2026`
-      where date(Disbursement_Date) >='2026-07-31'
+      from `up-faith-and-family-216419.customers.braintree-payout-recon-9-2026`
+      where date(Disbursement_Date) <'2026-09-30'
+      */
 
-
-      UNION ALL
-      SELECT distinct
+    UNION ALL
+    SELECT distinct
       NULL as email
-      , date(Disbursement_Date) as charge_created
+      , date(Disbursement_Date)  as charge_created
       , 'charge' as reporting_category
-      , cast(NULL as string) as source_id
+      , Original_Transaction_ID as source_id
       , Transaction_ID as transaction_id
-      , Amount_Disputed as gross
-      ,15.00 as fee
+      , Settlement_Amount as gross
+      ,CASE WHEN Transaction_Type = 'sale' THEN 0.05
+      ELSE 0
+      END as fee
       , 'Braintree' as payment_gateway
-      ,'charge_back' as payment_description
-      FROM `up-faith-and-family-216419.customers.dispute_report_7_2026_V2`
-      where date(Disbursement_Date)  ='2026-07-31'
+      ,Transaction_Type as payment_description
+      from `up-faith-and-family-216419.customers.braintree-payout-recon-8-2026`
+     where Settlement_Date <='2026-08-06'
+
+
 
 
       ),
@@ -270,8 +258,8 @@ view: braintree {
   content_invoice_line_items_1_tax_amount as tax_2,
   content_invoice_line_items_2_tax_amount as tax_3,
   NULL as tax_4,
- content_credit_note_sub_total as original_amount1,
-  NULL as original_amount2,
+ content_credit_note_line_items_0_unit_amount as original_amount1,
+ content_credit_note_line_items_1_unit_amount as original_amount2,
   content_invoice_line_items_2_unit_amount as original_amount3,
   NULL as original_amount4,
   content_credit_note_line_items_0_discount_amount AS discount_amount1,
@@ -336,7 +324,7 @@ FROM
   content_invoice_line_items_1_unit_amount as original_amount2,
   content_invoice_line_items_2_unit_amount as original_amount3,
   NULL as original_amount4,
-  content_credit_note_line_items_0_discount_amount AS discount_amount1,
+  content_credit_note_line_items_0_discount_amount +content_credit_note_allocations_0_allocated_amount  AS discount_amount1,
   content_invoice_line_items_1_discount_amount  AS discount_amount2,
   content_invoice_line_items_2_discount_amount AS discount_amount3,
   NULL AS discount_amount4,

@@ -36,7 +36,8 @@ include: "/views/UPFF_Vw/watch_rate.view.lkml"
 include: "/views/UPFF_Vw/bundle.view.lkml"
 include: "/views/UPFF_Vw/bundle_conversion.view.lkml"
 include: "/views/UPFF_Vw/churn_gain_historical.view.lkml"
-
+include: "/views/UPFF_Vw/churn_web.view.lkml"
+include: "/views/UPFF_Vw/chargebee_cancellations.view.lkml"
 
 
 explore: UPFF_analytics_Vw {
@@ -165,4 +166,8 @@ explore: bundle_conversion {
 
 explore: rolling_platform {
   label: "UPFF rolling platform"
+}
+
+explore: churn_web {
+  label: "UPFF Churn Web only"
 }
