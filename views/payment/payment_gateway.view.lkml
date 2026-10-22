@@ -4,6 +4,7 @@
 #
 # One row per event, four event types:
 #   payment_succeeded | payment_failed | subscription_renewed | involuntary_churn
+#   checkout_started | checkout_card_error | order_completed   (web checkout, Segment)
 #
 # Grain notes
 #   - Payment events are grouped into "attempt groups" (invoice_id, falling back
@@ -11,6 +12,10 @@
 #     recovery rate, revenue at risk) count only the FIRST attempt row of each
 #     invoice, so each invoice is dated by its first attempt.
 #   - Dunning / renewal / churn measures count distinct customers.
+#   - Checkout measures count distinct anonymous_id (browser visitor). A visitor
+#     who errors on one device and orders on another counts as not recovered.
+#     Checkout rows carry no gateway, billing period, signup model or customer
+#     type, so checkout tiles should not listen to those dashboard filters.
 #
 # -----------------------------------------------------------------------------
 # CONVERSATIONAL ANALYTICS SETUP
@@ -102,6 +107,9 @@
 #     content_subscription_created_at, content_subscription_activated_at (epoch)
 #   subscription_renewed / subscription_cancelled:
 #     id, content_customer_id, content_subscription_id
+#   Segment checkout tables (javascript_upentertainment_checkout schema):
+#     checkout_started and order_completed are ASSUMED table names; confirm.
+#     subscribe_card_error is confirmed. All three need id, anonymous_id, received_at.
 #
 # No top-level WITH (nested subqueries only). Full rebuild daily after 6am ET;
 # invoice-level windows need each invoice's full attempt history.
@@ -145,7 +153,20 @@ view: payment_gateway {
       CASE WHEN ev.is_payment_event = 1 THEN
       MAX(CASE WHEN ev.event_type = 'payment_succeeded' THEN ev.gateway_raw END)
       OVER (PARTITION BY ev.attempt_group)
-      END AS recovered_via_gateway_raw
+      END AS recovered_via_gateway_raw,
+
+      -- checkout: first order / card error at or after this event, same anonymous_id
+      CASE WHEN ev.event_type IN ('checkout_started', 'checkout_card_error') THEN
+      MIN(CASE WHEN ev.event_type = 'order_completed' THEN ev.event_ts END)
+      OVER (PARTITION BY COALESCE(ev.anonymous_id, ev.event_id) ORDER BY ev.event_ts
+      ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING)
+      END AS next_order_ts,
+
+      CASE WHEN ev.event_type = 'checkout_started' THEN
+      MIN(CASE WHEN ev.event_type = 'checkout_card_error' THEN ev.event_ts END)
+      OVER (PARTITION BY COALESCE(ev.anonymous_id, ev.event_id) ORDER BY ev.event_ts
+      ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING)
+      END AS next_card_error_ts
 
       FROM (
       SELECT
@@ -186,7 +207,8 @@ view: payment_gateway {
       LOWER(content_card_funding_type)::VARCHAR(32)                 AS card_funding_type,
       0                                                             AS is_dunning_entry,
       TIMESTAMP 'epoch' + content_subscription_created_at * INTERVAL '1 second'  AS subscription_created_at,
-      TIMESTAMP 'epoch' + content_subscription_activated_at * INTERVAL '1 second'  AS subscription_activated_at
+      TIMESTAMP 'epoch' + content_subscription_activated_at * INTERVAL '1 second'  AS subscription_activated_at,
+      NULL::VARCHAR(128)                                            AS anonymous_id
       FROM chargebee_webhook_events.payment_succeeded
       WHERE content_subscription_subscription_items_0_item_price_id LIKE '%UP%'
 
@@ -220,7 +242,8 @@ view: payment_gateway {
       -- same "new dunning" rule as the existing dunning tile
       CASE WHEN content_invoice_linked_payments_1_txn_date IS NULL THEN 1 ELSE 0 END,
       TIMESTAMP 'epoch' + content_subscription_created_at * INTERVAL '1 second',
-      TIMESTAMP 'epoch' + content_subscription_activated_at * INTERVAL '1 second'
+      TIMESTAMP 'epoch' + content_subscription_activated_at * INTERVAL '1 second',
+      NULL::VARCHAR(128)
       FROM chargebee_webhook_events.payment_failed
       WHERE content_subscription_subscription_items_0_item_price_id LIKE '%UP%'
 
@@ -250,7 +273,8 @@ view: payment_gateway {
       NULL::VARCHAR(32),
       0,
       TIMESTAMP 'epoch' + content_subscription_created_at * INTERVAL '1 second',
-      TIMESTAMP 'epoch' + content_subscription_activated_at * INTERVAL '1 second'
+      TIMESTAMP 'epoch' + content_subscription_activated_at * INTERVAL '1 second',
+      NULL::VARCHAR(128)
       FROM chargebee_webhook_events.subscription_renewed
       -- same product filter as payment events so the dunning rate's
       -- numerator and denominator cover the same subscriptions
@@ -280,7 +304,8 @@ view: payment_gateway {
       NULL::VARCHAR(32),
       0,
       j.subscription_created_at,
-      j.subscription_activated_at
+      j.subscription_activated_at,
+      NULL::VARCHAR(128)
       FROM (
       SELECT
       c.*,
@@ -332,6 +357,60 @@ view: payment_gateway {
       AND p.failed_date <  c.report_date
       ) j
       WHERE j.rn = 1
+
+      UNION ALL
+
+      -- ---------------- checkout: checkout_started (Segment, keyed by anonymous_id) ----------------
+      SELECT
+      ('ck-' || id)::VARCHAR(160),
+      'checkout_started'::VARCHAR(30),
+      NULL::VARCHAR(128), NULL::VARCHAR(128), NULL::VARCHAR(128),
+      received_at,
+      DATE(CONVERT_TIMEZONE('America/New_York', received_at)),
+      NULL::VARCHAR(64), NULL::VARCHAR(10), NULL::VARCHAR(10), NULL::VARCHAR(10),
+      NULL::VARCHAR(128), NULL::VARCHAR(1024), NULL::VARCHAR(128),
+      NULL::BIGINT, NULL::VARCHAR(3), NULL::VARCHAR(32), NULL::VARCHAR(32),
+      0,
+      NULL::TIMESTAMP, NULL::TIMESTAMP,
+      anonymous_id::VARCHAR(128)
+      FROM javascript_upentertainment_checkout.checkout_started
+      WHERE anonymous_id IS NOT NULL
+
+      UNION ALL
+
+      -- ---------------- checkout: checkout_card_error (Segment, keyed by anonymous_id) ----------------
+      SELECT
+      ('ce-' || id)::VARCHAR(160),
+      'checkout_card_error'::VARCHAR(30),
+      NULL::VARCHAR(128), NULL::VARCHAR(128), NULL::VARCHAR(128),
+      received_at,
+      DATE(CONVERT_TIMEZONE('America/New_York', received_at)),
+      NULL::VARCHAR(64), NULL::VARCHAR(10), NULL::VARCHAR(10), NULL::VARCHAR(10),
+      NULL::VARCHAR(128), NULL::VARCHAR(1024), NULL::VARCHAR(128),
+      NULL::BIGINT, NULL::VARCHAR(3), NULL::VARCHAR(32), NULL::VARCHAR(32),
+      0,
+      NULL::TIMESTAMP, NULL::TIMESTAMP,
+      anonymous_id::VARCHAR(128)
+      FROM javascript_upentertainment_checkout.subscribe_card_error
+      WHERE anonymous_id IS NOT NULL
+
+      UNION ALL
+
+      -- ---------------- checkout: order_completed (Segment, keyed by anonymous_id) ----------------
+      SELECT
+      ('oc-' || id)::VARCHAR(160),
+      'order_completed'::VARCHAR(30),
+      NULL::VARCHAR(128), NULL::VARCHAR(128), NULL::VARCHAR(128),
+      received_at,
+      DATE(CONVERT_TIMEZONE('America/New_York', received_at)),
+      NULL::VARCHAR(64), NULL::VARCHAR(10), NULL::VARCHAR(10), NULL::VARCHAR(10),
+      NULL::VARCHAR(128), NULL::VARCHAR(1024), NULL::VARCHAR(128),
+      NULL::BIGINT, NULL::VARCHAR(3), NULL::VARCHAR(32), NULL::VARCHAR(32),
+      0,
+      NULL::TIMESTAMP, NULL::TIMESTAMP,
+      anonymous_id::VARCHAR(128)
+      FROM javascript_upentertainment_checkout.order_completed
+      WHERE anonymous_id IS NOT NULL
 
       ) u
       ) ev
@@ -475,8 +554,8 @@ view: payment_gateway {
   dimension: event_type {
     label: "Event Type"
     type: string
-    description: "What happened. Values: payment_succeeded (a charge was approved), payment_failed (a charge was declined), subscription_renewed (a subscription renewed and was paid), involuntary_churn (a subscription was cancelled for non-payment or a payment-related reason). Prefer the named measures over filtering on this field."
-    suggestions: ["payment_succeeded", "payment_failed", "subscription_renewed", "involuntary_churn"]
+    description: "What happened. Values: payment_succeeded (a charge was approved), payment_failed (a charge was declined), subscription_renewed (a subscription renewed and was paid), involuntary_churn (a subscription was cancelled for non-payment or a payment-related reason), checkout_started (a web visitor reached checkout), checkout_card_error (a card error at checkout), order_completed (a web order was completed). Prefer the named measures over filtering on this field."
+    suggestions: ["payment_succeeded", "payment_failed", "subscription_renewed", "involuntary_churn", "checkout_started", "checkout_card_error", "order_completed"]
     sql: ${TABLE}.event_type ;;
   }
 
@@ -664,6 +743,48 @@ view: payment_gateway {
         WHEN 'PayPal agreement / instrument'     THEN 'Ask customer to re-authorize PayPal'
         WHEN 'Issuer refusal'                    THEN 'Retry on alternate gateway'
         WHEN 'Processor decline (generic)'       THEN 'Retry on alternate gateway'
+      END ;;
+  }
+
+  # ===========================================================================
+  # DIMENSIONS - web checkout
+  # ===========================================================================
+
+  dimension: anonymous_id {
+    view_label: "Payment Gateway - Record Detail"
+    label: "Checkout Visitor ID"
+    type: string
+    description: "Segment anonymous_id for web checkout events. Record-level drill only."
+    sql: ${TABLE}.anonymous_id ;;
+  }
+
+  dimension: checkout_converted {
+    group_label: "Checkout"
+    label: "Checkout Converted"
+    type: yesno
+    description: "Checkout started or card error rows: yes if the same visitor completed an order within 2 days after this event."
+    sql: ${TABLE}.next_order_ts IS NOT NULL AND ${TABLE}.next_order_ts <= DATEADD(day, 2, ${TABLE}.event_ts) ;;
+  }
+
+  dimension: checkout_had_card_error {
+    group_label: "Checkout"
+    label: "Checkout Had Card Error"
+    type: yesno
+    description: "Checkout started rows: yes if the visitor got a card error within 2 days after reaching checkout."
+    sql: ${TABLE}.next_card_error_ts IS NOT NULL AND ${TABLE}.next_card_error_ts <= DATEADD(day, 2, ${TABLE}.event_ts) ;;
+  }
+
+  dimension: checkout_card_error_group {
+    group_label: "Checkout"
+    label: "Checkout Card Error Group"
+    type: string
+    description: "Checkout started rows only. Values: Had card error, No card error. Use with Checkout Success Rate to compare the two groups."
+    suggestions: ["Had card error", "No card error"]
+    sql:
+      CASE
+        WHEN ${TABLE}.event_type <> 'checkout_started' THEN NULL
+        WHEN ${checkout_had_card_error} THEN 'Had card error'
+        ELSE 'No card error'
       END ;;
   }
 
@@ -986,6 +1107,121 @@ view: payment_gateway {
     description: "Dollar value of declined invoices still unpaid 30+ days after the first decline. Also called: lost revenue."
     sql: ${amount_usd} ;;
     filters: [is_first_attempt: "yes", invoice_status: "Not recovered"]
+  }
+
+  # ===========================================================================
+  # MEASURES - web checkout (distinct visitors by anonymous_id)
+  # ===========================================================================
+
+  measure: checkout_visitors {
+    group_label: "Checkout"
+    label: "Checkout Visitors"
+    type: count_distinct
+    description: "Distinct visitors who reached checkout. Also called: checkout starts, checkout sessions."
+    sql: ${anonymous_id} ;;
+    filters: [event_type: "checkout_started"]
+  }
+
+  measure: checkout_completers {
+    group_label: "Checkout"
+    label: "Checkout Visitors Who Ordered"
+    type: count_distinct
+    description: "Distinct checkout visitors who completed an order within 2 days of reaching checkout."
+    sql: ${anonymous_id} ;;
+    filters: [event_type: "checkout_started", checkout_converted: "yes"]
+  }
+
+  measure: checkout_success_rate {
+    group_label: "Checkout"
+    label: "Checkout Success Rate"
+    type: number
+    value_format_name: percent_2
+    description: "Checkout Visitors Who Ordered / Checkout Visitors. Group by Checkout Card Error Group to compare visitors with and without a card error. Also called: checkout conversion, signup success rate. Ratio: do not sum or average across rows."
+    sql: ${checkout_completers} / NULLIF(${checkout_visitors}, 0)::FLOAT ;;
+  }
+
+  measure: card_errors {
+    group_label: "Checkout"
+    label: "Checkout Card Errors"
+    type: count
+    description: "Card error events at checkout (expired, declined or other card errors). Also called: signup declines."
+    filters: [event_type: "checkout_card_error"]
+  }
+
+  measure: card_error_visitors {
+    group_label: "Checkout"
+    label: "Visitors With a Card Error"
+    type: count_distinct
+    description: "Distinct visitors who got at least one card error at checkout."
+    sql: ${anonymous_id} ;;
+    filters: [event_type: "checkout_card_error"]
+  }
+
+  measure: card_error_recovered_visitors {
+    group_label: "Checkout"
+    label: "Card Error Visitors Who Ordered"
+    type: count_distinct
+    description: "Distinct visitors who completed an order within 2 days after a card error."
+    sql: ${anonymous_id} ;;
+    filters: [event_type: "checkout_card_error", checkout_converted: "yes"]
+  }
+
+  measure: card_error_recovery_rate {
+    group_label: "Checkout"
+    label: "Card Error Recovery Rate"
+    type: number
+    value_format_name: percent_2
+    description: "Card Error Visitors Who Ordered / Visitors With a Card Error. Also called: checkout save rate. Ratio: do not sum or average across rows."
+    sql: ${card_error_recovered_visitors} / NULLIF(${card_error_visitors}, 0)::FLOAT ;;
+  }
+
+  # ===========================================================================
+  # MEASURES - renewal success, unique customers
+  # ===========================================================================
+
+  measure: renewal_charge_customers {
+    group_label: "Renewal Success"
+    label: "Renewing Customers Charged"
+    type: count_distinct
+    description: "Distinct customers with at least one renewal charge attempt (Customer Type = renewal)."
+    sql: ${customer_id} ;;
+    filters: [is_payment_event: "yes", customer_type: "renewal"]
+  }
+
+  measure: renewal_paid_customers {
+    group_label: "Renewal Success"
+    label: "Renewing Customers Paid"
+    type: count_distinct
+    description: "Distinct customers with at least one successful renewal charge, on the first try or after a retry."
+    sql: ${customer_id} ;;
+    filters: [event_type: "payment_succeeded", customer_type: "renewal"]
+  }
+
+  measure: renewal_declined_customers {
+    group_label: "Renewal Success"
+    label: "Renewing Customers Declined"
+    type: count_distinct
+    description: "Distinct customers with at least one declined renewal charge."
+    sql: ${customer_id} ;;
+    filters: [event_type: "payment_failed", customer_type: "renewal"]
+  }
+
+  measure: renewal_customer_success_rate {
+    group_label: "Renewal Success"
+    label: "Renewal Success Rate (Unique Customers)"
+    type: number
+    value_format_name: percent_2
+    description: "Renewing Customers Paid / Renewing Customers Charged. Understated for the last ~30 days while retries continue. Also called: renewal success rate, customer renewal rate. Ratio: do not sum or average across rows."
+    sql: ${renewal_paid_customers} / NULLIF(${renewal_charge_customers}, 0)::FLOAT ;;
+  }
+
+  measure: renewal_customer_first_try_rate {
+    group_label: "Renewal Success"
+    label: "Renewal First-Try Rate (Unique Customers)"
+    type: number
+    value_format_name: percent_2
+    description: "Share of renewing customers with no declined renewal charge in the period. Ratio: do not sum or average across rows."
+    sql: (${renewal_charge_customers} - ${renewal_declined_customers}) / NULLIF(${renewal_charge_customers}, 0)::FLOAT ;;
   }
 
   # ===========================================================================
@@ -1349,6 +1585,182 @@ view: payment_gateway {
     sql: ${attempt_auth_rate_this_period} - ${attempt_auth_rate_prior_period} ;;
   }
 
+  # Checkout success rate
+  measure: ck_vis_this   { hidden: yes type: count_distinct sql: ${anonymous_id} ;; filters: [event_type: "checkout_started", pop_period: "This Period"] }
+  measure: ck_vis_prior  { hidden: yes type: count_distinct sql: ${anonymous_id} ;; filters: [event_type: "checkout_started", pop_period: "Prior Period"] }
+  measure: ck_done_this  { hidden: yes type: count_distinct sql: ${anonymous_id} ;; filters: [event_type: "checkout_started", checkout_converted: "yes", pop_period: "This Period"] }
+  measure: ck_done_prior { hidden: yes type: count_distinct sql: ${anonymous_id} ;; filters: [event_type: "checkout_started", checkout_converted: "yes", pop_period: "Prior Period"] }
+
+  measure: checkout_success_rate_this_period {
+    view_label: "_Period over Period"
+    group_label: "Checkout"
+    label: "Checkout Success Rate - This Period"
+    description: "Dashboard only; requires the Current Period and Prior Period filters. Group by Checkout Card Error Group to split by card error."
+    type: number
+    value_format_name: percent_2
+    sql: ${ck_done_this} / NULLIF(${ck_vis_this}, 0)::FLOAT ;;
+  }
+
+  measure: checkout_success_rate_prior_period {
+    view_label: "_Period over Period"
+    group_label: "Checkout"
+    label: "Checkout Success Rate - Prior Period"
+    description: "Dashboard only; requires the Current Period and Prior Period filters."
+    type: number
+    value_format_name: percent_2
+    sql: ${ck_done_prior} / NULLIF(${ck_vis_prior}, 0)::FLOAT ;;
+  }
+
+  measure: checkout_success_rate_change {
+    view_label: "_Period over Period"
+    group_label: "Checkout"
+    label: "Checkout Success Rate - Change (pts)"
+    description: "Dashboard only. This Period minus Prior Period, in percentage points."
+    type: number
+    value_format: "+0.00%;-0.00%;0.00%"
+    sql: ${checkout_success_rate_this_period} - ${checkout_success_rate_prior_period} ;;
+  }
+
+  measure: checkout_visitors_this_period {
+    view_label: "_Period over Period"
+    group_label: "Checkout"
+    label: "Checkout Visitors - This Period"
+    description: "Dashboard only; requires the Current Period and Prior Period filters."
+    type: number
+    sql: ${ck_vis_this} ;;
+  }
+
+  measure: checkout_visitors_prior_period {
+    view_label: "_Period over Period"
+    group_label: "Checkout"
+    label: "Checkout Visitors - Prior Period"
+    description: "Dashboard only; requires the Current Period and Prior Period filters."
+    type: number
+    sql: ${ck_vis_prior} ;;
+  }
+
+  # Card error recovery rate
+  measure: ce_vis_this   { hidden: yes type: count_distinct sql: ${anonymous_id} ;; filters: [event_type: "checkout_card_error", pop_period: "This Period"] }
+  measure: ce_vis_prior  { hidden: yes type: count_distinct sql: ${anonymous_id} ;; filters: [event_type: "checkout_card_error", pop_period: "Prior Period"] }
+  measure: ce_rec_this   { hidden: yes type: count_distinct sql: ${anonymous_id} ;; filters: [event_type: "checkout_card_error", checkout_converted: "yes", pop_period: "This Period"] }
+  measure: ce_rec_prior  { hidden: yes type: count_distinct sql: ${anonymous_id} ;; filters: [event_type: "checkout_card_error", checkout_converted: "yes", pop_period: "Prior Period"] }
+
+  measure: card_error_recovery_rate_this_period {
+    view_label: "_Period over Period"
+    group_label: "Checkout"
+    label: "Card Error Recovery Rate - This Period"
+    description: "Dashboard only; requires the Current Period and Prior Period filters."
+    type: number
+    value_format_name: percent_2
+    sql: ${ce_rec_this} / NULLIF(${ce_vis_this}, 0)::FLOAT ;;
+  }
+
+  measure: card_error_recovery_rate_prior_period {
+    view_label: "_Period over Period"
+    group_label: "Checkout"
+    label: "Card Error Recovery Rate - Prior Period"
+    description: "Dashboard only; requires the Current Period and Prior Period filters."
+    type: number
+    value_format_name: percent_2
+    sql: ${ce_rec_prior} / NULLIF(${ce_vis_prior}, 0)::FLOAT ;;
+  }
+
+  measure: card_error_recovery_rate_change {
+    view_label: "_Period over Period"
+    group_label: "Checkout"
+    label: "Card Error Recovery Rate - Change (pts)"
+    description: "Dashboard only. This Period minus Prior Period, in percentage points."
+    type: number
+    value_format: "+0.00%;-0.00%;0.00%"
+    sql: ${card_error_recovery_rate_this_period} - ${card_error_recovery_rate_prior_period} ;;
+  }
+
+  measure: card_error_visitors_this_period {
+    view_label: "_Period over Period"
+    group_label: "Checkout"
+    label: "Visitors With a Card Error - This Period"
+    description: "Dashboard only; requires the Current Period and Prior Period filters."
+    type: number
+    sql: ${ce_vis_this} ;;
+  }
+
+  measure: card_error_visitors_prior_period {
+    view_label: "_Period over Period"
+    group_label: "Checkout"
+    label: "Visitors With a Card Error - Prior Period"
+    description: "Dashboard only; requires the Current Period and Prior Period filters."
+    type: number
+    sql: ${ce_vis_prior} ;;
+  }
+
+  # Renewal success, unique customers
+  measure: rn_chg_this   { hidden: yes type: count_distinct sql: ${customer_id} ;; filters: [is_payment_event: "yes", customer_type: "renewal", pop_period: "This Period"] }
+  measure: rn_chg_prior  { hidden: yes type: count_distinct sql: ${customer_id} ;; filters: [is_payment_event: "yes", customer_type: "renewal", pop_period: "Prior Period"] }
+  measure: rn_paid_this  { hidden: yes type: count_distinct sql: ${customer_id} ;; filters: [event_type: "payment_succeeded", customer_type: "renewal", pop_period: "This Period"] }
+  measure: rn_paid_prior { hidden: yes type: count_distinct sql: ${customer_id} ;; filters: [event_type: "payment_succeeded", customer_type: "renewal", pop_period: "Prior Period"] }
+  measure: rn_dec_this   { hidden: yes type: count_distinct sql: ${customer_id} ;; filters: [event_type: "payment_failed", customer_type: "renewal", pop_period: "This Period"] }
+  measure: rn_dec_prior  { hidden: yes type: count_distinct sql: ${customer_id} ;; filters: [event_type: "payment_failed", customer_type: "renewal", pop_period: "Prior Period"] }
+
+  measure: renewal_customer_success_rate_this_period {
+    view_label: "_Period over Period"
+    group_label: "Renewal Success"
+    label: "Renewal Success Rate (Unique Customers) - This Period"
+    description: "Dashboard only; requires the Current Period and Prior Period filters."
+    type: number
+    value_format_name: percent_2
+    sql: ${rn_paid_this} / NULLIF(${rn_chg_this}, 0)::FLOAT ;;
+  }
+
+  measure: renewal_customer_success_rate_prior_period {
+    view_label: "_Period over Period"
+    group_label: "Renewal Success"
+    label: "Renewal Success Rate (Unique Customers) - Prior Period"
+    description: "Dashboard only; requires the Current Period and Prior Period filters."
+    type: number
+    value_format_name: percent_2
+    sql: ${rn_paid_prior} / NULLIF(${rn_chg_prior}, 0)::FLOAT ;;
+  }
+
+  measure: renewal_customer_success_rate_change {
+    view_label: "_Period over Period"
+    group_label: "Renewal Success"
+    label: "Renewal Success Rate (Unique Customers) - Change (pts)"
+    description: "Dashboard only. This Period minus Prior Period, in percentage points."
+    type: number
+    value_format: "+0.00%;-0.00%;0.00%"
+    sql: ${renewal_customer_success_rate_this_period} - ${renewal_customer_success_rate_prior_period} ;;
+  }
+
+  measure: renewal_customer_first_try_rate_this_period {
+    view_label: "_Period over Period"
+    group_label: "Renewal Success"
+    label: "Renewal First-Try Rate (Unique Customers) - This Period"
+    description: "Dashboard only; requires the Current Period and Prior Period filters."
+    type: number
+    value_format_name: percent_2
+    sql: (${rn_chg_this} - ${rn_dec_this}) / NULLIF(${rn_chg_this}, 0)::FLOAT ;;
+  }
+
+  measure: renewal_customer_first_try_rate_prior_period {
+    view_label: "_Period over Period"
+    group_label: "Renewal Success"
+    label: "Renewal First-Try Rate (Unique Customers) - Prior Period"
+    description: "Dashboard only; requires the Current Period and Prior Period filters."
+    type: number
+    value_format_name: percent_2
+    sql: (${rn_chg_prior} - ${rn_dec_prior}) / NULLIF(${rn_chg_prior}, 0)::FLOAT ;;
+  }
+
+  measure: renewal_customer_first_try_rate_change {
+    view_label: "_Period over Period"
+    group_label: "Renewal Success"
+    label: "Renewal First-Try Rate (Unique Customers) - Change (pts)"
+    description: "Dashboard only. This Period minus Prior Period, in percentage points."
+    type: number
+    value_format: "+0.00%;-0.00%;0.00%"
+    sql: ${renewal_customer_first_try_rate_this_period} - ${renewal_customer_first_try_rate_prior_period} ;;
+  }
+
   # ===========================================================================
   # FIELD SETS
   # ===========================================================================
@@ -1374,7 +1786,13 @@ view: payment_gateway {
       revenue_at_risk_this_period, revenue_at_risk_prior_period, revenue_at_risk_change_pct,
       invoices_attempted_this_period, invoices_attempted_prior_period, invoices_attempted_change_pct,
       declined_invoices_this_period, declined_invoices_prior_period, declined_invoices_change_pct,
-      attempt_auth_rate_this_period, attempt_auth_rate_prior_period, attempt_auth_rate_change
+      attempt_auth_rate_this_period, attempt_auth_rate_prior_period, attempt_auth_rate_change,
+      checkout_success_rate_this_period, checkout_success_rate_prior_period, checkout_success_rate_change,
+      checkout_visitors_this_period, checkout_visitors_prior_period,
+      card_error_recovery_rate_this_period, card_error_recovery_rate_prior_period, card_error_recovery_rate_change,
+      card_error_visitors_this_period, card_error_visitors_prior_period,
+      renewal_customer_success_rate_this_period, renewal_customer_success_rate_prior_period, renewal_customer_success_rate_change,
+      renewal_customer_first_try_rate_this_period, renewal_customer_first_try_rate_prior_period, renewal_customer_first_try_rate_change
     ]
   }
 
@@ -1408,7 +1826,13 @@ view: payment_gateway {
       avg_attempts_to_recover, median_hours_to_recover,
       revenue_at_risk, revenue_recovered, revenue_not_recovered,
       dunning_users, renewed_users, dunning_rate,
-      involuntary_churn_users, involuntary_churn_trial, involuntary_churn_renew
+      involuntary_churn_users, involuntary_churn_trial, involuntary_churn_renew,
+      # checkout and renewal success
+      checkout_converted, checkout_had_card_error, checkout_card_error_group, anonymous_id,
+      checkout_visitors, checkout_completers, checkout_success_rate,
+      card_errors, card_error_visitors, card_error_recovered_visitors, card_error_recovery_rate,
+      renewal_charge_customers, renewal_paid_customers, renewal_declined_customers,
+      renewal_customer_success_rate, renewal_customer_first_try_rate
     ]
   }
 }
