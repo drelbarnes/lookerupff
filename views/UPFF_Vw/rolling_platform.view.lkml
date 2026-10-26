@@ -22,25 +22,21 @@ backfill_cfg as (
 
       -- 2) Chargebee cancellations -> treat as 'web' platform (adjust if you prefer a different label)
       user_cancelled_counts2 AS (
-
  SELECT
-        content_subscription_id::VARCHAR AS user_id,
-        CASE
-        WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'::VARCHAR
-        ELSE 'yearly'::VARCHAR
-        END AS billing_period,
-        DATE("timestamp") AS report_date,
+        subscription_id AS user_id,
+        billing_period,
+        event_date_utc AS report_date,
         DATE_TRUNC('month', report_date) AS month_start,
 
         'web'::VARCHAR AS platform
-        FROM chargebee_webhook_events.subscription_cancelled
+        FROM ${chargebee_cancellations.SQL_TABLE_NAME}
         WHERE
-        (
-        --(content_subscription_cancel_reason_code not in ('Not Paid', 'No Card', 'Fraud Review Failed', 'Non Compliant EU Customer', 'Tax Calculation Failed', 'Currency incompatible with Gateway', 'Non Compliant Customer') and
-        (content_subscription_cancelled_at - content_subscription_activated_at) > 10000)
-        --or content_subscription_cancel_reason_code is null)
-        AND content_subscription_subscription_items LIKE '%UP%'
-        AND date(timestamp) >= (SELECT max(report_date) - 31 FROM cfg)
+        secs_since_activation > 10000
+        -- The dunning exclusion is still switched off, as before. The old
+        -- commented-out version, if restored, would replace the line above with:
+        --   ((NOT is_dunning AND secs_since_activation > 10000) OR cancel_reason_code IS NULL)
+        AND is_up
+        AND event_date_utc >= (SELECT max(report_date) - 31 FROM cfg)
       ),
 
       -- 33) Non-Chargebee users with platform/billing info (to enrich VM webhook expirations)

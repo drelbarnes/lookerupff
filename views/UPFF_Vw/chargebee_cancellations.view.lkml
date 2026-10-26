@@ -63,6 +63,7 @@ view: chargebee_cancellations {
       "timestamp"                                                AS event_ts,
       received_at,
       DATE("timestamp")                                          AS event_date_utc,
+      DATE(DATEADD(HOUR, -4, "timestamp"))                      AS event_date_est,
       DATE(DATEADD(HOUR, +18, "timestamp"))                      AS event_date_plus18,
 
       -- subscription lifecycle, epoch seconds as stored by Chargebee

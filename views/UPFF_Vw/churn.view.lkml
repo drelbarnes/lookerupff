@@ -57,18 +57,15 @@ non_web_cancelled2 AS (
 
 chargebee_cancelled AS (
     SELECT
-        content_subscription_id::VARCHAR AS user_id,
-        CASE
-            WHEN content_subscription_billing_period_unit = 'month' THEN 'monthly'
-            ELSE 'yearly'
-        END AS billing_period,
-        DATE("timestamp") AS report_date,
-        'web' AS platform
-    FROM chargebee_webhook_events.subscription_cancelled
-    WHERE
-        (content_subscription_cancelled_at - content_subscription_activated_at) > 10000
-        AND content_subscription_subscription_items LIKE '%UP%'
-        AND DATE(timestamp) >= (SELECT MAX(report_date) FROM cfg)
+    subscription_id AS user_id,
+    billing_period,
+    event_date_est AS report_date,
+    'web' AS platform
+  FROM ${chargebee_cancellations.SQL_TABLE_NAME}
+  WHERE
+    secs_since_activation > 10000
+    AND is_up
+    AND event_date_utc >= (SELECT MAX(report_date) FROM cfg)
 
     UNION ALL
 
