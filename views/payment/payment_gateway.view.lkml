@@ -1322,6 +1322,23 @@ view: payment_gateway {
     sql: ${card_error_recovered_visitors} / NULLIF(${card_error_visitors}, 0)::FLOAT ;;
   }
 
+  measure: orders_completed {
+    group_label: "Checkout"
+    label: "Completed Orders"
+    type: count
+    description: "Order completed events on the checkout site. Also called: orders, successful checkouts, completed signups."
+    filters: [event_type: "order_completed"]
+  }
+
+  measure: checkout_payment_success_rate {
+    group_label: "Checkout"
+    label: "Checkout Payment Success Rate"
+    type: number
+    value_format_name: percent_2
+    description: "Completed Orders / (Completed Orders + Checkout Card Errors): the share of payment submissions at checkout that ended in an order rather than a card error. Counts events, so it does not depend on matching visitors across events. Also called: payment success rate, order success rate. Ratio: do not sum or average across rows."
+    sql: ${orders_completed} / NULLIF(${orders_completed} + ${card_errors}, 0)::FLOAT ;;
+  }
+
   measure: card_error_ip_addresses {
     group_label: "Checkout"
     label: "Card Error IP Addresses"
@@ -1955,6 +1972,58 @@ view: payment_gateway {
     sql: (${card_errors_this_period} - ${card_errors_prior_period}) / NULLIF(${card_errors_prior_period}, 0)::FLOAT ;;
   }
 
+  # Checkout payment success (orders vs card errors, events)
+  measure: orders_this  { hidden: yes type: count filters: [event_type: "order_completed", pop_period: "This Period"] }
+  measure: orders_prior { hidden: yes type: count filters: [event_type: "order_completed", pop_period: "Prior Period"] }
+
+  measure: orders_completed_this_period {
+    view_label: "_Period over Period"
+    group_label: "Checkout"
+    label: "Completed Orders - This Period"
+    description: "Dashboard only; requires the Current Period and Prior Period filters."
+    type: number
+    sql: ${orders_this} ;;
+  }
+
+  measure: orders_completed_prior_period {
+    view_label: "_Period over Period"
+    group_label: "Checkout"
+    label: "Completed Orders - Prior Period"
+    description: "Dashboard only; requires the Current Period and Prior Period filters."
+    type: number
+    sql: ${orders_prior} ;;
+  }
+
+  measure: checkout_payment_success_rate_this_period {
+    view_label: "_Period over Period"
+    group_label: "Checkout"
+    label: "Checkout Payment Success Rate - This Period"
+    description: "Dashboard only; requires the Current Period and Prior Period filters. Completed Orders / (Completed Orders + Checkout Card Errors), this period."
+    type: number
+    value_format_name: percent_2
+    sql: ${orders_this} / NULLIF(${orders_this} + ${card_errors_this_period}, 0)::FLOAT ;;
+  }
+
+  measure: checkout_payment_success_rate_prior_period {
+    view_label: "_Period over Period"
+    group_label: "Checkout"
+    label: "Checkout Payment Success Rate - Prior Period"
+    description: "Dashboard only; requires the Current Period and Prior Period filters."
+    type: number
+    value_format_name: percent_2
+    sql: ${orders_prior} / NULLIF(${orders_prior} + ${card_errors_prior_period}, 0)::FLOAT ;;
+  }
+
+  measure: checkout_payment_success_rate_change {
+    view_label: "_Period over Period"
+    group_label: "Checkout"
+    label: "Checkout Payment Success Rate - Change (pts)"
+    description: "Dashboard only. This Period minus Prior Period, in percentage points."
+    type: number
+    value_format: "+0.00%;-0.00%;0.00%"
+    sql: ${checkout_payment_success_rate_this_period} - ${checkout_payment_success_rate_prior_period} ;;
+  }
+
   # ===========================================================================
   # FIELD SETS
   # ===========================================================================
@@ -1988,6 +2057,8 @@ view: payment_gateway {
       card_error_recovery_rate_this_period, card_error_recovery_rate_prior_period, card_error_recovery_rate_change,
       card_error_visitors_this_period, card_error_visitors_prior_period,
       card_errors_this_period, card_errors_prior_period, card_errors_change_pct,
+      orders_completed_this_period, orders_completed_prior_period,
+      checkout_payment_success_rate_this_period, checkout_payment_success_rate_prior_period, checkout_payment_success_rate_change,
       renewal_customer_success_rate_this_period, renewal_customer_success_rate_prior_period, renewal_customer_success_rate_change,
       renewal_customer_first_try_rate_this_period, renewal_customer_first_try_rate_prior_period, renewal_customer_first_try_rate_change
     ]
@@ -2030,6 +2101,7 @@ view: payment_gateway {
       card_errors, card_error_visitors, card_error_recovered_visitors, card_error_recovery_rate,
       checkout_error_category, checkout_error_reason, checkout_error_code, checkout_error_owner,
       checkout_error_action, checkout_error_message, card_error_ip_addresses, card_errors_per_visitor,
+      orders_completed, checkout_payment_success_rate,
       renewal_charge_customers, renewal_paid_customers, renewal_declined_customers,
       renewal_customer_success_rate, renewal_customer_first_try_rate
     ]
