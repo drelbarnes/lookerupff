@@ -92,10 +92,9 @@ view: vimeo {
                 order by report_date
             ) as rn
         from vimeo_ott_webhook.customer_product_created
-        where platform not in ( 'api','web') and billing_period != 'custom'
           --and date(timestamp) = date(created_at)
     )
-    where rn != 1
+    where rn != 1 and platform not in ( 'api','web') and billing_period != 'custom'
 
 
       UNION ALL

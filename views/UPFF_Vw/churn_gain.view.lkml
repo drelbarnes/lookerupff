@@ -61,7 +61,7 @@ view: churn_gain {
       FROM (
       SELECT DATE("timestamp") AS report_date, CAST(user_id AS VARCHAR) AS user_id
       FROM vimeo_ott_webhook.customer_product_expired
-      where date(timestamp) = (select * from backfill_cfg)
+      where date(timestamp) >= (select * from backfill_cfg)
       ) a
       LEFT JOIN (
       SELECT report_date, user_id, billing_period, platform
@@ -216,10 +216,9 @@ view: churn_gain {
                 order by report_date
             ) as rn
         from vimeo_ott_webhook.customer_product_created
-        where platform != 'api' and subscription_frequency != 'custom'
           --and date(timestamp) = date(created_at)
     )
-    where rn != 1
+    where rn != 1 and platform not in ( 'api','web') and billing_period != 'custom'
       ) reacq_src
       GROUP BY 2, 3, 4
       ) re_acquisition_count
@@ -287,11 +286,10 @@ UNION ALL
                 order by report_date
             ) as rn
         from vimeo_ott_webhook.customer_product_created
-        where platform != 'api' and subscription_frequency != 'custom'
 
           --and date(timestamp) = date(created_at)
     )
-    where rn = 1
+    where rn = 1 and platform not in ( 'api','web') and billing_period != 'custom'
 
       ) new_paid_pre
       GROUP BY 2, 3, 4
