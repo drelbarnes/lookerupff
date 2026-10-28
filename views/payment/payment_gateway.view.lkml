@@ -108,8 +108,13 @@
 #   subscription_renewed / subscription_cancelled:
 #     id, content_customer_id, content_subscription_id
 #   Segment checkout tables (javascript_upentertainment_checkout schema):
-#     checkout_started and order_completed are ASSUMED table names; confirm.
-#     subscribe_card_error is confirmed. All three need id, anonymous_id, received_at.
+#     Checkout start = pages where LOWER(path) LIKE '%welcome/payment_condensed%'
+#       (the checkout payment page; id, anonymous_id, context_ip, received_at).
+#     subscribe_card_error is confirmed (id, anonymous_id, ip_address,
+#       error_message, received_at).
+#     order_completed is still an ASSUMED table and returned no matching orders
+#       in testing. Point that branch at the event or page that marks a
+#       completed order before trusting any "Who Ordered" or success-rate field.
 #     subscribe_card_error also supplies ip_address and error_message (populated
 #     from about 2026-10-25; earlier card errors show "No error message").
 #
@@ -370,7 +375,9 @@ view: payment_gateway {
 
       UNION ALL
 
-      -- ---------------- checkout: checkout_started (Segment, keyed by anonymous_id) ----------------
+      -- ---------------- checkout: checkout_started = payment page view ----------------
+      -- First view of the checkout payment page per visitor per ET day, so page
+      -- reloads (including the reload after a card error) count once.
       SELECT
       ('ck-' || id)::VARCHAR(160),
       'checkout_started'::VARCHAR(30),
@@ -383,10 +390,20 @@ view: payment_gateway {
       0,
       NULL::TIMESTAMP, NULL::TIMESTAMP,
       anonymous_id::VARCHAR(128),
-      NULL::VARCHAR(64),
+      context_ip::VARCHAR(64),
       NULL::VARCHAR(1024)
-      FROM javascript_upentertainment_checkout.checkout_started
+      FROM (
+      SELECT
+      id, anonymous_id, context_ip, received_at,
+      ROW_NUMBER() OVER (
+      PARTITION BY anonymous_id, DATE(CONVERT_TIMEZONE('America/New_York', received_at))
+      ORDER BY received_at, id
+      ) AS rn
+      FROM javascript_upentertainment_checkout.pages
       WHERE anonymous_id IS NOT NULL
+      AND LOWER(path) LIKE '%welcome/payment_condensed%'
+      ) pv
+      WHERE pv.rn = 1
 
       UNION ALL
 
@@ -570,7 +587,7 @@ view: payment_gateway {
   dimension: event_type {
     label: "Event Type"
     type: string
-    description: "What happened. Values: payment_succeeded (a charge was approved), payment_failed (a charge was declined), subscription_renewed (a subscription renewed and was paid), involuntary_churn (a subscription was cancelled for non-payment or a payment-related reason), checkout_started (a web visitor reached checkout), checkout_card_error (a card error at checkout), order_completed (a web order was completed). Prefer the named measures over filtering on this field."
+    description: "What happened. Values: payment_succeeded (a charge was approved), payment_failed (a charge was declined), subscription_renewed (a subscription renewed and was paid), involuntary_churn (a subscription was cancelled for non-payment or a payment-related reason), checkout_started (a web visitor viewed the checkout payment page; first view per visitor per day), checkout_card_error (a card error at checkout), order_completed (a web order was completed). Prefer the named measures over filtering on this field."
     suggestions: ["payment_succeeded", "payment_failed", "subscription_renewed", "involuntary_churn", "checkout_started", "checkout_card_error", "order_completed"]
     sql: ${TABLE}.event_type ;;
   }
@@ -786,7 +803,7 @@ view: payment_gateway {
     group_label: "Checkout"
     label: "Checkout Had Card Error"
     type: yesno
-    description: "Checkout started rows: yes if the visitor got a card error within 2 days after reaching checkout."
+    description: "Payment page rows: yes if the visitor got a card error within 2 days after their first payment page view that day."
     sql: ${TABLE}.next_card_error_ts IS NOT NULL AND ${TABLE}.next_card_error_ts <= DATEADD(day, 2, ${TABLE}.event_ts) ;;
   }
 
@@ -812,7 +829,7 @@ view: payment_gateway {
     view_label: "Payment Gateway - Record Detail"
     label: "Checkout IP Address"
     type: string
-    description: "IP address on a checkout card error. Personal data: record-level investigation only (for example, many errors from one address can signal card testing). Never list in summaries."
+    description: "IP address on a checkout card error or payment page view. Personal data: record-level investigation only (for example, many errors from one address can signal card testing). Never list in summaries."
     sql: ${TABLE}.ip_address ;;
   }
 
@@ -1247,7 +1264,7 @@ view: payment_gateway {
     group_label: "Checkout"
     label: "Checkout Visitors"
     type: count_distinct
-    description: "Distinct visitors who reached checkout. Also called: checkout starts, checkout sessions."
+    description: "Distinct visitors who viewed the checkout payment page (/welcome/payment_condensed). Page reloads count once per visitor per day. Also called: checkout starts, payment page visitors."
     sql: ${anonymous_id} ;;
     filters: [event_type: "checkout_started"]
   }
