@@ -48,7 +48,7 @@ view: churn_gain {
       )
       AND content_subscription_activated_at IS NOT NULL
       AND content_subscription_subscription_items LIKE '%UP%'
-      AND date(timestamp) = (select * from backfill_cfg)
+      AND date(timestamp) >= (select * from backfill_cfg)
 
 
       UNION ALL
@@ -67,7 +67,7 @@ view: churn_gain {
       SELECT report_date, user_id, billing_period, platform
       FROM ${UPFF_analytics_Vw_v2.SQL_TABLE_NAME}
       WHERE platform != 'Chargebee'
-      and report_date = (select * from backfill_cfg)
+      and report_date >= (select * from backfill_cfg)
       ) b
       ON a.report_date = b.report_date AND a.user_id = b.user_id
       ) churn_src
@@ -90,7 +90,7 @@ view: churn_gain {
       'web'::VARCHAR                           AS platform
       FROM chargebee_webhook_events.subscription_paused
       WHERE content_subscription_subscription_items LIKE '%UP%'
-      AND date(timestamp) = (select * from backfill_cfg)
+      AND date(timestamp) >= (select * from backfill_cfg)
       ) paused_pre
       GROUP BY 2, 3, 4
       ) paused_count
@@ -112,7 +112,7 @@ view: churn_gain {
       FROM chargebee_webhook_events.subscription_activated
       WHERE content_subscription_subscription_items LIKE '%UP%'
       and (content_subscription_activated_at-content_subscription_created_at)<864000
-      AND date(timestamp) = (select * from backfill_cfg)
+      AND date(timestamp) >= (select * from backfill_cfg)
 
       UNION ALL
 
@@ -135,7 +135,7 @@ view: churn_gain {
       DATE(event_occurred_at)          AS report_date
       FROM customers.new_customers
       WHERE subscription_frequency != 'custom'
-      AND date(event_occurred_at) = (select * from backfill_cfg)
+      AND date(event_occurred_at) >= (select * from backfill_cfg)
       ) b
       ON a.report_date = b.report_date AND a.user_id = b.user_id
       WHERE b.event_type = 'Free Trial to Paid'
@@ -160,7 +160,7 @@ view: churn_gain {
       FROM chargebee_webhook_events.subscription_reactivated
       WHERE content_subscription_subscription_items LIKE '%UP%'
       and content_subscription_status != 'in_trial'
-      AND date(timestamp) = (select * from backfill_cfg)
+      AND  DATE(DATEADD(HOUR, +18, timestamp)) >= (select * from backfill_cfg)
 
       UNION ALL
 
@@ -174,7 +174,7 @@ view: churn_gain {
       'web'::VARCHAR                           AS platform
       FROM chargebee_webhook_events.subscription_resumed
       WHERE content_subscription_subscription_items LIKE '%UP%'
-      AND date(timestamp) = (select * from backfill_cfg)
+      AND  DATE(DATEADD(HOUR, +18, timestamp)) >= (select * from backfill_cfg)
 
       UNION ALL
 /*
@@ -216,8 +216,7 @@ view: churn_gain {
                 order by report_date
             ) as rn
         from vimeo_ott_webhook.customer_product_created
-        where platform != 'api'
-        AND date(timestamp) = (select * from backfill_cfg)
+        where platform != 'api' and subscription_frequency != 'custom'
           --and date(timestamp) = date(created_at)
     )
     where rn != 1
@@ -247,7 +246,7 @@ view: churn_gain {
       )
       AND (content_subscription_cancelled_at - content_subscription_activated_at) > 10000
       AND content_subscription_subscription_items LIKE '%UP%'
-      AND date(timestamp) = (select * from backfill_cfg)
+      AND date(timestamp) >= (select * from backfill_cfg)
       ) dunning_pre
       GROUP BY 2, 3, 4
       ) dunning_count
@@ -268,7 +267,7 @@ view: churn_gain {
         ,date(DATEADD(HOUR, -4, received_at)) as report_date
         FROM chargebee_webhook_events.subscription_created
         WHERE content_subscription_subscription_items like '%UP%'
-        AND date(timestamp) = (select * from backfill_cfg)
+        AND  DATE(DATEADD(HOUR, -4, timestamp)) >= (select * from backfill_cfg)
 
 UNION ALL
     select
@@ -281,15 +280,15 @@ UNION ALL
             user_id,
             subscription_frequency,
             platform,
-            date(timestamp) as report_date,
+            DATE(DATEADD(HOUR, -4, timestamp)) as report_date,
             created_at,
             row_number() over (
                 partition by user_id
                 order by report_date
             ) as rn
         from vimeo_ott_webhook.customer_product_created
-        where platform != 'api'
-        AND date(timestamp) = (select * from backfill_cfg)
+        where platform != 'api' and subscription_frequency != 'custom'
+
           --and date(timestamp) = date(created_at)
     )
     where rn = 1
@@ -300,6 +299,11 @@ UNION ALL
 
       ) result
       GROUP BY 2, 3, 4, 5
+
+
+
+      ) all_rows
+      where report_date >= (select * from backfill_cfg)
 
       UNION ALL
 
@@ -340,8 +344,6 @@ UNION ALL
       'rolling_total'::VARCHAR     AS status,
       CAST(platform AS VARCHAR)    AS platform
       FROM ${rolling_platform.SQL_TABLE_NAME}
-
-      ) all_rows
 
       UNION ALL
       SELECT

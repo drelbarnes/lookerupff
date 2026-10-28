@@ -37,7 +37,7 @@ view: free_trials {
             ELSE 'yearly'
           END AS billing_period,
           'web' AS platform,
-          DATE(DATEADD(HOUR, +18, timestamp)) AS report_date
+          DATE(DATEADD(HOUR, -4, timestamp)) AS report_date
         FROM chargebee_webhook_events.subscription_created
         WHERE content_subscription_subscription_items LIKE '%UP%'
       ),
@@ -45,7 +45,7 @@ view: free_trials {
       chargebee_bundle as (
       select count(*) as count
       ,content_customer_id as user_id
-      ,DATE(DATEADD(HOUR, +18, received_at)) AS report_date
+      ,DATE(DATEADD(HOUR, -4, received_at)) AS report_date
       from chargebee_webhook_events.subscription_created
       group by 2,3
       ),
