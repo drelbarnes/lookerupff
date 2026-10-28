@@ -110,6 +110,8 @@
 #   Segment checkout tables (javascript_upentertainment_checkout schema):
 #     checkout_started and order_completed are ASSUMED table names; confirm.
 #     subscribe_card_error is confirmed. All three need id, anonymous_id, received_at.
+#     subscribe_card_error also supplies ip_address and error_message (populated
+#     from about 2026-10-25; earlier card errors show "No error message").
 #
 # No top-level WITH (nested subqueries only). Full rebuild daily after 6am ET;
 # invoice-level windows need each invoice's full attempt history.
@@ -208,7 +210,9 @@ view: payment_gateway {
       0                                                             AS is_dunning_entry,
       TIMESTAMP 'epoch' + content_subscription_created_at * INTERVAL '1 second'  AS subscription_created_at,
       TIMESTAMP 'epoch' + content_subscription_activated_at * INTERVAL '1 second'  AS subscription_activated_at,
-      NULL::VARCHAR(128)                                            AS anonymous_id
+      NULL::VARCHAR(128)                                            AS anonymous_id,
+      NULL::VARCHAR(64)                                             AS ip_address,
+      NULL::VARCHAR(1024)                                           AS checkout_error_message
       FROM chargebee_webhook_events.payment_succeeded
       WHERE content_subscription_subscription_items_0_item_price_id LIKE '%UP%'
 
@@ -243,7 +247,9 @@ view: payment_gateway {
       CASE WHEN content_invoice_linked_payments_1_txn_date IS NULL THEN 1 ELSE 0 END,
       TIMESTAMP 'epoch' + content_subscription_created_at * INTERVAL '1 second',
       TIMESTAMP 'epoch' + content_subscription_activated_at * INTERVAL '1 second',
-      NULL::VARCHAR(128)
+      NULL::VARCHAR(128),
+      NULL::VARCHAR(64),
+      NULL::VARCHAR(1024)
       FROM chargebee_webhook_events.payment_failed
       WHERE content_subscription_subscription_items_0_item_price_id LIKE '%UP%'
 
@@ -274,7 +280,9 @@ view: payment_gateway {
       0,
       TIMESTAMP 'epoch' + content_subscription_created_at * INTERVAL '1 second',
       TIMESTAMP 'epoch' + content_subscription_activated_at * INTERVAL '1 second',
-      NULL::VARCHAR(128)
+      NULL::VARCHAR(128),
+      NULL::VARCHAR(64),
+      NULL::VARCHAR(1024)
       FROM chargebee_webhook_events.subscription_renewed
       -- same product filter as payment events so the dunning rate's
       -- numerator and denominator cover the same subscriptions
@@ -305,7 +313,9 @@ view: payment_gateway {
       0,
       j.subscription_created_at,
       j.subscription_activated_at,
-      NULL::VARCHAR(128)
+      NULL::VARCHAR(128),
+      NULL::VARCHAR(64),
+      NULL::VARCHAR(1024)
       FROM (
       SELECT
       c.*,
@@ -372,7 +382,9 @@ view: payment_gateway {
       NULL::BIGINT, NULL::VARCHAR(3), NULL::VARCHAR(32), NULL::VARCHAR(32),
       0,
       NULL::TIMESTAMP, NULL::TIMESTAMP,
-      anonymous_id::VARCHAR(128)
+      anonymous_id::VARCHAR(128),
+      NULL::VARCHAR(64),
+      NULL::VARCHAR(1024)
       FROM javascript_upentertainment_checkout.checkout_started
       WHERE anonymous_id IS NOT NULL
 
@@ -390,7 +402,9 @@ view: payment_gateway {
       NULL::BIGINT, NULL::VARCHAR(3), NULL::VARCHAR(32), NULL::VARCHAR(32),
       0,
       NULL::TIMESTAMP, NULL::TIMESTAMP,
-      anonymous_id::VARCHAR(128)
+      anonymous_id::VARCHAR(128),
+      ip_address::VARCHAR(64),
+      error_message::VARCHAR(1024)
       FROM javascript_upentertainment_checkout.subscribe_card_error
       WHERE anonymous_id IS NOT NULL
 
@@ -408,7 +422,9 @@ view: payment_gateway {
       NULL::BIGINT, NULL::VARCHAR(3), NULL::VARCHAR(32), NULL::VARCHAR(32),
       0,
       NULL::TIMESTAMP, NULL::TIMESTAMP,
-      anonymous_id::VARCHAR(128)
+      anonymous_id::VARCHAR(128),
+      NULL::VARCHAR(64),
+      NULL::VARCHAR(1024)
       FROM javascript_upentertainment_checkout.order_completed
       WHERE anonymous_id IS NOT NULL
 
@@ -785,6 +801,120 @@ view: payment_gateway {
         WHEN ${TABLE}.event_type <> 'checkout_started' THEN NULL
         WHEN ${checkout_had_card_error} THEN 'Had card error'
         ELSE 'No card error'
+      END ;;
+  }
+
+  # ===========================================================================
+  # DIMENSIONS - checkout card errors (checkout_card_error rows only)
+  # ===========================================================================
+
+  dimension: ip_address {
+    view_label: "Payment Gateway - Record Detail"
+    label: "Checkout IP Address"
+    type: string
+    description: "IP address on a checkout card error. Personal data: record-level investigation only (for example, many errors from one address can signal card testing). Never list in summaries."
+    sql: ${TABLE}.ip_address ;;
+  }
+
+  dimension: checkout_error_message {
+    group_label: "Checkout Card Errors"
+    label: "Checkout Error Message"
+    type: string
+    description: "Raw card error message shown at checkout, e.g. 'Problem while adding the payment method. Error message : (2010) Card Issuer Declined CVV.' High cardinality; prefer Checkout Error Reason or Checkout Error Category."
+    sql: ${TABLE}.checkout_error_message ;;
+  }
+
+  dimension: checkout_error_code {
+    group_label: "Checkout Card Errors"
+    label: "Checkout Error Code"
+    type: string
+    description: "Gateway response code from the checkout error message, e.g. 2010, 2014, 93108. Null for messages without a code, such as prepaid cards."
+    sql: REGEXP_SUBSTR(${TABLE}.checkout_error_message, '[(]([0-9]+)[)]', 1, 1, 'e') ;;
+  }
+
+  dimension: checkout_error_reason {
+    group_label: "Checkout Card Errors"
+    label: "Checkout Error Reason"
+    type: string
+    description: "Checkout error message without the standard prefix and code, e.g. 'Prepaid cards are not supported', 'Card Issuer Declined CVV', 'Processor Declined - Fraud Suspected'. Use for the top individual reasons."
+    sql:
+      CASE
+        WHEN ${TABLE}.event_type <> 'checkout_card_error' THEN NULL
+        WHEN ${TABLE}.checkout_error_message IS NULL THEN 'No error message'
+        ELSE TRIM(TRAILING '.' FROM TRIM(
+               REGEXP_REPLACE(
+                 REGEXP_REPLACE(${TABLE}.checkout_error_message, '^.*Error message *: *', ''),
+                 '^[(][0-9]+[)] *', '')))
+      END ;;
+  }
+
+  dimension: checkout_error_category {
+    group_label: "Checkout Card Errors"
+    label: "Checkout Error Category"
+    type: string
+    description: "Checkout card errors grouped by cause. Values: Prepaid card not accepted; CVV mismatch; Fraud / risk rules; Checkout technical error (expired or reused payment token); Card unusable; Issuer refusal; Insufficient funds; Processor decline; Other; No error message (before message capture began about 2026-10-25). Use this first for 'what are the top checkout errors' questions. Also called: signup decline reason, checkout error type."
+    suggestions: ["Prepaid card not accepted", "CVV mismatch", "Fraud / risk rules", "Checkout technical error", "Card unusable", "Issuer refusal", "Insufficient funds", "Processor decline", "Other", "No error message"]
+    sql:
+      CASE
+        WHEN ${TABLE}.event_type <> 'checkout_card_error' THEN NULL
+        WHEN ${TABLE}.checkout_error_message IS NULL THEN 'No error message'
+        WHEN LOWER(${TABLE}.checkout_error_message) LIKE '%prepaid%'                 THEN 'Prepaid card not accepted'
+        WHEN LOWER(${TABLE}.checkout_error_message) LIKE '%cvv%'
+          OR LOWER(${TABLE}.checkout_error_message) LIKE '%security code%'           THEN 'CVV mismatch'
+        WHEN LOWER(${TABLE}.checkout_error_message) LIKE '%nonce%'                   THEN 'Checkout technical error'
+        WHEN LOWER(${TABLE}.checkout_error_message) LIKE '%fraud%'
+          OR LOWER(${TABLE}.checkout_error_message) LIKE '%security violation%'      THEN 'Fraud / risk rules'
+        WHEN LOWER(${TABLE}.checkout_error_message) LIKE '%insufficient funds%'      THEN 'Insufficient funds'
+        WHEN LOWER(${TABLE}.checkout_error_message) LIKE '%life cycle%'
+          OR LOWER(${TABLE}.checkout_error_message) LIKE '%pick up%'
+          OR LOWER(${TABLE}.checkout_error_message) LIKE '%no account%'
+          OR LOWER(${TABLE}.checkout_error_message) LIKE '%closed card%'
+          OR LOWER(${TABLE}.checkout_error_message) LIKE '%expired card%'
+          OR LOWER(${TABLE}.checkout_error_message) LIKE '%lost%'
+          OR LOWER(${TABLE}.checkout_error_message) LIKE '%stolen%'                  THEN 'Card unusable'
+        WHEN LOWER(${TABLE}.checkout_error_message) LIKE '%processor declined%'      THEN 'Processor decline'
+        WHEN LOWER(${TABLE}.checkout_error_message) LIKE '%restriction%'
+          OR LOWER(${TABLE}.checkout_error_message) LIKE '%do not honor%'
+          OR LOWER(${TABLE}.checkout_error_message) LIKE '%call issuer%'
+          OR LOWER(${TABLE}.checkout_error_message) LIKE '%policy%'
+          OR LOWER(${TABLE}.checkout_error_message) LIKE '%declined%'                THEN 'Issuer refusal'
+        ELSE 'Other'
+      END ;;
+  }
+
+  dimension: checkout_error_owner {
+    group_label: "Checkout Card Errors"
+    label: "Checkout Error Owner"
+    type: string
+    description: "Who can act on the error. Values: Product policy (prepaid cards), Customer entry (CVV), Engineering (payment token errors), Fraud rules, Card issuer (bank declines). Use to separate errors UP can fix from true bank declines."
+    suggestions: ["Product policy", "Customer entry", "Engineering", "Fraud rules", "Card issuer"]
+    sql:
+      CASE ${checkout_error_category}
+        WHEN 'Prepaid card not accepted' THEN 'Product policy'
+        WHEN 'CVV mismatch'              THEN 'Customer entry'
+        WHEN 'Checkout technical error'  THEN 'Engineering'
+        WHEN 'Fraud / risk rules'        THEN 'Fraud rules'
+        WHEN 'No error message'          THEN 'Unknown'
+        WHEN 'Other'                     THEN 'Unknown'
+        ELSE 'Card issuer'
+      END ;;
+  }
+
+  dimension: checkout_error_action {
+    group_label: "Checkout Card Errors"
+    label: "Checkout Error Suggested Action"
+    type: string
+    description: "Default next step for each Checkout Error Category. Edit to match the team's plans."
+    sql:
+      CASE ${checkout_error_category}
+        WHEN 'Prepaid card not accepted' THEN 'Decide whether to accept prepaid cards; if not, say so before card entry'
+        WHEN 'CVV mismatch'              THEN 'Clarify the security-code field and keep the form filled for a retry'
+        WHEN 'Checkout technical error'  THEN 'Fix expired or reused payment tokens (double submits, page timeouts)'
+        WHEN 'Fraud / risk rules'        THEN 'Review fraud-rule settings for false positives'
+        WHEN 'Card unusable'             THEN 'Prompt for a different card'
+        WHEN 'Issuer refusal'            THEN 'Prompt for a different card or PayPal'
+        WHEN 'Insufficient funds'        THEN 'Suggest another card or PayPal'
+        WHEN 'Processor decline'         THEN 'Offer PayPal as an alternative'
       END ;;
   }
 
@@ -1173,6 +1303,24 @@ view: payment_gateway {
     value_format_name: percent_2
     description: "Card Error Visitors Who Ordered / Visitors With a Card Error. Also called: checkout save rate. Ratio: do not sum or average across rows."
     sql: ${card_error_recovered_visitors} / NULLIF(${card_error_visitors}, 0)::FLOAT ;;
+  }
+
+  measure: card_error_ip_addresses {
+    group_label: "Checkout"
+    label: "Card Error IP Addresses"
+    type: count_distinct
+    description: "Distinct IP addresses with a checkout card error. Far more errors than addresses can signal card testing."
+    sql: ${ip_address} ;;
+    filters: [event_type: "checkout_card_error"]
+  }
+
+  measure: card_errors_per_visitor {
+    group_label: "Checkout"
+    label: "Card Errors per Visitor"
+    type: number
+    value_format_name: decimal_2
+    description: "Checkout Card Errors / Visitors With a Card Error: how many times visitors retry after an error. Ratio: do not sum or average across rows."
+    sql: ${card_errors} / NULLIF(${card_error_visitors}, 0)::FLOAT ;;
   }
 
   # ===========================================================================
@@ -1761,6 +1909,35 @@ view: payment_gateway {
     sql: ${renewal_customer_first_try_rate_this_period} - ${renewal_customer_first_try_rate_prior_period} ;;
   }
 
+  # Checkout card errors (use with Checkout Error Category / Reason)
+  measure: card_errors_this_period {
+    view_label: "_Period over Period"
+    group_label: "Checkout"
+    label: "Checkout Card Errors - This Period"
+    description: "Dashboard only; requires the Current Period and Prior Period filters."
+    type: count
+    filters: [event_type: "checkout_card_error", pop_period: "This Period"]
+  }
+
+  measure: card_errors_prior_period {
+    view_label: "_Period over Period"
+    group_label: "Checkout"
+    label: "Checkout Card Errors - Prior Period"
+    description: "Dashboard only; requires the Current Period and Prior Period filters."
+    type: count
+    filters: [event_type: "checkout_card_error", pop_period: "Prior Period"]
+  }
+
+  measure: card_errors_change_pct {
+    view_label: "_Period over Period"
+    group_label: "Checkout"
+    label: "Checkout Card Errors - Change (%)"
+    description: "Dashboard only. Percent change vs Prior Period. Group by Checkout Error Category to see which errors are growing."
+    type: number
+    value_format: "+0.0%;-0.0%;0.0%"
+    sql: (${card_errors_this_period} - ${card_errors_prior_period}) / NULLIF(${card_errors_prior_period}, 0)::FLOAT ;;
+  }
+
   # ===========================================================================
   # FIELD SETS
   # ===========================================================================
@@ -1773,6 +1950,8 @@ view: payment_gateway {
       error_text, error_category, invoice_status
     ]
   }
+
+  # ip_address is deliberately left out of ca_fields (personal data).
 
   # Liquid-dependent fields; keep out of the conversational explore
   set: pop_fields {
@@ -1791,6 +1970,7 @@ view: payment_gateway {
       checkout_visitors_this_period, checkout_visitors_prior_period,
       card_error_recovery_rate_this_period, card_error_recovery_rate_prior_period, card_error_recovery_rate_change,
       card_error_visitors_this_period, card_error_visitors_prior_period,
+      card_errors_this_period, card_errors_prior_period, card_errors_change_pct,
       renewal_customer_success_rate_this_period, renewal_customer_success_rate_prior_period, renewal_customer_success_rate_change,
       renewal_customer_first_try_rate_this_period, renewal_customer_first_try_rate_prior_period, renewal_customer_first_try_rate_change
     ]
@@ -1831,6 +2011,8 @@ view: payment_gateway {
       checkout_converted, checkout_had_card_error, checkout_card_error_group, anonymous_id,
       checkout_visitors, checkout_completers, checkout_success_rate,
       card_errors, card_error_visitors, card_error_recovered_visitors, card_error_recovery_rate,
+      checkout_error_category, checkout_error_reason, checkout_error_code, checkout_error_owner,
+      checkout_error_action, checkout_error_message, card_error_ip_addresses, card_errors_per_visitor,
       renewal_charge_customers, renewal_paid_customers, renewal_declined_customers,
       renewal_customer_success_rate, renewal_customer_first_try_rate
     ]
