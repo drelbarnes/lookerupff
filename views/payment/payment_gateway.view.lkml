@@ -12,8 +12,10 @@
 #     recovery rate, revenue at risk) count only the FIRST attempt row of each
 #     invoice, so each invoice is dated by its first attempt.
 #   - Dunning / renewal / churn measures count distinct customers.
-#   - Checkout measures count distinct anonymous_id (browser visitor). A visitor
-#     who errors on one device and orders on another counts as not recovered.
+#   - Checkout measures count distinct anonymous_id (browser visitor). Orders and
+#     card errors are linked to a visitor by anonymous_id first (2-day window),
+#     then by IP address as a fallback (2-hour window). The IP is used only for
+#     matching; shared IPs can over-count slightly, IP changes can still miss.
 #     Checkout rows carry no gateway, billing period, signup model or customer
 #     type, so checkout tiles should not listen to those dashboard filters.
 #
@@ -112,6 +114,7 @@
 #       (the checkout payment page; id, anonymous_id, context_ip, received_at).
 #     subscribe_card_error is confirmed (id, anonymous_id, ip_address,
 #       error_message, received_at).
+#     order_completed needs context_ip for the IP fallback.
 #     order_completed is still an ASSUMED table and returned no matching orders
 #       in testing. Point that branch at the event or page that marks a
 #       completed order before trusting any "Who Ordered" or success-rate field.
@@ -173,7 +176,20 @@ view: payment_gateway {
       MIN(CASE WHEN ev.event_type = 'checkout_card_error' THEN ev.event_ts END)
       OVER (PARTITION BY COALESCE(ev.anonymous_id, ev.event_id) ORDER BY ev.event_ts
       ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING)
-      END AS next_card_error_ts
+      END AS next_card_error_ts,
+
+      -- IP fallback: same IP address, used only when the visitor ID does not match
+      CASE WHEN ev.event_type IN ('checkout_started', 'checkout_card_error') AND ev.ip_address IS NOT NULL THEN
+      MIN(CASE WHEN ev.event_type = 'order_completed' THEN ev.event_ts END)
+      OVER (PARTITION BY COALESCE(LOWER(TRIM(ev.ip_address)), ev.event_id) ORDER BY ev.event_ts
+      ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING)
+      END AS next_order_ip_ts,
+
+      CASE WHEN ev.event_type = 'checkout_started' AND ev.ip_address IS NOT NULL THEN
+      MIN(CASE WHEN ev.event_type = 'checkout_card_error' THEN ev.event_ts END)
+      OVER (PARTITION BY COALESCE(LOWER(TRIM(ev.ip_address)), ev.event_id) ORDER BY ev.event_ts
+      ROWS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING)
+      END AS next_card_error_ip_ts
 
       FROM (
       SELECT
@@ -440,7 +456,7 @@ view: payment_gateway {
       0,
       NULL::TIMESTAMP, NULL::TIMESTAMP,
       anonymous_id::VARCHAR(128),
-      NULL::VARCHAR(64),
+      context_ip::VARCHAR(64),
       NULL::VARCHAR(1024)
       FROM javascript_upentertainment_checkout.order_completed
       WHERE anonymous_id IS NOT NULL
@@ -795,16 +811,34 @@ view: payment_gateway {
     group_label: "Checkout"
     label: "Checkout Converted"
     type: yesno
-    description: "Checkout started or card error rows: yes if the same visitor completed an order within 2 days after this event."
-    sql: ${TABLE}.next_order_ts IS NOT NULL AND ${TABLE}.next_order_ts <= DATEADD(day, 2, ${TABLE}.event_ts) ;;
+    description: "Payment page or card error rows: yes if an order followed. Matched first by visitor ID (same anonymous_id, order within 2 days); if that finds no order, by IP address (same IP, order within 2 hours)."
+    sql: ${checkout_match_method} IN ('Visitor ID', 'IP address') ;;
+  }
+
+  dimension: checkout_match_method {
+    group_label: "Checkout"
+    label: "Checkout Order Match Method"
+    type: string
+    description: "How a payment page view or card error was linked to a completed order. Values: Visitor ID (same anonymous_id within 2 days), IP address (fallback: same IP within 2 hours), No order found. Use to see how much of Card Error Recovery Rate relies on the IP fallback."
+    suggestions: ["Visitor ID", "IP address", "No order found"]
+    sql:
+      CASE
+        WHEN ${TABLE}.event_type NOT IN ('checkout_started', 'checkout_card_error') THEN NULL
+        WHEN ${TABLE}.next_order_ts IS NOT NULL
+         AND ${TABLE}.next_order_ts <= DATEADD(day, 2, ${TABLE}.event_ts) THEN 'Visitor ID'
+        WHEN ${TABLE}.next_order_ip_ts IS NOT NULL
+         AND ${TABLE}.next_order_ip_ts <= DATEADD(hour, 2, ${TABLE}.event_ts) THEN 'IP address'
+        ELSE 'No order found'
+      END ;;
   }
 
   dimension: checkout_had_card_error {
     group_label: "Checkout"
     label: "Checkout Had Card Error"
     type: yesno
-    description: "Payment page rows: yes if the visitor got a card error within 2 days after their first payment page view that day."
-    sql: ${TABLE}.next_card_error_ts IS NOT NULL AND ${TABLE}.next_card_error_ts <= DATEADD(day, 2, ${TABLE}.event_ts) ;;
+    description: "Payment page rows: yes if a card error followed the visitor's first payment page view that day. Matched by visitor ID (within 2 days), or by IP address when the visitor ID does not match (within 2 hours)."
+    sql: (${TABLE}.next_card_error_ts IS NOT NULL AND ${TABLE}.next_card_error_ts <= DATEADD(day, 2, ${TABLE}.event_ts))
+      OR (${TABLE}.next_card_error_ip_ts IS NOT NULL AND ${TABLE}.next_card_error_ip_ts <= DATEADD(hour, 2, ${TABLE}.event_ts)) ;;
   }
 
   dimension: checkout_card_error_group {
@@ -1308,7 +1342,7 @@ view: payment_gateway {
     group_label: "Checkout"
     label: "Card Error Visitors Who Ordered"
     type: count_distinct
-    description: "Distinct visitors who completed an order within 2 days after a card error."
+    description: "Distinct visitors who completed an order after a card error: same visitor ID within 2 days, or same IP address within 2 hours when the visitor ID does not match."
     sql: ${anonymous_id} ;;
     filters: [event_type: "checkout_card_error", checkout_converted: "yes"]
   }
@@ -1318,7 +1352,7 @@ view: payment_gateway {
     label: "Card Error Recovery Rate"
     type: number
     value_format_name: percent_2
-    description: "Card Error Visitors Who Ordered / Visitors With a Card Error. Also called: checkout save rate. Ratio: do not sum or average across rows."
+    description: "Card Error Visitors Who Ordered / Visitors With a Card Error: how many visitors who hit a card error went on to complete an order (visitor ID match, with IP address as a fallback). Also called: checkout save rate, retry success. Ratio: do not sum or average across rows."
     sql: ${card_error_recovered_visitors} / NULLIF(${card_error_visitors}, 0)::FLOAT ;;
   }
 
@@ -2096,7 +2130,7 @@ view: payment_gateway {
       dunning_users, renewed_users, dunning_rate,
       involuntary_churn_users, involuntary_churn_trial, involuntary_churn_renew,
       # checkout and renewal success
-      checkout_converted, checkout_had_card_error, checkout_card_error_group, anonymous_id,
+      checkout_converted, checkout_had_card_error, checkout_card_error_group, checkout_match_method, anonymous_id,
       checkout_visitors, checkout_completers, checkout_success_rate,
       card_errors, card_error_visitors, card_error_recovered_visitors, card_error_recovery_rate,
       checkout_error_category, checkout_error_reason, checkout_error_code, checkout_error_owner,
