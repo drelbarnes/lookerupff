@@ -384,9 +384,16 @@ view: redshift_timeupdate {
               from a4 as a
               inner join http_api.purchase_event as p
               on a.user_id = p.user_id
-              )
+              ),
 
-              select * from timeupdate {% endraw %} ;;
+              result as (
+              select *
+              ,CASE WHEN media_type is NULL THEN 'other'
+              ELSE media_type
+              END AS media_type_cleaned
+              from timeupdate
+              )
+              select * from result {% endraw %} ;;
 
       distribution_style: "even"
       sortkeys: ["user_id", "video_id"]
@@ -415,7 +422,7 @@ view: redshift_timeupdate {
 
     dimension: media_type {
       type: string
-      sql: ${TABLE}.media_type ;;
+      sql: ${TABLE}.media_type_cleaned ;;
     }
 
     dimension: video_id {
