@@ -380,7 +380,7 @@ view: bigquery_allfirstplay_legacy {
 
         ;;
 
-      datagroup_trigger: upff_analytics_datagroup
+      #datagroup_trigger: upff_analytics_datagroup
     }
 
     dimension: winback {

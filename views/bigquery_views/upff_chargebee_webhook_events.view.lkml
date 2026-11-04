@@ -1134,7 +1134,7 @@ view: upff_chargebee_webhook_events {
           --select *, row_number() over (order by timestamp, customer_id) as row from id_mapping
         select *, row_number() over (order by timestamp, customer_id) as row from distinct_events
       ;;
-    datagroup_trigger: upff_daily_refresh_datagroup
+    #datagroup_trigger: upff_daily_refresh_datagroup
   }
 
   dimension_group: timestamp {

@@ -1026,7 +1026,7 @@ view: branch_events {
       FROM
       branch_io_v2.purchase
       ;;
-    datagroup_trigger: upff_daily_refresh_datagroup
+    #datagroup_trigger: upff_daily_refresh_datagroup
   }
   dimension: _id {
     type: string

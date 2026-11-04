@@ -250,7 +250,7 @@ view: customer_record_v2 {
         )
         select * from final_output
        ;;
-    datagroup_trigger: upff_daily_refresh_datagroup
+    #datagroup_trigger: upff_daily_refresh_datagroup
   }
 
   measure: count {

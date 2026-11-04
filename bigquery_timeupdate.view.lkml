@@ -442,7 +442,7 @@ view: bigquery_timeupdate {
 
       ;;
 
-    datagroup_trigger: upff_analytics_datagroup
+    #datagroup_trigger: upff_analytics_datagroup
 
   }
 

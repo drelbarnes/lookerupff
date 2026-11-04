@@ -270,23 +270,7 @@ include: "/views/Chargebee/chargebee_subscriptions.view.lkml"
 include: "/google_organic_search.view.lkml"
 # Datagroups for PDT Triggers #
 
-datagroup: upff_daily_refresh_datagroup {
-  max_cache_age: "24 hours"
-  description: "Datagroup for Identity Resolution and Attribution PDTs. Triggers once per day"
-  sql_trigger: SELECT CURRENT_DATE() ;;
-}
 
-datagroup: upff_analytics_datagroup {
-  max_cache_age: "12 hours"
-  description: "Datagroup for Allfirstplay and Timeupdate. Triggers twice per day"
-  sql_trigger: SELECT CURRENT_DATE() ;;
-}
-
-datagroup: chargebee_reporting {
-  description: "Datagroup for Chargebee PDTs. Triggers once per day at 8:15am"
-  sql_trigger: SELECT CAST(FORMAT_TIMESTAMP('%F', TIMESTAMP_ADD(CURRENT_TIMESTAMP(), INTERVAL -495 MINUTE)) AS STRING) ;;
-  max_cache_age: "5 minutes"
-}
 
 # Explores #
 

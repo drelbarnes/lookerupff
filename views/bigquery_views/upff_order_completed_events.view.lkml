@@ -27,7 +27,7 @@ view: upff_order_completed_events {
       union all
       select * from web_events
       ;;
-    datagroup_trigger: upff_daily_refresh_datagroup
+    #datagroup_trigger: upff_daily_refresh_datagroup
   }
 
   measure: count {

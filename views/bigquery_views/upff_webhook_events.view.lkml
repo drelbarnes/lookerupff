@@ -59,7 +59,7 @@ view: upff_webhook_events {
       , row_number() over (partition by email order by timestamp desc) as user_event_number
       from unionised_purchase_events
     ;;
-    datagroup_trigger: upff_daily_refresh_datagroup
+   # datagroup_trigger: upff_daily_refresh_datagroup
   }
 
   measure: count {
