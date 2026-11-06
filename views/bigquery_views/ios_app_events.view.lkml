@@ -320,7 +320,7 @@ view: ios_app_events {
       from session_ids_p2
       )
       select * from session_ids_p3;;
-    datagroup_trigger: upff_daily_refresh_datagroup
+    #datagroup_trigger: upff_daily_refresh_datagroup
   }
 
   measure: count {

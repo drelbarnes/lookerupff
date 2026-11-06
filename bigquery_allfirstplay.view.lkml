@@ -35,7 +35,7 @@ select * from result
 
 ;;
 
-    datagroup_trigger: upff_analytics_datagroup
+    #datagroup_trigger: upff_analytics_datagroup
 
   }
 

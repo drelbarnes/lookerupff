@@ -177,7 +177,7 @@ view: customer_record {
       left join last_billing_attempts b
       on a.customer_id = b.customer_id and a.subscription_id = b.subscription_id and a.last_billed_at = b.last_billed_at
        ;;
-      datagroup_trigger: upff_daily_refresh_datagroup
+      #datagroup_trigger: upff_daily_refresh_datagroup
     }
 
   measure: count {

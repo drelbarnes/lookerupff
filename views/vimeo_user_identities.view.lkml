@@ -347,7 +347,7 @@ view: vimeo_user_identities {
     )
     select distinct *, row_number() over (order by user_id) as row from all_identities ;;
 
-  datagroup_trigger: upff_daily_refresh_datagroup
+  #datagroup_trigger: upff_daily_refresh_datagroup
   }
 
   measure: count {

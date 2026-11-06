@@ -27,7 +27,7 @@ view: minno_webhook_events {
       , row_number() over (partition by email order by timestamp desc) as user_event_number
       from user_id_mapping
     ;;
-    datagroup_trigger: upff_daily_refresh_datagroup
+    #datagroup_trigger: upff_daily_refresh_datagroup
   }
 
   measure: count {
