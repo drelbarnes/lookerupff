@@ -144,7 +144,6 @@ explore: hubspot_contacts {
 }
 
 
-
 # -----------------------------------------------------------------------------
 # Social Performance Dashboard explore: everything, with Current Period and Prior Period
 # as required filters.

@@ -15,6 +15,8 @@
 #     the sort column directly, so Redshift skips blocks outside the dates.
 #   * Distributed on recipient_email to match the Contacts table, so that
 #     join happens without moving data between nodes.
+#   * Build: last 13 full months of events, rebuilt once a day (see the
+#     datagroup in the model). See BUILD-SPEED NOTES in the SQL below.
 #
 # How period-over-period works (for developers and the AI agents):
 #   * Reporting Period = the date range the user picks.
@@ -32,72 +34,71 @@ view: hubspot_email_activity {
     distribution: "recipient_email"
     sortkeys: ["activity_at", "activity_type"]
     sql:
-      -- Layer 3: one-pass flags + campaign attributes copied in (no join at query time)
-      SELECT
-          w.activity_id,
-          w.activity_source,
-          w.activity_type,
-          w.activity_at,
-          w.email_campaign_id,
-          w.recipient_email,
-          COALESCE(ec.name, CASE WHEN w.email_campaign_id IS NOT NULL THEN 'Unnamed campaign ' || w.email_campaign_id END) AS campaign_name,
-          ec.subject                                                       AS campaign_subject,
-          CASE UPPER(ec.type)
-               WHEN 'BATCH_EMAIL'               THEN 'One-time send'
-               WHEN 'LOCALTIME_EMAIL'           THEN 'One-time send (local time)'
-               WHEN 'AB_EMAIL'                  THEN 'A/B test'
-               WHEN 'AUTOMATED_EMAIL'           THEN 'Automated (workflow)'
-               WHEN 'AUTOMATED_AB_EMAIL'        THEN 'Automated A/B test'
-               WHEN 'BLOG_EMAIL'                THEN 'Blog digest'
-               WHEN 'RSS_EMAIL'                 THEN 'RSS digest'
-               WHEN 'FOLLOWUP_EMAIL'            THEN 'Form follow-up'
-               WHEN 'OPTIN_EMAIL'               THEN 'Double opt-in'
-               WHEN 'SINGLE_SEND_API'           THEN 'Transactional'
-               WHEN 'MARKETING_SINGLE_SEND_API' THEN 'Transactional'
-               WHEN 'LEADFLOW_EMAIL'            THEN 'Lead flow'
-               ELSE INITCAP(REPLACE(ec.type, '_', ' '))
-          END                                                              AS campaign_type_label,
-          w.clicked_url,
-          w.drop_reason,
-          w.subscription_change_source,
-          w.form_title,
-          w.form_page_url,
-          CASE WHEN w.campaign_first_sent_at IS NOT NULL
-               THEN DENSE_RANK() OVER (PARTITION BY w.recipient_email
-                                       ORDER BY w.campaign_first_sent_at, w.email_campaign_id)
-          END                                                              AS touch_number,
-          -- 0/1 metric flags: measures are plain SUMs, never COUNT(DISTINCT)
-          CASE WHEN w.activity_type = 'SENT'                THEN 1 ELSE 0 END AS is_sent,
-          CASE WHEN w.activity_type = 'DELIVERED'           THEN 1 ELSE 0 END AS is_delivered,
-          CASE WHEN w.activity_type = 'DELIVERED' AND w.type_seq = 1 THEN 1 ELSE 0 END AS is_unique_delivered,
-          CASE WHEN w.activity_type = 'BOUNCE'              THEN 1 ELSE 0 END AS is_bounce,
-          CASE WHEN w.activity_type = 'DROPPED'             THEN 1 ELSE 0 END AS is_dropped,
-          CASE WHEN w.activity_type = 'OPEN'                THEN 1 ELSE 0 END AS is_open,
-          CASE WHEN w.activity_type = 'OPEN'  AND w.type_seq = 1 THEN 1 ELSE 0 END AS is_unique_open,
-          CASE WHEN w.activity_type = 'CLICK'               THEN 1 ELSE 0 END AS is_click,
-          CASE WHEN w.activity_type = 'CLICK' AND w.type_seq = 1 THEN 1 ELSE 0 END AS is_unique_click,
-          CASE WHEN w.activity_type = 'FORM_SUBMISSION'     THEN 1 ELSE 0 END AS is_form_submission,
-          CASE WHEN w.activity_type = 'FORM_SUBMISSION' AND w.email_campaign_id IS NOT NULL AND w.type_seq = 1
-                                                            THEN 1 ELSE 0 END AS is_conversion,
-          CASE WHEN w.activity_type = 'SUBSCRIBED'          THEN 1 ELSE 0 END AS is_subscribe,
-          CASE WHEN w.activity_type = 'UNSUBSCRIBED'        THEN 1 ELSE 0 END AS is_unsubscribe,
-          CASE WHEN w.activity_type = 'REPORTED_SPAM'       THEN 1 ELSE 0 END AS is_spam_report,
-          CASE WHEN w.activity_type = 'CLEARED_SPAM_REPORT' THEN 1 ELSE 0 END AS is_spam_cleared,
-          CASE WHEN w.activity_type = 'CONTACT_CREATED'     THEN 1 ELSE 0 END AS is_new_contact
-      FROM (
-          -- Layer 2: window columns computed once over the combined rows
-          -- (replaces a separate scan of email_events for touch numbers)
-          SELECT
-              a.*,
-              ROW_NUMBER() OVER (PARTITION BY a.recipient_email, a.email_campaign_id, a.activity_type
-                                 ORDER BY a.activity_at, a.activity_id)                       AS type_seq,
-              MIN(CASE WHEN a.activity_type = 'SENT' THEN a.activity_at END)
-                  OVER (PARTITION BY a.recipient_email, a.email_campaign_id)                   AS campaign_first_sent_at
-          FROM (
-              -- Layer 1: every activity on one timeline (US Eastern)
+      -- BUILD-SPEED NOTES
+      --  * Rolling window: event data from the last 13 full months (enough for
+      --    year-over-year). To change it, edit the -13 / -14 in this SQL.
+      --  * received_at filters are redundant with created/timestamp but match
+      --    Segment's sort order, so Redshift skips old blocks before reading them.
+      --  * Only one full-table window sort remains (the unique-event flag).
+      --  * Touch numbers are ranked on a small one-row-per-person-per-campaign
+      --    table, then joined back, instead of sorting every event by person.
 
-      -- 1. Email engagement. STATUSCHANGE / SPAMREPORT are skipped because the
-      --    subscription change table carries the same actions.
+      SELECT
+      a.activity_id,
+      a.activity_source,
+      a.activity_type,
+      a.activity_at,
+      a.email_campaign_id,
+      a.recipient_email,
+      COALESCE(ec.name, CASE WHEN a.email_campaign_id IS NOT NULL THEN 'Unnamed campaign ' || a.email_campaign_id END) AS campaign_name,
+      ec.subject                                                       AS campaign_subject,
+      CASE UPPER(ec.type)
+      WHEN 'BATCH_EMAIL'               THEN 'One-time send'
+      WHEN 'LOCALTIME_EMAIL'           THEN 'One-time send (local time)'
+      WHEN 'AB_EMAIL'                  THEN 'A/B test'
+      WHEN 'AUTOMATED_EMAIL'           THEN 'Automated (workflow)'
+      WHEN 'AUTOMATED_AB_EMAIL'        THEN 'Automated A/B test'
+      WHEN 'BLOG_EMAIL'                THEN 'Blog digest'
+      WHEN 'RSS_EMAIL'                 THEN 'RSS digest'
+      WHEN 'FOLLOWUP_EMAIL'            THEN 'Form follow-up'
+      WHEN 'OPTIN_EMAIL'               THEN 'Double opt-in'
+      WHEN 'SINGLE_SEND_API'           THEN 'Transactional'
+      WHEN 'MARKETING_SINGLE_SEND_API' THEN 'Transactional'
+      WHEN 'LEADFLOW_EMAIL'            THEN 'Lead flow'
+      ELSE INITCAP(REPLACE(ec.type, '_', ' '))
+      END                                                              AS campaign_type_label,
+      a.clicked_url,
+      a.drop_reason,
+      a.subscription_change_source,
+      a.form_title,
+      a.form_page_url,
+      t.touch_number,
+      CASE WHEN a.activity_type = 'SENT'                THEN 1 ELSE 0 END AS is_sent,
+      CASE WHEN a.activity_type = 'DELIVERED'           THEN 1 ELSE 0 END AS is_delivered,
+      CASE WHEN a.activity_type = 'DELIVERED' AND a.type_seq = 1 THEN 1 ELSE 0 END AS is_unique_delivered,
+      CASE WHEN a.activity_type = 'BOUNCE'              THEN 1 ELSE 0 END AS is_bounce,
+      CASE WHEN a.activity_type = 'DROPPED'             THEN 1 ELSE 0 END AS is_dropped,
+      CASE WHEN a.activity_type = 'OPEN'                THEN 1 ELSE 0 END AS is_open,
+      CASE WHEN a.activity_type = 'OPEN'  AND a.type_seq = 1 THEN 1 ELSE 0 END AS is_unique_open,
+      CASE WHEN a.activity_type = 'CLICK'               THEN 1 ELSE 0 END AS is_click,
+      CASE WHEN a.activity_type = 'CLICK' AND a.type_seq = 1 THEN 1 ELSE 0 END AS is_unique_click,
+      CASE WHEN a.activity_type = 'FORM_SUBMISSION'     THEN 1 ELSE 0 END AS is_form_submission,
+      CASE WHEN a.activity_type = 'FORM_SUBMISSION' AND a.email_campaign_id IS NOT NULL AND a.type_seq = 1
+      THEN 1 ELSE 0 END AS is_conversion,
+      CASE WHEN a.activity_type = 'SUBSCRIBED'          THEN 1 ELSE 0 END AS is_subscribe,
+      CASE WHEN a.activity_type = 'UNSUBSCRIBED'        THEN 1 ELSE 0 END AS is_unsubscribe,
+      CASE WHEN a.activity_type = 'REPORTED_SPAM'       THEN 1 ELSE 0 END AS is_spam_report,
+      CASE WHEN a.activity_type = 'CLEARED_SPAM_REPORT' THEN 1 ELSE 0 END AS is_spam_cleared,
+      CASE WHEN a.activity_type = 'CONTACT_CREATED'     THEN 1 ELSE 0 END AS is_new_contact
+      FROM (
+      SELECT
+      u.*,
+      ROW_NUMBER() OVER (PARTITION BY u.recipient_email, u.email_campaign_id, u.activity_type
+      ORDER BY u.activity_at, u.activity_id) AS type_seq
+      FROM (
+
+      -- 1. Email engagement (deduplicated; STATUSCHANGE / SPAMREPORT come from
+      --    the subscription change table instead)
       SELECT
       'ev-' || e.id::VARCHAR                                 AS activity_id,
       'Email engagement'::VARCHAR(30)                        AS activity_source,
@@ -114,74 +115,64 @@ view: hubspot_email_activity {
       SELECT ee.id, ee.type, ee.created, ee.email_campaign_id, ee.recipient, ee.url, ee.drop_reason,
       ROW_NUMBER() OVER (PARTITION BY ee.id ORDER BY ee.received_at DESC) AS rn
       FROM hubspot.email_events ee
-      WHERE UPPER(ee.type) NOT IN ('STATUSCHANGE', 'SPAMREPORT')
+      WHERE ee.received_at >= DATEADD(month, -13, DATE_TRUNC('month', GETDATE()))
+      AND ee.created     >= DATEADD(month, -13, DATE_TRUNC('month', GETDATE()))
+      AND ee.type NOT IN ('STATUSCHANGE', 'SPAMREPORT', 'statuschange', 'spamreport')
       ) e
       WHERE e.rn = 1
 
       UNION ALL
 
-      -- 2. Subscription changes, credited to the campaign whose email caused them
+      -- 2. Subscription changes. One plain join to the causing email event
+      --    (no IN-subquery, no DISTINCT); duplicates removed afterwards.
       SELECT
       'sc-' || sc.id::VARCHAR,
       'Subscription change',
       UPPER(sc.change),
-      CONVERT_TIMEZONE('UTC', 'America/New_York', COALESCE(sc."timestamp", sc.caused_by_event_created)),
-      ev.email_campaign_id::VARCHAR,
-      LOWER(TRIM(COALESCE(ev.recipient, es.email))),
+      CONVERT_TIMEZONE('UTC', 'America/New_York', sc.changed_at),
+      sc.email_campaign_id,
+      LOWER(TRIM(COALESCE(sc.recipient, es.email))),
       NULL::VARCHAR, NULL::VARCHAR, sc.source::VARCHAR, NULL::VARCHAR, NULL::VARCHAR
       FROM (
-      SELECT c.*, ROW_NUMBER() OVER (PARTITION BY c.id ORDER BY c.received_at DESC) AS rn
+      SELECT
+      c.id, c.change, c.source, c.email_subscription_event_id,
+      COALESCE(c."timestamp", c.caused_by_event_created) AS changed_at,
+      ev.email_campaign_id::VARCHAR                       AS email_campaign_id,
+      ev.recipient,
+      ROW_NUMBER() OVER (PARTITION BY c.id ORDER BY c.received_at DESC) AS rn
       FROM hubspot.email_subscription_event_changes c
-      WHERE c.change IS NOT NULL
-      ) sc
       LEFT JOIN (
-      -- only the columns needed, only events that caused a change
-      SELECT DISTINCT ee.id::VARCHAR AS id, ee.email_campaign_id, ee.recipient
-      FROM hubspot.email_events ee
-      WHERE ee.id::VARCHAR IN (SELECT caused_by_event_id::VARCHAR
-      FROM hubspot.email_subscription_event_changes
-      WHERE caused_by_event_id IS NOT NULL)
-      ) ev ON ev.id = sc.caused_by_event_id::VARCHAR
+      SELECT id, email_campaign_id, recipient
+      FROM hubspot.email_events
+      WHERE received_at >= DATEADD(month, -14, DATE_TRUNC('month', GETDATE()))
+      ) ev
+      ON ev.id::VARCHAR = c.caused_by_event_id::VARCHAR
+      WHERE c.change IS NOT NULL
+      AND c.received_at >= DATEADD(month, -13, DATE_TRUNC('month', GETDATE()))
+      AND COALESCE(c."timestamp", c.caused_by_event_created) >= DATEADD(month, -13, DATE_TRUNC('month', GETDATE()))
+      ) sc
       LEFT JOIN hubspot.email_subscriptions es
       ON es.id::VARCHAR = sc.email_subscription_event_id::VARCHAR
       WHERE sc.rn = 1
 
       UNION ALL
 
-      -- 3. Form submissions, credited to the last email clicked in the prior 7 days
+      -- 3. Form submissions. CONTACT LINK: form_submissions has no contact_id in
+      --    this warehouse, so submissions can't be credited to an email yet and
+      --    the click lookup is skipped (it could never match and was pure cost).
+      --    Once the linking column is known, ask to re-enable last-click
+      --    attribution here; Conversions stay 0 until then.
       SELECT
-      'fs-' || f.id::VARCHAR, 'Form submission', 'FORM_SUBMISSION',
-      CONVERT_TIMEZONE('UTC', 'America/New_York', f.submitted_at),
-      f.attributed_campaign_id, f.contact_email,
-      NULL::VARCHAR, NULL::VARCHAR, NULL::VARCHAR, f.title::VARCHAR, f.page_url::VARCHAR
-      FROM (
-      SELECT fs.id, fs."timestamp" AS submitted_at, fs.title, fs.page_url,
-      LOWER(TRIM(c.email)) AS contact_email,
-      clk.email_campaign_id::VARCHAR AS attributed_campaign_id,
-      ROW_NUMBER() OVER (PARTITION BY fs.id ORDER BY clk.created DESC NULLS LAST) AS rn
+      'fs-' || fs.id::VARCHAR, 'Form submission', 'FORM_SUBMISSION',
+      CONVERT_TIMEZONE('UTC', 'America/New_York', fs."timestamp"),
+      NULL::VARCHAR, NULL::VARCHAR,
+      NULL::VARCHAR, NULL::VARCHAR, NULL::VARCHAR, fs.title::VARCHAR, fs.page_url::VARCHAR
       FROM hubspot.form_submissions fs
-      -- CONTACT LINK: this warehouse's form_submissions table has no contact_id.
-      -- Until the linking column is confirmed, no contact is matched, so form
-      -- submissions still count but none are credited to email (Conversions = 0).
-      -- To enable conversions, replace NULL::VARCHAR with the linking column,
-      -- e.g. fs.<column_name>::VARCHAR
-      LEFT JOIN hubspot.contacts c
-      ON c.id::VARCHAR = NULL::VARCHAR
-      LEFT JOIN (
-      -- clicks only, narrowed before the range join
-      SELECT LOWER(TRIM(recipient)) AS recipient_email, email_campaign_id, created
-      FROM hubspot.email_events
-      WHERE UPPER(type) = 'CLICK'
-      ) clk
-      ON  clk.recipient_email = LOWER(TRIM(c.email))
-      AND clk.created <= fs."timestamp"
-      AND clk.created >  DATEADD(day, -7, fs."timestamp")
-      ) f
-      WHERE f.rn = 1
+      WHERE fs."timestamp" >= DATEADD(month, -13, DATE_TRUNC('month', GETDATE()))
 
       UNION ALL
 
-      -- 4. New contacts (valid, un-merged records only)
+      -- 4. New contacts (valid, un-merged records)
       SELECT
       'ct-' || c.id::VARCHAR, 'Contact', 'CONTACT_CREATED',
       CONVERT_TIMEZONE('UTC', 'America/New_York', c.added_at),
@@ -190,11 +181,32 @@ view: hubspot_email_activity {
       FROM hubspot.contacts c
       WHERE COALESCE(c.is_contact, TRUE)
       AND (c.canonical_vid IS NULL OR c.canonical_vid::VARCHAR = c.id::VARCHAR)
-      AND c.added_at IS NOT NULL
+      AND c.added_at >= DATEADD(month, -13, DATE_TRUNC('month', GETDATE()))
+      ) u
       ) a
-      ) w
+
+      -- Touch number: rank campaigns per person on a small grouped table (all
+      -- sends ever, only 3 columns), then join back. 1 = first campaign received.
+      LEFT JOIN (
+      SELECT
+      s.recipient_email,
+      s.email_campaign_id,
+      DENSE_RANK() OVER (PARTITION BY s.recipient_email
+      ORDER BY s.first_sent_at, s.email_campaign_id) AS touch_number
+      FROM (
+      SELECT LOWER(TRIM(recipient))     AS recipient_email,
+      email_campaign_id::VARCHAR AS email_campaign_id,
+      MIN(created)               AS first_sent_at
+      FROM hubspot.email_events
+      WHERE type IN ('SENT', 'sent')
+      GROUP BY 1, 2
+      ) s
+      ) t
+      ON  t.recipient_email   = a.recipient_email
+      AND t.email_campaign_id = a.email_campaign_id
+
       LEFT JOIN hubspot.email_campaigns ec
-      ON ec.id::VARCHAR = w.email_campaign_id
+      ON ec.id::VARCHAR = a.email_campaign_id
       ;;
   }
 
