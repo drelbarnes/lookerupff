@@ -238,22 +238,25 @@ view: hubspot_email_activity {
 
   dimension: period_start {
     hidden: yes
-    type: date_time
-    convert_tz: no
+    # string type on purpose: Looker passes the SQL through as-is.
+    # (date_time would wrap it in TO_CHAR and turn the timestamp into text)
+    type: string
     sql: {% if hubspot_email_activity.reporting_period._is_filtered %} CAST({% date_start reporting_period %} AS TIMESTAMP) {% else %} CAST(NULL AS TIMESTAMP) {% endif %} ;;
   }
 
   dimension: period_end {
     hidden: yes
-    type: date_time
-    convert_tz: no
+    # string type on purpose: Looker passes the SQL through as-is.
+    # (date_time would wrap it in TO_CHAR and turn the timestamp into text)
+    type: string
     sql: {% if hubspot_email_activity.reporting_period._is_filtered %} CAST({% date_end reporting_period %} AS TIMESTAMP) {% else %} CAST(NULL AS TIMESTAMP) {% endif %} ;;
   }
 
   dimension: prior_start {
     hidden: yes
-    type: date_time
-    convert_tz: no
+    # string type on purpose: Looker passes the SQL through as-is.
+    # (date_time would wrap it in TO_CHAR and turn the timestamp into text)
+    type: string
     sql:
       {% if hubspot_email_activity.compare_to._parameter_value == 'previous_year' %}      DATEADD(year,  -1, ${period_start})
       {% elsif hubspot_email_activity.compare_to._parameter_value == 'previous_quarter' %} DATEADD(month, -3, ${period_start})
@@ -264,8 +267,9 @@ view: hubspot_email_activity {
 
   dimension: prior_end {
     hidden: yes
-    type: date_time
-    convert_tz: no
+    # string type on purpose: Looker passes the SQL through as-is.
+    # (date_time would wrap it in TO_CHAR and turn the timestamp into text)
+    type: string
     sql:
       {% if hubspot_email_activity.compare_to._parameter_value == 'previous_year' %}      DATEADD(year,  -1, ${period_end})
       {% elsif hubspot_email_activity.compare_to._parameter_value == 'previous_quarter' %} DATEADD(month, -3, ${period_end})
