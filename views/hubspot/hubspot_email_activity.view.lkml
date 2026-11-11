@@ -160,8 +160,13 @@ view: hubspot_email_activity {
       clk.email_campaign_id::VARCHAR AS attributed_campaign_id,
       ROW_NUMBER() OVER (PARTITION BY fs.id ORDER BY clk.created DESC NULLS LAST) AS rn
       FROM hubspot.form_submissions fs
+      -- CONTACT LINK: this warehouse's form_submissions table has no contact_id.
+      -- Until the linking column is confirmed, no contact is matched, so form
+      -- submissions still count but none are credited to email (Conversions = 0).
+      -- To enable conversions, replace NULL::VARCHAR with the linking column,
+      -- e.g. fs.<column_name>::VARCHAR
       LEFT JOIN hubspot.contacts c
-      ON c.id::VARCHAR = fs.contact_id::VARCHAR
+      ON c.id::VARCHAR = NULL::VARCHAR
       LEFT JOIN (
       -- clicks only, narrowed before the range join
       SELECT LOWER(TRIM(recipient)) AS recipient_email, email_campaign_id, created
