@@ -1827,7 +1827,7 @@ view: upff_movie_premier {
                     SELECT 'A Change in Heart', 0.76 UNION ALL
                     SELECT 'Christmas in Amish Country', 0.79 UNION ALL
                     SELECT 'Christmas Roses', 0.79 UNION ALL
-                    SELECT 'A Christmas Murder Mystery', 0.79 UNION ALL
+                    SELECT 'A Christmas Murder Mystery', 0.79
                     ),
 
                     upff_premier_dates AS
