@@ -2034,7 +2034,7 @@ view: upff_movie_premier {
                       ELSE 100.00 * total_timecode / NULLIF(total_duration, 0)
                     END AS completion_rate_7d
                     FROM title_cr_step_one
-                    ,
+                    ),
 
 
 
