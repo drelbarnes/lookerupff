@@ -2014,7 +2014,7 @@ view: upff_movie_premier {
                     SELECT
                       a.*,
                       CASE WHEN COALESCE(SUM(b.timecode ), 0) > COALESCE(SUM(b.duration ), 0) THEN 100.00 ELSE 100.00 * COALESCE(SUM(b.timecode ), 0) / COALESCE(SUM(b.duration ), 0) END AS completion_rate_7d
-                      FROM upff_premier_titles as a
+                      FROM  upff_premier_dates as a
                       LEFT JOIN ${redshift_timeupdate.SQL_TABLE_NAME} AS b
                       ON a.title = b.title
                       WHERE a.release_date >= DATEADD(day, -6, DATE_TRUNC('day', GETDATE()))
