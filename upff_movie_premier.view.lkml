@@ -1929,28 +1929,28 @@ view: upff_movie_premier {
                     SELECT 'Christmas in Amish Country', DATE '2025-12-02' UNION ALL
                     SELECT 'Christmas Roses', DATE '2025-12-09' UNION ALL
                     SELECT 'A Christmas Murder Mystery', DATE '2025-12-09' UNION ALL
-                    SELECT 'North by North Pole', DATE '11/25/26' UNION ALL
-                    SELECT 'Music City Mistletoe', DATE '12/16/25' UNION ALL
-                    SELECT 'Best Thing about Christmas', DATE '12/16/26' UNION ALL
-                    SELECT 'Secret Santa', DATE '12/23/25' UNION ALL
-                    SELECT 'A Country Encore', DATE '1/30/2026' UNION ALL
-                    SELECT 'Where the Wind Blows', DATE '2/13/2026' UNION ALL
-                    SELECT 'Forgiveness Girl', DATE '3/13/2026' UNION ALL
-                    SELECT 'Sugarhouse', DATE '3/20/2026' UNION ALL
-                    SELECT 'Learning You', DATE '4/3/2026' UNION ALL
-                    SELECT 'The Brighton Miracle', DATE '5/1/2026' UNION ALL
-                    SELECT 'Love in Storytown', DATE '5/8/2026' UNION ALL
-                    SELECT 'A Very Southern Church', DATE '6/5/2026' UNION ALL
-                    SELECT 'Better Together', DATE '7/24/2026' UNION ALL
-                    SELECT 'Sheriffs of Savage Wells', DATE '9/15/2026' UNION ALL
-                    SELECT 'Interpreting Love', DATE '9/22/2026' UNION ALL
-                    SELECT 'Bachelor Santa', DATE '10/27/2026' UNION ALL
-                    SELECT 'A Snowflake Christmas', DATE '11/3/2026' UNION ALL
-                    SELECT 'Chocolate for Christmas', DATE '11/10/2026' UNION ALL
-                    SELECT 'Snowbody Like You', DATE '11/10/2026' UNION ALL
-                    SELECT 'A Royal Stables Christmas', DATE '11/17/2026' UNION ALL
-                    SELECT 'Christmas in the Ballroom', DATE '11/24/2026' UNION ALL
-                    SELECT 'Christmas En Pointe', DATE '11/24/2026'
+                    SELECT 'North by North Pole', DATE '2025-11-25' UNION ALL
+                    SELECT 'Music City Mistletoe', DATE '2025-12-16' UNION ALL
+                    SELECT 'Best Thing about Christmas', DATE '2025-12-16' UNION ALL
+                    SELECT 'Secret Santa', DATE '2025-12-23' UNION ALL
+                    SELECT 'A Country Encore', DATE '2026-01-30' UNION ALL
+                    SELECT 'Where the Wind Blows', DATE '2026-02-13' UNION ALL
+                    SELECT 'Forgiveness Girl', DATE '2026-03-13' UNION ALL
+                    SELECT 'Sugarhouse', DATE '2026-03-20' UNION ALL
+                    SELECT 'Learning You', DATE '2026-04-03' UNION ALL
+                    SELECT 'The Brighton Miracle', DATE '2026-05-01' UNION ALL
+                    SELECT 'Love in Storytown', DATE '2026-05-08' UNION ALL
+                    SELECT 'A Very Southern Church', DATE '2026-06-05' UNION ALL
+                    SELECT 'Better Together', DATE '2026-07-24' UNION ALL
+                    SELECT 'Sheriffs of Savage Wells', DATE '2026-09-15' UNION ALL
+                    SELECT 'Interpreting Love', DATE '2026-09-22' UNION ALL
+                    SELECT 'Bachelor Santa', DATE '2026-10-27' UNION ALL
+                    SELECT 'A Snowflake Christmas', DATE '2026-11-03' UNION ALL
+                    SELECT 'Chocolate for Christmas', DATE '2026-11-10' UNION ALL
+                    SELECT 'Snowbody Like You', DATE '2026-11-10' UNION ALL
+                    SELECT 'A Royal Stables Christmas', DATE '2026-11-17' UNION ALL
+                    SELECT 'Christmas in the Ballroom', DATE '2026-11-24' UNION ALL
+                    SELECT 'Christmas En Pointe', DATE '2026-11-24'
 
                     ),
 
@@ -2009,17 +2009,32 @@ view: upff_movie_premier {
 
 
                     -- first 7 days completion rates
+                    title_cr_step_one AS
+                    (
+                    SELECT
+                    a.title,
+                    a.release_date,
+                    SUM(b.timecode) AS total_timecode,
+                    SUM(b.duration) AS total_duration
+                    FROM upff_premier_dates AS a
+                    JOIN ${redshift_timeupdate.SQL_TABLE_NAME} AS b
+                     ON  b.title = a.title
+                     AND DATE(b.timestamp) >= DATE_TRUNC('day', a.release_date)
+                     AND DATE(b.timestamp) <  DATEADD(day, 7, DATE_TRUNC('day', a.release_date))
+                    GROUP BY a.title, a.release_date
+                      ),
+
                     title_cr AS
                     (
                     SELECT
-                      a.*,
-                      CASE WHEN COALESCE(SUM(b.timecode ), 0) > COALESCE(SUM(b.duration ), 0) THEN 100.00 ELSE 100.00 * COALESCE(SUM(b.timecode ), 0) / COALESCE(SUM(b.duration ), 0) END AS completion_rate_7d
-                      FROM  upff_premier_dates as a
-                      LEFT JOIN ${redshift_timeupdate.SQL_TABLE_NAME} AS b
-                      ON a.title = b.title
-                      WHERE a.release_date >= DATEADD(day, -6, DATE_TRUNC('day', GETDATE()))
-                      AND a.release_date <  DATEADD(day, 1,  DATE_TRUNC('day', GETDATE()))
-                      ),
+                    title,
+                    release_date,
+                    CASE
+                      WHEN total_timecode > total_duration THEN 100.00
+                      ELSE 100.00 * total_timecode / NULLIF(total_duration, 0)
+                    END AS completion_rate_7d
+                    FROM title_cr_step_one
+                    ,
 
 
 
