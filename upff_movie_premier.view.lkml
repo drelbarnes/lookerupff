@@ -2017,8 +2017,8 @@ view: upff_movie_premier {
                       FROM upff_premier_titles as a
                       LEFT JOIN ${redshift_timeupdate.SQL_TABLE_NAME} AS b
                       ON a.title = b.title
-                      WHERE ((( a.release_date) >= ((DATEADD(day,-6, DATE_TRUNC('day',GETDATE()) )))
-                      AND ( a.release_date) < ((DATEADD(day,7, DATEADD(day,-6, DATE_TRUNC('day',GETDATE()) ) ))))),
+                      WHERE a.release_date >= DATEADD(day, -6, DATE_TRUNC('day', GETDATE()))
+                      AND a.release_date <  DATEADD(day, 1,  DATE_TRUNC('day', GETDATE())),
 
 
 
