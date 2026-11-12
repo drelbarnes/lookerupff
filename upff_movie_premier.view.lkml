@@ -1704,21 +1704,31 @@ view: upff_movie_premier {
                     SELECT 'Christmas in Amish Country' UNION ALL
                     SELECT 'Christmas Roses' UNION ALL
                     SELECT 'A Christmas Murder Mystery' UNION ALL
-                   SELECT   'North by North Pole' UNION ALL
- SELECT   'Music City Mistletoe' UNION ALL
- SELECT 'Best Thing about Christmas' UNION ALL
- SELECT 'Secret Santa' UNION ALL
- SELECT 'A Country Encore' UNION ALL
- SELECT 'Where the Wind Blows' UNION ALL
- SELECT 'Forgiveness Girl' UNION ALL
- SELECT 'Sugarhouse' UNION ALL
- SELECT 'Learning You' UNION ALL
- SELECT 'The Brighton Miracle' UNION ALL
- SELECT 'Love in Storytown' UNION ALL
- SELECT 'A Very Southern Church' UNION ALL
- SELECT 'Better Together'
+                    SELECT   'North by North Pole' UNION ALL
+                    SELECT   'Music City Mistletoe' UNION ALL
+                    SELECT 'Best Thing about Christmas' UNION ALL
+                    SELECT 'Secret Santa' UNION ALL
+                    SELECT 'A Country Encore' UNION ALL
+                    SELECT 'Where the Wind Blows' UNION ALL
+                    SELECT 'Forgiveness Girl' UNION ALL
+                    SELECT 'Sugarhouse' UNION ALL
+                    SELECT 'Learning You' UNION ALL
+                    SELECT 'The Brighton Miracle' UNION ALL
+                    SELECT 'Love in Storytown' UNION ALL
+                    SELECT 'A Very Southern Church' UNION ALL
+                    SELECT 'Better Together' UNION ALL
+                    SELECT 'Sheriffs of Savage Wells' UNION ALL
+                    SELECT 'Interpreting Love' UNION ALL
+                    SELECT 'Bachelor Santa' UNION ALL
+                    SELECT 'A Snowflake Christmas' UNION ALL
+                    SELECT 'Chocolate for Christmas' UNION ALL
+                    SELECT 'Snowbody Like You' UNION ALL
+                    SELECT 'A Royal Stables Christmas' UNION ALL
+                    SELECT 'Christmas in the Ballroom' UNION ALL
+                    SELECT 'Christmas En Pointe'
                     ),
 
+                    --no longer using manually added lifetime completion rates
                     upff_premier_completion_rates AS
                     (
                     SELECT 'The Happy Camper' AS title, 0.77 AS completion_rate UNION ALL
@@ -1817,7 +1827,7 @@ view: upff_movie_premier {
                     SELECT 'A Change in Heart', 0.76 UNION ALL
                     SELECT 'Christmas in Amish Country', 0.79 UNION ALL
                     SELECT 'Christmas Roses', 0.79 UNION ALL
-                    SELECT 'A Christmas Murder Mystery', 0.79
+                    SELECT 'A Christmas Murder Mystery', 0.79 UNION ALL
                     ),
 
                     upff_premier_dates AS
@@ -1931,7 +1941,16 @@ view: upff_movie_premier {
                     SELECT 'The Brighton Miracle', DATE '5/1/2026' UNION ALL
                     SELECT 'Love in Storytown', DATE '5/8/2026' UNION ALL
                     SELECT 'A Very Southern Church', DATE '6/5/2026' UNION ALL
-                    SELECT 'Better Together', DATE '7/24/2026'
+                    SELECT 'Better Together', DATE '7/24/2026' -- UNION ALL
+                    SELECT 'Sheriffs of Savage Wells', DATE '9/15/2026' UNION ALL
+                    SELECT 'Interpreting Love', DATE '9/22/2026' UNION ALL
+                    SELECT 'Bachelor Santa', DATE '10/27/2026' UNIONALL
+                    SELECT 'A Snowflake Christmas', DATE '11/3/2026' UNION ALL
+                    SELECT 'Chocolate for Christmas', DATE '11/10/2026' UNION ALL
+                    SELECT 'Snowbody Like You', DATE '11/10/2026' UNION ALL
+                    SELECT 'A Royal Stables Christmas', DATE '11/17/2026' UNION ALL
+                    SELECT 'Christmas in the Ballroom', DATE '11/24/2026' UNION ALL
+                    SELECT 'Christmas En Pointe', DATE '11/24/2026'
 
                     ),
 
@@ -1988,13 +2007,28 @@ view: upff_movie_premier {
                     GROUP BY 1,2,3
                     ),
 
+
+                    -- first 7 days completion rates
+                    title_cr AS
+                    (
+                    SELECT
+                      a.*,
+                      CASE WHEN COALESCE(SUM(redshift_timeupdate.timecode ), 0) > COALESCE(SUM(redshift_timeupdate.duration ), 0) THEN 100.00 ELSE 100.00 * COALESCE(SUM(redshift_timeupdate.timecode ), 0) / COALESCE(SUM(redshift_timeupdate.duration ), 0) END AS completion_rate_7d
+                      FROM upff_premier_titles as a
+                      LEFT JOIN ${redshift_timeupdate.SQL_TABLE_NAME} AS b
+                      ON a.title = b.title
+                      WHERE ((( a.release_date) >= ((DATEADD(day,-6, DATE_TRUNC('day',GETDATE()) )))
+                      AND ( a.release_date) < ((DATEADD(day,7, DATEADD(day,-6, DATE_TRUNC('day',GETDATE()) ) ))))),
+
+
+
                     title_views_cr AS
                     (
                     SELECT
                     a.*
-                    , b.completion_rate
+                    ,b.completion_rate_7d
                     FROM title_views_raw AS a
-                    LEFT JOIN upff_premier_completion_rates AS b
+                    LEFT JOIN title_cr AS b
                     ON a.collection = b.title
                     ),
 
@@ -2013,7 +2047,7 @@ view: upff_movie_premier {
                     , round(views_7_days::decimal / NULLIF(subscriber_count, 0), 2) AS views_per_weekly_sub_7d
                     , round(views_30_days::decimal / NULLIF(subscriber_count, 0), 2) AS views_per_weekly_sub_30d
                     , round(views_90_days::decimal / NULLIF(subscriber_count, 0), 2) AS views_per_weekly_sub_90d
-                    , completion_rate AS lifetime_completion_rate
+                    , completion_rate_7d
                     FROM title_views_cr
                     )
 
@@ -2090,9 +2124,9 @@ view: upff_movie_premier {
       sql: ${TABLE}.views_per_weekly_sub_90d ;;
     }
 
-    dimension: lifetime_completion_rate {
+    dimension: completion_rate_7d {
       type: number
-      sql: ${TABLE}.lifetime_completion_rate ;;
+      sql: ${TABLE}.completion_rate_7d ;;
     }
 
     set: detail {
@@ -2109,7 +2143,7 @@ view: upff_movie_premier {
         views_per_weekly_sub_7d,
         views_per_weekly_sub_30d,
         views_per_weekly_sub_90d,
-        lifetime_completion_rate
+        completion_rate_7d
       ]
     }
   }
