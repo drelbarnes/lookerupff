@@ -24,9 +24,12 @@ view: hubspot_contacts {
               c.properties_firstname_value        AS first_name,
               c.properties_lastname_value         AS last_name,
               c.properties_company_value          AS company,
-              CONVERT_TIMEZONE('UTC', 'America/New_York', c.added_at) AS added_at,
+              CONVERT_TIMEZONE('UTC', 'America/New_York',
+                  CASE WHEN c.properties_createdate_value::VARCHAR ~ '^[0-9]{12,13}$'
+                    THEN TIMESTAMP 'epoch' + (c.properties_createdate_value::VARCHAR::BIGINT / 1000) * INTERVAL '1 second'
+                    ELSE CAST(c.properties_createdate_value::VARCHAR AS TIMESTAMP) END) AS added_at,  -- HubSpot create date (not Segment's sync-time added_at)
               c.portal_id::VARCHAR                AS portal_id,
-              ROW_NUMBER() OVER (PARTITION BY LOWER(TRIM(c.email)) ORDER BY c.added_at ASC) AS rn
+              ROW_NUMBER() OVER (PARTITION BY LOWER(TRIM(c.email)) ORDER BY c.id) AS rn
           FROM hubspot.contacts c
           WHERE c.email IS NOT NULL
             AND COALESCE(c.is_contact, TRUE)
@@ -85,7 +88,7 @@ view: hubspot_contacts {
   dimension_group: added {
     type: time
     label: "Contact Added"
-    description: "When the contact was first added to HubSpot (US Eastern)."
+    description: "When the contact was created in HubSpot, from HubSpot's create date (US Eastern)."
     timeframes: [date, week, month, quarter, year]
     convert_tz: no
     datatype: timestamp

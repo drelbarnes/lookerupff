@@ -172,16 +172,25 @@ view: hubspot_email_activity {
 
       UNION ALL
 
-      -- 4. New contacts (valid, un-merged records)
+      -- 4. New contacts (valid, un-merged records), dated by HubSpot's own
+      --    create date. NOT added_at: in this warehouse added_at is the time
+      --    Segment synced the record, so re-syncs looked like new contacts.
+      --    The CASE handles createdate stored as epoch milliseconds or as text.
       SELECT
       'ct-' || c.id::VARCHAR, 'Contact', 'CONTACT_CREATED',
-      CONVERT_TIMEZONE('UTC', 'America/New_York', c.added_at),
+      CONVERT_TIMEZONE('UTC', 'America/New_York', c.created_at),
       NULL::VARCHAR, LOWER(TRIM(c.email)),
       NULL::VARCHAR, NULL::VARCHAR, NULL::VARCHAR, NULL::VARCHAR, NULL::VARCHAR
+      FROM (
+      SELECT c.id, c.email, c.is_contact, c.canonical_vid,
+      CASE WHEN c.properties_createdate_value::VARCHAR ~ '^[0-9]{12,13}$'
+      THEN TIMESTAMP 'epoch' + (c.properties_createdate_value::VARCHAR::BIGINT / 1000) * INTERVAL '1 second'
+      ELSE CAST(c.properties_createdate_value::VARCHAR AS TIMESTAMP) END AS created_at
       FROM hubspot.contacts c
+      ) c
       WHERE COALESCE(c.is_contact, TRUE)
       AND (c.canonical_vid IS NULL OR c.canonical_vid::VARCHAR = c.id::VARCHAR)
-      AND c.added_at >= DATEADD(month, -13, DATE_TRUNC('month', GETDATE()))
+      AND c.created_at >= DATEADD(month, -13, DATE_TRUNC('month', GETDATE()))
       ) u
       ) a
 
@@ -641,7 +650,7 @@ view: hubspot_email_activity {
     type: sum
     label: "New Contacts"
     group_label: "Contacts"
-    description: "Contacts added to HubSpot. Also called new leads."
+    description: "Contacts created in HubSpot (by HubSpot's create date). Also called new leads."
     sql: ${current_flag} * ${TABLE}.is_new_contact ;;
     value_format_name: decimal_0
   }
