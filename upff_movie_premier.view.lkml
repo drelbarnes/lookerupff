@@ -1941,10 +1941,10 @@ view: upff_movie_premier {
                     SELECT 'The Brighton Miracle', DATE '5/1/2026' UNION ALL
                     SELECT 'Love in Storytown', DATE '5/8/2026' UNION ALL
                     SELECT 'A Very Southern Church', DATE '6/5/2026' UNION ALL
-                    SELECT 'Better Together', DATE '7/24/2026' -- UNION ALL
+                    SELECT 'Better Together', DATE '7/24/2026' UNION ALL
                     SELECT 'Sheriffs of Savage Wells', DATE '9/15/2026' UNION ALL
                     SELECT 'Interpreting Love', DATE '9/22/2026' UNION ALL
-                    SELECT 'Bachelor Santa', DATE '10/27/2026' UNIONALL
+                    SELECT 'Bachelor Santa', DATE '10/27/2026' UNION ALL
                     SELECT 'A Snowflake Christmas', DATE '11/3/2026' UNION ALL
                     SELECT 'Chocolate for Christmas', DATE '11/10/2026' UNION ALL
                     SELECT 'Snowbody Like You', DATE '11/10/2026' UNION ALL
