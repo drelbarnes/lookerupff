@@ -298,7 +298,7 @@ view: upff_web_event_processing {
     )
       select *, row_number() over (order by ordered_at) as row from attributable_events
        ;;
-    datagroup_trigger: upff_daily_refresh_datagroup
+    #datagroup_trigger: upff_daily_refresh_datagroup
   }
 
   measure: count {

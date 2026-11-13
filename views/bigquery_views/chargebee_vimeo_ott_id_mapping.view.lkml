@@ -44,7 +44,7 @@ view: chargebee_vimeo_ott_id_mapping {
       from vimeo_id
 
       ;;
-    datagroup_trigger: upff_daily_refresh_datagroup
+    #datagroup_trigger: upff_daily_refresh_datagroup
   }
 
 

@@ -296,7 +296,7 @@
       union all
       select * from radiant_android
     ;;
-    datagroup_trigger: upff_daily_refresh_datagroup
+    #datagroup_trigger: upff_daily_refresh_datagroup
   }
 
     dimension_group: timestamp {

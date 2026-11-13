@@ -367,7 +367,7 @@ view: bigquery_timeupdate_legacy {
 
         ;;
 
-      datagroup_trigger: upff_analytics_datagroup
+      #datagroup_trigger: upff_analytics_datagroup
 
     }
 

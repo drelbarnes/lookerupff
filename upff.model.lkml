@@ -80,6 +80,68 @@ include: "/Vimeo_OTT/vimeo_ott_all_customers_workflows.view.lkml"
 include: "/views/Marketing_attribution/upff_signup_funnel.view.lkml"
 include: "/views/payment/payment_gateway.view.lkml"
 include: "views/social_performance/social_performance_v2.view.lkml"
+include: "views/hubspot/hubspot_email_activity.view.lkml"
+include: "views/hubspot/hubspot_email_campaigns.view.lkml"
+include: "views/hubspot/hubspot_contacts.view.lkml"
+
+###############################################################################
+# HubSpot Email Marketing model
+# -----------------------------------------------------------------------------
+# Data: Twilio Segment HubSpot source -> Redshift -> Looker.
+# One place to see how email grows traffic, converts leads and keeps (or loses)
+# subscribers, with period-over-period comparison built in.
+###############################################################################
+
+# Segment syncs HubSpot about every 3 hours, then loads the warehouse on your
+# plan's schedule. Rebuild when new email events land, at most every 6 hours.
+
+datagroup: hubspot_segment_sync {
+  label: "HubSpot Segment sync"
+  description: "Fires when Segment loads new HubSpot email events into the warehouse."
+  sql_trigger: SELECT MAX(received_at) FROM hubspot.email_events ;;
+  max_cache_age: "6 hours"
+}
+
+persist_with: hubspot_segment_sync
+
+explore: hubspot_email_activity {
+  label: "HubSpot Email Marketing"
+  group_label: "Marketing"
+  description: "Email marketing performance from HubSpot: emails sent, delivered, opened and clicked; conversions (form submissions within 7 days of a click); subscribes, unsubscribes and spam reports; and new contacts. Pick a Reporting Period and a Compare To window to see change versus a prior period. Plain measures always mean the Reporting Period; '(Prior Period)' measures mean the comparison window. Campaign Name and Campaign Type are on Email Activity itself."
+
+  # Speed: when a Reporting Period is set, read only the two windows being
+  # compared. The predicates compare the sort-key column directly to constant
+  # dates, so Redshift skips every block outside them.
+  sql_always_where:
+    {% if hubspot_email_activity.reporting_period._is_filtered %}
+      (   (${hubspot_email_activity.activity_raw} >= ${hubspot_email_activity.period_start}
+           AND ${hubspot_email_activity.activity_raw} <  ${hubspot_email_activity.period_end})
+       OR (${hubspot_email_activity.activity_raw} >= ${hubspot_email_activity.prior_start}
+           AND ${hubspot_email_activity.activity_raw} <  ${hubspot_email_activity.prior_end}) )
+    {% else %} 1 = 1 {% endif %} ;;
+
+  # Only joined when a benchmark or lifetime field is used (DISTSTYLE ALL, no data movement).
+  join: hubspot_email_campaigns {
+    view_label: "Campaign Benchmarks"
+    type: left_outer
+    relationship: many_to_one
+    sql_on: ${hubspot_email_activity.email_campaign_id} = ${hubspot_email_campaigns.email_campaign_id} ;;
+  }
+
+  # Only joined when a contact field is used (same distribution key, joins on-node).
+  join: hubspot_contacts {
+    view_label: "Contacts"
+    type: left_outer
+    relationship: many_to_one
+    sql_on: ${hubspot_email_activity.recipient_email} = ${hubspot_contacts.email} ;;
+  }
+}
+
+explore: hubspot_contacts {
+  label: "HubSpot Contacts"
+  group_label: "Marketing"
+  description: "The HubSpot contact database: how many contacts we have and when they were added. Use HubSpot Email Marketing for anything about emails or subscriptions."
+}
 
 
 # -----------------------------------------------------------------------------
