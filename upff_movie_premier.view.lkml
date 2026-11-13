@@ -1704,21 +1704,31 @@ view: upff_movie_premier {
                     SELECT 'Christmas in Amish Country' UNION ALL
                     SELECT 'Christmas Roses' UNION ALL
                     SELECT 'A Christmas Murder Mystery' UNION ALL
-                   SELECT   'North by North Pole' UNION ALL
- SELECT   'Music City Mistletoe' UNION ALL
- SELECT 'Best Thing about Christmas' UNION ALL
- SELECT 'Secret Santa' UNION ALL
- SELECT 'A Country Encore' UNION ALL
- SELECT 'Where the Wind Blows' UNION ALL
- SELECT 'Forgiveness Girl' UNION ALL
- SELECT 'Sugarhouse' UNION ALL
- SELECT 'Learning You' UNION ALL
- SELECT 'The Brighton Miracle' UNION ALL
- SELECT 'Love in Storytown' UNION ALL
- SELECT 'A Very Southern Church' UNION ALL
- SELECT 'Better Together'
+                    SELECT   'North by North Pole' UNION ALL
+                    SELECT   'Music City Mistletoe' UNION ALL
+                    SELECT 'Best Thing about Christmas' UNION ALL
+                    SELECT 'Secret Santa' UNION ALL
+                    SELECT 'A Country Encore' UNION ALL
+                    SELECT 'Where the Wind Blows' UNION ALL
+                    SELECT 'Forgiveness Girl' UNION ALL
+                    SELECT 'Sugarhouse' UNION ALL
+                    SELECT 'Learning You' UNION ALL
+                    SELECT 'The Brighton Miracle' UNION ALL
+                    SELECT 'Love in Storytown' UNION ALL
+                    SELECT 'A Very Southern Church' UNION ALL
+                    SELECT 'Better Together' UNION ALL
+                    SELECT 'Sheriffs of Savage Wells' UNION ALL
+                    SELECT 'Interpreting Love' UNION ALL
+                    SELECT 'Bachelor Santa' UNION ALL
+                    SELECT 'A Snowflake Christmas' UNION ALL
+                    SELECT 'Chocolate for Christmas' UNION ALL
+                    SELECT 'Snowbody Like You' UNION ALL
+                    SELECT 'A Royal Stables Christmas' UNION ALL
+                    SELECT 'Christmas in the Ballroom' UNION ALL
+                    SELECT 'Christmas En Pointe'
                     ),
 
+                    --no longer using manually added lifetime completion rates
                     upff_premier_completion_rates AS
                     (
                     SELECT 'The Happy Camper' AS title, 0.77 AS completion_rate UNION ALL
@@ -1919,19 +1929,28 @@ view: upff_movie_premier {
                     SELECT 'Christmas in Amish Country', DATE '2025-12-02' UNION ALL
                     SELECT 'Christmas Roses', DATE '2025-12-09' UNION ALL
                     SELECT 'A Christmas Murder Mystery', DATE '2025-12-09' UNION ALL
-                    SELECT 'North by North Pole', DATE '11/25/26' UNION ALL
-                    SELECT 'Music City Mistletoe', DATE '12/16/25' UNION ALL
-                    SELECT 'Best Thing about Christmas', DATE '12/16/26' UNION ALL
-                    SELECT 'Secret Santa', DATE '12/23/25' UNION ALL
-                    SELECT 'A Country Encore', DATE '1/30/2026' UNION ALL
-                    SELECT 'Where the Wind Blows', DATE '2/13/2026' UNION ALL
-                    SELECT 'Forgiveness Girl', DATE '3/13/2026' UNION ALL
-                    SELECT 'Sugarhouse', DATE '3/20/2026' UNION ALL
-                    SELECT 'Learning You', DATE '4/3/2026' UNION ALL
-                    SELECT 'The Brighton Miracle', DATE '5/1/2026' UNION ALL
-                    SELECT 'Love in Storytown', DATE '5/8/2026' UNION ALL
-                    SELECT 'A Very Southern Church', DATE '6/5/2026' UNION ALL
-                    SELECT 'Better Together', DATE '7/24/2026'
+                    SELECT 'North by North Pole', DATE '2025-11-25' UNION ALL
+                    SELECT 'Music City Mistletoe', DATE '2025-12-16' UNION ALL
+                    SELECT 'Best Thing about Christmas', DATE '2025-12-16' UNION ALL
+                    SELECT 'Secret Santa', DATE '2025-12-23' UNION ALL
+                    SELECT 'A Country Encore', DATE '2026-01-30' UNION ALL
+                    SELECT 'Where the Wind Blows', DATE '2026-02-13' UNION ALL
+                    SELECT 'Forgiveness Girl', DATE '2026-03-13' UNION ALL
+                    SELECT 'Sugarhouse', DATE '2026-03-20' UNION ALL
+                    SELECT 'Learning You', DATE '2026-04-03' UNION ALL
+                    SELECT 'The Brighton Miracle', DATE '2026-05-01' UNION ALL
+                    SELECT 'Love in Storytown', DATE '2026-05-08' UNION ALL
+                    SELECT 'A Very Southern Church', DATE '2026-06-05' UNION ALL
+                    SELECT 'Better Together', DATE '2026-07-24' UNION ALL
+                    SELECT 'Sheriffs of Savage Wells', DATE '2026-09-15' UNION ALL
+                    SELECT 'Interpreting Love', DATE '2026-09-22' UNION ALL
+                    SELECT 'Bachelor Santa', DATE '2026-10-27' UNION ALL
+                    SELECT 'A Snowflake Christmas', DATE '2026-11-03' UNION ALL
+                    SELECT 'Chocolate for Christmas', DATE '2026-11-10' UNION ALL
+                    SELECT 'Snowbody Like You', DATE '2026-11-10' UNION ALL
+                    SELECT 'A Royal Stables Christmas', DATE '2026-11-17' UNION ALL
+                    SELECT 'Christmas in the Ballroom', DATE '2026-11-24' UNION ALL
+                    SELECT 'Christmas En Pointe', DATE '2026-11-24'
 
                     ),
 
@@ -1988,13 +2007,44 @@ view: upff_movie_premier {
                     GROUP BY 1,2,3
                     ),
 
+
+                    -- first 7 days completion rates
+                    title_cr_step_one AS
+                    (
+                    SELECT
+                    a.title,
+                    a.release_date,
+                    SUM(b.timecode) AS total_timecode,
+                    SUM(b.duration) AS total_duration
+                    FROM upff_premier_dates AS a
+                    JOIN ${redshift_timeupdate.SQL_TABLE_NAME} AS b
+                     ON  b.title = a.title
+                     AND DATE(b.timestamp) >= DATE_TRUNC('day', a.release_date)
+                     AND DATE(b.timestamp) <  DATEADD(day, 7, DATE_TRUNC('day', a.release_date))
+                    GROUP BY a.title, a.release_date
+                      ),
+
+                    title_cr AS
+                    (
+                    SELECT
+                    title,
+                    release_date,
+                    CASE
+                      WHEN total_timecode > total_duration THEN 1.00
+                      ELSE total_timecode / NULLIF(total_duration, 0)
+                    END AS completion_rate_7d
+                    FROM title_cr_step_one
+                    ),
+
+
+
                     title_views_cr AS
                     (
                     SELECT
                     a.*
-                    , b.completion_rate
+                    ,b.completion_rate_7d
                     FROM title_views_raw AS a
-                    LEFT JOIN upff_premier_completion_rates AS b
+                    LEFT JOIN title_cr AS b
                     ON a.collection = b.title
                     ),
 
@@ -2013,7 +2063,7 @@ view: upff_movie_premier {
                     , round(views_7_days::decimal / NULLIF(subscriber_count, 0), 2) AS views_per_weekly_sub_7d
                     , round(views_30_days::decimal / NULLIF(subscriber_count, 0), 2) AS views_per_weekly_sub_30d
                     , round(views_90_days::decimal / NULLIF(subscriber_count, 0), 2) AS views_per_weekly_sub_90d
-                    , completion_rate AS lifetime_completion_rate
+                    , completion_rate_7d
                     FROM title_views_cr
                     )
 
@@ -2090,9 +2140,9 @@ view: upff_movie_premier {
       sql: ${TABLE}.views_per_weekly_sub_90d ;;
     }
 
-    dimension: lifetime_completion_rate {
+    dimension: completion_rate_7d {
       type: number
-      sql: ${TABLE}.lifetime_completion_rate ;;
+      sql: ${TABLE}.completion_rate_7d ;;
     }
 
     set: detail {
@@ -2109,7 +2159,7 @@ view: upff_movie_premier {
         views_per_weekly_sub_7d,
         views_per_weekly_sub_30d,
         views_per_weekly_sub_90d,
-        lifetime_completion_rate
+        completion_rate_7d
       ]
     }
   }
