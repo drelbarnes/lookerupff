@@ -391,6 +391,16 @@ view: redshift_timeupdate {
               ,CASE WHEN media_type is NULL THEN 'other'
               ELSE media_type
               END AS media_type_cleaned
+
+              -- blue skies season 2 episode 6
+              ,CASE WHEN title = 'Yoga in the Woods' THEN 'Blue Skies - Season 2'
+              ELSE collection
+              END AS collection
+              ,CASE WHEN title = 'Yoga in the Woods' THEN 6
+              ELSE episode
+              END AS episode
+
+
               from timeupdate
               )
               select * from result {% endraw %} ;;
