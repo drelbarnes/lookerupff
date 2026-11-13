@@ -1041,4 +1041,116 @@ view: hubspot_email_activity {
     sql: 100.0 * (${unsubscribe_rate} - ${unsubscribe_rate_prior}) ;;
     value_format: "+0.00\" pts\";-0.00\" pts\";0.00\" pts\""
   }
+
+  # ===========================================================================
+  # PRIOR PERIOD AND CHANGE: deliverability and secondary rates
+  # ===========================================================================
+
+  measure: emails_bounced_prior {
+    type: sum
+    label: "Emails Bounced (Prior Period)"
+    group_label: "Prior Period"
+    description: "Emails Bounced in the comparison window."
+    sql: ${prior_flag} * ${TABLE}.is_bounce ;;
+    value_format_name: decimal_0
+  }
+
+  measure: emails_dropped_prior {
+    type: sum
+    label: "Emails Dropped (Prior Period)"
+    group_label: "Prior Period"
+    description: "Emails Dropped in the comparison window."
+    sql: ${prior_flag} * ${TABLE}.is_dropped ;;
+    value_format_name: decimal_0
+  }
+
+  measure: delivery_rate_prior {
+    type: number
+    label: "Delivery Rate (Prior Period)"
+    group_label: "Prior Period"
+    description: "Delivery Rate in the comparison window."
+    sql: 1.0 * ${emails_delivered_prior} / NULLIF(${emails_sent_prior}, 0) ;;
+    value_format_name: percent_1
+  }
+
+  measure: bounce_rate_prior {
+    type: number
+    label: "Bounce Rate (Prior Period)"
+    group_label: "Prior Period"
+    description: "Bounce Rate in the comparison window."
+    sql: 1.0 * ${emails_bounced_prior} / NULLIF(${emails_sent_prior}, 0) ;;
+    value_format_name: percent_2
+  }
+
+  measure: click_to_open_rate_prior {
+    type: number
+    label: "Click-to-Open Rate (Prior Period)"
+    group_label: "Prior Period"
+    description: "Click-to-Open Rate in the comparison window."
+    sql: 1.0 * ${unique_clicks_prior} / NULLIF(${unique_opens_prior}, 0) ;;
+    value_format_name: percent_1
+  }
+
+  measure: spam_report_rate_prior {
+    type: number
+    label: "Spam Report Rate (Prior Period)"
+    group_label: "Prior Period"
+    description: "Spam Report Rate in the comparison window."
+    sql: 1.0 * ${spam_reports_prior} / NULLIF(${recipients_delivered_prior}, 0) ;;
+    value_format_name: percent_3
+  }
+
+  measure: emails_bounced_change_pct {
+    type: number
+    label: "Emails Bounced Change %"
+    group_label: "Change vs Prior Period"
+    description: "Percent change in Emails Bounced versus the comparison window. A rise is bad news."
+    sql: 1.0 * (${emails_bounced} - ${emails_bounced_prior}) / NULLIF(${emails_bounced_prior}, 0) ;;
+    value_format: "+0.0%;-0.0%;0.0%"
+  }
+
+  measure: emails_dropped_change_pct {
+    type: number
+    label: "Emails Dropped Change %"
+    group_label: "Change vs Prior Period"
+    description: "Percent change in Emails Dropped versus the comparison window. A rise is bad news."
+    sql: 1.0 * (${emails_dropped} - ${emails_dropped_prior}) / NULLIF(${emails_dropped_prior}, 0) ;;
+    value_format: "+0.0%;-0.0%;0.0%"
+  }
+
+  measure: delivery_rate_change_pts {
+    type: number
+    label: "Delivery Rate Change (pts)"
+    group_label: "Change vs Prior Period"
+    description: "Delivery Rate minus the prior period’s Delivery Rate, in percentage points."
+    sql: 100.0 * (${delivery_rate} - ${delivery_rate_prior}) ;;
+    value_format: "+0.0\" pts\";-0.0\" pts\";0.0\" pts\""
+  }
+
+  measure: bounce_rate_change_pts {
+    type: number
+    label: "Bounce Rate Change (pts)"
+    group_label: "Change vs Prior Period"
+    description: "Bounce Rate minus the prior period’s Bounce Rate, in percentage points. A rise is bad news."
+    sql: 100.0 * (${bounce_rate} - ${bounce_rate_prior}) ;;
+    value_format: "+0.00\" pts\";-0.00\" pts\";0.00\" pts\""
+  }
+
+  measure: click_to_open_rate_change_pts {
+    type: number
+    label: "Click-to-Open Rate Change (pts)"
+    group_label: "Change vs Prior Period"
+    description: "Click-to-Open Rate minus the prior period’s, in percentage points."
+    sql: 100.0 * (${click_to_open_rate} - ${click_to_open_rate_prior}) ;;
+    value_format: "+0.0\" pts\";-0.0\" pts\";0.0\" pts\""
+  }
+
+  measure: spam_report_rate_change_pts {
+    type: number
+    label: "Spam Report Rate Change (pts)"
+    group_label: "Change vs Prior Period"
+    description: "Spam Report Rate minus the prior period’s, in percentage points. A rise is bad news."
+    sql: 100.0 * (${spam_report_rate} - ${spam_report_rate_prior}) ;;
+    value_format: "+0.000\" pts\";-0.000\" pts\";0.000\" pts\""
+  }
 }
