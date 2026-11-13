@@ -2030,8 +2030,8 @@ view: upff_movie_premier {
                     title,
                     release_date,
                     CASE
-                      WHEN total_timecode > total_duration THEN 100.00
-                      ELSE 100.00 * total_timecode / NULLIF(total_duration, 0)
+                      WHEN total_timecode > total_duration THEN 1.00
+                      ELSE total_timecode / NULLIF(total_duration, 0)
                     END AS completion_rate_7d
                     FROM title_cr_step_one
                     ),
