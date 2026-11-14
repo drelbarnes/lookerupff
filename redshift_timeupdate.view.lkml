@@ -387,7 +387,20 @@ view: redshift_timeupdate {
               ),
 
               result as (
-              select *
+              select
+                title,
+                release,
+                user_id,
+                media_type,
+                video_id,
+                series,
+                season,
+                type,
+                timestamp,
+                duration,
+                timecode,
+                source,
+                email
               ,CASE WHEN media_type is NULL THEN 'other'
               ELSE media_type
               END AS media_type_cleaned
