@@ -78,10 +78,14 @@ view: hubspot_email_activity {
       CASE WHEN a.activity_type = 'DELIVERED' AND a.type_seq = 1 THEN 1 ELSE 0 END AS is_unique_delivered,
       CASE WHEN a.activity_type = 'BOUNCE'              THEN 1 ELSE 0 END AS is_bounce,
       CASE WHEN a.activity_type = 'DROPPED'             THEN 1 ELSE 0 END AS is_dropped,
-      CASE WHEN a.activity_type = 'OPEN'                THEN 1 ELSE 0 END AS is_open,
-      CASE WHEN a.activity_type = 'OPEN'  AND a.type_seq = 1 THEN 1 ELSE 0 END AS is_unique_open,
-      CASE WHEN a.activity_type = 'CLICK'               THEN 1 ELSE 0 END AS is_click,
-      CASE WHEN a.activity_type = 'CLICK' AND a.type_seq = 1 THEN 1 ELSE 0 END AS is_unique_click,
+      -- Opens and clicks exclude HubSpot bot-filtered events (as HubSpot reports them)
+      CASE WHEN a.activity_type = 'OPEN'  AND a.is_filtered = 0                    THEN 1 ELSE 0 END AS is_open,
+      CASE WHEN a.activity_type = 'OPEN'  AND a.is_filtered = 0 AND a.type_seq = 1 THEN 1 ELSE 0 END AS is_unique_open,
+      CASE WHEN a.activity_type = 'CLICK' AND a.is_filtered = 0                    THEN 1 ELSE 0 END AS is_click,
+      CASE WHEN a.activity_type = 'CLICK' AND a.is_filtered = 0 AND a.type_seq = 1 THEN 1 ELSE 0 END AS is_unique_click,
+      CASE WHEN a.activity_type = 'OPEN'  AND a.is_filtered = 1                    THEN 1 ELSE 0 END AS is_bot_open,
+      CASE WHEN a.activity_type = 'CLICK' AND a.is_filtered = 1                    THEN 1 ELSE 0 END AS is_bot_click,
+      a.is_filtered                                                                       AS is_bot_filtered,
       CASE WHEN a.activity_type = 'FORM_SUBMISSION'     THEN 1 ELSE 0 END AS is_form_submission,
       CASE WHEN a.activity_type = 'FORM_SUBMISSION' AND a.email_campaign_id IS NOT NULL AND a.type_seq = 1
       THEN 1 ELSE 0 END AS is_conversion,
@@ -93,7 +97,7 @@ view: hubspot_email_activity {
       FROM (
       SELECT
       u.*,
-      ROW_NUMBER() OVER (PARTITION BY u.recipient_email, u.email_campaign_id, u.activity_type
+      ROW_NUMBER() OVER (PARTITION BY u.recipient_email, u.email_campaign_id, u.activity_type, u.is_filtered
       ORDER BY u.activity_at, u.activity_id) AS type_seq
       FROM (
 
@@ -110,9 +114,12 @@ view: hubspot_email_activity {
       e.drop_reason::VARCHAR                                 AS drop_reason,
       NULL::VARCHAR                                          AS subscription_change_source,
       NULL::VARCHAR                                          AS form_title,
-      NULL::VARCHAR                                          AS form_page_url
+      NULL::VARCHAR                                          AS form_page_url,
+      -- HubSpot's bot filter: true when HubSpot excludes the event from its
+      -- reporting (bot / machine opens and clicks). Matches "Excluding bots".
+      CASE WHEN e.filtered_event THEN 1 ELSE 0 END           AS is_filtered
       FROM (
-      SELECT ee.id, ee.type, ee.created, ee.email_campaign_id, ee.recipient, ee.url, ee.drop_reason,
+      SELECT ee.id, ee.type, ee.created, ee.email_campaign_id, ee.recipient, ee.url, ee.drop_reason, ee.filtered_event,
       ROW_NUMBER() OVER (PARTITION BY ee.id ORDER BY ee.received_at DESC) AS rn
       FROM hubspot.email_events ee
       WHERE ee.received_at >= DATEADD(month, -13, DATE_TRUNC('month', GETDATE()))
@@ -132,7 +139,7 @@ view: hubspot_email_activity {
       CONVERT_TIMEZONE('UTC', 'America/New_York', sc.changed_at),
       sc.email_campaign_id,
       LOWER(TRIM(COALESCE(sc.recipient, es.email))),
-      NULL::VARCHAR, NULL::VARCHAR, sc.source::VARCHAR, NULL::VARCHAR, NULL::VARCHAR
+      NULL::VARCHAR, NULL::VARCHAR, sc.source::VARCHAR, NULL::VARCHAR, NULL::VARCHAR, 0
       FROM (
       SELECT
       c.id, c.change, c.source, c.email_subscription_event_id,
@@ -166,7 +173,7 @@ view: hubspot_email_activity {
       'fs-' || fs.id::VARCHAR, 'Form submission', 'FORM_SUBMISSION',
       CONVERT_TIMEZONE('UTC', 'America/New_York', fs."timestamp"),
       NULL::VARCHAR, NULL::VARCHAR,
-      NULL::VARCHAR, NULL::VARCHAR, NULL::VARCHAR, fs.title::VARCHAR, fs.page_url::VARCHAR
+      NULL::VARCHAR, NULL::VARCHAR, NULL::VARCHAR, fs.title::VARCHAR, fs.page_url::VARCHAR, 0
       FROM hubspot.form_submissions fs
       WHERE fs."timestamp" >= DATEADD(month, -13, DATE_TRUNC('month', GETDATE()))
 
@@ -180,7 +187,7 @@ view: hubspot_email_activity {
       'ct-' || c.id::VARCHAR, 'Contact', 'CONTACT_CREATED',
       CONVERT_TIMEZONE('UTC', 'America/New_York', c.created_at),
       NULL::VARCHAR, LOWER(TRIM(c.email)),
-      NULL::VARCHAR, NULL::VARCHAR, NULL::VARCHAR, NULL::VARCHAR, NULL::VARCHAR
+      NULL::VARCHAR, NULL::VARCHAR, NULL::VARCHAR, NULL::VARCHAR, NULL::VARCHAR, 0
       FROM (
       SELECT c.id, c.email, c.is_contact, c.canonical_vid,
       CASE WHEN c.properties_createdate_value::VARCHAR ~ '^[0-9]{12,13}$'
@@ -491,6 +498,13 @@ view: hubspot_email_activity {
     sql: ${TABLE}.form_page_url ;;
   }
 
+  dimension: is_bot_filtered {
+    type: yesno
+    label: "Is Bot Activity"
+    description: "Yes when HubSpot's bot filter excluded this open or click from its reporting (machine opens and link scanners, often from security tools). Opens, clicks and their rates already leave these out, matching HubSpot's 'Excluding bots' numbers."
+    sql: ${TABLE}.is_bot_filtered = 1 ;;
+  }
+
   dimension: is_email_attributed {
     type: yesno
     label: "Is Credited to Email"
@@ -560,7 +574,7 @@ view: hubspot_email_activity {
     type: sum
     label: "Unique Opens"
     group_label: "Engagement"
-    description: "People who opened a campaign, counted once per campaign on their first open. Also called openers."
+    description: "People who opened a campaign, counted once per campaign on their first open, excluding bot opens (matches HubSpot's 'Excluding bots'). Also called openers."
     sql: ${current_flag} * ${TABLE}.is_unique_open ;;
     value_format_name: decimal_0
   }
@@ -569,16 +583,43 @@ view: hubspot_email_activity {
     type: sum
     label: "Total Opens"
     group_label: "Engagement"
-    description: "Every open, including repeat opens by the same person."
+    description: "Every open, including repeat opens by the same person, excluding bot opens."
     sql: ${current_flag} * ${TABLE}.is_open ;;
     value_format_name: decimal_0
+  }
+
+  measure: bot_opens {
+    type: sum
+    label: "Bot Opens"
+    group_label: "Bot Activity"
+    description: "Opens that HubSpot's bot filter flagged as machine activity. Already excluded from Unique Opens, Total Opens and Open Rate; shown here for transparency."
+    sql: ${current_flag} * ${TABLE}.is_bot_open ;;
+    value_format_name: decimal_0
+  }
+
+  measure: bot_clicks {
+    type: sum
+    label: "Bot Clicks"
+    group_label: "Bot Activity"
+    description: "Clicks that HubSpot's bot filter flagged as machine activity (for example security scanners checking links). Already excluded from Unique Clicks, Total Clicks and Click Rate."
+    sql: ${current_flag} * ${TABLE}.is_bot_click ;;
+    value_format_name: decimal_0
+  }
+
+  measure: bot_open_share {
+    type: number
+    label: "Bot Share of Opens"
+    group_label: "Bot Activity"
+    description: "Bot opens as a share of all opens (bot plus human). Shows how much bot filtering changes the open numbers."
+    sql: 1.0 * ${bot_opens} / NULLIF(${bot_opens} + ${total_opens}, 0) ;;
+    value_format_name: percent_1
   }
 
   measure: unique_clicks {
     type: sum
     label: "Unique Clicks"
     group_label: "Engagement"
-    description: "People who clicked a link in a campaign, counted once per campaign on their first click. Also called clickers."
+    description: "People who clicked a link in a campaign, counted once per campaign on their first click, excluding bot clicks (matches HubSpot's 'Excluding bots'). Also called clickers."
     sql: ${current_flag} * ${TABLE}.is_unique_click ;;
     value_format_name: decimal_0
   }
@@ -587,7 +628,7 @@ view: hubspot_email_activity {
     type: sum
     label: "Total Clicks"
     group_label: "Engagement"
-    description: "Every link click, including repeat clicks."
+    description: "Every link click, including repeat clicks, excluding bot clicks."
     sql: ${current_flag} * ${TABLE}.is_click ;;
     value_format_name: decimal_0
   }
