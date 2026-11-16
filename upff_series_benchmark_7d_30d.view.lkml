@@ -115,16 +115,16 @@ view: upff_series_benchmark_7d_30d {
                   THEN user_id
                   END) AS uniques_30d
                 , cr.avg_complete_rate
+                , cr7.completion_rate_7d
                 , e.title
                 , CASE WHEN CURRENT_DATE > DATEADD(day, 7, e.drop_date) THEN 'yes' ELSE 'no - ' || DATEDIFF(day, CURRENT_DATE, DATEADD(day, 7, e.drop_date)) || ' days left' END AS finalized_7d
                 , CASE WHEN CURRENT_DATE > DATEADD(day, 30, e.drop_date) THEN 'yes' ELSE 'no - ' || DATEDIFF(day, CURRENT_DATE, DATEADD(day, 30, e.drop_date)) || ' days left' END AS finalized_30d
-                , cr7.completion_rate_7d
               FROM episode_views AS e
               LEFT JOIN completion_rates AS cr
               ON e.episode = cr.ep
               LEFT JOIN completion_rate_7d AS cr7
               ON e.episode = cr7.episode
-              GROUP BY 1,2,7,8,9,11
+              GROUP BY 1,2,7,8,9
               )
 
               select * from view_counts order by episode ;;
