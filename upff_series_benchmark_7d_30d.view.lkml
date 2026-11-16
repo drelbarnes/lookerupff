@@ -174,6 +174,11 @@ view: upff_series_benchmark_7d_30d {
       sql: ${TABLE}.uniques_30d ;;
     }
 
+    dimension: completion_rate_7d {
+      type: number
+      sql: ${TABLE}.completion_rate_7d ;;
+    }
+
     dimension: avg_complete_rate {
       type: number
       sql: ${TABLE}.avg_complete_rate ;;
@@ -194,10 +199,6 @@ view: upff_series_benchmark_7d_30d {
       sql: ${TABLE}.finalized_30d ;;
     }
 
-  dimension: completion_rate_7d {
-    type: number
-    sql: ${TABLE}.completion_rate_7d ;;
-  }
 
     measure: pct_change_7d_views {
       type: number
