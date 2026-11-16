@@ -164,18 +164,6 @@ UNION ALL
     ,'2026-11-09' as report_date
     ,'web' as platform
     ,'yearly' as billing_period
-  UNION ALL
-  SELECT
-    102542 as user_count
-    ,'2026-11-10' as report_date
-    ,'web' as platform
-    ,'monthly' as billing_period
-  UNION ALL
-  SELECT
-    89339 as user_count
-    ,'2026-11-10' as report_date
-    ,'web' as platform
-    ,'yearly' as billing_period
 
 
 )
