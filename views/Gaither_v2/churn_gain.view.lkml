@@ -120,6 +120,24 @@ view: churn_gain {
         ,'total' as status
       FROM get_sub_count
 
+      UNION ALL
+      SELECT
+         10382
+        ,'2026-11-09'
+        ,'Chargebee'
+        ,'total' as status
+
+
+      UNION ALL
+      SELECT
+         10382
+        ,'2026-11-10'
+        ,'Chargebee'
+        ,'total' as status
+
+
+
+
 
       UNION ALL
       SELECT

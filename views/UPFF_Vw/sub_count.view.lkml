@@ -151,6 +151,21 @@ FROM (
     ,'web' as platform
     ,'yearly' as billing_period
 */
+UNION ALL
+
+  SELECT
+    102542 as user_count
+    ,'2026-11-09' as report_date
+    ,'web' as platform
+    ,'monthly' as billing_period
+  UNION ALL
+  SELECT
+    89339 as user_count
+    ,'2026-11-09' as report_date
+    ,'web' as platform
+    ,'yearly' as billing_period
+
+
 )
 UNION ALL
 SELECT
@@ -193,9 +208,8 @@ where report_date < CURRENT_DATE - 1
       ;;
     sql_trigger_value:
     SELECT TO_CHAR(
-    CONVERT_TIMEZONE('UTC', 'America/New_York', GETDATE()) - INTERVAL '7 hour',
-    'YYYY-MM-DD'
-    ) ;;
+    sql_trigger_value: SELECT TO_CHAR(DATEADD(minute, -530, GETDATE()), 'YYYY-MM-DD')
+
     #sql_trigger_value:  SELECT TO_CHAR(DATE_TRUNC('day', CURRENT_TIMESTAMP) + INTERVAL '9 hours 45 minutes', 'YYYY-MM-DD');;
     distribution: "report_date"
     sortkeys: ["report_date"]
