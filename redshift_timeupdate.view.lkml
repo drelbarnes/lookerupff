@@ -396,7 +396,7 @@ view: redshift_timeupdate {
                 series,
                 season,
                 type,
-                timestamp,
+
                 duration,
                 timecode,
                 source,
@@ -411,7 +411,8 @@ view: redshift_timeupdate {
               END AS collection
               ,CASE WHEN title = 'Yoga in the Woods' THEN 6
               ELSE episode
-              END AS episode
+              END AS episode,
+              timestamp
 
 
               from timeupdate
