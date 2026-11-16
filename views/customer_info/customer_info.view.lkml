@@ -297,6 +297,7 @@ GROUP BY 1
       ,cbd.cancellation_date
       ,s.most_recent_sign_in_date
       ,s.used_platforms
+      ,current_date - 1 as report_date
     FROM vimeo_info v
     LEFT JOIN chargebee_info c
     on v.email = c.email
@@ -311,9 +312,13 @@ GROUP BY 1
     LEFT JOIN chargebee_billing_dates cbd
     on v.email = cbd.email
     LEFT JOIN recent_sign_in s
-    on v.email = s.email
+    on v.email = s.email;;
 
-    ;;
+    sql_trigger_value:
+    SELECT TO_CHAR(
+sql_trigger_value: SELECT TO_CHAR(DATEADD(minute, -500, GETDATE()), 'YYYY-MM-DD') ;;
+    distribution: "report_date"
+    sortkeys: ["report_date"]
   }
   filter: email_filter {
     type: string
@@ -359,11 +364,11 @@ GROUP BY 1
     type: string
     sql:  ${TABLE}.error_codes;;
   }
-
   dimension: primary_platform {
     type: string
     sql:  ${TABLE}.primary_platform;;
   }
+
 
   dimension: last_payment_date {
     type: date
