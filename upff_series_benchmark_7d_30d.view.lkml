@@ -99,25 +99,25 @@ view: upff_series_benchmark_7d_30d {
                 e.episode
                 , e.drop_date
                 , COUNT(DISTINCT CASE
-                  WHEN ds >= drop_date AND ds <= DATEADD(day, 6, drop_date)
-                  THEN CAST(video_id AS VARCHAR) || CAST(user_id AS VARCHAR) ||  CAST(ds AS VARCHAR)
+                  WHEN e.ds >= e.drop_date AND e.ds <= DATEADD(day, 6, e.drop_date)
+                  THEN CAST(e.video_id AS VARCHAR) || CAST(user_id AS VARCHAR) ||  CAST(e.ds AS VARCHAR)
                   END) AS views_7d
                 , COUNT(DISTINCT CASE
-                  WHEN ds >= drop_date AND ds <= DATEADD(day, 29, drop_date)
-                  THEN CAST(video_id AS VARCHAR) || CAST(user_id AS VARCHAR) ||  CAST(ds AS VARCHAR)
+                  WHEN e.ds >= e.drop_date AND e.ds <= DATEADD(day, 29, e.drop_date)
+                  THEN CAST(e.video_id AS VARCHAR) || CAST(user_id AS VARCHAR) ||  CAST(e.ds AS VARCHAR)
                   END) AS views_30d
                 , COUNT(DISTINCT CASE
-                  WHEN ds >= drop_date AND ds <= DATEADD(day, 6, drop_date)
+                  WHEN e.ds >= e.drop_date AND ds <= DATEADD(day, 6, e.drop_date)
                   THEN user_id
                   END) AS uniques_7d
                 , COUNT(DISTINCT CASE
-                  WHEN ds >= drop_date AND ds <= DATEADD(day, 29, drop_date)
+                  WHEN e.ds >= e.drop_date AND ds <= DATEADD(day, 29, e.drop_date)
                   THEN user_id
                   END) AS uniques_30d
                 , cr.avg_complete_rate
                 , e.title
-                , CASE WHEN CURRENT_DATE > DATEADD(day, 7, drop_date) THEN 'yes' ELSE 'no - ' || DATEDIFF(day, CURRENT_DATE, DATEADD(day, 7, drop_date)) || ' days left' END AS finalized_7d
-                , CASE WHEN CURRENT_DATE > DATEADD(day, 30, drop_date) THEN 'yes' ELSE 'no - ' || DATEDIFF(day, CURRENT_DATE, DATEADD(day, 30, drop_date)) || ' days left' END AS finalized_30d
+                , CASE WHEN CURRENT_DATE > DATEADD(day, 7, e.drop_date) THEN 'yes' ELSE 'no - ' || DATEDIFF(day, CURRENT_DATE, DATEADD(day, 7, e.drop_date)) || ' days left' END AS finalized_7d
+                , CASE WHEN CURRENT_DATE > DATEADD(day, 30, e.drop_date) THEN 'yes' ELSE 'no - ' || DATEDIFF(day, CURRENT_DATE, DATEADD(day, 30, e.drop_date)) || ' days left' END AS finalized_30d
                 , cr7.completion_rate_7d
               FROM episode_views AS e
               LEFT JOIN completion_rates AS cr
