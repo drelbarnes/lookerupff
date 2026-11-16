@@ -34,6 +34,8 @@ view: upff_series_benchmark_7d_30d {
               GROUP BY 1,2,3,4
               ),
 
+
+
               episode_drop_dates AS
               (
               SELECT
@@ -45,6 +47,37 @@ view: upff_series_benchmark_7d_30d {
               WHERE daily_views >= 10
               GROUP BY 1,2,3
               ),
+
+
+              completion_rate_7d_step_one AS
+              (
+              SELECT
+                b.title
+                , b.episode
+                , b.video_id
+                , SUM(CAST(b.timecode AS DECIMAL(18,4))) AS total_timecode
+                , SUM(CAST(b.duration AS DECIMAL(18,4))) AS total_duration
+              FROM universe AS b
+              INNER JOIN episode_drop_dates AS d
+                ON b.episode = d.episode
+              WHERE b.ds >= d.drop_date
+                AND b.ds <  DATEADD(day, 7, d.drop_date)
+              GROUP BY 1,2,3
+              ),
+
+                completion_rate_7d AS
+                (
+                SELECT
+                  title
+                  , episode
+                  , video_id
+                  , ROUND(CAST(
+                      CASE
+                        WHEN total_timecode > total_duration THEN 1.00
+                        ELSE total_timecode / NULLIF(total_duration, 0)
+                      END AS DECIMAL(10,4)), 2) AS completion_rate_7d
+                FROM completion_rate_7d_step_one
+                ),
 
               episode_views AS
               (
@@ -85,10 +118,13 @@ view: upff_series_benchmark_7d_30d {
                 , e.title
                 , CASE WHEN CURRENT_DATE > DATEADD(day, 7, drop_date) THEN 'yes' ELSE 'no - ' || DATEDIFF(day, CURRENT_DATE, DATEADD(day, 7, drop_date)) || ' days left' END AS finalized_7d
                 , CASE WHEN CURRENT_DATE > DATEADD(day, 30, drop_date) THEN 'yes' ELSE 'no - ' || DATEDIFF(day, CURRENT_DATE, DATEADD(day, 30, drop_date)) || ' days left' END AS finalized_30d
+                , cr7.completion_rate_7d
               FROM episode_views AS e
               LEFT JOIN completion_rates AS cr
               ON e.episode = cr.ep
-              GROUP BY 1,2,7,8,9
+              LEFT JOIN completion_rate_7d AS cr7
+              ON e.episode = cr7.episode
+              GROUP BY 1,2,7,8,9,11
               )
 
               select * from view_counts order by episode ;;
@@ -157,6 +193,11 @@ view: upff_series_benchmark_7d_30d {
       type: string
       sql: ${TABLE}.finalized_30d ;;
     }
+
+  dimension: completion_rate_7d {
+    type: number
+    sql: ${TABLE}.completion_rate_7d ;;
+  }
 
     measure: pct_change_7d_views {
       type: number
