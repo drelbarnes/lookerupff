@@ -10,6 +10,7 @@ view: customer_info {
         ,content_customer_last_name as last_name
         ,'https://upentertainment.chargebee.com/d/customers/'||content_invoice_customer_id::varchar as chargebee_link
       from chargebee_webhook_events.subscription_created
+      where {% condition email_filter %} email {% endcondition %}
 
 
     ),
@@ -19,6 +20,7 @@ view: customer_info {
       content_customer_email as email
       ,min(date(timestamp)) as chargebee_join_date
     FROM chargebee_webhook_events.subscription_created
+    where {% condition email_filter %} content_customer_email {% endcondition %}
     GROUP BY email
     ),
 
@@ -30,6 +32,7 @@ view: customer_info {
         MAX("timestamp") AS last_occurred_at
     FROM chargebee_webhook_events.payment_failed
     WHERE content_transaction_error_detail_decline_code IS NOT NULL
+    and {% condition email_filter %} content_customer_email {% endcondition %}
     GROUP BY 1, 2
 ),
 ranked_errors AS (
@@ -65,6 +68,7 @@ GROUP BY content_customer_email),
         ,content_subscription_subscription_items
         ,row_number() over (partition by lower(trim(content_customer_email)) order by timestamp desc) as rn
     from chargebee_webhook_events.payment_succeeded
+    where {% condition email_filter %} content_customer_email {% endcondition %}
 
     ),
 
@@ -74,6 +78,7 @@ GROUP BY content_customer_email),
       ,(content_invoice_total * -1)/100.0 as amount_paid
       ,date(timestamp) as report_date
     from chargebee_webhook_events.payment_refunded
+    where {% condition email_filter %} content_customer_email {% endcondition %}
     ),
 
     chargebee_most_recent_payment as (
@@ -90,6 +95,7 @@ GROUP BY content_customer_email),
     from http_api.chargebee_subscriptions
     where date(uploaded_at) = current_date -1
       and subscription_subscription_items_0_item_price_id LIKE '%UP%'
+      and{% condition email_filter %} customer_email {% endcondition %}
 
     ),
 
@@ -146,12 +152,14 @@ chargebee_billing_dates as (
     ,date(event_occurred_at) as report_date
   from customers.new_customers
   where subscription_frequency != 'custom' and event_type in ( 'Direct to Paid', 'Free Trial to Paid')
+  and {% condition email_filter %} email {% endcondition %}
 
   UNION ALL
   select
     email
     ,date(timestamp) as report_date
   from vimeo_ott_webhook.customer_product_renewed
+  where {% condition email_filter %} email {% endcondition %}
 ),
 
 payment_history AS (
@@ -219,37 +227,40 @@ latest_payment AS (
       END AS primary_platform
       ,'https://upfaithandfamily.vhx.tv/admin/manage/customers/'||user_id::varchar||'/overview' as vimeo_ott_link
   from customers.all_customers where report_date = current_date -1 and action != 'follow'
+  AND {% condition email_filter %} email {% endcondition %}
     ),
 
     sign_ins AS (
     SELECT user_email AS email, DATE(timestamp) AS report_date,
            'Amazon_Fire_TV' AS platform
     FROM amazon_fire_tv.sign_in_complete
+    where {% condition email_filter %} user_email {% endcondition %}
 
     UNION ALL
 
     SELECT user_email, DATE(timestamp), 'Android'
     FROM android.sign_in_complete
-
+    where {% condition email_filter %} user_email {% endcondition %}
     UNION ALL
 
     SELECT user_email, DATE(timestamp), 'Roku'
     FROM roku.sign_in_complete
-
+    where {% condition email_filter %} user_email {% endcondition %}
     UNION ALL
 
     SELECT user_email, DATE(timestamp), 'Web'
     FROM javascript.sign_in_complete
-
+    where {% condition email_filter %} user_email {% endcondition %}
     UNION ALL
 
     SELECT user_email, DATE(timestamp), 'iOS'
     FROM ios.sign_in_complete
-
+    where {% condition email_filter %} user_email {% endcondition %}
     UNION ALL
 
     SELECT user_email, DATE(timestamp), 'Vizio_TV'
     FROM vizio_tv.sign_in_complete
+    where {% condition email_filter %} user_email {% endcondition %}
 ),
 
 recent_sign_in as (
@@ -303,6 +314,10 @@ GROUP BY 1
     on v.email = s.email
 
     ;;
+  }
+  filter: email_filter {
+    type: string
+    label: "Customer Email Filter"
   }
 
   dimension: vimeo_id {
