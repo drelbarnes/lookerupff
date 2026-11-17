@@ -388,7 +388,9 @@ view: redshift_timeupdate {
 
               result as (
               select
-                title,
+                CASE WHEN title = 'Yoga in the Woods' THEN '206 - Yoga in the Woods'
+                ELSE title
+                END AS title,
                 release,
                 user_id,
                 media_type,

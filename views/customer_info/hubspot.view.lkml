@@ -58,9 +58,16 @@ SELECT
     s.email_type,
     DATE(e.open_date) AS open_date,
     DATE(e.click_date) AS click_date
+    ,current_date -1 as report_date
 FROM hubspot_most_recent s
 LEFT JOIN hubspot_engagement e
     ON s.sent_by_id = e.sent_by_id;;
+
+    sql_trigger_value:
+    SELECT TO_CHAR(
+    sql_trigger_value: SELECT TO_CHAR(DATEADD(minute, -510, GETDATE()), 'YYYY-MM-DD') ;;
+    distribution: "report_date"
+    sortkeys: ["report_date"]
   }
 
   dimension: email {
