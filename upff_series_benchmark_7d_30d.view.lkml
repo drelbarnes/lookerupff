@@ -52,8 +52,7 @@ view: upff_series_benchmark_7d_30d {
               completion_rate_7d_step_one AS
               (
               SELECT
-                b.title
-                , b.episode
+                b.episode
                 , SUM(CAST(b.timecode AS DECIMAL(18,4))) AS total_timecode
                 , SUM(CAST(b.duration AS DECIMAL(18,4))) AS total_duration
               FROM universe AS b
@@ -61,14 +60,13 @@ view: upff_series_benchmark_7d_30d {
                 ON b.episode = d.episode
               WHERE b.ds >= d.drop_date
                 AND b.ds <  DATEADD(day, 7, d.drop_date)
-              GROUP BY 1,2
+              GROUP BY 1
               ),
 
                 completion_rate_7d AS
                 (
                 SELECT
-                  title
-                  , episode
+                  episode
                   , ROUND(CAST(
                       CASE
                         WHEN total_timecode > total_duration THEN 1.00
