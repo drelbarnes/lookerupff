@@ -114,13 +114,13 @@ view: upff_series_benchmark_7d_30d {
                 , e.title
                 , CASE WHEN CURRENT_DATE > DATEADD(day, 7, e.drop_date) THEN 'yes' ELSE 'no - ' || DATEDIFF(day, CURRENT_DATE, DATEADD(day, 7, e.drop_date)) || ' days left' END AS finalized_7d
                 , CASE WHEN CURRENT_DATE > DATEADD(day, 30, e.drop_date) THEN 'yes' ELSE 'no - ' || DATEDIFF(day, CURRENT_DATE, DATEADD(day, 30, e.drop_date)) || ' days left' END AS finalized_30d
-                --, cr7.completion_rate_7d
+                , cr7.completion_rate_7d
               FROM episode_views AS e
               LEFT JOIN completion_rates AS cr
               ON e.episode = cr.ep
-             -- LEFT JOIN completion_rate_7d AS cr7
-              --ON e.episode = cr7.episode
-              GROUP BY 1,2,7,8,9--,11
+              LEFT JOIN completion_rate_7d AS cr7
+              ON e.episode = cr7.episode
+              GROUP BY 1,2,7,8,9,11
               )
 
               select * from view_counts order by episode ;;
@@ -190,6 +190,10 @@ view: upff_series_benchmark_7d_30d {
       sql: ${TABLE}.finalized_30d ;;
     }
 
+    dimension: completion_rate_7d {
+      type: number
+      sql: ${TABLE}.completion_rate_7d ;;
+    }
 
 
     measure: pct_change_7d_views {
