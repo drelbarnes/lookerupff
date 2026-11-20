@@ -16,6 +16,8 @@
 #     average daily rates) reflects them. App rows show "Mobile App (no UTM)" or
 #     "Connected TV (no UTM)".
 #
+#   Apps use 3 steps (1, 3, 4) for all dates: the iOS app update on 2026-11-13 removed
+#   Sign Up Viewed, and the other apps are normalized to match. Web keeps 4 steps.
 #   Step | iOS / Android / CTV      | Web
 #   -----+--------------------------+-------------------------------------------
 #   CTV  = Roku (roku), Amazon Fire TV (amazon_fire_tv), Vizio TV (vizio_tv);
@@ -375,7 +377,10 @@ view: upff_signup_funnel {
       )
       ),
 
-      -- ---------- Step 2 ----------
+      -- ---------- Step 2 (Web only) ----------
+      -- Apps moved to a 3-step sign-up (install -> plan chosen -> order) starting with the
+      -- iOS update on 2026-11-13; all apps are normalized to 3 steps for every date so
+      -- periods stay comparable. Product Viewed remains step 2 on the website.
       signup_viewed AS (
       SELECT en.platform, en.anonymous_id, en.period, MIN(e.received_at) AS signup_viewed_at
       FROM entries en
@@ -384,10 +389,12 @@ view: upff_signup_funnel {
       AND e.platform     = en.platform
       AND e.received_at >= en.entry_at
       AND e.received_at <  DATEADD(day, {% parameter attribution_days %}, en.entry_at)
+      WHERE en.platform = 'Web'
       GROUP BY en.platform, en.anonymous_id, en.period
       ),
 
       -- ---------- Step 3 ----------
+      -- Web: after Product Viewed. Apps: directly after install (no Sign Up Viewed step).
       plan_chosen AS (
       SELECT sv.platform, sv.anonymous_id, sv.period, MIN(e.received_at) AS plan_chosen_at
       FROM signup_viewed sv
@@ -399,6 +406,18 @@ view: upff_signup_funnel {
       AND e.received_at >= sv.signup_viewed_at
       AND e.received_at <  DATEADD(day, {% parameter attribution_days %}, en.entry_at)
       GROUP BY sv.platform, sv.anonymous_id, sv.period
+
+      UNION ALL
+
+      SELECT en.platform, en.anonymous_id, en.period, MIN(e.received_at) AS plan_chosen_at
+      FROM entries en
+      JOIN plan_chosen_events e
+      ON  e.anonymous_id = en.anonymous_id
+      AND e.platform     = en.platform
+      AND e.received_at >= en.entry_at
+      AND e.received_at <  DATEADD(day, {% parameter attribution_days %}, en.entry_at)
+      WHERE en.platform <> 'Web'
+      GROUP BY en.platform, en.anonymous_id, en.period
       ),
 
       -- ---------- Step 4 ----------
@@ -678,6 +697,14 @@ view: upff_signup_funnel {
       , COUNT(uf.plan_chosen_at)   OVER (PARTITION BY uf.period, uf.entry_day)                    AS day_plan_chosen_all
       , COUNT(uf.plan_chosen_at)   OVER (PARTITION BY uf.period, uf.platform_group, uf.entry_day) AS day_plan_chosen_group
       , COUNT(uf.plan_chosen_at)   OVER (PARTITION BY uf.period, uf.platform, uf.entry_day)       AS day_plan_chosen_platform
+      -- Users eligible for Product Viewed (web entries only)
+      , COUNT(CASE WHEN uf.platform = 'Web' THEN 1 END) OVER (PARTITION BY uf.period, uf.entry_day)                    AS day_web_entries_all
+      , COUNT(CASE WHEN uf.platform = 'Web' THEN 1 END) OVER (PARTITION BY uf.period, uf.platform_group, uf.entry_day) AS day_web_entries_group
+      , COUNT(CASE WHEN uf.platform = 'Web' THEN 1 END) OVER (PARTITION BY uf.period, uf.platform, uf.entry_day)       AS day_web_entries_platform
+      -- Users eligible for Plan Chosen: web users who reached Product Viewed, plus every app user
+      , COUNT(CASE WHEN uf.platform <> 'Web' OR uf.signup_viewed_at IS NOT NULL THEN 1 END) OVER (PARTITION BY uf.period, uf.entry_day)                    AS day_pre_plan_all
+      , COUNT(CASE WHEN uf.platform <> 'Web' OR uf.signup_viewed_at IS NOT NULL THEN 1 END) OVER (PARTITION BY uf.period, uf.platform_group, uf.entry_day) AS day_pre_plan_group
+      , COUNT(CASE WHEN uf.platform <> 'Web' OR uf.signup_viewed_at IS NOT NULL THEN 1 END) OVER (PARTITION BY uf.period, uf.platform, uf.entry_day)       AS day_pre_plan_platform
       -- Aggregate Vimeo trial conversions for this period/platform/day, carried on
       -- exactly one user row so SUM() never double counts
       , CASE WHEN uf.platform_day_rn = 1 THEN COALESCE(vd.trial_conversions, 0) ELSE 0 END         AS vimeo_trial_conversions
@@ -698,7 +725,7 @@ view: upff_signup_funnel {
       -- One row per funnel step + OVERALL, so steps can be rows in a table or chart
       steps AS (
       SELECT 1 AS step_number, 'App Installed / Landing Page Visit' AS step_name UNION ALL
-      SELECT 2, 'Sign Up Viewed / Product Viewed'                               UNION ALL
+      SELECT 2, 'Product Viewed (Web only)'                                     UNION ALL
       SELECT 3, 'Plan Chosen / Signed Up'                                       UNION ALL
       SELECT 4, 'Order Completed'                                               UNION ALL
       SELECT 5, 'OVERALL: Entry -> Order'
@@ -724,15 +751,15 @@ view: upff_signup_funnel {
       END AS reached_flag
       -- Did this user reach the previous step? (steps 2-4 only)
       , CASE s.step_number
-      WHEN 2 THEN 1
-      WHEN 3 THEN CASE WHEN ud.signup_viewed_at IS NOT NULL THEN 1 ELSE 0 END
+      WHEN 2 THEN CASE WHEN ud.platform = 'Web' THEN 1 ELSE 0 END
+      WHEN 3 THEN CASE WHEN ud.platform <> 'Web' OR ud.signup_viewed_at IS NOT NULL THEN 1 ELSE 0 END
       WHEN 4 THEN CASE WHEN ud.plan_chosen_at   IS NOT NULL THEN 1 ELSE 0 END
       ELSE 0
       END AS prev_flag
       -- Hours from the previous step (OVERALL = entry -> order)
       , CASE s.step_number
       WHEN 2 THEN DATEDIFF(minute, ud.entry_at,         ud.signup_viewed_at)   / 60.0
-      WHEN 3 THEN DATEDIFF(minute, ud.signup_viewed_at, ud.plan_chosen_at)     / 60.0
+      WHEN 3 THEN DATEDIFF(minute, CASE WHEN ud.platform <> 'Web' THEN ud.entry_at ELSE ud.signup_viewed_at END, ud.plan_chosen_at) / 60.0
       WHEN 4 THEN DATEDIFF(minute, ud.plan_chosen_at,   ud.order_completed_at) / 60.0
       WHEN 5 THEN DATEDIFF(minute, ud.entry_at,         ud.order_completed_at) / 60.0
       END AS hours_from_prev
@@ -777,6 +804,8 @@ view: upff_signup_funnel {
       , CAST(NULL AS BIGINT), CAST(NULL AS BIGINT), CAST(NULL AS BIGINT)
       , CAST(NULL AS BIGINT), CAST(NULL AS BIGINT), CAST(NULL AS BIGINT)
       , CAST(NULL AS BIGINT), CAST(NULL AS BIGINT), CAST(NULL AS BIGINT)
+      , CAST(NULL AS BIGINT), CAST(NULL AS BIGINT), CAST(NULL AS BIGINT)            -- day_web_entries_all / group / platform
+      , CAST(NULL AS BIGINT), CAST(NULL AS BIGINT), CAST(NULL AS BIGINT)            -- day_pre_plan_all / group / platform
       , CAST(NULL AS BIGINT)                                                         -- vimeo_trial_conversions
       , CAST(NULL AS BIGINT), CAST(NULL AS BIGINT), CAST(NULL AS BIGINT)            -- vimeo_trial_monthly / yearly / unknown
       , 1                                                                     -- step_number (kept on step 1)
@@ -823,7 +852,7 @@ view: upff_signup_funnel {
 
   dimension: step_number {
     label: "Funnel Step Number"
-    description: "Order of the funnel step: 1 Entry, 2 Sign Up Viewed / Product Viewed, 3 Plan Chosen / Signed Up, 4 Order Completed, 5 OVERALL (entry to order)."
+    description: "Order of the funnel step: 1 Entry, 2 Product Viewed (Web only; apps skip this step), 3 Plan Chosen / Signed Up, 4 Order Completed, 5 OVERALL (entry to order)."
     type: number
     sql: ${TABLE}.step_number ;;
     value_format_name: id
@@ -831,11 +860,11 @@ view: upff_signup_funnel {
 
   dimension: step_name {
     label: "Funnel Step"
-    description: "Name of the funnel step. Required for all 'Funnel Step' metrics. Steps: App Installed / Landing Page Visit, Sign Up Viewed / Product Viewed, Plan Chosen / Signed Up, Order Completed, and OVERALL: Entry -> Order. Also called: stage, funnel stage, checkout step."
+    description: "Name of the funnel step. Required for all 'Funnel Step' metrics. Steps: App Installed / Landing Page Visit, Product Viewed (Web only; apps go straight from install to Plan Chosen), Plan Chosen / Signed Up, Order Completed, and OVERALL: Entry -> Order. Also called: stage, funnel stage, checkout step."
     type: string
     sql: ${TABLE}.step_name ;;
     order_by_field: step_number
-    suggestions: ["App Installed / Landing Page Visit", "Sign Up Viewed / Product Viewed",
+    suggestions: ["App Installed / Landing Page Visit", "Product Viewed (Web only)",
       "Plan Chosen / Signed Up", "Order Completed", "OVERALL: Entry -> Order"]
   }
 
@@ -1253,13 +1282,33 @@ view: upff_signup_funnel {
       {% else %} ${TABLE}.day_plan_chosen_all {% endif %} ;;
   }
 
+  dimension: day_web_entries {
+    hidden: yes
+    type: number
+    description: "Same-day web entries, the users eligible for step 2 (Product Viewed)."
+    sql:
+      {% if upff_signup_funnel.platform._is_selected or upff_signup_funnel.platform._is_filtered %} ${TABLE}.day_web_entries_platform
+      {% elsif upff_signup_funnel.platform_group._is_selected or upff_signup_funnel.platform_group._is_filtered %} ${TABLE}.day_web_entries_group
+      {% else %} ${TABLE}.day_web_entries_all {% endif %} ;;
+  }
+
+  dimension: day_pre_plan {
+    hidden: yes
+    type: number
+    description: "Same-day users eligible for Plan Chosen: web users who reached Product Viewed plus all app users (apps have no step 2)."
+    sql:
+      {% if upff_signup_funnel.platform._is_selected or upff_signup_funnel.platform._is_filtered %} ${TABLE}.day_pre_plan_platform
+      {% elsif upff_signup_funnel.platform_group._is_selected or upff_signup_funnel.platform_group._is_filtered %} ${TABLE}.day_pre_plan_group
+      {% else %} ${TABLE}.day_pre_plan_all {% endif %} ;;
+  }
+
   dimension: day_prev_count {
     hidden: yes
     type: number
     sql:
       CASE ${TABLE}.step_number
-        WHEN 2 THEN ${day_entries}
-        WHEN 3 THEN ${day_signup_viewed}
+        WHEN 2 THEN NULLIF(${day_web_entries}, 0)
+        WHEN 3 THEN ${day_pre_plan}
         WHEN 4 THEN ${day_plan_chosen}
       END ;;
   }
