@@ -37,6 +37,13 @@ view: app_installers {
       UNION ALL
       SELECT
         anonymous_id
+        ,'Xbox' as platform
+        ,timestamp
+      FROM xbox.app_installed
+
+      UNION ALL
+      SELECT
+        anonymous_id
         ,'Tizen' as platform
         ,timestamp
       FROM tizen_tv.app_installed
