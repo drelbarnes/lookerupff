@@ -357,7 +357,7 @@ UNION ALL
       ;;
     sql_trigger_value:
     SELECT TO_CHAR(
-sql_trigger_value: SELECT TO_CHAR(DATEADD(minute, -673, GETDATE()), 'YYYY-MM-DD') ;;
+sql_trigger_value: SELECT TO_CHAR(DATEADD(minute, -685, GETDATE()), 'YYYY-MM-DD') ;;
     #sql_trigger_value:  SELECT TO_CHAR(DATE_TRUNC('day', CURRENT_TIMESTAMP) + INTERVAL '9 hours 45 minutes', 'YYYY-MM-DD');;
       distribution: "report_date"
       sortkeys: ["report_date"]
