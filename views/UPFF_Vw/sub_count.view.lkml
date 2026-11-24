@@ -123,7 +123,7 @@ FROM (
     billing_period
   FROM ${UPFF_analytics_Vw_v2.SQL_TABLE_NAME}
   WHERE status IN ('active', 'non_renewing', 'enabled')
-  and report_date = CURRENT_DATE - 4
+  and report_date >= CURRENT_DATE - 4
     AND platform != 'ios'
   GROUP BY 2, 3, 4
 
