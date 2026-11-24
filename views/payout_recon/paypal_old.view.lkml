@@ -66,6 +66,20 @@ view: paypal_old {
       , fee
       , 'paypal' as payment_gateway
       , type as payment_description from `up-faith-and-family-216419.customers.paypal-payout-recon-9-2026`
+
+       UNION ALL
+      SELECT DISTINCT
+      To_Email_Address as email
+      , date(_Date_) as charge_created
+      , 'charge' as reporting_category
+      , Reference_Txn_ID as source_id
+      , Transaction_ID as transaction_id
+      , Gross
+      , fee
+      , 'paypal' as payment_gateway
+      , type as payment_description from`up-faith-and-family-216419.customers.Paypal_payout_recon_10_2026`
+
+
       ),
 
       paypal_chargebee as (

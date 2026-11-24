@@ -16,7 +16,7 @@ customer_email as email
 , fee
 , 'paypal' as payment_gateway
 ,reporting_category as payment_description
-FROM  `up-faith-and-family-216419.customers.stripe-payout-recon-9-2026`
+FROM `up-faith-and-family-216419.customers.stripe_payout_recon_10_2026`
 --FROM  `up-faith-and-family-216419.customers.paypal_payout_recon_3_2026`
 WHERE date(charge_created) <= (SELECT report_date FROM config)
 --and date(automatic_payout_effective_at) <'2026-09-30'

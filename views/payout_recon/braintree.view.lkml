@@ -5,6 +5,7 @@ view: braintree {
         FROM ${config.SQL_TABLE_NAME}),
 
       paypal0 as (
+
 SELECT distinct
       NULL as email
       , date(Disbursement_Date)  as charge_created
@@ -20,7 +21,24 @@ SELECT distinct
         END as payment_description
         From
 `up-faith-and-family-216419.customers.dispute_report_Aug_Sept_2026`
-where date(Disbursement_Date) <'2026-09-01'
+where date(Disbursement_Date)>= '2026-09-30'
+
+UNION ALL
+SELECT distinct
+      NULL as email
+      , date(Disbursement_Date)  as charge_created
+      , 'charge' as reporting_category
+      , cast(NULL as string) as source_id
+      , Transaction_ID as transaction_id
+      , Amount_Disputed as gross
+      ,15.00 as fee
+      , 'Braintree' as payment_gateway
+      ,CASE
+        WHEN Status != 'Open' THEN 'charge_back_won'
+        ELSE 'charge_back'
+        END as payment_description
+        From `up-faith-and-family-216419.customers.braintree_dispute_report_11_18_2026`
+        where date(Disbursement_Date)between  '2026-10-01' and '2026-10-29'
 
 /*
       UNION ALL
@@ -39,6 +57,21 @@ where date(Disbursement_Date) <'2026-09-01'
       from `up-faith-and-family-216419.customers.braintree-payout-recon-9-2026`
       where date(Disbursement_Date) <'2026-09-30'
       */
+      UNION ALL
+SELECT distinct
+      NULL as email
+      , date(Disbursement_Date)  as charge_created
+      , 'charge' as reporting_category
+      , Original_Transaction_ID as source_id
+      , Transaction_ID as transaction_id
+      , Settlement_Amount as gross
+      ,CASE WHEN Transaction_Type = 'sale' THEN 0.00
+      ELSE 0
+      END as fee
+      , 'Braintree' as payment_gateway
+      ,Transaction_Type as payment_description
+      from `up-faith-and-family-216419.customers.braintree_payout_recon_10_2026`
+     where date(Disbursement_Date) <='2026-10-29'
 
     UNION ALL
     SELECT distinct
@@ -48,13 +81,13 @@ where date(Disbursement_Date) <'2026-09-01'
       , Original_Transaction_ID as source_id
       , Transaction_ID as transaction_id
       , Settlement_Amount as gross
-      ,CASE WHEN Transaction_Type = 'sale' THEN 0.05
+      ,CASE WHEN Transaction_Type = 'sale' THEN 0.00
       ELSE 0
       END as fee
       , 'Braintree' as payment_gateway
       ,Transaction_Type as payment_description
-      from `up-faith-and-family-216419.customers.braintree-payout-recon-8-2026`
-     where Settlement_Date <='2026-08-06'
+      from `up-faith-and-family-216419.customers.braintree-payout-recon-9-2026`
+     where date(Settlement_Date) >'2026-09-28'
 
 
 
