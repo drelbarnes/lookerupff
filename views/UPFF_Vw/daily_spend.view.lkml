@@ -222,7 +222,7 @@ view: daily_spend {
 
         google_perf as (
         select apr.date_start,
-        b.name as channel,
+        'Google_' ||b.name AS channel,
         b.spend as spend,
         sum(impressions) as impressions,
         sum(clicks) as clicks,

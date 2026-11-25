@@ -123,7 +123,7 @@ FROM (
     billing_period
   FROM ${UPFF_analytics_Vw_v2.SQL_TABLE_NAME}
   WHERE status IN ('active', 'non_renewing', 'enabled')
-  and report_date >= CURRENT_DATE - 4
+  and report_date >= CURRENT_DATE - 5
     AND platform != 'ios'
   GROUP BY 2, 3, 4
 
@@ -135,7 +135,7 @@ FROM (
     'ios' AS platform,
     billing_period
   FROM ${ios.SQL_TABLE_NAME}
-  where report_date >= CURRENT_DATE - 4
+  where report_date >= CURRENT_DATE - 5
 /*
   UNION ALL
 
@@ -175,7 +175,7 @@ SELECT
   ,billing_period
   ,'active'::VARCHAR AS status
 FROM ${paid_sub_count.SQL_TABLE_NAME}
-where report_date < CURRENT_DATE - 4
+where report_date < CURRENT_DATE - 5
 
 /*
       UNION ALL

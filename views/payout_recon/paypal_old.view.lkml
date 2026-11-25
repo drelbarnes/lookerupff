@@ -77,7 +77,7 @@ view: paypal_old {
       , Gross
       , fee
       , 'paypal' as payment_gateway
-      , type as payment_description from`up-faith-and-family-216419.customers.Paypal_payout_recon_10_2026`
+      , type as payment_description from `up-faith-and-family-216419.customers.paypal-recon-payout-10-2026-v2`
 
 
       ),
