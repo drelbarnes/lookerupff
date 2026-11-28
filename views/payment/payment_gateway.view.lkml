@@ -1399,27 +1399,27 @@ view: payment_gateway {
     group_label: "Renewal Success"
     label: "Renewing Customers Charged"
     type: count_distinct
-    description: "Distinct customers with at least one renewal charge attempt (Customer Type = renewal)."
+    description: "Distinct customers with a renewal invoice first charged in the period (each invoice counted on its first attempt). Same invoices as Renewal Decline Rate and Recovery Rate."
     sql: ${customer_id} ;;
-    filters: [is_payment_event: "yes", customer_type: "renewal"]
+    filters: [is_first_attempt: "yes", customer_type: "renewal"]
   }
 
   measure: renewal_paid_customers {
     group_label: "Renewal Success"
     label: "Renewing Customers Paid"
     type: count_distinct
-    description: "Distinct customers with at least one successful renewal charge, on the first try or after a retry."
+    description: "Distinct customers whose renewal invoice first charged in the period was paid, on the first try or after a retry."
     sql: ${customer_id} ;;
-    filters: [event_type: "payment_succeeded", customer_type: "renewal"]
+    filters: [is_first_attempt: "yes", customer_type: "renewal", invoice_paid: "yes"]
   }
 
   measure: renewal_declined_customers {
     group_label: "Renewal Success"
     label: "Renewing Customers Declined"
     type: count_distinct
-    description: "Distinct customers with at least one declined renewal charge."
+    description: "Distinct customers whose renewal invoice first charged in the period was declined at least once."
     sql: ${customer_id} ;;
-    filters: [event_type: "payment_failed", customer_type: "renewal"]
+    filters: [is_first_attempt: "yes", customer_type: "renewal", invoice_had_failure: "yes"]
   }
 
   measure: renewal_customer_success_rate {
@@ -1427,7 +1427,7 @@ view: payment_gateway {
     label: "Renewal Success Rate (Unique Customers)"
     type: number
     value_format_name: percent_2
-    description: "Renewing Customers Paid / Renewing Customers Charged. Understated for the last ~30 days while retries continue. Also called: renewal success rate, customer renewal rate. Ratio: do not sum or average across rows."
+    description: "Renewing Customers Paid / Renewing Customers Charged, for renewal invoices first charged in the period. Understated for the last ~30 days while retries continue. Roughly 1 - Renewal Decline Rate x (1 - Recovery Rate). Also called: renewal success rate, customer renewal rate. Ratio: do not sum or average across rows."
     sql: ${renewal_paid_customers} / NULLIF(${renewal_charge_customers}, 0)::FLOAT ;;
   }
 
@@ -1436,7 +1436,7 @@ view: payment_gateway {
     label: "Renewal First-Try Rate (Unique Customers)"
     type: number
     value_format_name: percent_2
-    description: "Share of renewing customers with no declined renewal charge in the period. Ratio: do not sum or average across rows."
+    description: "Share of renewing customers whose renewal invoice first charged in the period was paid with no decline. Ratio: do not sum or average across rows."
     sql: (${renewal_charge_customers} - ${renewal_declined_customers}) / NULLIF(${renewal_charge_customers}, 0)::FLOAT ;;
   }
 
@@ -1956,12 +1956,12 @@ view: payment_gateway {
   }
 
   # Renewal success, unique customers
-  measure: rn_chg_this   { hidden: yes type: count_distinct sql: ${customer_id} ;; filters: [is_payment_event: "yes", customer_type: "renewal", pop_period: "This Period"] }
-  measure: rn_chg_prior  { hidden: yes type: count_distinct sql: ${customer_id} ;; filters: [is_payment_event: "yes", customer_type: "renewal", pop_period: "Prior Period"] }
-  measure: rn_paid_this  { hidden: yes type: count_distinct sql: ${customer_id} ;; filters: [event_type: "payment_succeeded", customer_type: "renewal", pop_period: "This Period"] }
-  measure: rn_paid_prior { hidden: yes type: count_distinct sql: ${customer_id} ;; filters: [event_type: "payment_succeeded", customer_type: "renewal", pop_period: "Prior Period"] }
-  measure: rn_dec_this   { hidden: yes type: count_distinct sql: ${customer_id} ;; filters: [event_type: "payment_failed", customer_type: "renewal", pop_period: "This Period"] }
-  measure: rn_dec_prior  { hidden: yes type: count_distinct sql: ${customer_id} ;; filters: [event_type: "payment_failed", customer_type: "renewal", pop_period: "Prior Period"] }
+  measure: rn_chg_this   { hidden: yes type: count_distinct sql: ${customer_id} ;; filters: [is_first_attempt: "yes", customer_type: "renewal", pop_period: "This Period"] }
+  measure: rn_chg_prior  { hidden: yes type: count_distinct sql: ${customer_id} ;; filters: [is_first_attempt: "yes", customer_type: "renewal", pop_period: "Prior Period"] }
+  measure: rn_paid_this  { hidden: yes type: count_distinct sql: ${customer_id} ;; filters: [is_first_attempt: "yes", customer_type: "renewal", invoice_paid: "yes", pop_period: "This Period"] }
+  measure: rn_paid_prior { hidden: yes type: count_distinct sql: ${customer_id} ;; filters: [is_first_attempt: "yes", customer_type: "renewal", invoice_paid: "yes", pop_period: "Prior Period"] }
+  measure: rn_dec_this   { hidden: yes type: count_distinct sql: ${customer_id} ;; filters: [is_first_attempt: "yes", customer_type: "renewal", invoice_had_failure: "yes", pop_period: "This Period"] }
+  measure: rn_dec_prior  { hidden: yes type: count_distinct sql: ${customer_id} ;; filters: [is_first_attempt: "yes", customer_type: "renewal", invoice_had_failure: "yes", pop_period: "Prior Period"] }
 
   measure: renewal_customer_success_rate_this_period {
     view_label: "_Period over Period"
