@@ -768,7 +768,7 @@ view: payment_gateway {
     group_label: "Decline Detail"
     label: "Decline Category"
     type: string
-    description: "Decline messages grouped by what can be done about them. Values: Soft decline - insufficient funds; Hard decline - card unusable (closed, expired, lost/stolen, no account, lifecycle); Fraud / risk; PayPal agreement / instrument; Issuer refusal (do not honor, call issuer, policy, restriction); Processor decline (generic); Other. Use this first for any 'why are payments failing' question. Also called: decline type, failure reason, root cause."
+    description: "Decline messages grouped by what can be done about them. Values: Soft decline - insufficient funds; Hard decline - card unusable (closed, expired, lost/stolen, no account, lifecycle); Fraud / risk; PayPal agreement / instrument (incl. payer cannot pay); Issuer refusal (do not honor, call issuer, policy, restriction); Processor decline (generic); Other. Use this first for any 'why are payments failing' question. Also called: decline type, failure reason, root cause."
     suggestions: ["Soft decline - insufficient funds", "Hard decline - card unusable", "Fraud / risk", "PayPal agreement / instrument", "Issuer refusal", "Processor decline (generic)", "Other"]
     sql:
       CASE
@@ -785,7 +785,8 @@ view: payment_gateway {
         WHEN LOWER(${TABLE}.error_text) LIKE '%fraud%'                THEN 'Fraud / risk'
         WHEN LOWER(${TABLE}.error_text) LIKE '%agreement%'
           OR LOWER(${TABLE}.error_text) LIKE '%instrument%'
-          OR LOWER(${TABLE}.error_text) LIKE '%request was refused%'  THEN 'PayPal agreement / instrument'
+          OR LOWER(${TABLE}.error_text) LIKE '%request was refused%'
+          OR LOWER(${TABLE}.error_text) LIKE '%payer cannot pay%'     THEN 'PayPal agreement / instrument'
         WHEN LOWER(${TABLE}.error_text) LIKE '%policy%'
           OR LOWER(${TABLE}.error_text) LIKE '%restriction%'
           OR LOWER(${TABLE}.error_text) LIKE '%do not honor%'
