@@ -107,6 +107,11 @@
 #     content_subscription_subscription_items_0_item_price_id
 #   payment_succeeded / payment_failed / subscription_renewed:
 #     content_subscription_created_at, content_subscription_activated_at (epoch)
+#   payment_succeeded / payment_failed: content_transaction_date (epoch).
+#     Charge attempts are ordered by transaction time, not webhook time:
+#     success and decline webhooks often arrive in the same minute and in the
+#     wrong order (2,450 invoices in a 45-day check), which made a later
+#     success look like the first attempt.
 #   subscription_renewed / subscription_cancelled:
 #     id, content_customer_id, content_subscription_id
 #   Segment checkout tables (javascript_upentertainment_checkout schema):
@@ -133,7 +138,11 @@ view: payment_gateway {
         COALESCE(bk.has_stripe_backup, 0) AS has_stripe_backup,
 
       CASE WHEN ev.is_payment_event = 1 THEN
-      ROW_NUMBER() OVER (PARTITION BY ev.attempt_group ORDER BY ev.event_ts, ev.event_id)
+      ROW_NUMBER() OVER (
+      PARTITION BY ev.attempt_group
+      ORDER BY COALESCE(ev.txn_ts, ev.event_ts),
+      CASE WHEN ev.event_type = 'payment_failed' THEN 0 ELSE 1 END,
+      ev.event_id)
       END AS attempt_number,
 
       CASE WHEN ev.is_payment_event = 1 THEN
@@ -151,12 +160,12 @@ view: payment_gateway {
       END AS invoice_paid,
 
       CASE WHEN ev.is_payment_event = 1 THEN
-      MIN(CASE WHEN ev.event_type = 'payment_failed' THEN ev.event_ts END)
+      MIN(CASE WHEN ev.event_type = 'payment_failed' THEN COALESCE(ev.txn_ts, ev.event_ts) END)
       OVER (PARTITION BY ev.attempt_group)
       END AS invoice_first_failure_ts,
 
       CASE WHEN ev.is_payment_event = 1 THEN
-      MIN(CASE WHEN ev.event_type = 'payment_succeeded' THEN ev.event_ts END)
+      MIN(CASE WHEN ev.event_type = 'payment_succeeded' THEN COALESCE(ev.txn_ts, ev.event_ts) END)
       OVER (PARTITION BY ev.attempt_group)
       END AS invoice_first_success_ts,
 
@@ -233,7 +242,8 @@ view: payment_gateway {
       TIMESTAMP 'epoch' + content_subscription_activated_at * INTERVAL '1 second'  AS subscription_activated_at,
       NULL::VARCHAR(128)                                            AS anonymous_id,
       NULL::VARCHAR(64)                                             AS ip_address,
-      NULL::VARCHAR(1024)                                           AS checkout_error_message
+      NULL::VARCHAR(1024)                                           AS checkout_error_message,
+      TIMESTAMP 'epoch' + content_transaction_date * INTERVAL '1 second'  AS txn_ts
       FROM chargebee_webhook_events.payment_succeeded
       WHERE content_subscription_subscription_items_0_item_price_id LIKE '%UP%'
 
@@ -270,7 +280,8 @@ view: payment_gateway {
       TIMESTAMP 'epoch' + content_subscription_activated_at * INTERVAL '1 second',
       NULL::VARCHAR(128),
       NULL::VARCHAR(64),
-      NULL::VARCHAR(1024)
+      NULL::VARCHAR(1024),
+      TIMESTAMP 'epoch' + content_transaction_date * INTERVAL '1 second'
       FROM chargebee_webhook_events.payment_failed
       WHERE content_subscription_subscription_items_0_item_price_id LIKE '%UP%'
 
@@ -303,7 +314,8 @@ view: payment_gateway {
       TIMESTAMP 'epoch' + content_subscription_activated_at * INTERVAL '1 second',
       NULL::VARCHAR(128),
       NULL::VARCHAR(64),
-      NULL::VARCHAR(1024)
+      NULL::VARCHAR(1024),
+      NULL::TIMESTAMP
       FROM chargebee_webhook_events.subscription_renewed
       -- same product filter as payment events so the dunning rate's
       -- numerator and denominator cover the same subscriptions
@@ -336,7 +348,8 @@ view: payment_gateway {
       j.subscription_activated_at,
       NULL::VARCHAR(128),
       NULL::VARCHAR(64),
-      NULL::VARCHAR(1024)
+      NULL::VARCHAR(1024),
+      NULL::TIMESTAMP
       FROM (
       SELECT
       c.*,
@@ -407,7 +420,8 @@ view: payment_gateway {
       NULL::TIMESTAMP, NULL::TIMESTAMP,
       anonymous_id::VARCHAR(128),
       context_ip::VARCHAR(64),
-      NULL::VARCHAR(1024)
+      NULL::VARCHAR(1024),
+      NULL::TIMESTAMP
       FROM (
       SELECT
       id, anonymous_id, context_ip, received_at,
@@ -437,7 +451,8 @@ view: payment_gateway {
       NULL::TIMESTAMP, NULL::TIMESTAMP,
       anonymous_id::VARCHAR(128),
       ip_address::VARCHAR(64),
-      error_message::VARCHAR(1024)
+      error_message::VARCHAR(1024),
+      NULL::TIMESTAMP
       FROM javascript_upentertainment_checkout.subscribe_card_error
       WHERE anonymous_id IS NOT NULL
 
@@ -457,7 +472,8 @@ view: payment_gateway {
       NULL::TIMESTAMP, NULL::TIMESTAMP,
       anonymous_id::VARCHAR(128),
       context_ip::VARCHAR(64),
-      NULL::VARCHAR(1024)
+      NULL::VARCHAR(1024),
+      NULL::TIMESTAMP
       FROM javascript_upentertainment_checkout.order_completed
       WHERE anonymous_id IS NOT NULL
 
