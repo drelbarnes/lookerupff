@@ -1446,9 +1446,9 @@ view: payment_gateway {
 
   measure: dunning_users {
     group_label: "Dunning & Churn"
-    label: "New Dunning Customers"
+    label: "New Dunning Customers (Legacy)"
     type: count_distinct
-    description: "Distinct customers entering dunning (a declined charge with no earlier linked payment on the invoice). Also called: dunning users, past-due customers, customers with payment issues."
+    description: "Distinct customers with a declined charge and no second linked payment on the invoice, the rule from the original dunning query. Legacy rule: misses about 40% of first declines (invoices with a second linked payment at the first decline); use the invoice-based dunning measures instead."
     sql: ${customer_id} ;;
     filters: [event_type: "payment_failed", is_dunning_entry: "yes"]
     drill_fields: [detail*]
@@ -1465,11 +1465,57 @@ view: payment_gateway {
 
   measure: dunning_rate {
     group_label: "Dunning & Churn"
-    label: "Dunning Rate"
+    label: "Dunning Rate (Legacy)"
     type: number
     value_format_name: percent_2
-    description: "New Dunning Customers / (New Dunning Customers + Renewed Customers). Same as the failure-rate line on the existing dashboard. Also called: failure rate, renewal failure rate. Ratio: do not sum or average across rows."
+    description: "New Dunning Customers (Legacy) / (New Dunning Customers (Legacy) + Renewed Customers), as on the original dashboard. Legacy rule: misses about 40% of first declines (invoices with a second linked payment at the first decline); use the invoice-based dunning measures instead. Ratio: do not sum or average across rows."
     sql: ${dunning_users} / NULLIF(${dunning_users} + ${renewed_users}, 0)::FLOAT ;;
+  }
+
+  # ---- Invoice-based dunning (replaces the legacy rule) ----------------------
+
+  measure: dunning_customers {
+    group_label: "Dunning & Churn"
+    label: "Dunning Customers"
+    type: count_distinct
+    description: "Distinct customers with an invoice declined at least once, dated by the invoice's first charge attempt. Counts every first decline, unlike the legacy rule. Same invoices as Revenue at Risk and Recovery Rate. Also called: dunning users, new dunning customers, past-due customers, customers with payment issues."
+    sql: ${customer_id} ;;
+    filters: [is_first_attempt: "yes", invoice_had_failure: "yes"]
+    drill_fields: [detail*]
+  }
+
+  measure: renewal_invoices_attempted {
+    group_label: "Dunning & Churn"
+    label: "Renewal Invoices Attempted"
+    type: count
+    description: "Renewal invoices charged in the period, each counted once on its first attempt."
+    filters: [is_first_attempt: "yes", customer_type: "renewal"]
+  }
+
+  measure: renewal_invoices_declined {
+    group_label: "Dunning & Churn"
+    label: "Renewal Invoices Declined"
+    type: count
+    description: "Renewal invoices declined at least once, dated by their first attempt. Also called: renewals in dunning, failed renewals."
+    filters: [is_first_attempt: "yes", customer_type: "renewal", invoice_had_failure: "yes"]
+    drill_fields: [detail*]
+  }
+
+  measure: renewal_invoices_paid_first_try {
+    group_label: "Dunning & Churn"
+    label: "Renewal Invoices Paid First Try"
+    type: count
+    description: "Renewal invoices approved on the first charge with no decline."
+    filters: [is_first_attempt: "yes", customer_type: "renewal", invoice_had_failure: "no"]
+  }
+
+  measure: renewal_decline_rate {
+    group_label: "Dunning & Churn"
+    label: "Renewal Decline Rate"
+    type: number
+    value_format_name: percent_2
+    description: "Renewal Invoices Declined / Renewal Invoices Attempted: the share of renewal charges that entered dunning. Replaces Dunning Rate (Legacy). Also called: dunning rate, failure rate, renewal failure rate. Ratio: do not sum or average across rows."
+    sql: ${renewal_invoices_declined} / NULLIF(${renewal_invoices_attempted}, 0)::FLOAT ;;
   }
 
   measure: involuntary_churn_users {
@@ -1547,7 +1593,7 @@ view: payment_gateway {
   measure: dunning_rate_this_period {
     view_label: "_Period over Period"
     group_label: "KPIs"
-    label: "Dunning Rate - This Period"
+    label: "Dunning Rate (Legacy) - This Period"
     description: "Dashboard only; requires the Current Period and Prior Period filters."
     type: number
     value_format_name: percent_2
@@ -1557,7 +1603,7 @@ view: payment_gateway {
   measure: dunning_rate_prior_period {
     view_label: "_Period over Period"
     group_label: "KPIs"
-    label: "Dunning Rate - Prior Period"
+    label: "Dunning Rate (Legacy) - Prior Period"
     description: "Dashboard only; requires the Current Period and Prior Period filters."
     type: number
     value_format_name: percent_2
@@ -1567,7 +1613,7 @@ view: payment_gateway {
   measure: dunning_rate_change {
     view_label: "_Period over Period"
     group_label: "KPIs"
-    label: "Dunning Rate - Change (pts)"
+    label: "Dunning Rate (Legacy) - Change (pts)"
     description: "Dashboard only. This Period minus Prior Period, in percentage points."
     type: number
     value_format: "+0.00%;-0.00%;0.00%"
@@ -2058,6 +2104,72 @@ view: payment_gateway {
     sql: ${checkout_payment_success_rate_this_period} - ${checkout_payment_success_rate_prior_period} ;;
   }
 
+  # Invoice-based dunning
+  measure: dun_cust_this  { hidden: yes type: count_distinct sql: ${customer_id} ;; filters: [is_first_attempt: "yes", invoice_had_failure: "yes", pop_period: "This Period"] }
+  measure: dun_cust_prior { hidden: yes type: count_distinct sql: ${customer_id} ;; filters: [is_first_attempt: "yes", invoice_had_failure: "yes", pop_period: "Prior Period"] }
+  measure: rn_inv_this    { hidden: yes type: count filters: [is_first_attempt: "yes", customer_type: "renewal", pop_period: "This Period"] }
+  measure: rn_inv_prior   { hidden: yes type: count filters: [is_first_attempt: "yes", customer_type: "renewal", pop_period: "Prior Period"] }
+  measure: rn_dec_inv_this  { hidden: yes type: count filters: [is_first_attempt: "yes", customer_type: "renewal", invoice_had_failure: "yes", pop_period: "This Period"] }
+  measure: rn_dec_inv_prior { hidden: yes type: count filters: [is_first_attempt: "yes", customer_type: "renewal", invoice_had_failure: "yes", pop_period: "Prior Period"] }
+
+  measure: dunning_customers_this_period {
+    view_label: "_Period over Period"
+    group_label: "KPIs"
+    label: "Dunning Customers - This Period"
+    description: "Dashboard only; requires the Current Period and Prior Period filters."
+    type: number
+    sql: ${dun_cust_this} ;;
+  }
+
+  measure: dunning_customers_prior_period {
+    view_label: "_Period over Period"
+    group_label: "KPIs"
+    label: "Dunning Customers - Prior Period"
+    description: "Dashboard only; requires the Current Period and Prior Period filters."
+    type: number
+    sql: ${dun_cust_prior} ;;
+  }
+
+  measure: dunning_customers_change_pct {
+    view_label: "_Period over Period"
+    group_label: "KPIs"
+    label: "Dunning Customers - Change (%)"
+    description: "Dashboard only. Percent change vs Prior Period."
+    type: number
+    value_format: "+0.0%;-0.0%;0.0%"
+    sql: (${dun_cust_this} - ${dun_cust_prior}) / NULLIF(${dun_cust_prior}, 0)::FLOAT ;;
+  }
+
+  measure: renewal_decline_rate_this_period {
+    view_label: "_Period over Period"
+    group_label: "KPIs"
+    label: "Renewal Decline Rate - This Period"
+    description: "Dashboard only; requires the Current Period and Prior Period filters."
+    type: number
+    value_format_name: percent_2
+    sql: ${rn_dec_inv_this} / NULLIF(${rn_inv_this}, 0)::FLOAT ;;
+  }
+
+  measure: renewal_decline_rate_prior_period {
+    view_label: "_Period over Period"
+    group_label: "KPIs"
+    label: "Renewal Decline Rate - Prior Period"
+    description: "Dashboard only; requires the Current Period and Prior Period filters."
+    type: number
+    value_format_name: percent_2
+    sql: ${rn_dec_inv_prior} / NULLIF(${rn_inv_prior}, 0)::FLOAT ;;
+  }
+
+  measure: renewal_decline_rate_change {
+    view_label: "_Period over Period"
+    group_label: "KPIs"
+    label: "Renewal Decline Rate - Change (pts)"
+    description: "Dashboard only. This Period minus Prior Period, in percentage points. Lower is better."
+    type: number
+    value_format: "+0.00%;-0.00%;0.00%"
+    sql: ${renewal_decline_rate_this_period} - ${renewal_decline_rate_prior_period} ;;
+  }
+
   # ===========================================================================
   # FIELD SETS
   # ===========================================================================
@@ -2092,6 +2204,8 @@ view: payment_gateway {
       card_error_visitors_this_period, card_error_visitors_prior_period,
       card_errors_this_period, card_errors_prior_period, card_errors_change_pct,
       orders_completed_this_period, orders_completed_prior_period,
+      dunning_customers_this_period, dunning_customers_prior_period, dunning_customers_change_pct,
+      renewal_decline_rate_this_period, renewal_decline_rate_prior_period, renewal_decline_rate_change,
       checkout_payment_success_rate_this_period, checkout_payment_success_rate_prior_period, checkout_payment_success_rate_change,
       renewal_customer_success_rate_this_period, renewal_customer_success_rate_prior_period, renewal_customer_success_rate_change,
       renewal_customer_first_try_rate_this_period, renewal_customer_first_try_rate_prior_period, renewal_customer_first_try_rate_change
@@ -2128,6 +2242,8 @@ view: payment_gateway {
       avg_attempts_to_recover, median_hours_to_recover,
       revenue_at_risk, revenue_recovered, revenue_not_recovered,
       dunning_users, renewed_users, dunning_rate,
+      dunning_customers, renewal_invoices_attempted, renewal_invoices_declined,
+      renewal_invoices_paid_first_try, renewal_decline_rate,
       involuntary_churn_users, involuntary_churn_trial, involuntary_churn_renew,
       # checkout and renewal success
       checkout_converted, checkout_had_card_error, checkout_card_error_group, checkout_match_method, anonymous_id,
